@@ -1,12 +1,9 @@
-import { Utensils } from "lucide-react";
+import logoTabbled from "@/assets/logo_tabbled.png";
 
 const TabbledLogo = () => (
-  <div className="flex items-center gap-2.5">
-    <div className="w-9 h-9 rounded-[9px] bg-gradient-to-br from-sage to-sage-light flex items-center justify-center">
-      <Utensils className="w-5 h-5 text-sage-foreground" />
-    </div>
-    <span className="font-heading font-extrabold text-xl lowercase text-foreground">tabbled</span>
-  </div>
+  <a href="#" onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
+    <img src={logoTabbled} alt="Tabbled - Horeca Tech Solutions" className="h-9 w-auto" />
+  </a>
 );
 
 export default TabbledLogo;
