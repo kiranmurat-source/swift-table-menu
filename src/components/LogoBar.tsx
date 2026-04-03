@@ -1,28 +1,30 @@
-import { Building2, Hotel, Star, Gem, Crown, Castle, Landmark, Shield } from "lucide-react";
+import ramadaLogo from "@/assets/logos/ramada.svg";
+import wyndhamLogo from "@/assets/logos/wyndham.svg";
+import novotelLogo from "@/assets/logos/novotel.svg";
+import hiltonLogo from "@/assets/logos/hilton.svg";
+import holidayInnLogo from "@/assets/logos/holiday-inn.svg";
+import bestWesternLogo from "@/assets/logos/best-western.svg";
 
 const brands = [
-  { name: "Ramada Encore", icon: Crown },
-  { name: "Wyndham Hotels", icon: Shield },
-  { name: "Novotel", icon: Star },
-  { name: "ibis Hotels", icon: Gem },
-  { name: "Hilton Garden Inn", icon: Hotel },
-  { name: "Radisson Blu", icon: Building2 },
-  { name: "Best Western", icon: Castle },
-  { name: "Holiday Inn", icon: Landmark },
+  { name: "Ramada", logo: ramadaLogo },
+  { name: "Wyndham Hotels", logo: wyndhamLogo },
+  { name: "Novotel", logo: novotelLogo },
+  { name: "Hilton Garden Inn", logo: hiltonLogo },
+  { name: "Holiday Inn", logo: holidayInnLogo },
+  { name: "Best Western", logo: bestWesternLogo },
 ];
 
-const BrandItem = ({ name, icon: Icon }: { name: string; icon: typeof Crown }) => (
-  <div className="flex items-center gap-2.5 mx-8 select-none opacity-30 grayscale">
-    <Icon className="w-5 h-5 flex-shrink-0" strokeWidth={1.5} />
-    <span className="text-base font-heading font-bold tracking-tight whitespace-nowrap">{name}</span>
-  </div>
-);
-
 const LogoBar = () => (
-  <section className="border-y border-border py-7 overflow-hidden">
-    <div className="flex animate-marquee whitespace-nowrap">
+  <section className="border-y border-border py-8 overflow-hidden">
+    <div className="flex animate-marquee whitespace-nowrap items-center">
       {[...brands, ...brands].map((b, i) => (
-        <BrandItem key={i} name={b.name} icon={b.icon} />
+        <img
+          key={i}
+          src={b.logo}
+          alt={b.name}
+          className="h-8 w-auto mx-10 opacity-30 grayscale hover:opacity-50 hover:grayscale-0 transition-all duration-300 select-none"
+          loading="lazy"
+        />
       ))}
     </div>
   </section>
