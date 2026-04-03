@@ -164,7 +164,7 @@ const HeroSection = () => {
 
           {/* Right: Phone Mockup */}
           <div className="flex justify-center lg:justify-end">
-            <HeroImage />
+            <HeroVisual />
           </div>
         </div>
       </div>
