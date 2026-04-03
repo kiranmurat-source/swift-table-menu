@@ -27,9 +27,12 @@ const TestimonialsSection = () => {
                 ))}
               </div>
               <p className="text-sm text-foreground leading-relaxed mb-4">"{t.text}"</p>
-              <div>
-                <p className="text-sm font-bold">{t.name}</p>
-                <p className="text-xs text-muted-foreground">{t.title}</p>
+              <div className="flex items-center gap-3">
+                <img src={t.avatar} alt={t.name} className="w-10 h-10 rounded-full object-cover flex-shrink-0" loading="lazy" />
+                <div>
+                  <p className="text-sm font-bold">{t.name}</p>
+                  <p className="text-xs text-muted-foreground">{t.title}</p>
+                </div>
               </div>
             </div>
           ))}
