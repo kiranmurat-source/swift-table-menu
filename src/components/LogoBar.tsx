@@ -22,7 +22,7 @@ const LogoBar = () => (
           key={i}
           src={b.logo}
           alt={b.name}
-          className="h-[468px] w-auto mx-10 opacity-30 grayscale hover:opacity-50 hover:grayscale-0 transition-all duration-300 select-none"
+          className="h-[234px] w-auto mx-10 opacity-30 grayscale hover:opacity-50 hover:grayscale-0 transition-all duration-300 select-none"
           loading="lazy"
         />
       ))}
