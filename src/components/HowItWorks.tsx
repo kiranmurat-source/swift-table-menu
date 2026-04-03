@@ -10,12 +10,8 @@ const HowItWorks = () => {
   const ref = useScrollReveal();
 
   return (
-    <section id="nasil-calisir" className="py-20 lg:py-28 bg-cream relative overflow-hidden">
-      <div
-        className="absolute inset-0 bg-cover bg-center opacity-[0.06]"
-        style={{ backgroundImage: "url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&q=60')" }}
-      />
-      <div ref={ref} className="container mx-auto px-4 lg:px-8 section-fade-in relative z-10">
+    <section id="nasil-calisir" className="py-20 lg:py-28 bg-cream">
+      <div ref={ref} className="container mx-auto px-4 lg:px-8 section-fade-in">
         <div className="text-center mb-14">
           <h2 className="text-3xl sm:text-4xl font-extrabold mb-3">Nasıl Çalışır?</h2>
         </div>
