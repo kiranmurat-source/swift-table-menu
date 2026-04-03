@@ -24,7 +24,7 @@ const PhoneMockup = () => (
 
         <div className="bg-grapefruit px-5 pb-4 pt-2">
           <p className="text-card/70 text-[10px] font-medium tracking-wide uppercase">Hoş geldiniz</p>
-          <p className="text-card text-lg font-extrabold font-heading mt-0.5">Ramada Encore</p>
+          <p className="text-card text-lg font-extrabold font-heading mt-0.5">ABC Hotel</p>
           <p className="text-card/60 text-[10px] mt-0.5">Masa 12 · Lobby Restaurant</p>
         </div>
 
