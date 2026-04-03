@@ -68,7 +68,11 @@ const Navbar = () => {
               key={l.href}
               href={l.href}
               className="block py-3 text-sm font-medium text-muted-foreground hover:text-foreground"
-              onClick={() => setMobileOpen(false)}
+              onClick={(e) => {
+                e.preventDefault();
+                setMobileOpen(false);
+                document.querySelector(l.href)?.scrollIntoView({ behavior: "smooth" });
+              }}
             >
               {l.label}
             </a>
