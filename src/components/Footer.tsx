@@ -11,7 +11,7 @@ const footerLinks = [
 const Footer = () => (
   <footer className="border-t border-border py-12">
     <div className="container mx-auto px-4 lg:px-8">
-      <div className="grid md:grid-cols-3 gap-8 items-start">
+      <div className="grid md:grid-cols-3 gap-8 items-center">
         <div>
           <TabbledLogo />
         </div>
