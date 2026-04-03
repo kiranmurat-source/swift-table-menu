@@ -14,9 +14,6 @@ const Footer = () => (
       <div className="grid md:grid-cols-3 gap-8 items-start">
         <div>
           <TabbledLogo />
-          <p className="text-sm text-muted-foreground mt-3 max-w-xs">
-            Otel ve restoranlar için QR dijital menü ve sipariş yönetim platformu.
-          </p>
         </div>
 
         <div className="flex flex-wrap gap-x-6 gap-y-2">
