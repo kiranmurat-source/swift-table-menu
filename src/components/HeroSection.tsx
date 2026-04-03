@@ -55,9 +55,13 @@ const HeroSection = () => {
             </div>
           </div>
 
-          {/* Right: Phone Mockup */}
+          {/* Right: Hero Image */}
           <div className="flex justify-center lg:justify-end">
-            <PhoneMockup />
+            <img
+              src={heroImage}
+              alt="Restoranda QR menü kullanan misafirler"
+              className="w-full max-w-xl rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] object-cover"
+            />
           </div>
         </div>
       </div>
