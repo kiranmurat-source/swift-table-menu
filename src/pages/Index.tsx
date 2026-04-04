@@ -5,6 +5,7 @@ import FeaturesSection from "@/components/FeaturesSection";
 import ValueProposition from "@/components/ValueProposition";
 import HowItWorks from "@/components/HowItWorks";
 import PricingSection from "@/components/PricingSection";
+import FeatureComparisonTable from "@/components/FeatureComparisonTable";
 import RoadmapSection from "@/components/RoadmapSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import MetricsBar from "@/components/MetricsBar";
@@ -22,6 +23,7 @@ const Index = () => {
       <ValueProposition />
       <HowItWorks />
       <PricingSection />
+      <FeatureComparisonTable />
       <RoadmapSection />
       <TestimonialsSection />
       <MetricsBar />
