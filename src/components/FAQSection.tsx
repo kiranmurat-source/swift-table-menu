@@ -2,16 +2,16 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { useScrollReveal } from "@/hooks/use-scroll-reveal";
 
 const faqs = [
-  { q: "Tabbled nedir?", a: "Tabbled, otel ve restoranlar için geliştirilmiş QR dijital menü ve sipariş yönetim platformudur. Misafirler QR kodu tarayarak menüye ulaşır, sipariş verir ve garson çağırabilir." },
+  { q: "Tabbled nedir?", a: "Tabbled, restoran ve oteller için geliştirilmiş QR dijital menü platformudur. Misafirler QR kodu tarayarak menüye ulaşır, alerjen ve kalori bilgilerini görebilir." },
   { q: "Kurulum ne kadar sürer?", a: "Admin panelden menünüzü 15-30 dakikada oluşturabilirsiniz. QR kodlarınız otomatik olarak üretilir, yazdırıp masalara yerleştirmeniz yeterli." },
   { q: "Hangi cihazlarda çalışır?", a: "Tabbled tüm modern tarayıcılarda çalışır. Misafirlerinizin uygulama indirmesine gerek yoktur — iPhone, Android, tablet fark etmez." },
-  { q: "Kaç dil destekleniyor?", a: "Şu anda Türkçe, İngilizce, Arapça ve Fransızca desteklenmektedir. Tüm planlarda 4 dil dahildir." },
-  { q: "Sözleşme zorunlu mu?", a: "Hayır, aylık abonelik sistemiyle çalışıyoruz. İstediğiniz zaman iptal edebilirsiniz." },
-  { q: "Diğer QR menü çözümlerinden farkı nedir?", a: "Tabbled, masadan sipariş, garson çağır ve sipariş takibi gibi özellikleri uygun fiyatla sunar. 4 dil desteği ve sınırsız masa tüm planlarda dahildir." },
-  { q: "Alerjen bilgileri nasıl eklenir?", a: "Admin panelden her ürüne alerjen bilgilerini tek tek ekleyebilirsiniz. Misafirler menüde alerjen ikonlarını görebilir." },
-  { q: "Ödeme yöntemleri nelerdir?", a: "Kredi kartı ve banka havalesi ile ödeme yapabilirsiniz. Yıllık planlarda indirim uygulanır." },
-  { q: "Ücretsiz deneme nasıl çalışır?", a: "14 gün boyunca tüm Profesyonel plan özelliklerini ücretsiz kullanabilirsiniz. Kredi kartı bilgisi gerekmez." },
-  { q: "Destek nasıl alırım?", a: "E-posta ve canlı destek ile 7/24 yanınızdayız. Profesyonel ve Kurumsal planlarda öncelikli destek sağlıyoruz." },
+  { q: "Çok dilli menü hangi planlarda var?", a: "Basic planda menü tek dildir. Pro planda 2 dil, Premium planda 4 dil desteği bulunur." },
+  { q: "Abonelik nasıl çalışır?", a: "Sadece yıllık abonelik sistemiyle çalışıyoruz. Kurulum ücreti yoktur. Ödeme banka havalesi veya kredi kartı ile yapılabilir." },
+  { q: "Ücretsiz deneme var mı?", a: "Ücretsiz deneme süresi bulunmamaktadır. Ancak demo menümüzü inceleyerek platformun nasıl çalıştığını görebilirsiniz." },
+  { q: "QR menü yasal zorunluluk mu?", a: "Evet, Fiyat Etiketi Yönetmeliği kapsamında 1 Ocak 2026 itibarıyla dijital menü zorunlu hale gelmiştir." },
+  { q: "Alerjen bilgileri nasıl eklenir?", a: "Admin panelden her ürüne alerjen bilgilerini (gluten, süt, yumurta, fıstık vb.) ve kalori değerlerini ekleyebilirsiniz. Misafirler menüde bu bilgileri görebilir." },
+  { q: "Garson çağırma ve sipariş özellikleri hangi planlarda?", a: "Garson çağırma ve WhatsApp sipariş Pro ve Premium planlarda mevcuttur. Online sipariş, masadan ödeme ve teslimat sadece Premium planda bulunur." },
+  { q: "Destek nasıl alırım?", a: "Tüm planlarda e-posta desteği mevcuttur. Premium planda öncelikli destek sağlanır." },
 ];
 
 const FAQSection = () => {

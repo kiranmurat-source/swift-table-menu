@@ -1,9 +1,9 @@
 import { useScrollReveal } from "@/hooks/use-scroll-reveal";
 
 const metrics = [
-  { value: "500+", label: "Aktif Masa" },
-  { value: "%40", label: "Servis Hızı Artışı" },
-  { value: "4 Dil", label: "Dahil Dil Desteği" },
+  { value: "40+", label: "Özellik" },
+  { value: "4 Dil", label: "Menü Desteği" },
+  { value: "₺300", label: "Başlangıç Fiyatı/ay" },
   { value: "₺0", label: "Kurulum Ücreti" },
 ];
 

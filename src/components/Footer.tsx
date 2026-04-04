@@ -3,9 +3,9 @@ import TabbledLogo from "@/components/TabbledLogo";
 const footerLinks = [
   { label: "Özellikler", href: "#ozellikler" },
   { label: "Fiyatlar", href: "#fiyatlar" },
-  { label: "Demo", href: "#demo" },
-  { label: "Blog", href: "#" },
-  { label: "İletişim", href: "#" },
+  { label: "Demo Menü", href: "/menu/cafe-istanbul" },
+  { label: "Gizlilik Politikası", href: "/privacy" },
+  { label: "İletişim", href: "mailto:info@tabbled.com" },
 ];
 
 const Footer = () => (

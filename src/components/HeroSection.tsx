@@ -27,10 +27,12 @@ const HeroSection = () => {
             </p>
 
             <div className="flex flex-wrap gap-4 mb-10">
-              <Button variant="hero" size="lg" className="rounded-full px-8 text-base">
-                Ücretsiz Başla <ArrowRight className="w-4 h-4" />
-              </Button>
-              <Button variant="hero-outline" size="lg" className="rounded-full px-8 text-base">
+              <a href="/menu/cafe-istanbul">
+                <Button variant="hero" size="lg" className="rounded-full px-8 text-base">
+                  Demo Menüyü Gör <ArrowRight className="w-4 h-4" />
+                </Button>
+              </a>
+              <Button variant="hero-outline" size="lg" className="rounded-full px-8 text-base" onClick={() => document.querySelector('#nasil-calisir')?.scrollIntoView({ behavior: 'smooth' })}>
                 <Play className="w-4 h-4" /> Nasıl Çalışır?
               </Button>
             </div>

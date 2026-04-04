@@ -7,7 +7,7 @@ const navLinks = [
   { label: "Özellikler", href: "#ozellikler" },
   { label: "Fiyatlar", href: "#fiyatlar" },
   { label: "Nasıl Çalışır", href: "#nasil-calisir" },
-  { label: "Demo", href: "#demo" },
+  { label: "Demo", href: "/menu/cafe-istanbul" },
 ];
 
 const Navbar = () => {
@@ -36,8 +36,10 @@ const Navbar = () => {
               key={l.href}
               href={l.href}
               onClick={(e) => {
-                e.preventDefault();
-                document.querySelector(l.href)?.scrollIntoView({ behavior: "smooth" });
+                if (l.href.startsWith('#')) {
+                  e.preventDefault();
+                  document.querySelector(l.href)?.scrollIntoView({ behavior: "smooth" });
+                }
               }}
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
@@ -47,9 +49,11 @@ const Navbar = () => {
         </div>
 
         <div className="hidden md:block">
-          <Button variant="hero" size="lg" className="rounded-full px-6">
-            Ücretsiz Dene
-          </Button>
+          <a href="/menu/cafe-istanbul">
+            <Button variant="hero" size="lg" className="rounded-full px-6">
+              Demo Gör
+            </Button>
+          </a>
         </div>
 
         <button
@@ -69,17 +73,23 @@ const Navbar = () => {
               href={l.href}
               className="block py-3 text-sm font-medium text-muted-foreground hover:text-foreground"
               onClick={(e) => {
-                e.preventDefault();
-                setMobileOpen(false);
-                document.querySelector(l.href)?.scrollIntoView({ behavior: "smooth" });
+                if (l.href.startsWith('#')) {
+                  e.preventDefault();
+                  setMobileOpen(false);
+                  document.querySelector(l.href)?.scrollIntoView({ behavior: "smooth" });
+                } else {
+                  setMobileOpen(false);
+                }
               }}
             >
               {l.label}
             </a>
           ))}
-          <Button variant="hero" className="w-full mt-2 rounded-full">
-            Ücretsiz Dene
-          </Button>
+          <a href="/menu/cafe-istanbul">
+            <Button variant="hero" className="w-full mt-2 rounded-full">
+              Demo Gör
+            </Button>
+          </a>
         </div>
       )}
     </nav>
