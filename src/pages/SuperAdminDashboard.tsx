@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { CiCircleCheck, CiCircleRemove } from 'react-icons/ci';
+import { CiCircleCheck, CiCircleRemove, CiEdit, CiShop, CiMoneyBill, CiWarning } from 'react-icons/ci';
 
-type Restaurant = { id: string; name: string; slug: string; is_active: boolean; subscription_status: string; current_plan: string; created_at: string; };
+type Restaurant = { id: string; name: string; slug: string; is_active: boolean; subscription_status: string; current_plan: string; created_at: string; address: string | null; phone: string | null; };
 type Profile = { id: string; email: string; full_name: string | null; role: string; restaurant_id: string | null; };
 type Plan = { id: string; name: string; price_monthly: number | null; price_yearly: number; features: string[]; sort_order: number; };
 type Subscription = { id: string; restaurant_id: string; plan_id: string; start_date: string; end_date: string; status: string; payment_method: string; notes: string | null; };
@@ -45,6 +45,12 @@ export default function SuperAdminDashboard() {
   const [msg, setMsg] = useState('');
   const [editingPF, setEditingPF] = useState<string | null>(null);
   const [editPFValue, setEditPFValue] = useState('');
+  const [editingRest, setEditingRest] = useState<string | null>(null);
+  const [editRestForm, setEditRestForm] = useState({ name: '', slug: '', address: '', phone: '' });
+  const [editingUser, setEditingUser] = useState<string | null>(null);
+  const [editUserForm, setEditUserForm] = useState({ full_name: '', restaurant_id: '' });
+  const [changingPlan, setChangingPlan] = useState<string | null>(null);
+  const [newPlanId, setNewPlanId] = useState('');
 
   useEffect(() => { loadAll(); }, []);
 
@@ -117,6 +123,63 @@ export default function SuperAdminDashboard() {
     setSubForm({ restaurant_id: '', plan_id: '', start_date: '', notes: '' }); setShowSubForm(false); loadAll();
     setSaving(false);
   }
+  // --- Restaurant Edit/Delete ---
+  async function updateRestaurant(id: string) {
+    await supabase.from('restaurants').update({
+      name: editRestForm.name,
+      slug: editRestForm.slug,
+      address: editRestForm.address || null,
+      phone: editRestForm.phone || null,
+    }).eq('id', id);
+    setEditingRest(null);
+    loadRestaurants();
+  }
+  async function deleteRestaurant(id: string) {
+    if (!confirm('Bu restoran ve tum verileri (kategoriler, urunler, uyelikler) silinecek. Emin misiniz?')) return;
+    await supabase.from('menu_items').delete().eq('restaurant_id', id);
+    await supabase.from('menu_categories').delete().eq('restaurant_id', id);
+    await supabase.from('subscriptions').delete().eq('restaurant_id', id);
+    await supabase.from('qr_codes').delete().eq('restaurant_id', id);
+    await supabase.from('profiles').update({ restaurant_id: null }).eq('restaurant_id', id);
+    await supabase.from('restaurants').delete().eq('id', id);
+    loadAll();
+  }
+
+  // --- User Edit/Delete ---
+  async function updateUser(id: string) {
+    await supabase.from('profiles').update({
+      full_name: editUserForm.full_name || null,
+      restaurant_id: editUserForm.restaurant_id || null,
+    }).eq('id', id);
+    setEditingUser(null);
+    loadUsers();
+  }
+  async function deleteUser(id: string) {
+    const user = users.find(u => u.id === id);
+    if (user?.role === 'super_admin') { setMsg('Super admin silinemez.'); return; }
+    if (!confirm('Bu kullaniciyi silmek istediginize emin misiniz?')) return;
+    await supabase.from('profiles').delete().eq('id', id);
+    loadUsers();
+  }
+
+  // --- Subscription Extend/Change Plan ---
+  async function extendSubscription(id: string, currentEndDate: string) {
+    if (!confirm('Uyelik 1 yil uzatilacak. Emin misiniz?')) return;
+    const newEnd = new Date(new Date(currentEndDate).getTime() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    await supabase.from('subscriptions').update({ end_date: newEnd, status: 'active' }).eq('id', id);
+    loadAll();
+  }
+  async function changePlan(subId: string, restaurantId: string) {
+    if (!newPlanId) return;
+    const plan = plans.find(p => p.id === newPlanId);
+    if (!plan) return;
+    await supabase.from('subscriptions').update({ plan_id: newPlanId }).eq('id', subId);
+    await supabase.from('restaurants').update({ current_plan: plan.name }).eq('id', restaurantId);
+    setChangingPlan(null);
+    setNewPlanId('');
+    loadAll();
+  }
+
   async function cancelSubscription(id: string, rid: string) {
     if (!confirm('Bu uyeligi iptal etmek istediginize emin misiniz?')) return;
     await supabase.from('subscriptions').update({ status: 'cancelled' }).eq('id', id);
@@ -188,8 +251,35 @@ export default function SuperAdminDashboard() {
     return planFeatures.filter(pf => pf.plan_id === planId && pf.value !== 'false').length;
   }
 
+  const activeSubs = subscriptions.filter(s => s.status === 'active');
+  const monthlyRevenue = activeSubs.reduce((sum, s) => {
+    const plan = plans.find(p => p.id === s.plan_id);
+    return sum + (plan?.price_monthly ? Number(plan.price_monthly) : 0);
+  }, 0);
+  const expiringSubs = activeSubs.filter(s => daysLeft(s.end_date) <= 30 && daysLeft(s.end_date) > 0);
+
   return (
     <div style={S.wrap}>
+      {/* Dashboard Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
+        <div style={{ ...S.card, marginBottom: 0, padding: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CiShop size={20} style={{ color: '#4f46e5' }} /></div>
+          <div><div style={{ fontSize: 24, fontWeight: 800, color: '#1c1917' }}>{restaurants.length}</div><div style={{ fontSize: 12, color: '#a8a29e' }}>Toplam Restoran</div></div>
+        </div>
+        <div style={{ ...S.card, marginBottom: 0, padding: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CiCircleCheck size={20} style={{ color: '#16a34a' }} /></div>
+          <div><div style={{ fontSize: 24, fontWeight: 800, color: '#1c1917' }}>{activeSubs.length}</div><div style={{ fontSize: 12, color: '#a8a29e' }}>Aktif Uyelik</div></div>
+        </div>
+        <div style={{ ...S.card, marginBottom: 0, padding: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CiMoneyBill size={20} style={{ color: '#4f46e5' }} /></div>
+          <div><div style={{ fontSize: 24, fontWeight: 800, color: '#1c1917' }}>{monthlyRevenue.toLocaleString('tr-TR')}</div><div style={{ fontSize: 12, color: '#a8a29e' }}>Aylik Gelir (TL)</div></div>
+        </div>
+        <div style={{ ...S.card, marginBottom: 0, padding: 16, display: 'flex', alignItems: 'center', gap: 12, border: expiringSubs.length > 0 ? '1px solid #fed7aa' : undefined, background: expiringSubs.length > 0 ? '#fff7ed' : '#fff' }}>
+          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#ffedd5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CiWarning size={20} style={{ color: '#ea580c' }} /></div>
+          <div><div style={{ fontSize: 24, fontWeight: 800, color: expiringSubs.length > 0 ? '#ea580c' : '#1c1917' }}>{expiringSubs.length}</div><div style={{ fontSize: 12, color: '#a8a29e' }}>Suresi Dolan</div></div>
+        </div>
+      </div>
+
       <div style={S.tabs}>
         {(['restaurants', 'users', 'subscriptions', 'features'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} style={{ ...S.tab, background: tab === t ? '#fff' : 'transparent', color: tab === t ? '#1c1917' : '#78716c', boxShadow: tab === t ? '0 1px 3px rgba(0,0,0,0.08)' : 'none' }}>
@@ -217,15 +307,37 @@ export default function SuperAdminDashboard() {
           </form>
         )}
         {restaurants.map(r => (
-          <div key={r.id} style={{ ...S.card, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontSize: 16, fontWeight: 600, color: '#1c1917' }}>{r.name}</div>
-              <div style={{ fontSize: 13, color: '#a8a29e', marginTop: 2 }}>/{r.slug} &middot; {r.current_plan}</div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ ...S.badge, ...statusColor(r.subscription_status) }}>{r.subscription_status}</span>
-              <button onClick={() => toggleActive(r.id, r.is_active)} style={{ ...S.btnSm, color: r.is_active ? '#16a34a' : '#dc2626' }}>{r.is_active ? 'Aktif' : 'Pasif'}</button>
-            </div>
+          <div key={r.id} style={S.card}>
+            {editingRest === r.id ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={S.grid2}>
+                  <div><label style={S.label}>Restoran Adi</label><input style={S.input} value={editRestForm.name} onChange={e => setEditRestForm({ ...editRestForm, name: e.target.value })} /></div>
+                  <div><label style={S.label}>Slug</label><input style={S.input} value={editRestForm.slug} onChange={e => setEditRestForm({ ...editRestForm, slug: e.target.value })} /></div>
+                </div>
+                <div style={S.grid2}>
+                  <div><label style={S.label}>Adres</label><input style={S.input} value={editRestForm.address} onChange={e => setEditRestForm({ ...editRestForm, address: e.target.value })} /></div>
+                  <div><label style={S.label}>Telefon</label><input style={S.input} value={editRestForm.phone} onChange={e => setEditRestForm({ ...editRestForm, phone: e.target.value })} /></div>
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button onClick={() => updateRestaurant(r.id)} style={S.btnSm}><CiCircleCheck size={14} /> Kaydet</button>
+                  <button onClick={() => setEditingRest(null)} style={S.btnSm}><CiCircleRemove size={14} /> Iptal</button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 600, color: '#1c1917' }}>{r.name}</div>
+                  <div style={{ fontSize: 13, color: '#a8a29e', marginTop: 2 }}>/{r.slug} &middot; {r.current_plan}</div>
+                  {(r.address || r.phone) && <div style={{ fontSize: 12, color: '#78716c', marginTop: 2 }}>{r.address}{r.address && r.phone ? ' · ' : ''}{r.phone}</div>}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ ...S.badge, ...statusColor(r.subscription_status) }}>{r.subscription_status}</span>
+                  <button onClick={() => toggleActive(r.id, r.is_active)} style={{ ...S.btnSm, color: r.is_active ? '#16a34a' : '#dc2626' }}>{r.is_active ? 'Aktif' : 'Pasif'}</button>
+                  <button onClick={() => { setEditingRest(r.id); setEditRestForm({ name: r.name, slug: r.slug, address: r.address || '', phone: r.phone || '' }); }} style={S.btnSm}><CiEdit size={14} /></button>
+                  <button onClick={() => deleteRestaurant(r.id)} style={S.btnDanger}>Sil</button>
+                </div>
+              </div>
+            )}
           </div>
         ))}
         {restaurants.length === 0 && <div style={{ textAlign: 'center', color: '#a8a29e', padding: 40, fontSize: 14 }}>Henuz restoran eklenmedi.</div>}
@@ -254,12 +366,36 @@ export default function SuperAdminDashboard() {
           </form>
         )}
         {users.map(u => (
-          <div key={u.id} style={{ ...S.card, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 600, color: '#1c1917' }}>{u.full_name || u.email}</div>
-              <div style={{ fontSize: 13, color: '#a8a29e' }}>{u.email}{u.restaurant_id ? ' · ' + restName(u.restaurant_id) : ''}</div>
-            </div>
-            <span style={{ ...S.badge, background: u.role === 'super_admin' ? '#fee2e2' : '#e0e7ff', color: u.role === 'super_admin' ? '#dc2626' : '#4f46e5' }}>{u.role}</span>
+          <div key={u.id} style={S.card}>
+            {editingUser === u.id ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={S.grid2}>
+                  <div><label style={S.label}>Ad Soyad</label><input style={S.input} value={editUserForm.full_name} onChange={e => setEditUserForm({ ...editUserForm, full_name: e.target.value })} /></div>
+                  <div><label style={S.label}>Restoran</label>
+                    <select style={S.input} value={editUserForm.restaurant_id} onChange={e => setEditUserForm({ ...editUserForm, restaurant_id: e.target.value })}>
+                      <option value="">-- Seciniz --</option>
+                      {restaurants.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button onClick={() => updateUser(u.id)} style={S.btnSm}><CiCircleCheck size={14} /> Kaydet</button>
+                  <button onClick={() => setEditingUser(null)} style={S.btnSm}><CiCircleRemove size={14} /> Iptal</button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: '#1c1917' }}>{u.full_name || u.email}</div>
+                  <div style={{ fontSize: 13, color: '#a8a29e' }}>{u.email}{u.restaurant_id ? ' · ' + restName(u.restaurant_id) : ''}</div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ ...S.badge, background: u.role === 'super_admin' ? '#fee2e2' : '#e0e7ff', color: u.role === 'super_admin' ? '#dc2626' : '#4f46e5' }}>{u.role}</span>
+                  <button onClick={() => { setEditingUser(u.id); setEditUserForm({ full_name: u.full_name || '', restaurant_id: u.restaurant_id || '' }); }} style={S.btnSm}><CiEdit size={14} /></button>
+                  {u.role !== 'super_admin' && <button onClick={() => deleteUser(u.id)} style={S.btnDanger}>Sil</button>}
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </>)}
@@ -338,9 +474,26 @@ export default function SuperAdminDashboard() {
                 {expired && <div style={{ fontSize: 12, color: '#dc2626', fontWeight: 600, marginTop: 4 }}>Suresi doldu ({Math.abs(days)} gun once)</div>}
                 {s.notes && <div style={{ fontSize: 12, color: '#a8a29e', marginTop: 2 }}>{s.notes}</div>}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <span style={{ ...S.badge, ...statusColor(expired ? 'expired' : expiring ? 'expiring' : s.status) }}>{expired ? 'expired' : expiring ? 'expiring' : s.status}</span>
-                {s.status === 'active' && <button onClick={() => cancelSubscription(s.id, s.restaurant_id)} style={S.btnDanger}>Iptal</button>}
+                {s.status === 'active' && (
+                  <>
+                    <button onClick={() => extendSubscription(s.id, s.end_date)} style={S.btnSm}>Uzat</button>
+                    {changingPlan === s.id ? (
+                      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                        <select style={{ ...S.input, width: 120, padding: '4px 8px', fontSize: 12 }} value={newPlanId} onChange={e => setNewPlanId(e.target.value)}>
+                          <option value="">Plan sec</option>
+                          {plans.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                        </select>
+                        <button onClick={() => changePlan(s.id, s.restaurant_id)} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11 }}><CiCircleCheck size={14} /></button>
+                        <button onClick={() => { setChangingPlan(null); setNewPlanId(''); }} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11 }}><CiCircleRemove size={14} /></button>
+                      </div>
+                    ) : (
+                      <button onClick={() => { setChangingPlan(s.id); setNewPlanId(''); }} style={S.btnSm}>Plan Degistir</button>
+                    )}
+                    <button onClick={() => cancelSubscription(s.id, s.restaurant_id)} style={S.btnDanger}>Iptal</button>
+                  </>
+                )}
               </div>
             </div>
           );
