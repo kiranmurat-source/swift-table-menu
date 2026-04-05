@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { CiCircleCheck, CiCircleRemove } from 'react-icons/ci';
 
 type Restaurant = { id: string; name: string; slug: string; is_active: boolean; subscription_status: string; current_plan: string; created_at: string; };
 type Profile = { id: string; email: string; full_name: string | null; role: string; restaurant_id: string | null; };
@@ -418,7 +419,7 @@ export default function SuperAdminDashboard() {
                                   }}
                                   autoFocus
                                 />
-                                <button onClick={() => savePlanFeatureValue(p.id, feat.id, editPFValue)} style={{ ...S.btnSm, padding: '3px 6px', fontSize: 11 }}>✓</button>
+                                <button onClick={() => savePlanFeatureValue(p.id, feat.id, editPFValue)} style={{ ...S.btnSm, padding: '3px 6px', fontSize: 11 }}><CiCircleCheck size={14} /></button>
                               </div>
                             ) : (
                               <span
@@ -431,14 +432,14 @@ export default function SuperAdminDashboard() {
                                 }}
                                 title="Tikla: deger degistir"
                               >
-                                {val === 'true' ? '✓' : val === 'false' ? '—' : val}
+                                {val === 'true' ? <CiCircleCheck size={14} style={{ display: 'inline' }} /> : val === 'false' ? '—' : val}
                               </span>
                             )}
                           </td>
                         );
                       })}
                       <td style={{ textAlign: 'center' }}>
-                        <button onClick={() => deleteFeature(feat.id)} style={{ background: 'none', border: 'none', color: '#d6d3d1', cursor: 'pointer', fontSize: 14, padding: 4 }} title="Sil">✕</button>
+                        <button onClick={() => deleteFeature(feat.id)} style={{ background: 'none', border: 'none', color: '#d6d3d1', cursor: 'pointer', fontSize: 14, padding: 4 }} title="Sil"><CiCircleRemove size={14} /></button>
                       </td>
                     </tr>
                   ))

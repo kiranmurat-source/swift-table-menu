@@ -1,4 +1,4 @@
-import { Star } from "lucide-react";
+import { CiStar } from "react-icons/ci";
 import { useScrollReveal } from "@/hooks/use-scroll-reveal";
 
 const testimonials = [
@@ -23,7 +23,7 @@ const TestimonialsSection = () => {
             <div key={i} className="p-6 rounded-2xl bg-card border border-border hover:border-sage/40 transition-all duration-200">
               <div className="flex gap-0.5 mb-4">
                 {[...Array(5)].map((_, j) => (
-                  <Star key={j} className="w-4 h-4 fill-gold text-gold" />
+                  <CiStar key={j} className="w-4 h-4 fill-gold text-gold" />
                 ))}
               </div>
               <p className="text-sm text-foreground leading-relaxed mb-4">"{t.text}"</p>

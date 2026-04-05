@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
+import { CiWheat, CiDroplet, CiCircleAlert, CiApple, CiLemon, CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiStar, CiTempHigh, CiWavePulse1 } from 'react-icons/ci';
 
 type Category = { id: string; name_tr: string; name_en: string | null; sort_order: number; is_active: boolean; };
 type MenuItem = {
@@ -11,14 +12,14 @@ type MenuItem = {
 };
 type Restaurant = { id: string; name: string; slug: string; };
 
-const ALLERGEN_OPTIONS: { value: string; label: string; icon: string }[] = [
-  { value: 'gluten', label: 'Gluten', icon: '🌾' },
-  { value: 'dairy', label: 'Süt Ürünü', icon: '🥛' },
-  { value: 'egg', label: 'Yumurta', icon: '🥚' },
-  { value: 'nuts', label: 'Kuruyemiş', icon: '🥜' },
-  { value: 'seafood', label: 'Deniz Ürünü', icon: '🐟' },
-  { value: 'soy', label: 'Soya', icon: '🫘' },
-  { value: 'spicy', label: 'Acı', icon: '🌶️' },
+const ALLERGEN_OPTIONS: { value: string; label: string; icon: React.ReactNode }[] = [
+  { value: 'gluten', label: 'Gluten', icon: <CiWheat size={14} /> },
+  { value: 'dairy', label: 'Süt Ürünü', icon: <CiDroplet size={14} /> },
+  { value: 'egg', label: 'Yumurta', icon: <CiCircleAlert size={14} /> },
+  { value: 'nuts', label: 'Kuruyemiş', icon: <CiApple size={14} /> },
+  { value: 'seafood', label: 'Deniz Ürünü', icon: <CiWavePulse1 size={14} /> },
+  { value: 'soy', label: 'Soya', icon: <CiLemon size={14} /> },
+  { value: 'spicy', label: 'Acı', icon: <CiTempHigh size={14} /> },
 ];
 
 const S: Record<string, React.CSSProperties> = {
@@ -210,13 +211,13 @@ export default function RestaurantDashboard() {
               <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                 <input style={{ ...S.input, width: 100, padding: '4px 8px', fontSize: 12 }} value={editCatForm.name_tr} onChange={e => setEditCatForm({ ...editCatForm, name_tr: e.target.value })} />
                 <input style={{ ...S.input, width: 80, padding: '4px 8px', fontSize: 12 }} value={editCatForm.name_en} onChange={e => setEditCatForm({ ...editCatForm, name_en: e.target.value })} placeholder="EN" />
-                <button onClick={() => updateCategory(c.id)} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11 }}>✓</button>
-                <button onClick={() => setEditingCat(null)} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11 }}>✕</button>
+                <button onClick={() => updateCategory(c.id)} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11 }}><CiCircleCheck size={14} /></button>
+                <button onClick={() => setEditingCat(null)} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11 }}><CiCircleRemove size={14} /></button>
               </div>
             ) : (
               <>
                 <button onClick={() => setSelectedCat(c.id)} style={{ ...S.btnSm, background: selectedCat === c.id ? '#1c1917' : '#fff', color: selectedCat === c.id ? '#fff' : '#44403c' }}>{c.name_tr} ({items.filter(i => i.category_id === c.id).length})</button>
-                <button onClick={() => { setEditingCat(c.id); setEditCatForm({ name_tr: c.name_tr, name_en: c.name_en || '' }); }} style={{ background: 'none', border: 'none', color: '#a8a29e', cursor: 'pointer', fontSize: 12, padding: '0 2px' }} title="Düzenle">✎</button>
+                <button onClick={() => { setEditingCat(c.id); setEditCatForm({ name_tr: c.name_tr, name_en: c.name_en || '' }); }} style={{ background: 'none', border: 'none', color: '#a8a29e', cursor: 'pointer', fontSize: 12, padding: '0 2px' }} title="Düzenle"><CiEdit size={14} /></button>
                 <button onClick={() => deleteCategory(c.id)} style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: 14, padding: '0 2px' }}>×</button>
               </>
             )}
@@ -258,7 +259,7 @@ export default function RestaurantDashboard() {
                 </div>
               ) : (
                 <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} style={{ ...S.btnSm, width: '100%' }}>
-                  {uploading ? 'Yükleniyor...' : '📷 Görsel Seç'}
+                  {uploading ? 'Yükleniyor...' : <><CiCamera size={14} /> Görsel Seç</>}
                 </button>
               )}
             </div>
@@ -284,11 +285,11 @@ export default function RestaurantDashboard() {
           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#44403c' }}>
               <input type="checkbox" checked={itemForm.is_vegetarian} onChange={e => setItemForm({ ...itemForm, is_vegetarian: e.target.checked })} />
-              🌱 Vejetaryen
+              <CiApple size={14} /> Vejetaryen
             </label>
             <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#44403c' }}>
               <input type="checkbox" checked={itemForm.is_new} onChange={e => setItemForm({ ...itemForm, is_new: e.target.checked })} />
-              ✨ Yeni Ürün
+              <CiStar size={14} /> Yeni Ürün
             </label>
           </div>
           <button type="submit" disabled={saving} style={{ ...S.btn, alignSelf: 'flex-start' }}>{saving ? '...' : editingItem ? 'Güncelle' : 'Ekle'}</button>
@@ -297,7 +298,7 @@ export default function RestaurantDashboard() {
 
       {/* ===== ÜRÜN LİSTESİ ===== */}
       {filteredItems.map(item => {
-        const allergenIcons = (item.allergens || []).map(a => ALLERGEN_OPTIONS.find(o => o.value === a)?.icon || '').join(' ');
+        const allergenIconList = (item.allergens || []).map(a => ALLERGEN_OPTIONS.find(o => o.value === a)?.icon).filter(Boolean);
         return (
           <div key={item.id} style={{ ...S.card, opacity: item.is_available ? 1 : 0.45 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -305,15 +306,15 @@ export default function RestaurantDashboard() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 15, fontWeight: 600, color: '#1c1917' }}>{item.name_tr}</span>
                   {item.name_en && <span style={{ fontSize: 12, color: '#a8a29e' }}>/ {item.name_en}</span>}
-                  {item.is_vegetarian && <span style={{ ...S.badge, background: '#dcfce7', color: '#16a34a' }}>🌱</span>}
-                  {item.is_new && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309' }}>✨ Yeni</span>}
-                  {item.is_popular && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309' }}>⭐</span>}
+                  {item.is_vegetarian && <span style={{ ...S.badge, background: '#dcfce7', color: '#16a34a' }}><CiApple size={12} /></span>}
+                  {item.is_new && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309' }}><CiStar size={12} /> Yeni</span>}
+                  {item.is_popular && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309' }}><CiStar size={12} /></span>}
                 </div>
                 {item.description_tr && <div style={{ fontSize: 13, color: '#78716c', marginTop: 2 }}>{item.description_tr}</div>}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
                   <span style={{ fontSize: 14, fontWeight: 700, color: '#1c1917' }}>₺{Number(item.price).toFixed(2)}</span>
-                  {item.calories && <span style={{ fontSize: 11, color: '#a8a29e' }}>🔥 {item.calories} kcal</span>}
-                  {allergenIcons && <span style={{ fontSize: 12 }} title={(item.allergens || []).join(', ')}>{allergenIcons}</span>}
+                  {item.calories && <span style={{ fontSize: 11, color: '#a8a29e', display: 'inline-flex', alignItems: 'center', gap: 2 }}><CiTempHigh size={12} /> {item.calories} kcal</span>}
+                  {allergenIconList.length > 0 && <span style={{ fontSize: 12, display: 'inline-flex', gap: 2, alignItems: 'center' }} title={(item.allergens || []).join(', ')}>{allergenIconList.map((icon, idx) => <span key={idx}>{icon}</span>)}</span>}
                 </div>
               </div>
               {item.image_url && <img src={item.image_url} alt="" style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover', marginLeft: 12 }} />}

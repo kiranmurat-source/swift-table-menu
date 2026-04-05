@@ -1,4 +1,5 @@
-import { Wifi, Battery, Signal } from "lucide-react";
+import { CiWifiOn, CiBatteryFull, CiWavePulse1 } from "react-icons/ci";
+import { CiForkAndKnife } from "react-icons/ci";
 
 const PhoneMockup = () => (
   <div className="relative">
@@ -16,9 +17,9 @@ const PhoneMockup = () => (
         <div className="flex items-center justify-between px-5 py-1.5 bg-grapefruit">
           <span className="text-card text-[10px] font-semibold">9:41</span>
           <div className="flex items-center gap-1">
-            <Signal className="w-3 h-3 text-card" />
-            <Wifi className="w-3 h-3 text-card" />
-            <Battery className="w-3.5 h-3.5 text-card" />
+            <CiWavePulse1 className="w-3 h-3 text-card" />
+            <CiWifiOn className="w-3 h-3 text-card" />
+            <CiBatteryFull className="w-3.5 h-3.5 text-card" />
           </div>
         </div>
 
@@ -59,7 +60,7 @@ const PhoneMockup = () => (
               className="flex items-center gap-3 p-3 rounded-2xl bg-cream/50 border border-border/50 hover:border-sage/30 transition-colors"
             >
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-salmon/30 to-gold/20 flex-shrink-0 flex items-center justify-center">
-                <span className="text-lg">🍳</span>
+                <CiForkAndKnife className="text-lg" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">

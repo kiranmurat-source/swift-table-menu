@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import TabbledLogo from "@/components/TabbledLogo";
-import { Menu, X } from "lucide-react";
+import { CiMenuBurger, CiCircleRemove } from "react-icons/ci";
 
 const navLinks = [
   { label: "Özellikler", href: "#ozellikler" },
@@ -61,7 +61,7 @@ const Navbar = () => {
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label="Menü"
         >
-          {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          {mobileOpen ? <CiCircleRemove className="w-6 h-6" /> : <CiMenuBurger className="w-6 h-6" />}
         </button>
       </div>
 

@@ -1,4 +1,4 @@
-import { Check, X, Minus } from "lucide-react";
+import { CiCircleCheck, CiCircleRemove, CiCircleMinus } from "react-icons/ci";
 import { useScrollReveal } from "@/hooks/use-scroll-reveal";
 
 type FeatureValue = boolean | string;
@@ -79,9 +79,9 @@ const matrix: Category[] = [
 
 function CellValue({ value, highlight }: { value: FeatureValue; highlight?: boolean }) {
   if (value === true)
-    return <Check className={`w-4 h-4 mx-auto ${highlight ? "text-sage" : "text-sage"}`} />;
+    return <CiCircleCheck className={`w-4 h-4 mx-auto ${highlight ? "text-sage" : "text-sage"}`} />;
   if (value === false)
-    return <Minus className="w-4 h-4 mx-auto text-muted-foreground/30" />;
+    return <CiCircleMinus className="w-4 h-4 mx-auto text-muted-foreground/30" />;
   return (
     <span className={`text-xs font-semibold ${highlight ? "text-sage" : "text-foreground"}`}>
       {value}

@@ -1,0 +1,477 @@
+diff --git a/package-lock.json b/package-lock.json
+index 652ce9c..63bcf8c 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -50,6 +50,7 @@
+         "react-day-picker": "^8.10.1",
+         "react-dom": "^18.3.1",
+         "react-hook-form": "^7.61.1",
++        "react-icons": "^5.6.0",
+         "react-resizable-panels": "^2.1.9",
+         "react-router-dom": "^6.30.1",
+         "recharts": "^2.15.4",
+@@ -6852,6 +6853,15 @@
+         "react": "^16.8.0 || ^17 || ^18 || ^19"
+       }
+     },
++    "node_modules/react-icons": {
++      "version": "5.6.0",
++      "resolved": "https://registry.npmjs.org/react-icons/-/react-icons-5.6.0.tgz",
++      "integrity": "sha512-RH93p5ki6LfOiIt0UtDyNg/cee+HLVR6cHHtW3wALfo+eOHTp8RnU2kRkI6E+H19zMIs03DyxUG/GfZMOGvmiA==",
++      "license": "MIT",
++      "peerDependencies": {
++        "react": "*"
++      }
++    },
+     "node_modules/react-is": {
+       "version": "18.3.1",
+       "resolved": "https://registry.npmjs.org/react-is/-/react-is-18.3.1.tgz",
+diff --git a/package.json b/package.json
+index 9e0f84e..ade2a22 100644
+--- a/package.json
++++ b/package.json
+@@ -55,6 +55,7 @@
+     "react-day-picker": "^8.10.1",
+     "react-dom": "^18.3.1",
+     "react-hook-form": "^7.61.1",
++    "react-icons": "^5.6.0",
+     "react-resizable-panels": "^2.1.9",
+     "react-router-dom": "^6.30.1",
+     "recharts": "^2.15.4",
+diff --git a/src/components/CTABanner.tsx b/src/components/CTABanner.tsx
+index eef7968..553ea2a 100644
+--- a/src/components/CTABanner.tsx
++++ b/src/components/CTABanner.tsx
+@@ -1,5 +1,5 @@
+ import { Button } from "@/components/ui/button";
+-import { ArrowRight } from "lucide-react";
++import { CiCircleChevRight } from "react-icons/ci";
+ 
+ const CTABanner = () => (
+   <section className="py-20 lg:py-28 bg-gradient-to-br from-grapefruit to-grapefruit-deep">
+@@ -11,7 +11,7 @@ const CTABanner = () => (
+       <div className="flex flex-wrap gap-4 justify-center">
+         <a href="/menu/cafe-istanbul">
+           <Button variant="cta-white" size="lg" className="rounded-full px-10 text-base">
+-            Demo Menüyü Gör <ArrowRight className="w-4 h-4" />
++            Demo Menüyü Gör <CiCircleChevRight className="w-4 h-4" />
+           </Button>
+         </a>
+       </div>
+diff --git a/src/components/FeatureComparisonTable.tsx b/src/components/FeatureComparisonTable.tsx
+index bbe7f53..e68634e 100644
+--- a/src/components/FeatureComparisonTable.tsx
++++ b/src/components/FeatureComparisonTable.tsx
+@@ -1,4 +1,4 @@
+-import { Check, X, Minus } from "lucide-react";
++import { CiCircleCheck, CiCircleRemove, CiCircleMinus } from "react-icons/ci";
+ import { useScrollReveal } from "@/hooks/use-scroll-reveal";
+ 
+ type FeatureValue = boolean | string;
+@@ -79,9 +79,9 @@ const matrix: Category[] = [
+ 
+ function CellValue({ value, highlight }: { value: FeatureValue; highlight?: boolean }) {
+   if (value === true)
+-    return <Check className={`w-4 h-4 mx-auto ${highlight ? "text-sage" : "text-sage"}`} />;
++    return <CiCircleCheck className={`w-4 h-4 mx-auto ${highlight ? "text-sage" : "text-sage"}`} />;
+   if (value === false)
+-    return <Minus className="w-4 h-4 mx-auto text-muted-foreground/30" />;
++    return <CiCircleMinus className="w-4 h-4 mx-auto text-muted-foreground/30" />;
+   return (
+     <span className={`text-xs font-semibold ${highlight ? "text-sage" : "text-foreground"}`}>
+       {value}
+diff --git a/src/components/FeaturesSection.tsx b/src/components/FeaturesSection.tsx
+index 1416452..5528edb 100644
+--- a/src/components/FeaturesSection.tsx
++++ b/src/components/FeaturesSection.tsx
+@@ -1,13 +1,13 @@
+-import { QrCode, ShoppingCart, Bell, BarChart3, Globe, Activity } from "lucide-react";
++import { CiBarcode, CiShoppingCart, CiBellOn, CiViewBoard, CiGlobe, CiWavePulse1 } from "react-icons/ci";
+ import { useScrollReveal } from "@/hooks/use-scroll-reveal";
+ 
+ const features = [
+-  { icon: QrCode, title: "QR Menü", desc: "Misafir QR kodu tarar, menü anında açılır. Uygulama indirmeye gerek yok. Tüm planlarda.", color: "bg-grapefruit/10 text-grapefruit" },
+-  { icon: ShoppingCart, title: "Online Sipariş", desc: "Masadan sipariş, WhatsApp sipariş ve kendi teslimat altyapınız. Pro ve Premium.", color: "bg-sage/15 text-sage" },
+-  { icon: Bell, title: "Garson Çağır", desc: "Tek tuşla garson çağırma. Pro ve Premium planlarda.", color: "bg-salmon/15 text-salmon" },
+-  { icon: Activity, title: "Alerjen & Kalori", desc: "Her üründe alerjen ikonları ve kalori bilgisi. Misafir güvenle sipariş verir. Tüm planlarda.", color: "bg-gold/20 text-foreground" },
+-  { icon: Globe, title: "Çok Dilli Menü", desc: "Pro'da 2 dil, Premium'da 4 dil desteği. Yabancı misafirlerinize hitap edin.", color: "bg-sage-light/20 text-sage" },
+-  { icon: BarChart3, title: "Analytics & Raporlama", desc: "Hangi ürün çok görüntüleniyor? Kategori performansı ve trendler. Premium.", color: "bg-grapefruit/10 text-grapefruit" },
++  { icon: CiBarcode, title: "QR Menü", desc: "Misafir QR kodu tarar, menü anında açılır. Uygulama indirmeye gerek yok. Tüm planlarda.", color: "bg-grapefruit/10 text-grapefruit" },
++  { icon: CiShoppingCart, title: "Online Sipariş", desc: "Masadan sipariş, WhatsApp sipariş ve kendi teslimat altyapınız. Pro ve Premium.", color: "bg-sage/15 text-sage" },
++  { icon: CiBellOn, title: "Garson Çağır", desc: "Tek tuşla garson çağırma. Pro ve Premium planlarda.", color: "bg-salmon/15 text-salmon" },
++  { icon: CiWavePulse1, title: "Alerjen & Kalori", desc: "Her üründe alerjen ikonları ve kalori bilgisi. Misafir güvenle sipariş verir. Tüm planlarda.", color: "bg-gold/20 text-foreground" },
++  { icon: CiGlobe, title: "Çok Dilli Menü", desc: "Pro'da 2 dil, Premium'da 4 dil desteği. Yabancı misafirlerinize hitap edin.", color: "bg-sage-light/20 text-sage" },
++  { icon: CiViewBoard, title: "Analytics & Raporlama", desc: "Hangi ürün çok görüntüleniyor? Kategori performansı ve trendler. Premium.", color: "bg-grapefruit/10 text-grapefruit" },
+ ];
+ 
+ const FeaturesSection = () => {
+diff --git a/src/components/HeroSection.tsx b/src/components/HeroSection.tsx
+index 3e0b383..f6e53a0 100644
+--- a/src/components/HeroSection.tsx
++++ b/src/components/HeroSection.tsx
+@@ -1,5 +1,5 @@
+ import { Button } from "@/components/ui/button";
+-import { ArrowRight, Play, Star } from "lucide-react";
++import { CiCircleChevRight, CiPlay1, CiStar } from "react-icons/ci";
+ import heroImage from "@/assets/hero-restaurant.png";
+ 
+ const avatarColors = ["bg-grapefruit", "bg-sage", "bg-salmon", "bg-gold"];
+@@ -29,11 +29,11 @@ const HeroSection = () => {
+             <div className="flex flex-wrap gap-4 mb-10">
+               <a href="/menu/cafe-istanbul">
+                 <Button variant="hero" size="lg" className="rounded-full px-8 text-base">
+-                  Demo Menüyü Gör <ArrowRight className="w-4 h-4" />
++                  Demo Menüyü Gör <CiCircleChevRight className="w-4 h-4" />
+                 </Button>
+               </a>
+               <Button variant="hero-outline" size="lg" className="rounded-full px-8 text-base" onClick={() => document.querySelector('#nasil-calisir')?.scrollIntoView({ behavior: 'smooth' })}>
+-                <Play className="w-4 h-4" /> Nasıl Çalışır?
++                <CiPlay1 className="w-4 h-4" /> Nasıl Çalışır?
+               </Button>
+             </div>
+ 
+@@ -50,7 +50,7 @@ const HeroSection = () => {
+               </div>
+               <div className="flex items-center gap-1">
+                 {[...Array(5)].map((_, i) => (
+-                  <Star key={i} className="w-4 h-4 fill-gold text-gold" />
++                  <CiStar key={i} className="w-4 h-4 fill-gold text-gold" />
+                 ))}
+               </div>
+               <span className="text-sm text-muted-foreground font-medium">Otelcilerin tercihi</span>
+diff --git a/src/components/Navbar.tsx b/src/components/Navbar.tsx
+index 18eacd0..70d3322 100644
+--- a/src/components/Navbar.tsx
++++ b/src/components/Navbar.tsx
+@@ -1,7 +1,7 @@
+ import { useState, useEffect } from "react";
+ import { Button } from "@/components/ui/button";
+ import TabbledLogo from "@/components/TabbledLogo";
+-import { Menu, X } from "lucide-react";
++import { CiMenuBurger, CiCircleRemove } from "react-icons/ci";
+ 
+ const navLinks = [
+   { label: "Özellikler", href: "#ozellikler" },
+@@ -61,7 +61,7 @@ const Navbar = () => {
+           onClick={() => setMobileOpen(!mobileOpen)}
+           aria-label="Menü"
+         >
+-          {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
++          {mobileOpen ? <CiCircleRemove className="w-6 h-6" /> : <CiMenuBurger className="w-6 h-6" />}
+         </button>
+       </div>
+ 
+diff --git a/src/components/PhoneMockup.tsx b/src/components/PhoneMockup.tsx
+index ae25a6d..8de98a6 100644
+--- a/src/components/PhoneMockup.tsx
++++ b/src/components/PhoneMockup.tsx
+@@ -1,4 +1,4 @@
+-import { Wifi, Battery, Signal } from "lucide-react";
++import { CiWifiOn, CiBatteryFull, CiWavePulse1, CiForkAndKnife } from "react-icons/ci";
+ 
+ const PhoneMockup = () => (
+   <div className="relative">
+@@ -16,9 +16,9 @@ const PhoneMockup = () => (
+         <div className="flex items-center justify-between px-5 py-1.5 bg-grapefruit">
+           <span className="text-card text-[10px] font-semibold">9:41</span>
+           <div className="flex items-center gap-1">
+-            <Signal className="w-3 h-3 text-card" />
+-            <Wifi className="w-3 h-3 text-card" />
+-            <Battery className="w-3.5 h-3.5 text-card" />
++            <CiWavePulse1 className="w-3 h-3 text-card" />
++            <CiWifiOn className="w-3 h-3 text-card" />
++            <CiBatteryFull className="w-3.5 h-3.5 text-card" />
+           </div>
+         </div>
+ 
+@@ -59,7 +59,7 @@ const PhoneMockup = () => (
+               className="flex items-center gap-3 p-3 rounded-2xl bg-cream/50 border border-border/50 hover:border-sage/30 transition-colors"
+             >
+               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-salmon/30 to-gold/20 flex-shrink-0 flex items-center justify-center">
+-                <span className="text-lg">🍳</span>
++                <span className="text-lg"><CiForkAndKnife /></span>
+               </div>
+               <div className="flex-1 min-w-0">
+                 <div className="flex items-center gap-1.5">
+diff --git a/src/components/PricingSection.tsx b/src/components/PricingSection.tsx
+index 863c0a8..55f8ad8 100644
+--- a/src/components/PricingSection.tsx
++++ b/src/components/PricingSection.tsx
+@@ -1,5 +1,5 @@
+ import { Button } from "@/components/ui/button";
+-import { Check, X } from "lucide-react";
++import { CiCircleCheck, CiCircleRemove } from "react-icons/ci";
+ import { useScrollReveal } from "@/hooks/use-scroll-reveal";
+ 
+ const plans = [
+@@ -107,9 +107,9 @@ const PricingSection = () => {
+                 {p.features.map((f) => (
+                   <li key={f.text} className="flex items-start gap-2 text-sm">
+                     {f.included ? (
+-                      <Check className={`w-4 h-4 mt-0.5 flex-shrink-0 ${p.popular ? "text-card" : "text-sage"}`} />
++                      <CiCircleCheck className={`w-4 h-4 mt-0.5 flex-shrink-0 ${p.popular ? "text-card" : "text-sage"}`} />
+                     ) : (
+-                      <X className={`w-4 h-4 mt-0.5 flex-shrink-0 ${p.popular ? "text-card/40" : "text-muted-foreground/40"}`} />
++                      <CiCircleRemove className={`w-4 h-4 mt-0.5 flex-shrink-0 ${p.popular ? "text-card/40" : "text-muted-foreground/40"}`} />
+                     )}
+                     <span className={`${!f.included ? (p.popular ? "text-card/50" : "text-muted-foreground/50") : (p.popular ? "" : "text-foreground")}`}>
+                       {f.text}
+diff --git a/src/components/TestimonialsSection.tsx b/src/components/TestimonialsSection.tsx
+index 0fd7c83..f4a37b9 100644
+--- a/src/components/TestimonialsSection.tsx
++++ b/src/components/TestimonialsSection.tsx
+@@ -1,4 +1,4 @@
+-import { Star } from "lucide-react";
++import { CiStar } from "react-icons/ci";
+ import { useScrollReveal } from "@/hooks/use-scroll-reveal";
+ 
+ const testimonials = [
+@@ -23,7 +23,7 @@ const TestimonialsSection = () => {
+             <div key={i} className="p-6 rounded-2xl bg-card border border-border hover:border-sage/40 transition-all duration-200">
+               <div className="flex gap-0.5 mb-4">
+                 {[...Array(5)].map((_, j) => (
+-                  <Star key={j} className="w-4 h-4 fill-gold text-gold" />
++                  <CiStar key={j} className="w-4 h-4 fill-gold text-gold" />
+                 ))}
+               </div>
+               <p className="text-sm text-foreground leading-relaxed mb-4">"{t.text}"</p>
+diff --git a/src/components/ValueProposition.tsx b/src/components/ValueProposition.tsx
+index e599779..4f2a194 100644
+--- a/src/components/ValueProposition.tsx
++++ b/src/components/ValueProposition.tsx
+@@ -1,12 +1,12 @@
+ import { Button } from "@/components/ui/button";
+-import { ArrowRight, Layers, Globe, Activity, Bell } from "lucide-react";
++import { CiCircleChevRight, CiBoxes, CiGlobe, CiWavePulse1, CiBellOn } from "react-icons/ci";
+ import { useScrollReveal } from "@/hooks/use-scroll-reveal";
+ 
+ const values = [
+-  { icon: Layers, title: "Sınırsız ürün & kategori", desc: "Menünüzde istediğiniz kadar kategori ve ürün olsun. Tüm planlarda sınırsız." },
+-  { icon: Globe, title: "Çok dilli menü", desc: "Pro'da 2 dil, Premium'da 4 dil. Yabancı misafirleriniz kendi dilinde görsün." },
+-  { icon: Activity, title: "Alerjen & kalori bilgisi", desc: "Her üründe alerjen ikonları ve kalori değeri. Misafir güvenle sipariş verir." },
+-  { icon: Bell, title: "Yasal uyumluluk", desc: "1 Ocak 2026 itibarıyla dijital menü zorunlu. Tabbled ile hemen uyumlu olun." },
++  { icon: CiBoxes, title: "Sınırsız ürün & kategori", desc: "Menünüzde istediğiniz kadar kategori ve ürün olsun. Tüm planlarda sınırsız." },
++  { icon: CiGlobe, title: "Çok dilli menü", desc: "Pro'da 2 dil, Premium'da 4 dil. Yabancı misafirleriniz kendi dilinde görsün." },
++  { icon: CiWavePulse1, title: "Alerjen & kalori bilgisi", desc: "Her üründe alerjen ikonları ve kalori değeri. Misafir güvenle sipariş verir." },
++  { icon: CiBellOn, title: "Yasal uyumluluk", desc: "1 Ocak 2026 itibarıyla dijital menü zorunlu. Tabbled ile hemen uyumlu olun." },
+ ];
+ 
+ const ValueProposition = () => {
+@@ -35,7 +35,7 @@ const ValueProposition = () => {
+         <div className="text-center">
+           <a href="#fiyatlar">
+             <Button variant="hero" size="lg" className="rounded-full px-8 text-base" onClick={(e) => { e.preventDefault(); document.querySelector('#fiyatlar')?.scrollIntoView({ behavior: 'smooth' }); }}>
+-              Planları İncele <ArrowRight className="w-4 h-4" />
++              Planları İncele <CiCircleChevRight className="w-4 h-4" />
+             </Button>
+           </a>
+         </div>
+diff --git a/src/index.css b/src/index.css
+index c14701c..ea9333f 100644
+--- a/src/index.css
++++ b/src/index.css
+@@ -1,4 +1,4 @@
+-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Nunito:wght@700;800;900&display=swap');
++@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap');
+ 
+ @tailwind base;
+ @tailwind components;
+@@ -63,10 +63,21 @@
+ 
+   body {
+     @apply bg-background text-foreground font-body antialiased;
++    font-weight: 400;
+   }
+ 
+   h1, h2, h3, h4, h5, h6 {
+     @apply font-heading;
++    font-weight: 700;
++  }
++
++  p, span, li, td, label {
++    font-family: 'Montserrat', sans-serif;
++  }
++
++  /* Açıklama/description metinleri thin */
++  .text-muted-foreground {
++    font-weight: 200;
+   }
+ }
+ 
+diff --git a/src/pages/RestaurantDashboard.tsx b/src/pages/RestaurantDashboard.tsx
+index d35c84e..e26fcf1 100644
+--- a/src/pages/RestaurantDashboard.tsx
++++ b/src/pages/RestaurantDashboard.tsx
+@@ -1,6 +1,7 @@
+ import { useEffect, useState, useRef } from 'react';
+ import { supabase } from '../lib/supabase';
+ import { useAuth } from '../lib/useAuth';
++import { CiWheat, CiDroplet, CiCircleAlert, CiApple, CiLemon, CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiStar, CiTempHigh } from 'react-icons/ci';
+ 
+ type Category = { id: string; name_tr: string; name_en: string | null; sort_order: number; is_active: boolean; };
+ type MenuItem = {
+@@ -11,14 +12,14 @@ type MenuItem = {
+ };
+ type Restaurant = { id: string; name: string; slug: string; };
+ 
+-const ALLERGEN_OPTIONS: { value: string; label: string; icon: string }[] = [
+-  { value: 'gluten', label: 'Gluten', icon: '🌾' },
+-  { value: 'dairy', label: 'Süt Ürünü', icon: '🥛' },
+-  { value: 'egg', label: 'Yumurta', icon: '🥚' },
+-  { value: 'nuts', label: 'Kuruyemiş', icon: '🥜' },
+-  { value: 'seafood', label: 'Deniz Ürünü', icon: '🐟' },
+-  { value: 'soy', label: 'Soya', icon: '🫘' },
+-  { value: 'spicy', label: 'Acı', icon: '🌶️' },
++const ALLERGEN_OPTIONS: { value: string; label: string; icon: React.ReactNode }[] = [
++  { value: 'gluten', label: 'Gluten', icon: <CiWheat size={14} /> },
++  { value: 'dairy', label: 'Süt Ürünü', icon: <CiDroplet size={14} /> },
++  { value: 'egg', label: 'Yumurta', icon: <CiCircleAlert size={14} /> },
++  { value: 'nuts', label: 'Kuruyemiş', icon: <CiApple size={14} /> },
++  { value: 'seafood', label: 'Deniz Ürünü', icon: <CiCircleAlert size={14} /> },
++  { value: 'soy', label: 'Soya', icon: <CiLemon size={14} /> },
++  { value: 'spicy', label: 'Acı', icon: <CiTempHigh size={14} /> },
+ ];
+ 
+ const S: Record<string, React.CSSProperties> = {
+@@ -184,7 +185,7 @@ export default function RestaurantDashboard() {
+       <h2 style={{ fontSize: 22, fontWeight: 700, color: '#1c1917', marginBottom: 4 }}>{restaurant.name}</h2>
+       <p style={{ fontSize: 13, color: '#a8a29e', marginBottom: 24 }}>Menü Yönetimi</p>
+ 
+-      {msg && <div style={{ padding: '10px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, color: '#dc2626', fontSize: 13, marginBottom: 16 }} onClick={() => setMsg('')}>{msg} <span style={{ float: 'right', cursor: 'pointer' }}>✕</span></div>}
++      {msg && <div style={{ padding: '10px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, color: '#dc2626', fontSize: 13, marginBottom: 16 }} onClick={() => setMsg('')}>{msg} <span style={{ float: 'right', cursor: 'pointer' }}><CiCircleRemove size={14} /></span></div>}
+ 
+       {/* ===== KATEGORILER ===== */}
+       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+@@ -210,13 +211,13 @@ export default function RestaurantDashboard() {
+               <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                 <input style={{ ...S.input, width: 100, padding: '4px 8px', fontSize: 12 }} value={editCatForm.name_tr} onChange={e => setEditCatForm({ ...editCatForm, name_tr: e.target.value })} />
+                 <input style={{ ...S.input, width: 80, padding: '4px 8px', fontSize: 12 }} value={editCatForm.name_en} onChange={e => setEditCatForm({ ...editCatForm, name_en: e.target.value })} placeholder="EN" />
+-                <button onClick={() => updateCategory(c.id)} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11 }}>✓</button>
+-                <button onClick={() => setEditingCat(null)} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11 }}>✕</button>
++                <button onClick={() => updateCategory(c.id)} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11 }}><CiCircleCheck size={14} /></button>
++                <button onClick={() => setEditingCat(null)} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11 }}><CiCircleRemove size={14} /></button>
+               </div>
+             ) : (
+               <>
+                 <button onClick={() => setSelectedCat(c.id)} style={{ ...S.btnSm, background: selectedCat === c.id ? '#1c1917' : '#fff', color: selectedCat === c.id ? '#fff' : '#44403c' }}>{c.name_tr} ({items.filter(i => i.category_id === c.id).length})</button>
+-                <button onClick={() => { setEditingCat(c.id); setEditCatForm({ name_tr: c.name_tr, name_en: c.name_en || '' }); }} style={{ background: 'none', border: 'none', color: '#a8a29e', cursor: 'pointer', fontSize: 12, padding: '0 2px' }} title="Düzenle">✎</button>
++                <button onClick={() => { setEditingCat(c.id); setEditCatForm({ name_tr: c.name_tr, name_en: c.name_en || '' }); }} style={{ background: 'none', border: 'none', color: '#a8a29e', cursor: 'pointer', fontSize: 12, padding: '0 2px' }} title="Düzenle"><CiEdit size={14} /></button>
+                 <button onClick={() => deleteCategory(c.id)} style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: 14, padding: '0 2px' }}>×</button>
+               </>
+             )}
+@@ -258,7 +259,7 @@ export default function RestaurantDashboard() {
+                 </div>
+               ) : (
+                 <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} style={{ ...S.btnSm, width: '100%' }}>
+-                  {uploading ? 'Yükleniyor...' : '📷 Görsel Seç'}
++                  {uploading ? 'Yükleniyor...' : <><CiCamera size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />Görsel Seç</>}
+                 </button>
+               )}
+             </div>
+@@ -284,11 +285,11 @@ export default function RestaurantDashboard() {
+           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+             <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#44403c' }}>
+               <input type="checkbox" checked={itemForm.is_vegetarian} onChange={e => setItemForm({ ...itemForm, is_vegetarian: e.target.checked })} />
+-              🌱 Vejetaryen
++              <CiApple size={14} style={{ display: 'inline', verticalAlign: 'middle' }} /> Vejetaryen
+             </label>
+             <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#44403c' }}>
+               <input type="checkbox" checked={itemForm.is_new} onChange={e => setItemForm({ ...itemForm, is_new: e.target.checked })} />
+-              ✨ Yeni Ürün
++              <CiStar size={14} style={{ display: 'inline', verticalAlign: 'middle' }} /> Yeni Ürün
+             </label>
+           </div>
+           <button type="submit" disabled={saving} style={{ ...S.btn, alignSelf: 'flex-start' }}>{saving ? '...' : editingItem ? 'Güncelle' : 'Ekle'}</button>
+@@ -297,7 +298,7 @@ export default function RestaurantDashboard() {
+ 
+       {/* ===== ÜRÜN LİSTESİ ===== */}
+       {filteredItems.map(item => {
+-        const allergenIcons = (item.allergens || []).map(a => ALLERGEN_OPTIONS.find(o => o.value === a)?.icon || '').join(' ');
++        const allergenNodes = (item.allergens || []).map(a => ALLERGEN_OPTIONS.find(o => o.value === a)).filter(Boolean);
+         return (
+           <div key={item.id} style={{ ...S.card, opacity: item.is_available ? 1 : 0.45 }}>
+             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+@@ -305,15 +306,15 @@ export default function RestaurantDashboard() {
+                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                   <span style={{ fontSize: 15, fontWeight: 600, color: '#1c1917' }}>{item.name_tr}</span>
+                   {item.name_en && <span style={{ fontSize: 12, color: '#a8a29e' }}>/ {item.name_en}</span>}
+-                  {item.is_vegetarian && <span style={{ ...S.badge, background: '#dcfce7', color: '#16a34a' }}>🌱</span>}
+-                  {item.is_new && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309' }}>✨ Yeni</span>}
+-                  {item.is_popular && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309' }}>⭐</span>}
++                  {item.is_vegetarian && <span style={{ ...S.badge, background: '#dcfce7', color: '#16a34a', display: 'inline-flex', alignItems: 'center', gap: 2 }}><CiApple size={12} /></span>}
++                  {item.is_new && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309', display: 'inline-flex', alignItems: 'center', gap: 2 }}><CiStar size={12} /> Yeni</span>}
++                  {item.is_popular && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309', display: 'inline-flex', alignItems: 'center' }}><CiStar size={12} /></span>}
+                 </div>
+                 {item.description_tr && <div style={{ fontSize: 13, color: '#78716c', marginTop: 2 }}>{item.description_tr}</div>}
+                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
+                   <span style={{ fontSize: 14, fontWeight: 700, color: '#1c1917' }}>₺{Number(item.price).toFixed(2)}</span>
+-                  {item.calories && <span style={{ fontSize: 11, color: '#a8a29e' }}>🔥 {item.calories} kcal</span>}
+-                  {allergenIcons && <span style={{ fontSize: 12 }} title={(item.allergens || []).join(', ')}>{allergenIcons}</span>}
++                  {item.calories && <span style={{ fontSize: 11, color: '#a8a29e', display: 'inline-flex', alignItems: 'center', gap: 2 }}><CiTempHigh size={12} /> {item.calories} kcal</span>}
++                  {allergenNodes.length > 0 && <span style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }} title={(item.allergens || []).join(', ')}>{allergenNodes.map((a, i) => <span key={i}>{a!.icon}</span>)}</span>}
+                 </div>
+               </div>
+               {item.image_url && <img src={item.image_url} alt="" style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover', marginLeft: 12 }} />}
+diff --git a/src/pages/SuperAdminDashboard.tsx b/src/pages/SuperAdminDashboard.tsx
+index 3a062d1..6188d29 100644
+--- a/src/pages/SuperAdminDashboard.tsx
++++ b/src/pages/SuperAdminDashboard.tsx
+@@ -1,5 +1,6 @@
+ import { useEffect, useState } from 'react';
+ import { supabase } from '../lib/supabase';
++import { CiCircleCheck, CiCircleRemove } from 'react-icons/ci';
+ 
+ type Restaurant = { id: string; name: string; slug: string; is_active: boolean; subscription_status: string; current_plan: string; created_at: string; };
+ type Profile = { id: string; email: string; full_name: string | null; role: string; restaurant_id: string | null; };
+@@ -418,7 +419,7 @@ export default function SuperAdminDashboard() {
+                                   }}
+                                   autoFocus
+                                 />
+-                                <button onClick={() => savePlanFeatureValue(p.id, feat.id, editPFValue)} style={{ ...S.btnSm, padding: '3px 6px', fontSize: 11 }}>✓</button>
++                                <button onClick={() => savePlanFeatureValue(p.id, feat.id, editPFValue)} style={{ ...S.btnSm, padding: '3px 6px', fontSize: 11 }}><CiCircleCheck size={14} /></button>
+                               </div>
+                             ) : (
+                               <span
+@@ -431,14 +432,14 @@ export default function SuperAdminDashboard() {
+                                 }}
+                                 title="Tikla: deger degistir"
+                               >
+-                                {val === 'true' ? '✓' : val === 'false' ? '—' : val}
++                                {val === 'true' ? <CiCircleCheck size={14} style={{ display: 'inline' }} /> : val === 'false' ? '—' : val}
+                               </span>
+                             )}
+                           </td>
+                         );
+                       })}
+                       <td style={{ textAlign: 'center' }}>
+-                        <button onClick={() => deleteFeature(feat.id)} style={{ background: 'none', border: 'none', color: '#d6d3d1', cursor: 'pointer', fontSize: 14, padding: 4 }} title="Sil">✕</button>
++                        <button onClick={() => deleteFeature(feat.id)} style={{ background: 'none', border: 'none', color: '#d6d3d1', cursor: 'pointer', fontSize: 14, padding: 4 }} title="Sil"><CiCircleRemove size={14} /></button>
+                       </td>
+                     </tr>
+                   ))
+diff --git a/tailwind.config.ts b/tailwind.config.ts
+index 3eedf05..d3c105c 100644
+--- a/tailwind.config.ts
++++ b/tailwind.config.ts
+@@ -14,8 +14,19 @@ export default {
+     },
+     extend: {
+       fontFamily: {
+-        heading: ["Nunito", "sans-serif"],
+-        body: ["DM Sans", "sans-serif"],
++        heading: ["Montserrat", "sans-serif"],
++        body: ["Montserrat", "sans-serif"],
++      },
++      fontWeight: {
++        thin: "100",
++        extralight: "200",
++        light: "300",
++        normal: "400",
++        medium: "500",
++        semibold: "600",
++        bold: "700",
++        extrabold: "800",
++        black: "900",
+       },
+       colors: {
+         border: "hsl(var(--border))",

@@ -1,12 +1,12 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Layers, Globe, Activity, Bell } from "lucide-react";
+import { CiCircleChevRight, CiBoxes, CiGlobe, CiWavePulse1, CiBellOn } from "react-icons/ci";
 import { useScrollReveal } from "@/hooks/use-scroll-reveal";
 
 const values = [
-  { icon: Layers, title: "Sınırsız ürün & kategori", desc: "Menünüzde istediğiniz kadar kategori ve ürün olsun. Tüm planlarda sınırsız." },
-  { icon: Globe, title: "Çok dilli menü", desc: "Pro'da 2 dil, Premium'da 4 dil. Yabancı misafirleriniz kendi dilinde görsün." },
-  { icon: Activity, title: "Alerjen & kalori bilgisi", desc: "Her üründe alerjen ikonları ve kalori değeri. Misafir güvenle sipariş verir." },
-  { icon: Bell, title: "Yasal uyumluluk", desc: "1 Ocak 2026 itibarıyla dijital menü zorunlu. Tabbled ile hemen uyumlu olun." },
+  { icon: CiBoxes, title: "Sınırsız ürün & kategori", desc: "Menünüzde istediğiniz kadar kategori ve ürün olsun. Tüm planlarda sınırsız." },
+  { icon: CiGlobe, title: "Çok dilli menü", desc: "Pro'da 2 dil, Premium'da 4 dil. Yabancı misafirleriniz kendi dilinde görsün." },
+  { icon: CiWavePulse1, title: "Alerjen & kalori bilgisi", desc: "Her üründe alerjen ikonları ve kalori değeri. Misafir güvenle sipariş verir." },
+  { icon: CiBellOn, title: "Yasal uyumluluk", desc: "1 Ocak 2026 itibarıyla dijital menü zorunlu. Tabbled ile hemen uyumlu olun." },
 ];
 
 const ValueProposition = () => {
@@ -35,7 +35,7 @@ const ValueProposition = () => {
         <div className="text-center">
           <a href="#fiyatlar">
             <Button variant="hero" size="lg" className="rounded-full px-8 text-base" onClick={(e) => { e.preventDefault(); document.querySelector('#fiyatlar')?.scrollIntoView({ behavior: 'smooth' }); }}>
-              Planları İncele <ArrowRight className="w-4 h-4" />
+              Planları İncele <CiCircleChevRight className="w-4 h-4" />
             </Button>
           </a>
         </div>

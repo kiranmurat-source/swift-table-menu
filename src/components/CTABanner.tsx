@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { CiCircleChevRight } from "react-icons/ci";
 
 const CTABanner = () => (
   <section className="py-20 lg:py-28 bg-gradient-to-br from-grapefruit to-grapefruit-deep">
@@ -11,7 +11,7 @@ const CTABanner = () => (
       <div className="flex flex-wrap gap-4 justify-center">
         <a href="/menu/cafe-istanbul">
           <Button variant="cta-white" size="lg" className="rounded-full px-10 text-base">
-            Demo Menüyü Gör <ArrowRight className="w-4 h-4" />
+            Demo Menüyü Gör <CiCircleChevRight className="w-4 h-4" />
           </Button>
         </a>
       </div>

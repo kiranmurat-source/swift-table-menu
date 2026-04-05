@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play, Star } from "lucide-react";
+import { CiCircleChevRight, CiPlay1, CiStar } from "react-icons/ci";
 import heroImage from "@/assets/hero-restaurant.png";
 
 const avatarColors = ["bg-grapefruit", "bg-sage", "bg-salmon", "bg-gold"];
@@ -29,11 +29,11 @@ const HeroSection = () => {
             <div className="flex flex-wrap gap-4 mb-10">
               <a href="/menu/cafe-istanbul">
                 <Button variant="hero" size="lg" className="rounded-full px-8 text-base">
-                  Demo Menüyü Gör <ArrowRight className="w-4 h-4" />
+                  Demo Menüyü Gör <CiCircleChevRight className="w-4 h-4" />
                 </Button>
               </a>
               <Button variant="hero-outline" size="lg" className="rounded-full px-8 text-base" onClick={() => document.querySelector('#nasil-calisir')?.scrollIntoView({ behavior: 'smooth' })}>
-                <Play className="w-4 h-4" /> Nasıl Çalışır?
+                <CiPlay1 className="w-4 h-4" /> Nasıl Çalışır?
               </Button>
             </div>
 
@@ -50,7 +50,7 @@ const HeroSection = () => {
               </div>
               <div className="flex items-center gap-1">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-gold text-gold" />
+                  <CiStar key={i} className="w-4 h-4 fill-gold text-gold" />
                 ))}
               </div>
               <span className="text-sm text-muted-foreground font-medium">Otelcilerin tercihi</span>
