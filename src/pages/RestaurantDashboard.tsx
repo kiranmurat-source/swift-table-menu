@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
-import { CiWheat, CiDroplet, CiCircleAlert, CiApple, CiLemon, CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiStar, CiTempHigh, CiWavePulse1, CiGlobe } from 'react-icons/ci';
+import { CiWheat, CiDroplet, CiCircleAlert, CiApple, CiLemon, CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiStar, CiTempHigh, CiWavePulse1, CiGlobe, CiPen } from 'react-icons/ci';
 
 type Translations = {
   [lang: string]: {
@@ -73,6 +73,7 @@ export default function RestaurantDashboard() {
   const [itemForm, setItemForm] = useState(emptyItemForm);
   const [saving, setSaving] = useState(false);
   const [translating, setTranslating] = useState<string | null>(null);
+  const [generatingAI, setGeneratingAI] = useState(false);
   const [msg, setMsg] = useState('');
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [editingCat, setEditingCat] = useState<string | null>(null);
@@ -81,6 +82,8 @@ export default function RestaurantDashboard() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const enabledLangs = (restaurant?.enabled_languages ?? []).filter(l => l !== 'tr');
+  const plan = (restaurant?.current_plan || '').toLowerCase();
+  const hasAI = plan === 'pro' || plan === 'premium';
 
   useEffect(() => {
     if (user) {
@@ -101,6 +104,42 @@ export default function RestaurantDashboard() {
   async function loadItems(rid: string) {
     const { data } = await supabase.from('menu_items').select('*').eq('restaurant_id', rid).order('sort_order');
     setItems(data || []);
+  }
+
+  // --- AI Description ---
+  async function generateAIDescription() {
+    if (!restaurant || !itemForm.name_tr) return;
+    setGeneratingAI(true);
+    try {
+      const catName = selectedCat ? categories.find(c => c.id === selectedCat)?.name_tr || '' : '';
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-description`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          restaurant_id: restaurant.id,
+          item_id: editingItem || 'new',
+          name_tr: itemForm.name_tr,
+          category_name: catName,
+          price: itemForm.price,
+          allergens: itemForm.allergens,
+          is_vegetarian: itemForm.is_vegetarian,
+          calories: itemForm.calories ? parseInt(itemForm.calories) : null,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.description) {
+        setItemForm(prev => ({ ...prev, description_tr: data.description }));
+        if (data.usage && data.limit !== 'unlimited') {
+          setMsg(`AI açıklama oluşturuldu (${data.usage}/${data.limit} kullanım)`);
+          setTimeout(() => setMsg(''), 4000);
+        }
+      } else {
+        setMsg(data.error || 'AI açıklama oluşturulamadı');
+      }
+    } catch (err) {
+      setMsg('AI servisi bağlantı hatası');
+    }
+    setGeneratingAI(false);
   }
 
   // --- Category CRUD ---
@@ -260,11 +299,16 @@ export default function RestaurantDashboard() {
   return (
     <div style={S.wrap}>
       <h2 style={{ fontSize: 22, fontWeight: 700, color: '#1c1917', marginBottom: 4 }}>{restaurant.name}</h2>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 24 }}>
         <p style={{ fontSize: 13, color: '#a8a29e', margin: 0 }}>Menü Yönetimi</p>
         {enabledLangs.length > 0 && (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#4338CA', background: '#EEF2FF', padding: '2px 8px', borderRadius: 12 }}>
             <CiGlobe size={12} /> Otomatik çeviri: {enabledLangs.map(l => l.toUpperCase()).join(', ')}
+          </span>
+        )}
+        {hasAI && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#9333EA', background: '#F3E8FF', padding: '2px 8px', borderRadius: 12 }}>
+            <CiPen size={12} /> AI Açıklama aktif
           </span>
         )}
       </div>
@@ -275,7 +319,7 @@ export default function RestaurantDashboard() {
         </div>
       )}
 
-      {msg && <div style={{ padding: '10px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, color: '#dc2626', fontSize: 13, marginBottom: 16 }} onClick={() => setMsg('')}>{msg} <span style={{ float: 'right', cursor: 'pointer' }}>✕</span></div>}
+      {msg && <div style={{ padding: '10px 14px', background: msg.includes('oluşturuldu') ? '#f0fdf4' : '#fef2f2', border: `1px solid ${msg.includes('oluşturuldu') ? '#bbf7d0' : '#fecaca'}`, borderRadius: 8, color: msg.includes('oluşturuldu') ? '#16a34a' : '#dc2626', fontSize: 13, marginBottom: 16 }} onClick={() => setMsg('')}>{msg} <span style={{ float: 'right', cursor: 'pointer' }}>✕</span></div>}
 
       {/* ===== KATEGORILER ===== */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -338,7 +382,26 @@ export default function RestaurantDashboard() {
           </div>
           <div>
             <label style={S.label}>Açıklama</label>
-            <input style={S.input} value={itemForm.description_tr} onChange={e => setItemForm({ ...itemForm, description_tr: e.target.value })} placeholder="Kısa bir açıklama yazın" />
+            <div style={{ position: 'relative' }}>
+              <input style={S.input} value={itemForm.description_tr} onChange={e => setItemForm({ ...itemForm, description_tr: e.target.value })} placeholder="Kısa bir açıklama yazın veya AI ile oluşturun" />
+              {hasAI && (
+                <button
+                  type="button"
+                  onClick={generateAIDescription}
+                  disabled={generatingAI || !itemForm.name_tr}
+                  style={{
+                    position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)',
+                    padding: '5px 10px', fontSize: 11, fontWeight: 600, borderRadius: 6, cursor: 'pointer',
+                    border: 'none', background: generatingAI ? '#E9D5FF' : '#9333EA', color: '#fff',
+                    display: 'flex', alignItems: 'center', gap: 4, transition: 'all 0.15s',
+                    opacity: !itemForm.name_tr ? 0.5 : 1,
+                  }}
+                  title="AI ile açıklama oluştur"
+                >
+                  <CiPen size={12} /> {generatingAI ? 'Yazılıyor...' : 'AI Yaz'}
+                </button>
+              )}
+            </div>
           </div>
           {enabledLangs.length > 0 && (
             <p style={{ fontSize: 11, color: '#4338CA', margin: '-4px 0 0 0', display: 'flex', alignItems: 'center', gap: 4 }}>
