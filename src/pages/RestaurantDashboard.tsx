@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
-import { CiWheat, CiDroplet, CiCircleAlert, CiApple, CiLemon, CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiStar, CiTempHigh, CiWavePulse1, CiGlobe, CiPen } from 'react-icons/ci';
+import { CiWheat, CiDroplet, CiCircleAlert, CiApple, CiLemon, CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiStar, CiTempHigh, CiWavePulse1, CiGlobe, CiPen, CiGrid2H } from 'react-icons/ci';
+import QRManager from '../components/QRManager';
 
 type Translations = {
   [lang: string]: {
@@ -18,7 +19,7 @@ type MenuItem = {
   calories: number | null; allergens: string[] | null; is_vegetarian: boolean; is_new: boolean;
   translations: Translations;
 };
-type Restaurant = { id: string; name: string; slug: string; enabled_languages: string[]; current_plan: string | null; };
+type Restaurant = { id: string; name: string; slug: string; enabled_languages: string[]; current_plan: string | null; logo_url: string | null; };
 
 const ALLERGEN_OPTIONS: { value: string; label: string; icon: React.ReactNode }[] = [
   { value: 'gluten', label: 'Gluten', icon: <CiWheat size={14} /> },
@@ -47,7 +48,6 @@ const S: Record<string, React.CSSProperties> = {
 
 const emptyItemForm = { name_tr: '', description_tr: '', price: '', image_url: '', calories: '', allergens: [] as string[], is_vegetarian: false, is_new: false };
 
-// --- Translate helper ---
 async function triggerTranslation(table: string, recordId: string, languages: string[]) {
   if (languages.length === 0) return;
   try {
@@ -79,6 +79,7 @@ export default function RestaurantDashboard() {
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [editCatForm, setEditCatForm] = useState({ name_tr: '' });
   const [uploading, setUploading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'menu' | 'qr'>('menu');
   const fileRef = useRef<HTMLInputElement>(null);
 
   const enabledLangs = (restaurant?.enabled_languages ?? []).filter(l => l !== 'tr');
@@ -106,12 +107,11 @@ export default function RestaurantDashboard() {
     setItems(data || []);
   }
 
-  // --- AI Description ---
   async function generateAIDescription() {
     if (!restaurant || !itemForm.name_tr) return;
     setGeneratingAI(true);
     try {
-      const catName = selectedCat ? categories.find(c => c.id === selectedCat)?.name_tr || '' : '';
+      const catNameVal = selectedCat ? categories.find(c => c.id === selectedCat)?.name_tr || '' : '';
       const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-description`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -119,7 +119,7 @@ export default function RestaurantDashboard() {
           restaurant_id: restaurant.id,
           item_id: editingItem || 'new',
           name_tr: itemForm.name_tr,
-          category_name: catName,
+          category_name: catNameVal,
           price: itemForm.price,
           allergens: itemForm.allergens,
           is_vegetarian: itemForm.is_vegetarian,
@@ -142,7 +142,6 @@ export default function RestaurantDashboard() {
     setGeneratingAI(false);
   }
 
-  // --- Category CRUD ---
   async function addCategory(e: React.FormEvent) {
     e.preventDefault();
     if (!restaurant) return;
@@ -185,7 +184,6 @@ export default function RestaurantDashboard() {
     if (selectedCat === id) setSelectedCat(null);
   }
 
-  // --- Image Upload ---
   async function handleImageUpload(file: File) {
     if (!restaurant) return;
     setUploading(true);
@@ -198,7 +196,6 @@ export default function RestaurantDashboard() {
     setUploading(false);
   }
 
-  // --- Item CRUD ---
   async function addOrUpdateItem(e: React.FormEvent) {
     e.preventDefault();
     if (!restaurant || !selectedCat) return;
@@ -299,202 +296,236 @@ export default function RestaurantDashboard() {
   return (
     <div style={S.wrap}>
       <h2 style={{ fontSize: 22, fontWeight: 700, color: '#1c1917', marginBottom: 4 }}>{restaurant.name}</h2>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 24 }}>
-        <p style={{ fontSize: 13, color: '#a8a29e', margin: 0 }}>Menü Yönetimi</p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+        <p style={{ fontSize: 13, color: '#a8a29e', margin: 0 }}>Restoran Yönetimi</p>
         {enabledLangs.length > 0 && (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#4338CA', background: '#EEF2FF', padding: '2px 8px', borderRadius: 12 }}>
-            <CiGlobe size={12} /> Otomatik çeviri: {enabledLangs.map(l => l.toUpperCase()).join(', ')}
+            <CiGlobe size={12} /> {enabledLangs.map(l => l.toUpperCase()).join(', ')}
           </span>
         )}
         {hasAI && (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#9333EA', background: '#F3E8FF', padding: '2px 8px', borderRadius: 12 }}>
-            <CiPen size={12} /> AI Açıklama aktif
+            <CiPen size={12} /> AI Açıklama
           </span>
         )}
       </div>
 
-      {translating && (
-        <div style={{ padding: '8px 14px', background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: 8, color: '#4338CA', fontSize: 12, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <CiGlobe size={14} /> Çeviriler oluşturuluyor...
-        </div>
-      )}
-
-      {msg && <div style={{ padding: '10px 14px', background: msg.includes('oluşturuldu') ? '#f0fdf4' : '#fef2f2', border: `1px solid ${msg.includes('oluşturuldu') ? '#bbf7d0' : '#fecaca'}`, borderRadius: 8, color: msg.includes('oluşturuldu') ? '#16a34a' : '#dc2626', fontSize: 13, marginBottom: 16 }} onClick={() => setMsg('')}>{msg} <span style={{ float: 'right', cursor: 'pointer' }}>✕</span></div>}
-
-      {/* ===== KATEGORILER ===== */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1c1917' }}>Kategoriler</h3>
-        <button onClick={() => setShowCatForm(!showCatForm)} style={S.btnSm}>{showCatForm ? 'İptal' : '+ Kategori'}</button>
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '2px solid #e7e5e4' }}>
+        <button
+          onClick={() => setActiveTab('menu')}
+          style={{
+            padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+            background: 'none', border: 'none', borderBottom: activeTab === 'menu' ? '2px solid #1c1917' : '2px solid transparent',
+            color: activeTab === 'menu' ? '#1c1917' : '#a8a29e', marginBottom: -2, transition: 'all 0.15s',
+            display: 'flex', alignItems: 'center', gap: 6,
+          }}
+        >
+          <CiEdit size={16} /> Menü
+        </button>
+        <button
+          onClick={() => setActiveTab('qr')}
+          style={{
+            padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+            background: 'none', border: 'none', borderBottom: activeTab === 'qr' ? '2px solid #1c1917' : '2px solid transparent',
+            color: activeTab === 'qr' ? '#1c1917' : '#a8a29e', marginBottom: -2, transition: 'all 0.15s',
+            display: 'flex', alignItems: 'center', gap: 6,
+          }}
+        >
+          <CiGrid2H size={16} /> QR Kodları
+        </button>
       </div>
 
-      {showCatForm && (
-        <form onSubmit={addCategory} style={{ ...S.card, display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div>
-            <label style={S.label}>Kategori Adı *</label>
-            <input style={S.input} value={catForm.name_tr} onChange={e => setCatForm({ name_tr: e.target.value })} required placeholder="Örn: Ana Yemekler" />
-          </div>
-          {enabledLangs.length > 0 && (
-            <p style={{ fontSize: 11, color: '#4338CA', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
-              <CiGlobe size={12} /> Çeviriler kaydettikten sonra otomatik oluşturulacak
-            </p>
+      {/* QR Tab */}
+      {activeTab === 'qr' && <QRManager restaurant={restaurant} />}
+
+      {/* Menu Tab */}
+      {activeTab === 'menu' && (
+        <>
+          {translating && (
+            <div style={{ padding: '8px 14px', background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: 8, color: '#4338CA', fontSize: 12, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <CiGlobe size={14} /> Çeviriler oluşturuluyor...
+            </div>
           )}
-          <button type="submit" disabled={saving} style={{ ...S.btn, alignSelf: 'flex-start' }}>{saving ? '...' : 'Ekle'}</button>
-        </form>
-      )}
 
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 24 }}>
-        <button onClick={() => setSelectedCat(null)} style={{ ...S.btnSm, background: !selectedCat ? '#1c1917' : '#fff', color: !selectedCat ? '#fff' : '#44403c' }}>Tümü ({items.length})</button>
-        {categories.map(c => (
-          <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            {editingCat === c.id ? (
-              <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                <input style={{ ...S.input, width: 140, padding: '4px 8px', fontSize: 12 }} value={editCatForm.name_tr} onChange={e => setEditCatForm({ name_tr: e.target.value })} />
-                <button onClick={() => updateCategory(c.id)} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11 }}><CiCircleCheck size={14} /></button>
-                <button onClick={() => setEditingCat(null)} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11 }}><CiCircleRemove size={14} /></button>
+          {msg && <div style={{ padding: '10px 14px', background: msg.includes('oluşturuldu') ? '#f0fdf4' : '#fef2f2', border: `1px solid ${msg.includes('oluşturuldu') ? '#bbf7d0' : '#fecaca'}`, borderRadius: 8, color: msg.includes('oluşturuldu') ? '#16a34a' : '#dc2626', fontSize: 13, marginBottom: 16 }} onClick={() => setMsg('')}>{msg} <span style={{ float: 'right', cursor: 'pointer' }}>✕</span></div>}
+
+          {/* Kategoriler */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1c1917' }}>Kategoriler</h3>
+            <button onClick={() => setShowCatForm(!showCatForm)} style={S.btnSm}>{showCatForm ? 'İptal' : '+ Kategori'}</button>
+          </div>
+
+          {showCatForm && (
+            <form onSubmit={addCategory} style={{ ...S.card, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div>
+                <label style={S.label}>Kategori Adı *</label>
+                <input style={S.input} value={catForm.name_tr} onChange={e => setCatForm({ name_tr: e.target.value })} required placeholder="Örn: Ana Yemekler" />
               </div>
-            ) : (
-              <>
-                <button onClick={() => setSelectedCat(c.id)} style={{ ...S.btnSm, background: selectedCat === c.id ? '#1c1917' : '#fff', color: selectedCat === c.id ? '#fff' : '#44403c' }}>
-                  {c.name_tr} ({items.filter(i => i.category_id === c.id).length})
-                  <TranslationBadges translations={c.translations} />
-                </button>
-                <button onClick={() => { setEditingCat(c.id); setEditCatForm({ name_tr: c.name_tr }); }} style={{ background: 'none', border: 'none', color: '#a8a29e', cursor: 'pointer', fontSize: 12, padding: '0 2px' }} title="Düzenle"><CiEdit size={14} /></button>
-                <button onClick={() => deleteCategory(c.id)} style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: 14, padding: '0 2px' }}>×</button>
-              </>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* ===== ÜRÜNLER ===== */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1c1917' }}>Ürünler</h3>
-        {selectedCat && <button onClick={() => { setShowItemForm(!showItemForm); setEditingItem(null); setItemForm(emptyItemForm); }} style={S.btnSm}>{showItemForm ? 'İptal' : '+ Ürün Ekle'}</button>}
-      </div>
-
-      {!selectedCat && <p style={{ fontSize: 13, color: '#a8a29e', marginBottom: 16 }}>Ürün eklemek için bir kategori seçin.</p>}
-
-      {showItemForm && selectedCat && (
-        <form onSubmit={addOrUpdateItem} style={{ ...S.card, display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div>
-            <label style={S.label}>Ürün Adı *</label>
-            <input style={S.input} value={itemForm.name_tr} onChange={e => setItemForm({ ...itemForm, name_tr: e.target.value })} required placeholder="Örn: Mercimek Çorbası" />
-          </div>
-          <div>
-            <label style={S.label}>Açıklama</label>
-            <div style={{ position: 'relative' }}>
-              <input style={S.input} value={itemForm.description_tr} onChange={e => setItemForm({ ...itemForm, description_tr: e.target.value })} placeholder="Kısa bir açıklama yazın veya AI ile oluşturun" />
-              {hasAI && (
-                <button
-                  type="button"
-                  onClick={generateAIDescription}
-                  disabled={generatingAI || !itemForm.name_tr}
-                  style={{
-                    position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)',
-                    padding: '5px 10px', fontSize: 11, fontWeight: 600, borderRadius: 6, cursor: 'pointer',
-                    border: 'none', background: generatingAI ? '#E9D5FF' : '#9333EA', color: '#fff',
-                    display: 'flex', alignItems: 'center', gap: 4, transition: 'all 0.15s',
-                    opacity: !itemForm.name_tr ? 0.5 : 1,
-                  }}
-                  title="AI ile açıklama oluştur"
-                >
-                  <CiPen size={12} /> {generatingAI ? 'Yazılıyor...' : 'AI Yaz'}
-                </button>
+              {enabledLangs.length > 0 && (
+                <p style={{ fontSize: 11, color: '#4338CA', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <CiGlobe size={12} /> Çeviriler kaydettikten sonra otomatik oluşturulacak
+                </p>
               )}
-            </div>
-          </div>
-          {enabledLangs.length > 0 && (
-            <p style={{ fontSize: 11, color: '#4338CA', margin: '-4px 0 0 0', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <CiGlobe size={12} /> Çeviriler kaydettikten sonra otomatik oluşturulacak
-            </p>
+              <button type="submit" disabled={saving} style={{ ...S.btn, alignSelf: 'flex-start' }}>{saving ? '...' : 'Ekle'}</button>
+            </form>
           )}
-          <div style={S.grid3}>
-            <div><label style={S.label}>Fiyat (₺) *</label><input type="number" step="0.01" style={S.input} value={itemForm.price} onChange={e => setItemForm({ ...itemForm, price: e.target.value })} required /></div>
-            <div><label style={S.label}>Kalori (kcal)</label><input type="number" style={S.input} value={itemForm.calories} onChange={e => setItemForm({ ...itemForm, calories: e.target.value })} placeholder="Örn: 450" /></div>
-            <div>
-              <label style={S.label}>Görsel</label>
-              <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) handleImageUpload(e.target.files[0]); }} />
-              {itemForm.image_url ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <img src={itemForm.image_url} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover' }} />
-                  <button type="button" onClick={() => setItemForm({ ...itemForm, image_url: '' })} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11, color: '#dc2626' }}>Kaldır</button>
-                </div>
-              ) : (
-                <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} style={{ ...S.btnSm, width: '100%' }}>
-                  {uploading ? 'Yükleniyor...' : <><CiCamera size={14} /> Görsel Seç</>}
-                </button>
-              )}
-            </div>
-          </div>
-          <div>
-            <label style={S.label}>Alerjenler</label>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {ALLERGEN_OPTIONS.map(a => (
-                <button key={a.value} type="button" onClick={() => toggleAllergen(a.value)} style={{
-                  padding: '6px 12px', fontSize: 12, borderRadius: 20, cursor: 'pointer', transition: 'all 0.15s',
-                  border: itemForm.allergens.includes(a.value) ? '2px solid #16a34a' : '1px solid #d6d3d1',
-                  background: itemForm.allergens.includes(a.value) ? '#dcfce7' : '#fff',
-                  color: itemForm.allergens.includes(a.value) ? '#16a34a' : '#44403c',
-                  fontWeight: itemForm.allergens.includes(a.value) ? 700 : 400,
-                }}>
-                  {a.icon} {a.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#44403c' }}>
-              <input type="checkbox" checked={itemForm.is_vegetarian} onChange={e => setItemForm({ ...itemForm, is_vegetarian: e.target.checked })} />
-              <CiApple size={14} /> Vejetaryen
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#44403c' }}>
-              <input type="checkbox" checked={itemForm.is_new} onChange={e => setItemForm({ ...itemForm, is_new: e.target.checked })} />
-              <CiStar size={14} /> Yeni Ürün
-            </label>
-          </div>
-          <button type="submit" disabled={saving} style={{ ...S.btn, alignSelf: 'flex-start' }}>{saving ? '...' : editingItem ? 'Güncelle' : 'Ekle'}</button>
-        </form>
-      )}
 
-      {/* ===== ÜRÜN LİSTESİ ===== */}
-      {filteredItems.map(item => {
-        const allergenIconList = (item.allergens || []).map(a => ALLERGEN_OPTIONS.find(o => o.value === a)?.icon).filter(Boolean);
-        const isTranslating = translating === item.id;
-        return (
-          <div key={item.id} style={{ ...S.card, opacity: item.is_available ? 1 : 0.45, position: 'relative' }}>
-            {isTranslating && (
-              <div style={{ position: 'absolute', top: 8, right: 8, fontSize: 10, color: '#4338CA', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <CiGlobe size={12} /> Çevriliyor...
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 24 }}>
+            <button onClick={() => setSelectedCat(null)} style={{ ...S.btnSm, background: !selectedCat ? '#1c1917' : '#fff', color: !selectedCat ? '#fff' : '#44403c' }}>Tümü ({items.length})</button>
+            {categories.map(c => (
+              <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                {editingCat === c.id ? (
+                  <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                    <input style={{ ...S.input, width: 140, padding: '4px 8px', fontSize: 12 }} value={editCatForm.name_tr} onChange={e => setEditCatForm({ name_tr: e.target.value })} />
+                    <button onClick={() => updateCategory(c.id)} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11 }}><CiCircleCheck size={14} /></button>
+                    <button onClick={() => setEditingCat(null)} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11 }}><CiCircleRemove size={14} /></button>
+                  </div>
+                ) : (
+                  <>
+                    <button onClick={() => setSelectedCat(c.id)} style={{ ...S.btnSm, background: selectedCat === c.id ? '#1c1917' : '#fff', color: selectedCat === c.id ? '#fff' : '#44403c' }}>
+                      {c.name_tr} ({items.filter(i => i.category_id === c.id).length})
+                      <TranslationBadges translations={c.translations} />
+                    </button>
+                    <button onClick={() => { setEditingCat(c.id); setEditCatForm({ name_tr: c.name_tr }); }} style={{ background: 'none', border: 'none', color: '#a8a29e', cursor: 'pointer', fontSize: 12, padding: '0 2px' }} title="Düzenle"><CiEdit size={14} /></button>
+                    <button onClick={() => deleteCategory(c.id)} style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: 14, padding: '0 2px' }}>×</button>
+                  </>
+                )}
               </div>
-            )}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 15, fontWeight: 600, color: '#1c1917' }}>{item.name_tr}</span>
-                  <TranslationBadges translations={item.translations} />
-                  {item.is_vegetarian && <span style={{ ...S.badge, background: '#dcfce7', color: '#16a34a' }}><CiApple size={12} /></span>}
-                  {item.is_new && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309' }}><CiStar size={12} /> Yeni</span>}
-                  {item.is_popular && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309' }}><CiStar size={12} /></span>}
-                </div>
-                {item.description_tr && <div style={{ fontSize: 13, color: '#78716c', marginTop: 2 }}>{item.description_tr}</div>}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: '#1c1917' }}>₺{Number(item.price).toFixed(2)}</span>
-                  {item.calories && <span style={{ fontSize: 11, color: '#a8a29e', display: 'inline-flex', alignItems: 'center', gap: 2 }}><CiTempHigh size={12} /> {item.calories} kcal</span>}
-                  {allergenIconList.length > 0 && <span style={{ fontSize: 12, display: 'inline-flex', gap: 2, alignItems: 'center' }} title={(item.allergens || []).join(', ')}>{allergenIconList.map((icon, idx) => <span key={idx}>{icon}</span>)}</span>}
-                </div>
-              </div>
-              {item.image_url && <img src={item.image_url} alt="" style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover', marginLeft: 12 }} />}
-            </div>
-            <div style={{ display: 'flex', gap: 6, marginTop: 10, borderTop: '1px solid #f5f5f4', paddingTop: 10 }}>
-              <button onClick={() => toggleItemAvailable(item.id, item.is_available)} style={{ ...S.btnSm, color: item.is_available ? '#16a34a' : '#dc2626' }}>{item.is_available ? 'Aktif' : 'Pasif'}</button>
-              <button onClick={() => startEdit(item)} style={S.btnSm}>Düzenle</button>
-              <button onClick={() => deleteItem(item.id)} style={S.btnDanger}>Sil</button>
-              {!selectedCat && <span style={{ fontSize: 11, color: '#a8a29e', alignSelf: 'center', marginLeft: 'auto' }}>{catName(item.category_id)}</span>}
-            </div>
+            ))}
           </div>
-        );
-      })}
-      {filteredItems.length === 0 && <div style={{ textAlign: 'center', color: '#a8a29e', padding: 40, fontSize: 14 }}>{selectedCat ? 'Bu kategoride henüz ürün yok.' : 'Henüz ürün eklenmedi.'}</div>}
+
+          {/* Ürünler */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1c1917' }}>Ürünler</h3>
+            {selectedCat && <button onClick={() => { setShowItemForm(!showItemForm); setEditingItem(null); setItemForm(emptyItemForm); }} style={S.btnSm}>{showItemForm ? 'İptal' : '+ Ürün Ekle'}</button>}
+          </div>
+
+          {!selectedCat && <p style={{ fontSize: 13, color: '#a8a29e', marginBottom: 16 }}>Ürün eklemek için bir kategori seçin.</p>}
+
+          {showItemForm && selectedCat && (
+            <form onSubmit={addOrUpdateItem} style={{ ...S.card, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div>
+                <label style={S.label}>Ürün Adı *</label>
+                <input style={S.input} value={itemForm.name_tr} onChange={e => setItemForm({ ...itemForm, name_tr: e.target.value })} required placeholder="Örn: Mercimek Çorbası" />
+              </div>
+              <div>
+                <label style={S.label}>Açıklama</label>
+                <div style={{ position: 'relative' }}>
+                  <input style={S.input} value={itemForm.description_tr} onChange={e => setItemForm({ ...itemForm, description_tr: e.target.value })} placeholder="Kısa bir açıklama yazın veya AI ile oluşturun" />
+                  {hasAI && (
+                    <button
+                      type="button"
+                      onClick={generateAIDescription}
+                      disabled={generatingAI || !itemForm.name_tr}
+                      style={{
+                        position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)',
+                        padding: '5px 10px', fontSize: 11, fontWeight: 600, borderRadius: 6, cursor: 'pointer',
+                        border: 'none', background: generatingAI ? '#E9D5FF' : '#9333EA', color: '#fff',
+                        display: 'flex', alignItems: 'center', gap: 4, transition: 'all 0.15s',
+                        opacity: !itemForm.name_tr ? 0.5 : 1,
+                      }}
+                      title="AI ile açıklama oluştur"
+                    >
+                      <CiPen size={12} /> {generatingAI ? 'Yazılıyor...' : 'AI Yaz'}
+                    </button>
+                  )}
+                </div>
+              </div>
+              {enabledLangs.length > 0 && (
+                <p style={{ fontSize: 11, color: '#4338CA', margin: '-4px 0 0 0', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <CiGlobe size={12} /> Çeviriler kaydettikten sonra otomatik oluşturulacak
+                </p>
+              )}
+              <div style={S.grid3}>
+                <div><label style={S.label}>Fiyat (₺) *</label><input type="number" step="0.01" style={S.input} value={itemForm.price} onChange={e => setItemForm({ ...itemForm, price: e.target.value })} required /></div>
+                <div><label style={S.label}>Kalori (kcal)</label><input type="number" style={S.input} value={itemForm.calories} onChange={e => setItemForm({ ...itemForm, calories: e.target.value })} placeholder="Örn: 450" /></div>
+                <div>
+                  <label style={S.label}>Görsel</label>
+                  <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) handleImageUpload(e.target.files[0]); }} />
+                  {itemForm.image_url ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <img src={itemForm.image_url} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover' }} />
+                      <button type="button" onClick={() => setItemForm({ ...itemForm, image_url: '' })} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11, color: '#dc2626' }}>Kaldır</button>
+                    </div>
+                  ) : (
+                    <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} style={{ ...S.btnSm, width: '100%' }}>
+                      {uploading ? 'Yükleniyor...' : <><CiCamera size={14} /> Görsel Seç</>}
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div>
+                <label style={S.label}>Alerjenler</label>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {ALLERGEN_OPTIONS.map(a => (
+                    <button key={a.value} type="button" onClick={() => toggleAllergen(a.value)} style={{
+                      padding: '6px 12px', fontSize: 12, borderRadius: 20, cursor: 'pointer', transition: 'all 0.15s',
+                      border: itemForm.allergens.includes(a.value) ? '2px solid #16a34a' : '1px solid #d6d3d1',
+                      background: itemForm.allergens.includes(a.value) ? '#dcfce7' : '#fff',
+                      color: itemForm.allergens.includes(a.value) ? '#16a34a' : '#44403c',
+                      fontWeight: itemForm.allergens.includes(a.value) ? 700 : 400,
+                    }}>
+                      {a.icon} {a.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#44403c' }}>
+                  <input type="checkbox" checked={itemForm.is_vegetarian} onChange={e => setItemForm({ ...itemForm, is_vegetarian: e.target.checked })} />
+                  <CiApple size={14} /> Vejetaryen
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#44403c' }}>
+                  <input type="checkbox" checked={itemForm.is_new} onChange={e => setItemForm({ ...itemForm, is_new: e.target.checked })} />
+                  <CiStar size={14} /> Yeni Ürün
+                </label>
+              </div>
+              <button type="submit" disabled={saving} style={{ ...S.btn, alignSelf: 'flex-start' }}>{saving ? '...' : editingItem ? 'Güncelle' : 'Ekle'}</button>
+            </form>
+          )}
+
+          {/* Ürün Listesi */}
+          {filteredItems.map(item => {
+            const allergenIconList = (item.allergens || []).map(a => ALLERGEN_OPTIONS.find(o => o.value === a)?.icon).filter(Boolean);
+            const isTranslating = translating === item.id;
+            return (
+              <div key={item.id} style={{ ...S.card, opacity: item.is_available ? 1 : 0.45, position: 'relative' }}>
+                {isTranslating && (
+                  <div style={{ position: 'absolute', top: 8, right: 8, fontSize: 10, color: '#4338CA', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <CiGlobe size={12} /> Çevriliyor...
+                  </div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 15, fontWeight: 600, color: '#1c1917' }}>{item.name_tr}</span>
+                      <TranslationBadges translations={item.translations} />
+                      {item.is_vegetarian && <span style={{ ...S.badge, background: '#dcfce7', color: '#16a34a' }}><CiApple size={12} /></span>}
+                      {item.is_new && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309' }}><CiStar size={12} /> Yeni</span>}
+                      {item.is_popular && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309' }}><CiStar size={12} /></span>}
+                    </div>
+                    {item.description_tr && <div style={{ fontSize: 13, color: '#78716c', marginTop: 2 }}>{item.description_tr}</div>}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: '#1c1917' }}>₺{Number(item.price).toFixed(2)}</span>
+                      {item.calories && <span style={{ fontSize: 11, color: '#a8a29e', display: 'inline-flex', alignItems: 'center', gap: 2 }}><CiTempHigh size={12} /> {item.calories} kcal</span>}
+                      {allergenIconList.length > 0 && <span style={{ fontSize: 12, display: 'inline-flex', gap: 2, alignItems: 'center' }} title={(item.allergens || []).join(', ')}>{allergenIconList.map((icon, idx) => <span key={idx}>{icon}</span>)}</span>}
+                    </div>
+                  </div>
+                  {item.image_url && <img src={item.image_url} alt="" style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover', marginLeft: 12 }} />}
+                </div>
+                <div style={{ display: 'flex', gap: 6, marginTop: 10, borderTop: '1px solid #f5f5f4', paddingTop: 10 }}>
+                  <button onClick={() => toggleItemAvailable(item.id, item.is_available)} style={{ ...S.btnSm, color: item.is_available ? '#16a34a' : '#dc2626' }}>{item.is_available ? 'Aktif' : 'Pasif'}</button>
+                  <button onClick={() => startEdit(item)} style={S.btnSm}>Düzenle</button>
+                  <button onClick={() => deleteItem(item.id)} style={S.btnDanger}>Sil</button>
+                  {!selectedCat && <span style={{ fontSize: 11, color: '#a8a29e', alignSelf: 'center', marginLeft: 'auto' }}>{catName(item.category_id)}</span>}
+                </div>
+              </div>
+            );
+          })}
+          {filteredItems.length === 0 && <div style={{ textAlign: 'center', color: '#a8a29e', padding: 40, fontSize: 14 }}>{selectedCat ? 'Bu kategoride henüz ürün yok.' : 'Henüz ürün eklenmedi.'}</div>}
+        </>
+      )}
     </div>
   );
 }
