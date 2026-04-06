@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
-import { CiWheat, CiDroplet, CiCircleAlert, CiApple, CiLemon, CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiStar, CiTempHigh, CiWavePulse1, CiGlobe, CiPen, CiGrid2H } from 'react-icons/ci';
+import { CiWheat, CiDroplet, CiCircleAlert, CiApple, CiLemon, CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiStar, CiTempHigh, CiWavePulse1, CiGlobe, CiPen, CiGrid2H, CiUser, CiImageOn, CiTrash } from 'react-icons/ci';
 import QRManager from '../components/QRManager';
 
 type Translations = {
@@ -19,7 +19,12 @@ type MenuItem = {
   calories: number | null; allergens: string[] | null; is_vegetarian: boolean; is_new: boolean;
   translations: Translations;
 };
-type Restaurant = { id: string; name: string; slug: string; enabled_languages: string[]; current_plan: string | null; logo_url: string | null; };
+type Restaurant = {
+  id: string; name: string; slug: string; enabled_languages: string[]; current_plan: string | null;
+  logo_url: string | null; cover_url: string | null; cover_image_url: string | null;
+  address: string | null; phone: string | null; tagline: string | null;
+  description_tr: string | null; theme_color: string | null;
+};
 
 const ALLERGEN_OPTIONS: { value: string; label: string; icon: React.ReactNode }[] = [
   { value: 'gluten', label: 'Gluten', icon: <CiWheat size={14} /> },
@@ -61,6 +66,214 @@ async function triggerTranslation(table: string, recordId: string, languages: st
   }
 }
 
+/* ------------------------------------------------------------------ */
+/*  Profile Tab Component                                              */
+/* ------------------------------------------------------------------ */
+
+function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate: (r: Restaurant) => void }) {
+  const [form, setForm] = useState({
+    name: restaurant.name,
+    address: restaurant.address || '',
+    phone: restaurant.phone || '',
+    tagline: restaurant.tagline || '',
+    description_tr: restaurant.description_tr || '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const logoRef = useRef<HTMLInputElement>(null);
+  const coverRef = useRef<HTMLInputElement>(null);
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    const { error } = await supabase.from('restaurants').update({
+      name: form.name,
+      address: form.address || null,
+      phone: form.phone || null,
+      tagline: form.tagline || null,
+      description_tr: form.description_tr || null,
+    }).eq('id', restaurant.id);
+
+    if (error) {
+      setMsg('Hata: ' + error.message);
+    } else {
+      setMsg('Bilgiler kaydedildi');
+      onUpdate({ ...restaurant, ...form, address: form.address || null, phone: form.phone || null, tagline: form.tagline || null, description_tr: form.description_tr || null });
+    }
+    setSaving(false);
+    setTimeout(() => setMsg(''), 3000);
+  }
+
+  async function uploadImage(file: File, type: 'logo' | 'cover') {
+    const setUploading = type === 'logo' ? setUploadingLogo : setUploadingCover;
+    setUploading(true);
+
+    const ext = file.name.split('.').pop();
+    const fileName = `${restaurant.slug}/${type}-${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('menu-images').upload(fileName, file, { upsert: true });
+
+    if (error) {
+      setMsg('Yükleme hatasi: ' + error.message);
+      setUploading(false);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage.from('menu-images').getPublicUrl(fileName);
+    const field = type === 'logo' ? 'logo_url' : 'cover_url';
+
+    await supabase.from('restaurants').update({ [field]: urlData.publicUrl }).eq('id', restaurant.id);
+    onUpdate({ ...restaurant, [field]: urlData.publicUrl });
+    setMsg(type === 'logo' ? 'Logo guncellendi' : 'Kapak gorseli guncellendi');
+    setUploading(false);
+    setTimeout(() => setMsg(''), 3000);
+  }
+
+  async function removeImage(type: 'logo' | 'cover') {
+    const field = type === 'logo' ? 'logo_url' : 'cover_url';
+    await supabase.from('restaurants').update({ [field]: null }).eq('id', restaurant.id);
+    onUpdate({ ...restaurant, [field]: null });
+    setMsg(type === 'logo' ? 'Logo kaldirildi' : 'Kapak gorseli kaldirildi');
+    setTimeout(() => setMsg(''), 3000);
+  }
+
+  const coverImage = restaurant.cover_image_url || restaurant.cover_url;
+
+  return (
+    <div>
+      {msg && (
+        <div
+          style={{
+            padding: '10px 14px',
+            background: msg.includes('Hata') ? '#fef2f2' : '#f0fdf4',
+            border: `1px solid ${msg.includes('Hata') ? '#fecaca' : '#bbf7d0'}`,
+            borderRadius: 8,
+            color: msg.includes('Hata') ? '#dc2626' : '#16a34a',
+            fontSize: 13,
+            marginBottom: 16,
+            cursor: 'pointer',
+          }}
+          onClick={() => setMsg('')}
+        >
+          {msg} <span style={{ float: 'right' }}>✕</span>
+        </div>
+      )}
+
+      {/* Images Section */}
+      <div style={S.card}>
+        <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1c1917', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <CiImageOn size={16} /> Gorseller
+        </h4>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+          {/* Logo */}
+          <div>
+            <label style={{ ...S.label, marginBottom: 10 }}>Logo</label>
+            <input ref={logoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadImage(e.target.files[0], 'logo'); }} />
+            {restaurant.logo_url ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                <img src={restaurant.logo_url} alt="Logo" style={{ width: 80, height: 80, borderRadius: 12, objectFit: 'cover', border: '1px solid #e7e5e4' }} />
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button type="button" onClick={() => logoRef.current?.click()} disabled={uploadingLogo} style={{ ...S.btnSm, fontSize: 11, padding: '4px 10px' }}>
+                    {uploadingLogo ? '...' : 'Degistir'}
+                  </button>
+                  <button type="button" onClick={() => removeImage('logo')} style={{ ...S.btnDanger, fontSize: 11, padding: '4px 10px' }}>
+                    <CiTrash size={12} />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button type="button" onClick={() => logoRef.current?.click()} disabled={uploadingLogo} style={{ ...S.btnSm, width: '100%', padding: '20px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: '#a8a29e' }}>
+                <CiCamera size={24} />
+                <span style={{ fontSize: 12 }}>{uploadingLogo ? 'Yukleniyor...' : 'Logo Yukle'}</span>
+              </button>
+            )}
+          </div>
+
+          {/* Cover */}
+          <div>
+            <label style={{ ...S.label, marginBottom: 10 }}>Kapak Gorseli</label>
+            <input ref={coverRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadImage(e.target.files[0], 'cover'); }} />
+            {coverImage ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                <img src={coverImage} alt="Cover" style={{ width: '100%', height: 80, borderRadius: 8, objectFit: 'cover', border: '1px solid #e7e5e4' }} />
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button type="button" onClick={() => coverRef.current?.click()} disabled={uploadingCover} style={{ ...S.btnSm, fontSize: 11, padding: '4px 10px' }}>
+                    {uploadingCover ? '...' : 'Degistir'}
+                  </button>
+                  <button type="button" onClick={() => removeImage('cover')} style={{ ...S.btnDanger, fontSize: 11, padding: '4px 10px' }}>
+                    <CiTrash size={12} />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button type="button" onClick={() => coverRef.current?.click()} disabled={uploadingCover} style={{ ...S.btnSm, width: '100%', padding: '20px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: '#a8a29e' }}>
+                <CiCamera size={24} />
+                <span style={{ fontSize: 12 }}>{uploadingCover ? 'Yukleniyor...' : 'Kapak Yukle'}</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Info Form */}
+      <form onSubmit={handleSave} style={{ ...S.card, display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1c1917', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <CiUser size={16} /> Isletme Bilgileri
+        </h4>
+
+        <div>
+          <label style={S.label}>Restoran Adi *</label>
+          <input style={S.input} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
+        </div>
+
+        <div>
+          <label style={S.label}>Slogan / Tagline</label>
+          <input style={S.input} value={form.tagline} onChange={e => setForm({ ...form, tagline: e.target.value })} placeholder="Ornegin: 1985'ten beri lezzet duragi" />
+        </div>
+
+        <div>
+          <label style={S.label}>Aciklama</label>
+          <textarea
+            style={{ ...S.input, minHeight: 80, resize: 'vertical' }}
+            value={form.description_tr}
+            onChange={e => setForm({ ...form, description_tr: e.target.value })}
+            placeholder="Isletmenizi kisa bir cumleyle tanitin"
+          />
+        </div>
+
+        <div style={S.grid2}>
+          <div>
+            <label style={S.label}>Adres</label>
+            <input style={S.input} value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} placeholder="Sokak, mahalle, ilce / sehir" />
+          </div>
+          <div>
+            <label style={S.label}>Telefon</label>
+            <input style={S.input} value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="0212 123 4567" />
+          </div>
+        </div>
+
+        {/* Menu Preview Link */}
+        <div style={{ padding: '10px 14px', background: '#f5f5f4', borderRadius: 8, fontSize: 13, color: '#78716c' }}>
+          Menu linkiniz:{' '}
+          <a href={`/menu/${restaurant.slug}`} target="_blank" rel="noopener noreferrer" style={{ color: '#A8B977', fontWeight: 600 }}>
+            tabbled.com/menu/{restaurant.slug}
+          </a>
+        </div>
+
+        <button type="submit" disabled={saving} style={{ ...S.btn, alignSelf: 'flex-start' }}>
+          {saving ? 'Kaydediliyor...' : 'Kaydet'}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Main Component                                                     */
+/* ------------------------------------------------------------------ */
+
 export default function RestaurantDashboard() {
   const { user } = useAuth();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
@@ -79,7 +292,7 @@ export default function RestaurantDashboard() {
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [editCatForm, setEditCatForm] = useState({ name_tr: '' });
   const [uploading, setUploading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'menu' | 'qr'>('menu');
+  const [activeTab, setActiveTab] = useState<'menu' | 'qr' | 'profile'>('menu');
   const fileRef = useRef<HTMLInputElement>(null);
 
   const enabledLangs = (restaurant?.enabled_languages ?? []).filter(l => l !== 'tr');
@@ -334,7 +547,23 @@ export default function RestaurantDashboard() {
         >
           <CiGrid2H size={16} /> QR Kodları
         </button>
+        <button
+          onClick={() => setActiveTab('profile')}
+          style={{
+            padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+            background: 'none', border: 'none', borderBottom: activeTab === 'profile' ? '2px solid #1c1917' : '2px solid transparent',
+            color: activeTab === 'profile' ? '#1c1917' : '#a8a29e', marginBottom: -2, transition: 'all 0.15s',
+            display: 'flex', alignItems: 'center', gap: 6,
+          }}
+        >
+          <CiUser size={16} /> Profil
+        </button>
       </div>
+
+      {/* Profile Tab */}
+      {activeTab === 'profile' && (
+        <ProfileTab restaurant={restaurant} onUpdate={(r) => setRestaurant(r)} />
+      )}
 
       {/* QR Tab */}
       {activeTab === 'qr' && <QRManager restaurant={restaurant} />}
