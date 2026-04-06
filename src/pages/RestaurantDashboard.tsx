@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
-import { CiWheat, CiDroplet, CiCircleAlert, CiApple, CiLemon, CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiStar, CiTempHigh, CiWavePulse1, CiGlobe, CiPen, CiGrid2H, CiUser, CiImageOn, CiTrash } from 'react-icons/ci';
+import { CiWheat, CiDroplet, CiCircleAlert, CiApple, CiLemon, CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiStar, CiTempHigh, CiWavePulse1, CiGlobe, CiPen, CiGrid2H, CiUser, CiImageOn, CiTrash, CiLink } from 'react-icons/ci';
 import QRManager from '../components/QRManager';
 
 type Translations = {
@@ -24,6 +24,8 @@ type Restaurant = {
   logo_url: string | null; cover_url: string | null; cover_image_url: string | null;
   address: string | null; phone: string | null; tagline: string | null;
   description_tr: string | null; theme_color: string | null;
+  social_instagram: string | null; social_facebook: string | null;
+  social_x: string | null; social_tiktok: string | null; social_website: string | null;
 };
 
 const ALLERGEN_OPTIONS: { value: string; label: string; icon: React.ReactNode }[] = [
@@ -77,6 +79,11 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
     phone: restaurant.phone || '',
     tagline: restaurant.tagline || '',
     description_tr: restaurant.description_tr || '',
+    social_instagram: restaurant.social_instagram || '',
+    social_facebook: restaurant.social_facebook || '',
+    social_x: restaurant.social_x || '',
+    social_tiktok: restaurant.social_tiktok || '',
+    social_website: restaurant.social_website || '',
   });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
@@ -94,13 +101,30 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
       phone: form.phone || null,
       tagline: form.tagline || null,
       description_tr: form.description_tr || null,
+      social_instagram: form.social_instagram || null,
+      social_facebook: form.social_facebook || null,
+      social_x: form.social_x || null,
+      social_tiktok: form.social_tiktok || null,
+      social_website: form.social_website || null,
     }).eq('id', restaurant.id);
 
     if (error) {
       setMsg('Hata: ' + error.message);
     } else {
       setMsg('Bilgiler kaydedildi');
-      onUpdate({ ...restaurant, ...form, address: form.address || null, phone: form.phone || null, tagline: form.tagline || null, description_tr: form.description_tr || null });
+      onUpdate({
+        ...restaurant,
+        name: form.name,
+        address: form.address || null,
+        phone: form.phone || null,
+        tagline: form.tagline || null,
+        description_tr: form.description_tr || null,
+        social_instagram: form.social_instagram || null,
+        social_facebook: form.social_facebook || null,
+        social_x: form.social_x || null,
+        social_tiktok: form.social_tiktok || null,
+        social_website: form.social_website || null,
+      });
     }
     setSaving(false);
     setTimeout(() => setMsg(''), 3000);
@@ -109,20 +133,12 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
   async function uploadImage(file: File, type: 'logo' | 'cover') {
     const setUploading = type === 'logo' ? setUploadingLogo : setUploadingCover;
     setUploading(true);
-
     const ext = file.name.split('.').pop();
     const fileName = `${restaurant.slug}/${type}-${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from('menu-images').upload(fileName, file, { upsert: true });
-
-    if (error) {
-      setMsg('Yükleme hatasi: ' + error.message);
-      setUploading(false);
-      return;
-    }
-
+    if (error) { setMsg('Yukleme hatasi: ' + error.message); setUploading(false); return; }
     const { data: urlData } = supabase.storage.from('menu-images').getPublicUrl(fileName);
     const field = type === 'logo' ? 'logo_url' : 'cover_url';
-
     await supabase.from('restaurants').update({ [field]: urlData.publicUrl }).eq('id', restaurant.id);
     onUpdate({ ...restaurant, [field]: urlData.publicUrl });
     setMsg(type === 'logo' ? 'Logo guncellendi' : 'Kapak gorseli guncellendi');
@@ -143,19 +159,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
   return (
     <div>
       {msg && (
-        <div
-          style={{
-            padding: '10px 14px',
-            background: msg.includes('Hata') ? '#fef2f2' : '#f0fdf4',
-            border: `1px solid ${msg.includes('Hata') ? '#fecaca' : '#bbf7d0'}`,
-            borderRadius: 8,
-            color: msg.includes('Hata') ? '#dc2626' : '#16a34a',
-            fontSize: 13,
-            marginBottom: 16,
-            cursor: 'pointer',
-          }}
-          onClick={() => setMsg('')}
-        >
+        <div style={{ padding: '10px 14px', background: msg.includes('Hata') ? '#fef2f2' : '#f0fdf4', border: `1px solid ${msg.includes('Hata') ? '#fecaca' : '#bbf7d0'}`, borderRadius: 8, color: msg.includes('Hata') ? '#dc2626' : '#16a34a', fontSize: 13, marginBottom: 16, cursor: 'pointer' }} onClick={() => setMsg('')}>
           {msg} <span style={{ float: 'right' }}>✕</span>
         </div>
       )}
@@ -165,9 +169,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
         <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1c1917', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
           <CiImageOn size={16} /> Gorseller
         </h4>
-
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-          {/* Logo */}
           <div>
             <label style={{ ...S.label, marginBottom: 10 }}>Logo</label>
             <input ref={logoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadImage(e.target.files[0], 'logo'); }} />
@@ -175,12 +177,8 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
                 <img src={restaurant.logo_url} alt="Logo" style={{ width: 80, height: 80, borderRadius: 12, objectFit: 'cover', border: '1px solid #e7e5e4' }} />
                 <div style={{ display: 'flex', gap: 6 }}>
-                  <button type="button" onClick={() => logoRef.current?.click()} disabled={uploadingLogo} style={{ ...S.btnSm, fontSize: 11, padding: '4px 10px' }}>
-                    {uploadingLogo ? '...' : 'Degistir'}
-                  </button>
-                  <button type="button" onClick={() => removeImage('logo')} style={{ ...S.btnDanger, fontSize: 11, padding: '4px 10px' }}>
-                    <CiTrash size={12} />
-                  </button>
+                  <button type="button" onClick={() => logoRef.current?.click()} disabled={uploadingLogo} style={{ ...S.btnSm, fontSize: 11, padding: '4px 10px' }}>{uploadingLogo ? '...' : 'Degistir'}</button>
+                  <button type="button" onClick={() => removeImage('logo')} style={{ ...S.btnDanger, fontSize: 11, padding: '4px 10px' }}><CiTrash size={12} /></button>
                 </div>
               </div>
             ) : (
@@ -190,8 +188,6 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
               </button>
             )}
           </div>
-
-          {/* Cover */}
           <div>
             <label style={{ ...S.label, marginBottom: 10 }}>Kapak Gorseli</label>
             <input ref={coverRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadImage(e.target.files[0], 'cover'); }} />
@@ -199,12 +195,8 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
                 <img src={coverImage} alt="Cover" style={{ width: '100%', height: 80, borderRadius: 8, objectFit: 'cover', border: '1px solid #e7e5e4' }} />
                 <div style={{ display: 'flex', gap: 6 }}>
-                  <button type="button" onClick={() => coverRef.current?.click()} disabled={uploadingCover} style={{ ...S.btnSm, fontSize: 11, padding: '4px 10px' }}>
-                    {uploadingCover ? '...' : 'Degistir'}
-                  </button>
-                  <button type="button" onClick={() => removeImage('cover')} style={{ ...S.btnDanger, fontSize: 11, padding: '4px 10px' }}>
-                    <CiTrash size={12} />
-                  </button>
+                  <button type="button" onClick={() => coverRef.current?.click()} disabled={uploadingCover} style={{ ...S.btnSm, fontSize: 11, padding: '4px 10px' }}>{uploadingCover ? '...' : 'Degistir'}</button>
+                  <button type="button" onClick={() => removeImage('cover')} style={{ ...S.btnDanger, fontSize: 11, padding: '4px 10px' }}><CiTrash size={12} /></button>
                 </div>
               </div>
             ) : (
@@ -222,27 +214,18 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
         <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1c1917', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
           <CiUser size={16} /> Isletme Bilgileri
         </h4>
-
         <div>
           <label style={S.label}>Restoran Adi *</label>
           <input style={S.input} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
         </div>
-
         <div>
           <label style={S.label}>Slogan / Tagline</label>
           <input style={S.input} value={form.tagline} onChange={e => setForm({ ...form, tagline: e.target.value })} placeholder="Ornegin: 1985'ten beri lezzet duragi" />
         </div>
-
         <div>
           <label style={S.label}>Aciklama</label>
-          <textarea
-            style={{ ...S.input, minHeight: 80, resize: 'vertical' }}
-            value={form.description_tr}
-            onChange={e => setForm({ ...form, description_tr: e.target.value })}
-            placeholder="Isletmenizi kisa bir cumleyle tanitin"
-          />
+          <textarea style={{ ...S.input, minHeight: 80, resize: 'vertical' }} value={form.description_tr} onChange={e => setForm({ ...form, description_tr: e.target.value })} placeholder="Isletmenizi kisa bir cumleyle tanitin" />
         </div>
-
         <div style={S.grid2}>
           <div>
             <label style={S.label}>Adres</label>
@@ -252,6 +235,35 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
             <label style={S.label}>Telefon</label>
             <input style={S.input} value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="0212 123 4567" />
           </div>
+        </div>
+
+        {/* Social Media */}
+        <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1c1917', marginTop: 8, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <CiLink size={16} /> Sosyal Medya
+        </h4>
+        <div style={S.grid2}>
+          <div>
+            <label style={S.label}>Instagram</label>
+            <input style={S.input} value={form.social_instagram} onChange={e => setForm({ ...form, social_instagram: e.target.value })} placeholder="https://instagram.com/restoraniniz" />
+          </div>
+          <div>
+            <label style={S.label}>Facebook</label>
+            <input style={S.input} value={form.social_facebook} onChange={e => setForm({ ...form, social_facebook: e.target.value })} placeholder="https://facebook.com/restoraniniz" />
+          </div>
+        </div>
+        <div style={S.grid2}>
+          <div>
+            <label style={S.label}>X (Twitter)</label>
+            <input style={S.input} value={form.social_x} onChange={e => setForm({ ...form, social_x: e.target.value })} placeholder="https://x.com/restoraniniz" />
+          </div>
+          <div>
+            <label style={S.label}>TikTok</label>
+            <input style={S.input} value={form.social_tiktok} onChange={e => setForm({ ...form, social_tiktok: e.target.value })} placeholder="https://tiktok.com/@restoraniniz" />
+          </div>
+        </div>
+        <div>
+          <label style={S.label}>Web Sitesi</label>
+          <input style={S.input} value={form.social_website} onChange={e => setForm({ ...form, social_website: e.target.value })} placeholder="https://restoraniniz.com" />
         </div>
 
         {/* Menu Preview Link */}
@@ -525,50 +537,20 @@ export default function RestaurantDashboard() {
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '2px solid #e7e5e4' }}>
-        <button
-          onClick={() => setActiveTab('menu')}
-          style={{
-            padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
-            background: 'none', border: 'none', borderBottom: activeTab === 'menu' ? '2px solid #1c1917' : '2px solid transparent',
-            color: activeTab === 'menu' ? '#1c1917' : '#a8a29e', marginBottom: -2, transition: 'all 0.15s',
-            display: 'flex', alignItems: 'center', gap: 6,
-          }}
-        >
+        <button onClick={() => setActiveTab('menu')} style={{ padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', background: 'none', border: 'none', borderBottom: activeTab === 'menu' ? '2px solid #1c1917' : '2px solid transparent', color: activeTab === 'menu' ? '#1c1917' : '#a8a29e', marginBottom: -2, transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 6 }}>
           <CiEdit size={16} /> Menü
         </button>
-        <button
-          onClick={() => setActiveTab('qr')}
-          style={{
-            padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
-            background: 'none', border: 'none', borderBottom: activeTab === 'qr' ? '2px solid #1c1917' : '2px solid transparent',
-            color: activeTab === 'qr' ? '#1c1917' : '#a8a29e', marginBottom: -2, transition: 'all 0.15s',
-            display: 'flex', alignItems: 'center', gap: 6,
-          }}
-        >
+        <button onClick={() => setActiveTab('qr')} style={{ padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', background: 'none', border: 'none', borderBottom: activeTab === 'qr' ? '2px solid #1c1917' : '2px solid transparent', color: activeTab === 'qr' ? '#1c1917' : '#a8a29e', marginBottom: -2, transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 6 }}>
           <CiGrid2H size={16} /> QR Kodları
         </button>
-        <button
-          onClick={() => setActiveTab('profile')}
-          style={{
-            padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
-            background: 'none', border: 'none', borderBottom: activeTab === 'profile' ? '2px solid #1c1917' : '2px solid transparent',
-            color: activeTab === 'profile' ? '#1c1917' : '#a8a29e', marginBottom: -2, transition: 'all 0.15s',
-            display: 'flex', alignItems: 'center', gap: 6,
-          }}
-        >
+        <button onClick={() => setActiveTab('profile')} style={{ padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', background: 'none', border: 'none', borderBottom: activeTab === 'profile' ? '2px solid #1c1917' : '2px solid transparent', color: activeTab === 'profile' ? '#1c1917' : '#a8a29e', marginBottom: -2, transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 6 }}>
           <CiUser size={16} /> Profil
         </button>
       </div>
 
-      {/* Profile Tab */}
-      {activeTab === 'profile' && (
-        <ProfileTab restaurant={restaurant} onUpdate={(r) => setRestaurant(r)} />
-      )}
-
-      {/* QR Tab */}
+      {activeTab === 'profile' && <ProfileTab restaurant={restaurant} onUpdate={(r) => setRestaurant(r)} />}
       {activeTab === 'qr' && <QRManager restaurant={restaurant} />}
 
-      {/* Menu Tab */}
       {activeTab === 'menu' && (
         <>
           {translating && (
@@ -579,7 +561,6 @@ export default function RestaurantDashboard() {
 
           {msg && <div style={{ padding: '10px 14px', background: msg.includes('oluşturuldu') ? '#f0fdf4' : '#fef2f2', border: `1px solid ${msg.includes('oluşturuldu') ? '#bbf7d0' : '#fecaca'}`, borderRadius: 8, color: msg.includes('oluşturuldu') ? '#16a34a' : '#dc2626', fontSize: 13, marginBottom: 16 }} onClick={() => setMsg('')}>{msg} <span style={{ float: 'right', cursor: 'pointer' }}>✕</span></div>}
 
-          {/* Kategoriler */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1c1917' }}>Kategoriler</h3>
             <button onClick={() => setShowCatForm(!showCatForm)} style={S.btnSm}>{showCatForm ? 'İptal' : '+ Kategori'}</button>
@@ -624,7 +605,6 @@ export default function RestaurantDashboard() {
             ))}
           </div>
 
-          {/* Ürünler */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1c1917' }}>Ürünler</h3>
             {selectedCat && <button onClick={() => { setShowItemForm(!showItemForm); setEditingItem(null); setItemForm(emptyItemForm); }} style={S.btnSm}>{showItemForm ? 'İptal' : '+ Ürün Ekle'}</button>}
@@ -643,19 +623,7 @@ export default function RestaurantDashboard() {
                 <div style={{ position: 'relative' }}>
                   <input style={S.input} value={itemForm.description_tr} onChange={e => setItemForm({ ...itemForm, description_tr: e.target.value })} placeholder="Kısa bir açıklama yazın veya AI ile oluşturun" />
                   {hasAI && (
-                    <button
-                      type="button"
-                      onClick={generateAIDescription}
-                      disabled={generatingAI || !itemForm.name_tr}
-                      style={{
-                        position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)',
-                        padding: '5px 10px', fontSize: 11, fontWeight: 600, borderRadius: 6, cursor: 'pointer',
-                        border: 'none', background: generatingAI ? '#E9D5FF' : '#9333EA', color: '#fff',
-                        display: 'flex', alignItems: 'center', gap: 4, transition: 'all 0.15s',
-                        opacity: !itemForm.name_tr ? 0.5 : 1,
-                      }}
-                      title="AI ile açıklama oluştur"
-                    >
+                    <button type="button" onClick={generateAIDescription} disabled={generatingAI || !itemForm.name_tr} style={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)', padding: '5px 10px', fontSize: 11, fontWeight: 600, borderRadius: 6, cursor: 'pointer', border: 'none', background: generatingAI ? '#E9D5FF' : '#9333EA', color: '#fff', display: 'flex', alignItems: 'center', gap: 4, transition: 'all 0.15s', opacity: !itemForm.name_tr ? 0.5 : 1 }} title="AI ile açıklama oluştur">
                       <CiPen size={12} /> {generatingAI ? 'Yazılıyor...' : 'AI Yaz'}
                     </button>
                   )}
@@ -688,13 +656,7 @@ export default function RestaurantDashboard() {
                 <label style={S.label}>Alerjenler</label>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {ALLERGEN_OPTIONS.map(a => (
-                    <button key={a.value} type="button" onClick={() => toggleAllergen(a.value)} style={{
-                      padding: '6px 12px', fontSize: 12, borderRadius: 20, cursor: 'pointer', transition: 'all 0.15s',
-                      border: itemForm.allergens.includes(a.value) ? '2px solid #16a34a' : '1px solid #d6d3d1',
-                      background: itemForm.allergens.includes(a.value) ? '#dcfce7' : '#fff',
-                      color: itemForm.allergens.includes(a.value) ? '#16a34a' : '#44403c',
-                      fontWeight: itemForm.allergens.includes(a.value) ? 700 : 400,
-                    }}>
+                    <button key={a.value} type="button" onClick={() => toggleAllergen(a.value)} style={{ padding: '6px 12px', fontSize: 12, borderRadius: 20, cursor: 'pointer', transition: 'all 0.15s', border: itemForm.allergens.includes(a.value) ? '2px solid #16a34a' : '1px solid #d6d3d1', background: itemForm.allergens.includes(a.value) ? '#dcfce7' : '#fff', color: itemForm.allergens.includes(a.value) ? '#16a34a' : '#44403c', fontWeight: itemForm.allergens.includes(a.value) ? 700 : 400 }}>
                       {a.icon} {a.label}
                     </button>
                   ))}
@@ -714,7 +676,6 @@ export default function RestaurantDashboard() {
             </form>
           )}
 
-          {/* Ürün Listesi */}
           {filteredItems.map(item => {
             const allergenIconList = (item.allergens || []).map(a => ALLERGEN_OPTIONS.find(o => o.value === a)?.icon).filter(Boolean);
             const isTranslating = translating === item.id;
