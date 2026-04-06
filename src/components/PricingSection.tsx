@@ -126,7 +126,7 @@ const PricingSection = () => {
                 variant={p.buttonVariant}
                 className={`w-full rounded-xl ${p.popular ? "bg-card text-grapefruit hover:bg-card/90 font-semibold" : ""}`}
                 size="lg"
-                onClick={() => window.open("https://wa.me/905xxxxxxxxx?text=Merhaba, Tabbled " + p.name + " planı hakkında bilgi almak istiyorum.", "_blank")}
+                onClick={() => window.open("https://wa.me/905325119484?text=Merhaba, Tabbled " + p.name + " planı hakkında bilgi almak istiyorum.", "_blank")}
               >
                 Bilgi Al
               </Button>

@@ -3,7 +3,7 @@ import TabbledLogo from "@/components/TabbledLogo";
 const footerLinks = [
   { label: "Özellikler", href: "#ozellikler" },
   { label: "Fiyatlar", href: "#fiyatlar" },
-  { label: "Demo Menü", href: "/menu/cafe-istanbul" },
+  { label: "Demo Menü", href: "/menu/abc-restaurant" },
   { label: "Gizlilik Politikası", href: "/privacy" },
   { label: "İletişim", href: "mailto:info@tabbled.com" },
 ];
