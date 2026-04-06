@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
-import { CiWheat, CiDroplet, CiCircleAlert, CiApple, CiLemon, CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiStar, CiTempHigh, CiWavePulse1 } from 'react-icons/ci';
+import { CiWheat, CiDroplet, CiCircleAlert, CiApple, CiLemon, CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiStar, CiTempHigh, CiWavePulse1, CiGlobe } from 'react-icons/ci';
 
 type Translations = {
   [lang: string]: {
@@ -18,7 +18,7 @@ type MenuItem = {
   calories: number | null; allergens: string[] | null; is_vegetarian: boolean; is_new: boolean;
   translations: Translations;
 };
-type Restaurant = { id: string; name: string; slug: string; enabled_languages: string[]; };
+type Restaurant = { id: string; name: string; slug: string; enabled_languages: string[]; current_plan: string | null; };
 
 const ALLERGEN_OPTIONS: { value: string; label: string; icon: React.ReactNode }[] = [
   { value: 'gluten', label: 'Gluten', icon: <CiWheat size={14} /> },
@@ -29,6 +29,8 @@ const ALLERGEN_OPTIONS: { value: string; label: string; icon: React.ReactNode }[
   { value: 'soy', label: 'Soya', icon: <CiLemon size={14} /> },
   { value: 'spicy', label: 'Acı', icon: <CiTempHigh size={14} /> },
 ];
+
+const SUPABASE_URL = 'https://qmnrawqvkwehufebbkxp.supabase.co';
 
 const S: Record<string, React.CSSProperties> = {
   wrap: { maxWidth: 900, margin: '0 auto', padding: '32px 24px' },
@@ -45,6 +47,20 @@ const S: Record<string, React.CSSProperties> = {
 
 const emptyItemForm = { name_tr: '', description_tr: '', price: '', image_url: '', calories: '', allergens: [] as string[], is_vegetarian: false, is_new: false };
 
+// --- Translate helper ---
+async function triggerTranslation(table: string, recordId: string, languages: string[]) {
+  if (languages.length === 0) return;
+  try {
+    await fetch(`${SUPABASE_URL}/functions/v1/translate-menu`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ table, record_id: recordId, languages }),
+    });
+  } catch (err) {
+    console.error('Translation error:', err);
+  }
+}
+
 export default function RestaurantDashboard() {
   const { user } = useAuth();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
@@ -56,12 +72,15 @@ export default function RestaurantDashboard() {
   const [catForm, setCatForm] = useState({ name_tr: '' });
   const [itemForm, setItemForm] = useState(emptyItemForm);
   const [saving, setSaving] = useState(false);
+  const [translating, setTranslating] = useState<string | null>(null);
   const [msg, setMsg] = useState('');
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [editCatForm, setEditCatForm] = useState({ name_tr: '' });
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const enabledLangs = (restaurant?.enabled_languages ?? []).filter(l => l !== 'tr');
 
   useEffect(() => {
     if (user) {
@@ -89,23 +108,36 @@ export default function RestaurantDashboard() {
     e.preventDefault();
     if (!restaurant) return;
     setSaving(true);
-    const { error } = await supabase.from('menu_categories').insert({
+    const { data: newCat, error } = await supabase.from('menu_categories').insert({
       restaurant_id: restaurant.id,
       name_tr: catForm.name_tr,
       sort_order: categories.length,
       translations: {},
-    });
-    if (error) setMsg(error.message);
-    else { setCatForm({ name_tr: '' }); setShowCatForm(false); loadCategories(restaurant.id); }
+    }).select().single();
+    if (error) { setMsg(error.message); }
+    else {
+      setCatForm({ name_tr: '' }); setShowCatForm(false);
+      loadCategories(restaurant.id);
+      if (newCat && enabledLangs.length > 0) {
+        setTranslating(newCat.id);
+        await triggerTranslation('menu_categories', newCat.id, enabledLangs);
+        setTranslating(null);
+        loadCategories(restaurant.id);
+      }
+    }
     setSaving(false);
   }
   async function updateCategory(id: string) {
     if (!restaurant) return;
-    await supabase.from('menu_categories').update({
-      name_tr: editCatForm.name_tr,
-    }).eq('id', id);
+    await supabase.from('menu_categories').update({ name_tr: editCatForm.name_tr }).eq('id', id);
     setEditingCat(null);
     loadCategories(restaurant.id);
+    if (enabledLangs.length > 0) {
+      setTranslating(id);
+      await triggerTranslation('menu_categories', id, enabledLangs);
+      setTranslating(null);
+      loadCategories(restaurant.id);
+    }
   }
   async function deleteCategory(id: string) {
     if (!restaurant || !confirm('Bu kategori ve tüm ürünleri silinecek. Emin misiniz?')) return;
@@ -145,14 +177,27 @@ export default function RestaurantDashboard() {
       is_new: itemForm.is_new,
       sort_order: editingItem ? undefined : items.filter(i => i.category_id === selectedCat).length,
     };
+
+    let savedId = editingItem;
+
     if (editingItem) {
       const { sort_order, ...updatePayload } = payload;
       await supabase.from('menu_items').update(updatePayload).eq('id', editingItem);
     } else {
-      await supabase.from('menu_items').insert({ ...payload, translations: {} });
+      const { data: newItem } = await supabase.from('menu_items').insert({ ...payload, translations: {} }).select().single();
+      if (newItem) savedId = newItem.id;
     }
+
     setItemForm(emptyItemForm); setShowItemForm(false); setEditingItem(null);
     loadItems(restaurant.id);
+
+    if (savedId && enabledLangs.length > 0) {
+      setTranslating(savedId);
+      await triggerTranslation('menu_items', savedId, enabledLangs);
+      setTranslating(null);
+      loadItems(restaurant.id);
+    }
+
     setSaving(false);
   }
   async function deleteItem(id: string) {
@@ -189,6 +234,19 @@ export default function RestaurantDashboard() {
     }));
   }
 
+  function TranslationBadges({ translations }: { translations: Translations }) {
+    if (!translations || Object.keys(translations).length === 0) return null;
+    return (
+      <span style={{ display: 'inline-flex', gap: 3, marginLeft: 6 }}>
+        {Object.keys(translations).map(lang => (
+          <span key={lang} style={{ ...S.badge, background: '#EEF2FF', color: '#4338CA', fontSize: 9 }}>
+            {lang.toUpperCase()}
+          </span>
+        ))}
+      </span>
+    );
+  }
+
   if (!restaurant) return (
     <div style={{ maxWidth: 600, margin: '0 auto', padding: '60px 24px', textAlign: 'center' }}>
       <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1c1917', marginBottom: 8 }}>Restoran Atanmadı</h2>
@@ -202,7 +260,20 @@ export default function RestaurantDashboard() {
   return (
     <div style={S.wrap}>
       <h2 style={{ fontSize: 22, fontWeight: 700, color: '#1c1917', marginBottom: 4 }}>{restaurant.name}</h2>
-      <p style={{ fontSize: 13, color: '#a8a29e', marginBottom: 24 }}>Menü Yönetimi</p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
+        <p style={{ fontSize: 13, color: '#a8a29e', margin: 0 }}>Menü Yönetimi</p>
+        {enabledLangs.length > 0 && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#4338CA', background: '#EEF2FF', padding: '2px 8px', borderRadius: 12 }}>
+            <CiGlobe size={12} /> Otomatik çeviri: {enabledLangs.map(l => l.toUpperCase()).join(', ')}
+          </span>
+        )}
+      </div>
+
+      {translating && (
+        <div style={{ padding: '8px 14px', background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: 8, color: '#4338CA', fontSize: 12, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <CiGlobe size={14} /> Çeviriler oluşturuluyor...
+        </div>
+      )}
 
       {msg && <div style={{ padding: '10px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, color: '#dc2626', fontSize: 13, marginBottom: 16 }} onClick={() => setMsg('')}>{msg} <span style={{ float: 'right', cursor: 'pointer' }}>✕</span></div>}
 
@@ -218,7 +289,11 @@ export default function RestaurantDashboard() {
             <label style={S.label}>Kategori Adı *</label>
             <input style={S.input} value={catForm.name_tr} onChange={e => setCatForm({ name_tr: e.target.value })} required placeholder="Örn: Ana Yemekler" />
           </div>
-          <p style={{ fontSize: 11, color: '#a8a29e', margin: 0 }}>Çeviriler otomatik oluşturulacaktır.</p>
+          {enabledLangs.length > 0 && (
+            <p style={{ fontSize: 11, color: '#4338CA', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <CiGlobe size={12} /> Çeviriler kaydettikten sonra otomatik oluşturulacak
+            </p>
+          )}
           <button type="submit" disabled={saving} style={{ ...S.btn, alignSelf: 'flex-start' }}>{saving ? '...' : 'Ekle'}</button>
         </form>
       )}
@@ -235,7 +310,10 @@ export default function RestaurantDashboard() {
               </div>
             ) : (
               <>
-                <button onClick={() => setSelectedCat(c.id)} style={{ ...S.btnSm, background: selectedCat === c.id ? '#1c1917' : '#fff', color: selectedCat === c.id ? '#fff' : '#44403c' }}>{c.name_tr} ({items.filter(i => i.category_id === c.id).length})</button>
+                <button onClick={() => setSelectedCat(c.id)} style={{ ...S.btnSm, background: selectedCat === c.id ? '#1c1917' : '#fff', color: selectedCat === c.id ? '#fff' : '#44403c' }}>
+                  {c.name_tr} ({items.filter(i => i.category_id === c.id).length})
+                  <TranslationBadges translations={c.translations} />
+                </button>
                 <button onClick={() => { setEditingCat(c.id); setEditCatForm({ name_tr: c.name_tr }); }} style={{ background: 'none', border: 'none', color: '#a8a29e', cursor: 'pointer', fontSize: 12, padding: '0 2px' }} title="Düzenle"><CiEdit size={14} /></button>
                 <button onClick={() => deleteCategory(c.id)} style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: 14, padding: '0 2px' }}>×</button>
               </>
@@ -254,7 +332,6 @@ export default function RestaurantDashboard() {
 
       {showItemForm && selectedCat && (
         <form onSubmit={addOrUpdateItem} style={{ ...S.card, display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {/* İsim + Açıklama */}
           <div>
             <label style={S.label}>Ürün Adı *</label>
             <input style={S.input} value={itemForm.name_tr} onChange={e => setItemForm({ ...itemForm, name_tr: e.target.value })} required placeholder="Örn: Mercimek Çorbası" />
@@ -263,8 +340,11 @@ export default function RestaurantDashboard() {
             <label style={S.label}>Açıklama</label>
             <input style={S.input} value={itemForm.description_tr} onChange={e => setItemForm({ ...itemForm, description_tr: e.target.value })} placeholder="Kısa bir açıklama yazın" />
           </div>
-          <p style={{ fontSize: 11, color: '#a8a29e', margin: '-4px 0 0 0' }}>Çeviriler otomatik oluşturulacaktır.</p>
-          {/* Fiyat + Kalori + Görsel */}
+          {enabledLangs.length > 0 && (
+            <p style={{ fontSize: 11, color: '#4338CA', margin: '-4px 0 0 0', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <CiGlobe size={12} /> Çeviriler kaydettikten sonra otomatik oluşturulacak
+            </p>
+          )}
           <div style={S.grid3}>
             <div><label style={S.label}>Fiyat (₺) *</label><input type="number" step="0.01" style={S.input} value={itemForm.price} onChange={e => setItemForm({ ...itemForm, price: e.target.value })} required /></div>
             <div><label style={S.label}>Kalori (kcal)</label><input type="number" style={S.input} value={itemForm.calories} onChange={e => setItemForm({ ...itemForm, calories: e.target.value })} placeholder="Örn: 450" /></div>
@@ -283,7 +363,6 @@ export default function RestaurantDashboard() {
               )}
             </div>
           </div>
-          {/* Alerjenler */}
           <div>
             <label style={S.label}>Alerjenler</label>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -300,7 +379,6 @@ export default function RestaurantDashboard() {
               ))}
             </div>
           </div>
-          {/* Toggle'lar */}
           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#44403c' }}>
               <input type="checkbox" checked={itemForm.is_vegetarian} onChange={e => setItemForm({ ...itemForm, is_vegetarian: e.target.checked })} />
@@ -318,12 +396,19 @@ export default function RestaurantDashboard() {
       {/* ===== ÜRÜN LİSTESİ ===== */}
       {filteredItems.map(item => {
         const allergenIconList = (item.allergens || []).map(a => ALLERGEN_OPTIONS.find(o => o.value === a)?.icon).filter(Boolean);
+        const isTranslating = translating === item.id;
         return (
-          <div key={item.id} style={{ ...S.card, opacity: item.is_available ? 1 : 0.45 }}>
+          <div key={item.id} style={{ ...S.card, opacity: item.is_available ? 1 : 0.45, position: 'relative' }}>
+            {isTranslating && (
+              <div style={{ position: 'absolute', top: 8, right: 8, fontSize: 10, color: '#4338CA', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <CiGlobe size={12} /> Çevriliyor...
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 15, fontWeight: 600, color: '#1c1917' }}>{item.name_tr}</span>
+                  <TranslationBadges translations={item.translations} />
                   {item.is_vegetarian && <span style={{ ...S.badge, background: '#dcfce7', color: '#16a34a' }}><CiApple size={12} /></span>}
                   {item.is_new && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309' }}><CiStar size={12} /> Yeni</span>}
                   {item.is_popular && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309' }}><CiStar size={12} /></span>}
