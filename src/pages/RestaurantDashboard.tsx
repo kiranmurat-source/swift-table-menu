@@ -3,14 +3,22 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
 import { CiWheat, CiDroplet, CiCircleAlert, CiApple, CiLemon, CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiStar, CiTempHigh, CiWavePulse1 } from 'react-icons/ci';
 
-type Category = { id: string; name_tr: string; name_en: string | null; sort_order: number; is_active: boolean; };
+type Translations = {
+  [lang: string]: {
+    name?: string;
+    description?: string;
+  };
+};
+
+type Category = { id: string; name_tr: string; name_en: string | null; sort_order: number; is_active: boolean; translations: Translations; };
 type MenuItem = {
   id: string; category_id: string; name_tr: string; name_en: string | null;
   description_tr: string | null; description_en: string | null; price: number;
   image_url: string | null; is_available: boolean; is_popular: boolean; sort_order: number;
   calories: number | null; allergens: string[] | null; is_vegetarian: boolean; is_new: boolean;
+  translations: Translations;
 };
-type Restaurant = { id: string; name: string; slug: string; };
+type Restaurant = { id: string; name: string; slug: string; enabled_languages: string[]; };
 
 const ALLERGEN_OPTIONS: { value: string; label: string; icon: React.ReactNode }[] = [
   { value: 'gluten', label: 'Gluten', icon: <CiWheat size={14} /> },
@@ -35,7 +43,7 @@ const S: Record<string, React.CSSProperties> = {
   badge: { fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 4, display: 'inline-block', marginRight: 4 },
 };
 
-const emptyItemForm = { name_tr: '', name_en: '', description_tr: '', description_en: '', price: '', image_url: '', calories: '', allergens: [] as string[], is_vegetarian: false, is_new: false };
+const emptyItemForm = { name_tr: '', description_tr: '', price: '', image_url: '', calories: '', allergens: [] as string[], is_vegetarian: false, is_new: false };
 
 export default function RestaurantDashboard() {
   const { user } = useAuth();
@@ -45,13 +53,13 @@ export default function RestaurantDashboard() {
   const [selectedCat, setSelectedCat] = useState<string | null>(null);
   const [showCatForm, setShowCatForm] = useState(false);
   const [showItemForm, setShowItemForm] = useState(false);
-  const [catForm, setCatForm] = useState({ name_tr: '', name_en: '' });
+  const [catForm, setCatForm] = useState({ name_tr: '' });
   const [itemForm, setItemForm] = useState(emptyItemForm);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [editingCat, setEditingCat] = useState<string | null>(null);
-  const [editCatForm, setEditCatForm] = useState({ name_tr: '', name_en: '' });
+  const [editCatForm, setEditCatForm] = useState({ name_tr: '' });
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -81,14 +89,21 @@ export default function RestaurantDashboard() {
     e.preventDefault();
     if (!restaurant) return;
     setSaving(true);
-    const { error } = await supabase.from('menu_categories').insert({ restaurant_id: restaurant.id, name_tr: catForm.name_tr, name_en: catForm.name_en || null, sort_order: categories.length });
+    const { error } = await supabase.from('menu_categories').insert({
+      restaurant_id: restaurant.id,
+      name_tr: catForm.name_tr,
+      sort_order: categories.length,
+      translations: {},
+    });
     if (error) setMsg(error.message);
-    else { setCatForm({ name_tr: '', name_en: '' }); setShowCatForm(false); loadCategories(restaurant.id); }
+    else { setCatForm({ name_tr: '' }); setShowCatForm(false); loadCategories(restaurant.id); }
     setSaving(false);
   }
   async function updateCategory(id: string) {
     if (!restaurant) return;
-    await supabase.from('menu_categories').update({ name_tr: editCatForm.name_tr, name_en: editCatForm.name_en || null }).eq('id', id);
+    await supabase.from('menu_categories').update({
+      name_tr: editCatForm.name_tr,
+    }).eq('id', id);
     setEditingCat(null);
     loadCategories(restaurant.id);
   }
@@ -118,20 +133,23 @@ export default function RestaurantDashboard() {
     if (!restaurant || !selectedCat) return;
     setSaving(true);
     const payload = {
-      restaurant_id: restaurant.id, category_id: selectedCat,
-      name_tr: itemForm.name_tr, name_en: itemForm.name_en || null,
-      description_tr: itemForm.description_tr || null, description_en: itemForm.description_en || null,
-      price: parseFloat(itemForm.price), image_url: itemForm.image_url || null,
+      restaurant_id: restaurant.id,
+      category_id: selectedCat,
+      name_tr: itemForm.name_tr,
+      description_tr: itemForm.description_tr || null,
+      price: parseFloat(itemForm.price),
+      image_url: itemForm.image_url || null,
       calories: itemForm.calories ? parseInt(itemForm.calories) : null,
       allergens: itemForm.allergens.length > 0 ? itemForm.allergens : null,
-      is_vegetarian: itemForm.is_vegetarian, is_new: itemForm.is_new,
+      is_vegetarian: itemForm.is_vegetarian,
+      is_new: itemForm.is_new,
       sort_order: editingItem ? undefined : items.filter(i => i.category_id === selectedCat).length,
     };
     if (editingItem) {
       const { sort_order, ...updatePayload } = payload;
       await supabase.from('menu_items').update(updatePayload).eq('id', editingItem);
     } else {
-      await supabase.from('menu_items').insert(payload);
+      await supabase.from('menu_items').insert({ ...payload, translations: {} });
     }
     setItemForm(emptyItemForm); setShowItemForm(false); setEditingItem(null);
     loadItems(restaurant.id);
@@ -150,9 +168,10 @@ export default function RestaurantDashboard() {
   function startEdit(item: MenuItem) {
     setEditingItem(item.id);
     setItemForm({
-      name_tr: item.name_tr, name_en: item.name_en || '',
-      description_tr: item.description_tr || '', description_en: item.description_en || '',
-      price: item.price.toString(), image_url: item.image_url || '',
+      name_tr: item.name_tr,
+      description_tr: item.description_tr || '',
+      price: item.price.toString(),
+      image_url: item.image_url || '',
       calories: item.calories?.toString() || '',
       allergens: item.allergens || [],
       is_vegetarian: item.is_vegetarian || false,
@@ -195,10 +214,11 @@ export default function RestaurantDashboard() {
 
       {showCatForm && (
         <form onSubmit={addCategory} style={{ ...S.card, display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <div style={S.grid2}>
-            <div><label style={S.label}>Kategori Adı (TR) *</label><input style={S.input} value={catForm.name_tr} onChange={e => setCatForm({ ...catForm, name_tr: e.target.value })} required placeholder="Örn: Ana Yemekler" /></div>
-            <div><label style={S.label}>Category Name (EN)</label><input style={S.input} value={catForm.name_en} onChange={e => setCatForm({ ...catForm, name_en: e.target.value })} placeholder="e.g. Main Courses" /></div>
+          <div>
+            <label style={S.label}>Kategori Adı *</label>
+            <input style={S.input} value={catForm.name_tr} onChange={e => setCatForm({ name_tr: e.target.value })} required placeholder="Örn: Ana Yemekler" />
           </div>
+          <p style={{ fontSize: 11, color: '#a8a29e', margin: 0 }}>Çeviriler otomatik oluşturulacaktır.</p>
           <button type="submit" disabled={saving} style={{ ...S.btn, alignSelf: 'flex-start' }}>{saving ? '...' : 'Ekle'}</button>
         </form>
       )}
@@ -209,15 +229,14 @@ export default function RestaurantDashboard() {
           <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             {editingCat === c.id ? (
               <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                <input style={{ ...S.input, width: 100, padding: '4px 8px', fontSize: 12 }} value={editCatForm.name_tr} onChange={e => setEditCatForm({ ...editCatForm, name_tr: e.target.value })} />
-                <input style={{ ...S.input, width: 80, padding: '4px 8px', fontSize: 12 }} value={editCatForm.name_en} onChange={e => setEditCatForm({ ...editCatForm, name_en: e.target.value })} placeholder="EN" />
+                <input style={{ ...S.input, width: 140, padding: '4px 8px', fontSize: 12 }} value={editCatForm.name_tr} onChange={e => setEditCatForm({ name_tr: e.target.value })} />
                 <button onClick={() => updateCategory(c.id)} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11 }}><CiCircleCheck size={14} /></button>
                 <button onClick={() => setEditingCat(null)} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11 }}><CiCircleRemove size={14} /></button>
               </div>
             ) : (
               <>
                 <button onClick={() => setSelectedCat(c.id)} style={{ ...S.btnSm, background: selectedCat === c.id ? '#1c1917' : '#fff', color: selectedCat === c.id ? '#fff' : '#44403c' }}>{c.name_tr} ({items.filter(i => i.category_id === c.id).length})</button>
-                <button onClick={() => { setEditingCat(c.id); setEditCatForm({ name_tr: c.name_tr, name_en: c.name_en || '' }); }} style={{ background: 'none', border: 'none', color: '#a8a29e', cursor: 'pointer', fontSize: 12, padding: '0 2px' }} title="Düzenle"><CiEdit size={14} /></button>
+                <button onClick={() => { setEditingCat(c.id); setEditCatForm({ name_tr: c.name_tr }); }} style={{ background: 'none', border: 'none', color: '#a8a29e', cursor: 'pointer', fontSize: 12, padding: '0 2px' }} title="Düzenle"><CiEdit size={14} /></button>
                 <button onClick={() => deleteCategory(c.id)} style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: 14, padding: '0 2px' }}>×</button>
               </>
             )}
@@ -235,16 +254,16 @@ export default function RestaurantDashboard() {
 
       {showItemForm && selectedCat && (
         <form onSubmit={addOrUpdateItem} style={{ ...S.card, display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {/* İsim */}
-          <div style={S.grid2}>
-            <div><label style={S.label}>Ürün Adı (TR) *</label><input style={S.input} value={itemForm.name_tr} onChange={e => setItemForm({ ...itemForm, name_tr: e.target.value })} required /></div>
-            <div><label style={S.label}>Product Name (EN)</label><input style={S.input} value={itemForm.name_en} onChange={e => setItemForm({ ...itemForm, name_en: e.target.value })} /></div>
+          {/* İsim + Açıklama */}
+          <div>
+            <label style={S.label}>Ürün Adı *</label>
+            <input style={S.input} value={itemForm.name_tr} onChange={e => setItemForm({ ...itemForm, name_tr: e.target.value })} required placeholder="Örn: Mercimek Çorbası" />
           </div>
-          {/* Açıklama */}
-          <div style={S.grid2}>
-            <div><label style={S.label}>Açıklama (TR)</label><input style={S.input} value={itemForm.description_tr} onChange={e => setItemForm({ ...itemForm, description_tr: e.target.value })} /></div>
-            <div><label style={S.label}>Description (EN)</label><input style={S.input} value={itemForm.description_en} onChange={e => setItemForm({ ...itemForm, description_en: e.target.value })} /></div>
+          <div>
+            <label style={S.label}>Açıklama</label>
+            <input style={S.input} value={itemForm.description_tr} onChange={e => setItemForm({ ...itemForm, description_tr: e.target.value })} placeholder="Kısa bir açıklama yazın" />
           </div>
+          <p style={{ fontSize: 11, color: '#a8a29e', margin: '-4px 0 0 0' }}>Çeviriler otomatik oluşturulacaktır.</p>
           {/* Fiyat + Kalori + Görsel */}
           <div style={S.grid3}>
             <div><label style={S.label}>Fiyat (₺) *</label><input type="number" step="0.01" style={S.input} value={itemForm.price} onChange={e => setItemForm({ ...itemForm, price: e.target.value })} required /></div>
@@ -305,7 +324,6 @@ export default function RestaurantDashboard() {
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 15, fontWeight: 600, color: '#1c1917' }}>{item.name_tr}</span>
-                  {item.name_en && <span style={{ fontSize: 12, color: '#a8a29e' }}>/ {item.name_en}</span>}
                   {item.is_vegetarian && <span style={{ ...S.badge, background: '#dcfce7', color: '#16a34a' }}><CiApple size={12} /></span>}
                   {item.is_new && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309' }}><CiStar size={12} /> Yeni</span>}
                   {item.is_popular && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309' }}><CiStar size={12} /></span>}
