@@ -27,7 +27,7 @@ const HeroSection = () => {
             </p>
 
             <div className="flex flex-wrap gap-4 mb-10">
-              <a href="/menu/cafe-istanbul">
+              <a href="/menu/abc-restaurant">
                 <Button variant="hero" size="lg" className="rounded-full px-8 text-base">
                   Demo Menüyü Gör <CiCircleChevRight className="w-4 h-4" />
                 </Button>

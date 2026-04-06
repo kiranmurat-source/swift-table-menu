@@ -7,7 +7,7 @@ const navLinks = [
   { label: "Özellikler", href: "#ozellikler" },
   { label: "Fiyatlar", href: "#fiyatlar" },
   { label: "Nasıl Çalışır", href: "#nasil-calisir" },
-  { label: "Demo", href: "/menu/cafe-istanbul" },
+  { label: "Demo", href: "/menu/abc-restaurant" },
 ];
 
 const Navbar = () => {
@@ -49,7 +49,7 @@ const Navbar = () => {
         </div>
 
         <div className="hidden md:block">
-          <a href="/menu/cafe-istanbul">
+          <a href="/menu/abc-restaurant">
             <Button variant="hero" size="lg" className="rounded-full px-6">
               Demo Gör
             </Button>
@@ -85,7 +85,7 @@ const Navbar = () => {
               {l.label}
             </a>
           ))}
-          <a href="/menu/cafe-istanbul">
+          <a href="/menu/abc-restaurant">
             <Button variant="hero" className="w-full mt-2 rounded-full">
               Demo Gör
             </Button>

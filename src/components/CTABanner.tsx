@@ -9,7 +9,7 @@ const CTABanner = () => (
       </h2>
       <p className="text-lg text-card/80 mb-8">1 Ocak 2026 itibarıyla QR menü yasal zorunluluk. Hemen başlayın.</p>
       <div className="flex flex-wrap gap-4 justify-center">
-        <a href="/menu/cafe-istanbul">
+        <a href="/menu/abc-restaurant">
           <Button variant="cta-white" size="lg" className="rounded-full px-10 text-base">
             Demo Menüyü Gör <CiCircleChevRight className="w-4 h-4" />
           </Button>
