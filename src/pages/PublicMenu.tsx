@@ -13,6 +13,7 @@ import {
   CiMapPin,
   CiPhone,
   CiGlobe,
+  CiForkAndKnife,
 } from 'react-icons/ci';
 
 /* ------------------------------------------------------------------ */
@@ -107,34 +108,50 @@ const LANG_LABELS: Record<LangCode, string> = {
 const ALLERGEN_CONFIG: Record<string, {
   icon: React.ComponentType<{ size?: number; className?: string }>;
   label: Record<LangCode, string>;
+  color: string;
+  bg: string;
 }> = {
   gluten: {
     icon: CiWheat,
     label: { tr: 'Gluten', en: 'Gluten', ar: 'غلوتين', zh: '麸质' },
+    color: '#B45309',
+    bg: '#FEF3C7',
   },
   dairy: {
     icon: CiDroplet,
     label: { tr: 'Süt', en: 'Dairy', ar: 'ألبان', zh: '乳制品' },
+    color: '#1D4ED8',
+    bg: '#DBEAFE',
   },
   egg: {
     icon: CiCircleAlert,
     label: { tr: 'Yumurta', en: 'Egg', ar: 'بيض', zh: '鸡蛋' },
+    color: '#B45309',
+    bg: '#FEF9C3',
   },
   nuts: {
     icon: CiApple,
     label: { tr: 'Kuruyemiş', en: 'Nuts', ar: 'مكسرات', zh: '坚果' },
+    color: '#9A3412',
+    bg: '#FFEDD5',
   },
   seafood: {
     icon: CiWavePulse1,
     label: { tr: 'Deniz Ürünü', en: 'Seafood', ar: 'مأكولات بحرية', zh: '海鲜' },
+    color: '#0E7490',
+    bg: '#CFFAFE',
   },
   soy: {
     icon: CiLemon,
     label: { tr: 'Soya', en: 'Soy', ar: 'صويا', zh: '大豆' },
+    color: '#4D7C0F',
+    bg: '#ECFCCB',
   },
   spicy: {
     icon: CiTempHigh,
     label: { tr: 'Acı', en: 'Spicy', ar: 'حار', zh: '辣' },
+    color: '#DC2626',
+    bg: '#FEF2F2',
   },
 };
 
@@ -255,8 +272,11 @@ export default function PublicMenu() {
   if (!restaurant) {
     return (
       <div className="min-h-screen bg-[#FAFAF7] flex flex-col items-center justify-center gap-4 px-4">
+        <div className="w-16 h-16 rounded-2xl bg-[#422B21]/10 flex items-center justify-center">
+          <CiForkAndKnife size={32} className="text-[#422B21]/40" />
+        </div>
         <p className="font-bold text-lg text-[#1A1A1A]">{UI_LABELS.notFound[lang]}</p>
-        <a href="https://tabbled.com" className="text-[#A8B977] underline text-sm">
+        <a href="https://tabbled.com" className="text-[#A8B977] font-medium text-sm hover:underline">
           tabbled.com
         </a>
       </div>
@@ -301,58 +321,60 @@ export default function PublicMenu() {
     <div className="min-h-screen bg-[#FAFAF7]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
       {/* Cover Image */}
       {coverImage && (
-        <div className="relative h-40 bg-[#422B21]">
+        <div className="relative h-44 bg-[#422B21]">
           <img
             src={coverImage}
             alt=""
             className="w-full h-full object-cover opacity-80"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#422B21] to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#422B21] via-[#422B21]/40 to-transparent" />
         </div>
       )}
 
       {/* Header */}
-      <header className={`bg-[#422B21] text-white px-4 ${coverImage ? '-mt-16 relative z-10 pt-2 pb-5' : 'py-6'}`}>
+      <header className={`bg-[#422B21] text-white px-4 ${coverImage ? '-mt-20 relative z-10 pt-4 pb-5' : 'py-6'}`}>
         <div className="max-w-[480px] mx-auto">
-          <div className="flex items-center gap-4">
+          <div className="flex items-start gap-4">
             {restaurant.logo_url ? (
               <img
                 src={restaurant.logo_url}
                 alt={restaurant.name}
-                className="w-14 h-14 rounded-xl object-cover flex-shrink-0 border-2 border-white/20"
+                className="w-16 h-16 rounded-xl object-cover flex-shrink-0 border-2 border-white/20 shadow-lg"
               />
             ) : (
-              <div className="w-14 h-14 rounded-xl bg-[#A8B977] flex items-center justify-center flex-shrink-0 border-2 border-white/20">
-                <span className="font-bold text-xl text-white">
+              <div className="w-16 h-16 rounded-xl bg-[#A8B977] flex items-center justify-center flex-shrink-0 border-2 border-white/20 shadow-lg">
+                <span className="font-bold text-2xl text-white">
                   {restaurant.name.charAt(0).toUpperCase()}
                 </span>
               </div>
             )}
-            <div className="flex-1 min-w-0">
-              <h1 className="font-bold text-xl truncate">{restaurant.name}</h1>
+            <div className="flex-1 min-w-0 pt-0.5">
+              <h1 className="font-bold text-xl leading-tight">{restaurant.name}</h1>
               {restaurant.tagline && (
-                <p className="text-white/50 text-xs mt-0.5 font-light truncate">
+                <p className="text-white/50 text-xs mt-1 font-light leading-relaxed">
                   {t(restaurant.translations, 'tagline', restaurant.tagline, lang)}
                 </p>
               )}
-              {restaurant.address && (
-                <p className="text-white/60 text-xs flex items-center gap-1 mt-1">
-                  <CiMapPin size={12} className="flex-shrink-0" />
-                  <span className="truncate">{restaurant.address}</span>
-                </p>
-              )}
-              {restaurant.phone && (
-                <a
-                  href={`tel:${restaurant.phone}`}
-                  className="text-white/60 text-xs flex items-center gap-1 mt-0.5 hover:text-white/80 transition-colors"
-                >
-                  <CiPhone size={12} className="flex-shrink-0" />
-                  {restaurant.phone}
-                </a>
-              )}
+              <div className="flex flex-col gap-0.5 mt-2">
+                {restaurant.address && (
+                  <p className="text-white/60 text-xs flex items-center gap-1.5">
+                    <CiMapPin size={13} className="flex-shrink-0 text-white/40" />
+                    <span className="truncate">{restaurant.address}</span>
+                  </p>
+                )}
+                {restaurant.phone && (
+                  <a
+                    href={`tel:${restaurant.phone}`}
+                    className="text-white/60 text-xs flex items-center gap-1.5 hover:text-white/80 transition-colors"
+                  >
+                    <CiPhone size={13} className="flex-shrink-0 text-white/40" />
+                    {restaurant.phone}
+                  </a>
+                )}
+              </div>
             </div>
             {table && (
-              <span className="bg-[#A8B977] text-white text-xs font-bold px-3 py-1.5 rounded-lg flex-shrink-0">
+              <span className="bg-[#A8B977] text-white text-xs font-bold px-3 py-1.5 rounded-lg flex-shrink-0 shadow-sm">
                 {UI_LABELS.table[lang]} {table}
               </span>
             )}
@@ -389,6 +411,7 @@ export default function PublicMenu() {
             className="flex gap-2 px-4 py-3 overflow-x-auto"
             style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
           >
+            <style>{`.sticky div div::-webkit-scrollbar { display: none; }`}</style>
             <button
               onClick={() => setActiveCategory(null)}
               className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
@@ -422,6 +445,9 @@ export default function PublicMenu() {
       <main className="max-w-[480px] mx-auto px-4 py-4 pb-20">
         {hasNoItems ? (
           <div className="text-center py-16">
+            <div className="w-14 h-14 rounded-2xl bg-[#A8B977]/10 flex items-center justify-center mx-auto mb-3">
+              <CiForkAndKnife size={28} className="text-[#A8B977]/50" />
+            </div>
             <p className="text-[#9CA3AF] text-sm">{UI_LABELS.noItems[lang]}</p>
           </div>
         ) : activeCategory ? (
@@ -445,7 +471,9 @@ export default function PublicMenu() {
                     : UI_LABELS.other[lang]}
                 </h2>
                 <div className="flex-1 h-px bg-[#E8E6E0]" />
-                <span className="text-xs text-[#9CA3AF]">{catItems.length}</span>
+                <span className="text-[11px] text-[#9CA3AF] font-medium bg-[#F3F2EE] px-2 py-0.5 rounded-full">
+                  {catItems.length}
+                </span>
               </div>
               <div className="flex flex-col gap-3">
                 {catItems.map((item) => (
@@ -481,38 +509,45 @@ function MenuItemCard({ item, lang }: { item: MenuItem; lang: LangCode }) {
   const hasAllergens = item.allergens && item.allergens.length > 0;
 
   return (
-    <div className="bg-white border border-[#E8E6E0] rounded-2xl p-3.5 flex gap-3.5 hover:shadow-sm transition-shadow">
+    <div className="bg-white border border-[#E8E6E0] rounded-2xl p-3 flex gap-3 hover:shadow-md hover:border-[#D5D3CC] transition-all duration-200">
       {/* Image */}
       {item.image_url ? (
         <img
           src={item.image_url}
           alt={name}
-          className="w-20 h-20 rounded-xl object-cover flex-shrink-0"
+          className="w-[88px] h-[88px] rounded-xl object-cover flex-shrink-0"
         />
       ) : (
-        <div className="w-20 h-20 rounded-xl flex-shrink-0 bg-gradient-to-br from-[#A8B977]/20 to-[#E4A07A]/20 flex items-center justify-center">
-          <span className="text-2xl text-[#A8B977]/40 font-bold">{name.charAt(0)}</span>
+        <div className="w-[88px] h-[88px] rounded-xl flex-shrink-0 bg-gradient-to-br from-[#A8B977]/15 to-[#E4A07A]/15 flex items-center justify-center">
+          <CiForkAndKnife size={28} className="text-[#A8B977]/30" />
         </div>
       )}
 
       {/* Content */}
-      <div className="flex-1 min-w-0 flex flex-col">
-        {/* Name */}
-        <h3 className="font-semibold text-[15px] text-[#1A1A1A] leading-tight">{name}</h3>
+      <div className="flex-1 min-w-0 flex flex-col py-0.5">
+        {/* Top: Name + Price */}
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="font-semibold text-[15px] text-[#1A1A1A] leading-snug line-clamp-2">
+            {name || <span className="text-[#9CA3AF] italic">—</span>}
+          </h3>
+          <span className="text-[15px] font-bold text-[#A8B977] flex-shrink-0 tabular-nums">
+            {Number(item.price).toFixed(2)} ₺
+          </span>
+        </div>
 
         {/* Description */}
         {description && (
-          <p className="text-[13px] text-[#9CA3AF] font-light mt-1 line-clamp-2 leading-relaxed">
+          <p className="text-[12px] text-[#6B7280] font-light mt-1 line-clamp-2 leading-relaxed">
             {description}
           </p>
         )}
 
         {/* Badges */}
         {hasBadges && (
-          <div className="flex flex-wrap items-center gap-1 mt-1.5">
+          <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
             {item.is_popular && (
-              <span className="inline-flex items-center gap-0.5 bg-[#FEF3C7] text-[#B45309] text-[10px] font-semibold px-2 py-0.5 rounded-full">
-                <CiStar size={10} /> {UI_LABELS.popular[lang]}
+              <span className="inline-flex items-center gap-1 bg-[#FEF3C7] text-[#B45309] text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                <CiStar size={11} strokeWidth={1} /> {UI_LABELS.popular[lang]}
               </span>
             )}
             {item.is_new && (
@@ -521,46 +556,47 @@ function MenuItemCard({ item, lang }: { item: MenuItem; lang: LangCode }) {
               </span>
             )}
             {item.is_vegetarian && (
-              <span className="inline-flex items-center gap-0.5 bg-[#DCFCE7] text-[#16A34A] text-[10px] font-semibold px-2 py-0.5 rounded-full">
-                <CiApple size={10} /> {UI_LABELS.vegetarian[lang]}
+              <span className="inline-flex items-center gap-1 bg-[#DCFCE7] text-[#16A34A] text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                <CiApple size={11} /> {UI_LABELS.vegetarian[lang]}
               </span>
             )}
           </div>
         )}
 
-        {/* Bottom row: Price + Calories + Allergens */}
-        <div className="flex items-center justify-between mt-auto pt-2">
-          <div className="flex items-center gap-2">
-            <span className="text-base font-bold text-[#A8B977]">
-              ₺{Number(item.price).toFixed(2)}
-            </span>
-            {item.calories && (
+        {/* Bottom row: Calories + Allergens */}
+        {(item.calories || hasAllergens) && (
+          <div className="flex items-center justify-between mt-auto pt-1.5">
+            {/* Calories */}
+            {item.calories ? (
               <span className="text-[11px] text-[#9CA3AF] font-light">
                 {item.calories} kcal
               </span>
+            ) : (
+              <span />
+            )}
+
+            {/* Allergens */}
+            {hasAllergens && (
+              <div className="flex items-center gap-1">
+                {item.allergens!.map((a) => {
+                  const config = ALLERGEN_CONFIG[a];
+                  if (!config) return null;
+                  const Icon = config.icon;
+                  return (
+                    <span
+                      key={a}
+                      className="w-5 h-5 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: config.bg }}
+                      title={config.label[lang]}
+                    >
+                      <Icon size={12} style={{ color: config.color }} />
+                    </span>
+                  );
+                })}
+              </div>
             )}
           </div>
-
-          {/* Allergens */}
-          {hasAllergens && (
-            <div className="flex items-center gap-1">
-              {item.allergens!.map((a) => {
-                const config = ALLERGEN_CONFIG[a];
-                if (!config) return null;
-                const Icon = config.icon;
-                return (
-                  <span
-                    key={a}
-                    className="w-5 h-5 rounded-full bg-[#FEF2F2] flex items-center justify-center"
-                    title={config.label[lang]}
-                  >
-                    <Icon size={12} className="text-[#DC2626]" />
-                  </span>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );
