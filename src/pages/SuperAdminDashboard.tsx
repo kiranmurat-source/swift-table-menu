@@ -37,7 +37,7 @@ export default function SuperAdminDashboard() {
   const [showUserForm, setShowUserForm] = useState(false);
   const [showSubForm, setShowSubForm] = useState(false);
   const [showFeatureForm, setShowFeatureForm] = useState(false);
-  const [form, setForm] = useState({ name: '', slug: '', address: '', phone: '' });
+  const [form, setForm] = useState({ name: '', slug: '', address: '', phone: '', full_name: '', email: '', password: '' });
   const [userForm, setUserForm] = useState({ email: '', password: '', full_name: '', restaurant_id: '' });
   const [subForm, setSubForm] = useState({ restaurant_id: '', plan_id: '', start_date: '', notes: '' });
   const [featureForm, setFeatureForm] = useState({ category: 'MENÜ', name: '', description: '' });
@@ -80,13 +80,58 @@ export default function SuperAdminDashboard() {
     setPlanFeatures(data || []);
   }
 
-  // --- Restaurant ---
+  // --- Slug helper (Turkish-aware) ---
+  function generateSlug(name: string): string {
+    const map: Record<string, string> = { 'ş':'s','Ş':'s','ç':'c','Ç':'c','ğ':'g','Ğ':'g','ı':'i','İ':'i','ö':'o','Ö':'o','ü':'u','Ü':'u' };
+    return name.split('').map(c => map[c] || c).join('')
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+  }
+
+  // --- Restaurant + User (combined) ---
   async function addRestaurant(e: React.FormEvent) {
     e.preventDefault(); setSaving(true); setMsg('');
-    const slug = form.slug || form.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
-    const { error } = await supabase.from('restaurants').insert({ name: form.name, slug, address: form.address || null, phone: form.phone || null });
-    if (error) setMsg(error.message);
-    else { setForm({ name: '', slug: '', address: '', phone: '' }); setShowForm(false); loadRestaurants(); }
+    const slug = form.slug || generateSlug(form.name);
+
+    // 1. Restoran olustur
+    const { data: restaurant, error: restError } = await supabase
+      .from('restaurants')
+      .insert({ name: form.name, slug, address: form.address || null, phone: form.phone || null })
+      .select()
+      .single();
+    if (restError || !restaurant) { setMsg(`Restoran olusturulamadi: ${restError?.message || 'bilinmeyen hata'}`); setSaving(false); return; }
+
+    // 2. Kullanici olustur (mevcut signUp yontemi)
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: form.email,
+      password: form.password,
+      options: { data: { full_name: form.full_name } },
+    });
+    if (authError) {
+      // Rollback restoran
+      await supabase.from('restaurants').delete().eq('id', restaurant.id);
+      setMsg(`Kullanici olusturulamadi: ${authError.message}`);
+      setSaving(false);
+      return;
+    }
+
+    // 3. Profile guncelle (handle_new_user trigger zaten profili olusturur)
+    const userId = authData.user?.id;
+    if (userId) {
+      await new Promise(r => setTimeout(r, 500));
+      await supabase.from('profiles').update({
+        restaurant_id: restaurant.id,
+        full_name: form.full_name || null,
+      }).eq('id', userId);
+    }
+
+    setForm({ name: '', slug: '', address: '', phone: '', full_name: '', email: '', password: '' });
+    setShowForm(false);
+    await loadRestaurants();
+    await loadUsers();
     setSaving(false);
   }
   async function toggleActive(id: string, current: boolean) {
@@ -293,17 +338,24 @@ export default function SuperAdminDashboard() {
       {tab === 'restaurants' && (<>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1c1917' }}>Restoranlar</h2>
-          <button onClick={() => setShowForm(!showForm)} style={S.btn}>{showForm ? 'Iptal' : '+ Restoran Ekle'}</button>
+          <button onClick={() => setShowForm(!showForm)} style={S.btn}>{showForm ? 'Iptal' : '+ Restoran & Kullanici Ekle'}</button>
         </div>
         {showForm && (
           <form onSubmit={addRestaurant} style={{ ...S.card, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div><label style={S.label}>Restoran Adi *</label><input style={S.input} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required placeholder="Orn: Cafe Istanbul" /></div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#78716c', textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: '1px solid #e7e5e4', paddingBottom: 6 }}>Isletme Bilgileri</div>
+            <div><label style={S.label}>Restoran Adi *</label><input style={S.input} value={form.name} onChange={e => { const name = e.target.value; setForm({ ...form, name, slug: generateSlug(name) }); }} required placeholder="Orn: Cafe Istanbul" /></div>
             <div><label style={S.label}>Slug (URL)</label><input style={S.input} value={form.slug} onChange={e => setForm({ ...form, slug: e.target.value })} placeholder="otomatik olusturulur" /></div>
             <div style={S.grid2}>
               <div><label style={S.label}>Adres</label><input style={S.input} value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} /></div>
               <div><label style={S.label}>Telefon</label><input style={S.input} value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} /></div>
             </div>
-            <button type="submit" disabled={saving} style={S.btn}>{saving ? 'Kaydediliyor...' : 'Kaydet'}</button>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#78716c', textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: '1px solid #e7e5e4', paddingBottom: 6, marginTop: 8 }}>Hesap Bilgileri</div>
+            <div><label style={S.label}>Ad Soyad *</label><input style={S.input} value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} required placeholder="Restoran sahibi adi" /></div>
+            <div style={S.grid2}>
+              <div><label style={S.label}>E-posta *</label><input type="email" style={S.input} value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required /></div>
+              <div><label style={S.label}>Sifre *</label><input type="password" style={S.input} value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required minLength={6} /></div>
+            </div>
+            <button type="submit" disabled={saving} style={S.btn}>{saving ? 'Olusturuluyor...' : 'Restoran & Kullanici Olustur'}</button>
           </form>
         )}
         {restaurants.map(r => (
