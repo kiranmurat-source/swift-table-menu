@@ -29,6 +29,8 @@ interface Restaurant {
   theme_color: string | null;
   social_instagram: string | null; social_facebook: string | null;
   social_x: string | null; social_tiktok: string | null; social_website: string | null;
+  social_whatsapp: string | null; social_google_maps: string | null;
+  working_hours: Record<string, { open: string; close: string; closed: boolean }> | null;
 }
 
 interface MenuCategory {
@@ -42,6 +44,7 @@ interface MenuItem {
   name_tr: string; description_tr: string | null; price: number;
   image_url: string | null; is_available: boolean; is_popular: boolean;
   is_new: boolean; is_vegetarian: boolean;
+  is_featured: boolean;
   allergens: string[] | null; calories: number | null;
   sort_order: number; translations: Translations;
 }
@@ -130,6 +133,12 @@ const SocialIcon = ({ type, size = 20 }: { type: string; size?: number }) => {
     case 'website': return (
       <svg viewBox="0 0 24 24" {...s}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
     );
+    case 'whatsapp': return (
+      <svg viewBox="0 0 24 24" {...s}><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    );
+    case 'google_maps': return (
+      <svg viewBox="0 0 24 24" {...s}><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+    );
     default: return null;
   }
 };
@@ -205,16 +214,25 @@ export default function PublicMenu() {
   if (loading) {
     return (
       <div
-        className="min-h-screen flex items-center justify-center"
-        style={{ backgroundColor: theme.bg, color: theme.text, fontFamily: bodyFont }}
+        className="min-h-screen flex flex-col items-center justify-center gap-6"
+        style={{ backgroundColor: '#FAFAF7', fontFamily: bodyFont }}
       >
-        <div className="flex flex-col items-center gap-3">
-          <div
-            className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin"
-            style={{ borderColor: theme.accent, borderTopColor: 'transparent' }}
-          />
-          <p className="text-sm tracking-wide" style={{ color: theme.mutedText }}>{UI.loading[lang]}</p>
+        {/* Tabbled Logo */}
+        <img
+          src="/tabbled-logo-main.png"
+          alt="Tabbled"
+          className="h-16 w-auto animate-pulse"
+        />
+        {/* Subtle loading indicator */}
+        <div className="flex items-center gap-2">
+          <div className="w-1.5 h-1.5 rounded-full bg-[#E8837C] animate-bounce" style={{ animationDelay: '0ms' }} />
+          <div className="w-1.5 h-1.5 rounded-full bg-[#E8837C] animate-bounce" style={{ animationDelay: '150ms' }} />
+          <div className="w-1.5 h-1.5 rounded-full bg-[#E8837C] animate-bounce" style={{ animationDelay: '300ms' }} />
         </div>
+        {/* Tagline */}
+        <p className="text-xs text-stone-400 tracking-widest uppercase">
+          Otel ve restoranlar için
+        </p>
       </div>
     );
   }
@@ -234,9 +252,7 @@ export default function PublicMenu() {
         </div>
         <p className="text-lg" style={{ fontFamily: headingFont, fontWeight: 700 }}>{UI.notFound[lang]}</p>
         <a href="https://tabbled.com" aria-label="Tabbled" className="hover:opacity-80 transition-opacity">
-          <span className="inline-flex items-center" style={{ background: '#111', padding: '4px 12px', borderRadius: 6 }}>
-            <img src="/tabbled-logo.png" alt="Tabbled" className="h-5 w-auto block" />
-          </span>
+          <img src="/tabbled-logo.png" alt="Tabbled" className="h-5 w-auto block" />
         </a>
       </div>
     );
@@ -249,6 +265,8 @@ export default function PublicMenu() {
     { type: 'x', url: restaurant.social_x },
     { type: 'tiktok', url: restaurant.social_tiktok },
     { type: 'website', url: restaurant.social_website },
+    { type: 'whatsapp', url: restaurant.social_whatsapp },
+    { type: 'google_maps', url: restaurant.social_google_maps },
   ].filter(s => s.url);
 
   /* ================================================================ */
@@ -522,6 +540,18 @@ export default function PublicMenu() {
                     {restaurant.phone}
                   </a>
                 )}
+                {restaurant.working_hours && (() => {
+                  const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+                  const today = dayKeys[new Date().getDay()];
+                  const todayHours = restaurant.working_hours[today];
+                  if (!todayHours) return null;
+                  return (
+                    <p className="text-xs flex items-center gap-1.5" style={{ color: todayHours.closed ? '#dc2626' : theme.mutedText }}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${todayHours.closed ? 'bg-red-500' : 'bg-green-500'}`} />
+                      {todayHours.closed ? (lang === 'tr' ? 'Bugün kapalı' : 'Closed today') : `${todayHours.open} - ${todayHours.close}`}
+                    </p>
+                  );
+                })()}
               </div>
               {socials.length > 0 && (
                 <div className="flex items-center gap-2 mt-2">
@@ -754,9 +784,7 @@ export default function PublicMenu() {
         <div className="flex items-center justify-center gap-2">
           <span className="text-[10px]" style={{ color: theme.mutedText }}>Powered by</span>
           <a href="https://tabbled.com" aria-label="Tabbled" className="hover:opacity-80 transition-opacity inline-flex">
-            <span className="inline-flex items-center" style={{ background: '#111', padding: '2px 8px', borderRadius: 4 }}>
-              <img src="/tabbled-logo.png" alt="Tabbled" className="h-4 w-auto block" />
-            </span>
+            <img src="/tabbled-logo.png" alt="Tabbled" className="h-4 w-auto block" />
           </a>
         </div>
       </footer>
@@ -980,6 +1008,69 @@ function MenuItemCard({ item, lang, theme, onSelect }: { item: MenuItem; lang: L
   const hasBadges = item.is_popular || item.is_new || item.is_vegetarian;
   const hasAllergens = item.allergens && item.allergens.length > 0;
   const headingFont = "'Playfair Display', serif";
+  const isFeatured = item.is_featured;
+
+  if (isFeatured) {
+    return (
+      <div
+        className="rounded-2xl overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer active:scale-[0.99]"
+        style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}` }}
+        onClick={() => onSelect(item)}
+      >
+        {item.image_url ? (
+          <img src={item.image_url} alt={name} className="w-full h-48 object-cover" />
+        ) : (
+          <div className="w-full h-32 flex items-center justify-center" style={{ backgroundColor: theme.badgeBg }}>
+            <CiForkAndKnife size={40} style={{ color: theme.mutedText }} />
+          </div>
+        )}
+        <div className="p-4">
+          <div className="flex items-start justify-between gap-2 mb-1">
+            <h3 className="text-lg leading-snug" style={{ fontFamily: headingFont, fontWeight: 700, color: theme.text }}>
+              {name || <span className="italic" style={{ color: theme.mutedText }}>—</span>}
+            </h3>
+            <span className="text-lg flex-shrink-0 tabular-nums" style={{ color: theme.price, fontWeight: 500 }}>
+              {Number(item.price).toFixed(2)} ₺
+            </span>
+          </div>
+          {description && (
+            <p className="text-[13px] mt-1 leading-relaxed" style={{ color: theme.mutedText, fontWeight: 300 }}>
+              {description}
+            </p>
+          )}
+          {hasBadges && (
+            <div className="flex flex-wrap items-center gap-1.5 mt-2">
+              {item.is_popular && (
+                <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, fontWeight: 600 }}>
+                  <CiStar size={11} /> {UI.popular[lang]}
+                </span>
+              )}
+              {item.is_new && (
+                <span className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, fontWeight: 600 }}>
+                  {UI.newItem[lang]}
+                </span>
+              )}
+              {item.is_vegetarian && (
+                <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, fontWeight: 600 }}>
+                  <CiApple size={11} /> {UI.vegetarian[lang]}
+                </span>
+              )}
+            </div>
+          )}
+          {(item.calories || hasAllergens) && (
+            <div className="flex items-center justify-between mt-2 pt-2" style={{ borderTop: `1px solid ${theme.divider}` }}>
+              {item.calories ? (
+                <span className="text-[11px]" style={{ color: theme.mutedText, fontWeight: 300 }}>{item.calories} kcal</span>
+              ) : <span />}
+              {hasAllergens && (
+                <AllergenBadgeList allergens={item.allergens} size={16} lang={lang === 'ar' || lang === 'zh' ? 'en' : lang} invert={theme.invertIcons} />
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

@@ -28,7 +28,7 @@ const Navbar = () => {
       style={{ backgroundColor: "rgba(250,250,247,0.85)", backdropFilter: "blur(12px)" }}
     >
       <div className="container mx-auto flex items-center justify-between h-16 px-4 lg:px-8">
-        <TabbledLogo />
+        <TabbledLogo logoType="main" sizeClass="h-10" />
 
         <div className="hidden md:flex items-center gap-8">
           {navLinks.map((l) => (
