@@ -189,10 +189,17 @@ export default function PublicMenu() {
 
   useEffect(() => {
     if (!slug) return;
+    const loadStartTime = Date.now();
     const fetchData = async () => {
       setLoading(true);
       const { data: rest } = await supabase.from('restaurants').select('*').eq('slug', slug).eq('is_active', true).single();
-      if (!rest) { setLoading(false); return; }
+      if (!rest) {
+        const elapsed = Date.now() - loadStartTime;
+        const remaining = Math.max(0, 1500 - elapsed);
+        if (remaining > 0) await new Promise((r) => setTimeout(r, remaining));
+        setLoading(false);
+        return;
+      }
       setRestaurant(rest);
       const [{ data: cats }, { data: menuItems }, { data: promoData }] = await Promise.all([
         supabase.from('menu_categories').select('*').eq('restaurant_id', rest.id).eq('is_active', true).order('sort_order'),
@@ -202,6 +209,9 @@ export default function PublicMenu() {
       setCategories(cats ?? []);
       setItems(menuItems ?? []);
       setPromos((promoData ?? []) as Promo[]);
+      const elapsed = Date.now() - loadStartTime;
+      const remaining = Math.max(0, 1500 - elapsed);
+      if (remaining > 0) await new Promise((r) => setTimeout(r, remaining));
       setLoading(false);
     };
     fetchData();
@@ -219,9 +229,9 @@ export default function PublicMenu() {
       >
         {/* Tabbled Logo */}
         <img
-          src="/tabbled-logo-main.png"
+          src="/tabbled-logo.png"
           alt="Tabbled"
-          className="h-16 w-auto animate-pulse"
+          className="w-48 h-auto animate-pulse"
         />
         {/* Subtle loading indicator */}
         <div className="flex items-center gap-2">

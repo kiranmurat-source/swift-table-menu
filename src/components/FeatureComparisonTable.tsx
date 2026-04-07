@@ -1,4 +1,4 @@
-import { CiCircleCheck, CiCircleRemove, CiCircleMinus } from "react-icons/ci";
+import { CiCircleCheck, CiCircleRemove } from "react-icons/ci";
 import { useScrollReveal } from "@/hooks/use-scroll-reveal";
 
 type FeatureValue = boolean | string;
@@ -79,11 +79,11 @@ const matrix: Category[] = [
 
 function CellValue({ value, highlight }: { value: FeatureValue; highlight?: boolean }) {
   if (value === true)
-    return <CiCircleCheck className={`w-4 h-4 mx-auto ${highlight ? "text-sage" : "text-sage"}`} />;
+    return <CiCircleCheck className="w-5 h-5 mx-auto text-emerald-600" strokeWidth={1.5} />;
   if (value === false)
-    return <CiCircleMinus className="w-4 h-4 mx-auto text-muted-foreground/30" />;
+    return <CiCircleRemove className="w-5 h-5 mx-auto text-slate-400" strokeWidth={1.5} />;
   return (
-    <span className={`text-xs font-semibold ${highlight ? "text-sage" : "text-foreground"}`}>
+    <span className={`text-xs font-semibold ${highlight ? "text-emerald-700" : "text-slate-800"}`}>
       {value}
     </span>
   );
@@ -118,14 +118,14 @@ const FeatureComparisonTable = () => {
                   <tr key={`cat-${cat.name}`}>
                     <td
                       colSpan={4}
-                      className="pt-5 pb-2 px-3 text-xs font-bold text-muted-foreground uppercase tracking-wider border-t border-border"
+                      className="pt-5 pb-2 px-3 text-xs font-extrabold text-slate-900 uppercase tracking-wider border-t border-border"
                     >
                       {cat.name}
                     </td>
                   </tr>
                   {cat.features.map((feat) => (
                     <tr key={feat.name} className="border-b border-border/50 hover:bg-cream/50 transition-colors">
-                      <td className="py-2.5 px-3 text-foreground">{feat.name}</td>
+                      <td className="py-2.5 px-3 text-slate-800 font-medium">{feat.name}</td>
                       <td className="py-2.5 px-2 text-center"><CellValue value={feat.basic} /></td>
                       <td className="py-2.5 px-2 text-center bg-grapefruit/[0.03]"><CellValue value={feat.pro} highlight /></td>
                       <td className="py-2.5 px-2 text-center"><CellValue value={feat.premium} /></td>
