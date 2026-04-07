@@ -104,28 +104,31 @@ export default function SuperAdminDashboard() {
       .single();
     if (restError || !restaurant) { setMsg(`Restoran olusturulamadi: ${restError?.message || 'bilinmeyen hata'}`); setSaving(false); return; }
 
-    // 2. Kullanici olustur (mevcut signUp yontemi)
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
-      options: { data: { full_name: form.full_name } },
-    });
-    if (authError) {
+    // 2. Kullanici olustur (Edge Function — super admin oturumu bozulmaz)
+    const { data: { session } } = await supabase.auth.getSession();
+    const response = await fetch(
+      'https://qmnrawqvkwehufebbkxp.supabase.co/functions/v1/create-user',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token ?? ''}`,
+        },
+        body: JSON.stringify({
+          email: form.email,
+          password: form.password,
+          full_name: form.full_name,
+          restaurant_id: restaurant.id,
+        }),
+      }
+    );
+    const result = await response.json();
+    if (!response.ok) {
       // Rollback restoran
       await supabase.from('restaurants').delete().eq('id', restaurant.id);
-      setMsg(`Kullanici olusturulamadi: ${authError.message}`);
+      setMsg(result.error || 'Kullanici olusturulamadi');
       setSaving(false);
       return;
-    }
-
-    // 3. Profile guncelle (handle_new_user trigger zaten profili olusturur)
-    const userId = authData.user?.id;
-    if (userId) {
-      await new Promise(r => setTimeout(r, 500));
-      await supabase.from('profiles').update({
-        restaurant_id: restaurant.id,
-        full_name: form.full_name || null,
-      }).eq('id', userId);
     }
 
     setForm({ name: '', slug: '', address: '', phone: '', full_name: '', email: '', password: '' });
