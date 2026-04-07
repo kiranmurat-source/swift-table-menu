@@ -8,6 +8,7 @@ import {
 import { AllergenBadgeList, AllergenIcon } from '../components/AllergenIcon';
 import { getTheme, type MenuTheme } from '../lib/themes';
 import { getAllergenInfo } from '../lib/allergens';
+import PromoPopup, { isPromoVisible, type Promo } from '../components/PromoPopup';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -33,6 +34,7 @@ interface Restaurant {
 interface MenuCategory {
   id: string; restaurant_id: string; name_tr: string; description_tr: string | null;
   sort_order: number; is_active: boolean; translations: Translations;
+  image_url: string | null;
 }
 
 interface MenuItem {
@@ -152,6 +154,8 @@ export default function PublicMenu() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [excludeAllergens, setExcludeAllergens] = useState<string[]>([]);
   const [preferences, setPreferences] = useState<string[]>([]);
+  const [promos, setPromos] = useState<Promo[]>([]);
+  const [activePromo, setActivePromo] = useState<Promo | null>(null);
 
   const theme = useMemo<MenuTheme>(() => getTheme(restaurant?.theme_color), [restaurant?.theme_color]);
 
@@ -181,12 +185,14 @@ export default function PublicMenu() {
       const { data: rest } = await supabase.from('restaurants').select('*').eq('slug', slug).eq('is_active', true).single();
       if (!rest) { setLoading(false); return; }
       setRestaurant(rest);
-      const [{ data: cats }, { data: menuItems }] = await Promise.all([
+      const [{ data: cats }, { data: menuItems }, { data: promoData }] = await Promise.all([
         supabase.from('menu_categories').select('*').eq('restaurant_id', rest.id).eq('is_active', true).order('sort_order'),
         supabase.from('menu_items').select('*').eq('restaurant_id', rest.id).eq('is_available', true).order('sort_order'),
+        supabase.from('restaurant_promos').select('*').eq('restaurant_id', rest.id).eq('is_active', true).order('sort_order'),
       ]);
       setCategories(cats ?? []);
       setItems(menuItems ?? []);
+      setPromos((promoData ?? []) as Promo[]);
       setLoading(false);
     };
     fetchData();
@@ -333,7 +339,11 @@ export default function PublicMenu() {
 
           {/* CTA Button */}
           <button
-            onClick={() => setShowSplash(false)}
+            onClick={() => {
+              setShowSplash(false);
+              const next = promos.find(isPromoVisible);
+              if (next) setTimeout(() => setActivePromo(next), 500);
+            }}
             className="text-base px-10 py-3.5 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
             style={{
               backgroundColor: theme.accent,
@@ -628,17 +638,27 @@ export default function PublicMenu() {
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                className="flex-shrink-0 px-4 py-1.5 rounded-full text-sm transition-all"
+                className="flex-shrink-0 inline-flex items-center gap-1.5 pr-4 rounded-full text-sm transition-all"
                 style={{
                   backgroundColor: effectiveActiveCategory === cat.id ? theme.categoryActiveBg : theme.categoryBg,
                   color: effectiveActiveCategory === cat.id ? theme.categoryActiveText : theme.mutedText,
                   fontWeight: 500,
                   scrollSnapAlign: 'start',
+                  paddingLeft: cat.image_url ? 4 : 16,
+                  paddingTop: 6,
+                  paddingBottom: 6,
                 }}
               >
-                {t(cat.translations, 'name', cat.name_tr, lang)}
+                {cat.image_url && (
+                  <img
+                    src={cat.image_url}
+                    alt=""
+                    className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+                  />
+                )}
+                <span>{t(cat.translations, 'name', cat.name_tr, lang)}</span>
                 {filterApplied && (
-                  <span className="ml-1.5 opacity-70 tabular-nums">
+                  <span className="opacity-70 tabular-nums">
                     ({categoryCountMap.get(cat.id) ?? 0})
                   </span>
                 )}
@@ -746,6 +766,16 @@ export default function PublicMenu() {
       {/* Item Detail Modal */}
       {selectedItem && (
         <ItemDetailModal item={selectedItem} lang={lang} theme={theme} onClose={() => setSelectedItem(null)} />
+      )}
+
+      {/* Promo Popup */}
+      {activePromo && (
+        <PromoPopup
+          promo={activePromo}
+          theme={theme}
+          lang={lang}
+          onClose={() => setActivePromo(null)}
+        />
       )}
 
       {/* Filter Panel */}

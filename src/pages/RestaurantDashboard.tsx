@@ -6,6 +6,7 @@ import QRManager from '../components/QRManager';
 import { ALLERGEN_LIST, getAllergenInfo } from '../lib/allergens';
 import { AllergenIcon } from '../components/AllergenIcon';
 import { THEMES } from '../lib/themes';
+import type { Promo } from '../components/PromoPopup';
 
 type Translations = {
   [lang: string]: {
@@ -14,7 +15,7 @@ type Translations = {
   };
 };
 
-type Category = { id: string; name_tr: string; name_en: string | null; sort_order: number; is_active: boolean; translations: Translations; };
+type Category = { id: string; name_tr: string; name_en: string | null; sort_order: number; is_active: boolean; translations: Translations; image_url: string | null; };
 type MenuItem = {
   id: string; category_id: string; name_tr: string; name_en: string | null;
   description_tr: string | null; description_en: string | null; price: number;
@@ -348,7 +349,9 @@ export default function RestaurantDashboard() {
   const [selectedCat, setSelectedCat] = useState<string | null>(null);
   const [showCatForm, setShowCatForm] = useState(false);
   const [showItemForm, setShowItemForm] = useState(false);
-  const [catForm, setCatForm] = useState({ name_tr: '' });
+  const [catForm, setCatForm] = useState<{ name_tr: string; image_url: string }>({ name_tr: '', image_url: '' });
+  const [uploadingCatImage, setUploadingCatImage] = useState<string | null>(null); // 'new' or category id
+  const catFileRef = useRef<HTMLInputElement>(null);
   const [itemForm, setItemForm] = useState(emptyItemForm);
   const [saving, setSaving] = useState(false);
   const [translating, setTranslating] = useState<string | null>(null);
@@ -358,7 +361,7 @@ export default function RestaurantDashboard() {
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [editCatForm, setEditCatForm] = useState({ name_tr: '' });
   const [uploading, setUploading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'menu' | 'qr' | 'profile'>('menu');
+  const [activeTab, setActiveTab] = useState<'menu' | 'qr' | 'profile' | 'promos'>('menu');
   const fileRef = useRef<HTMLInputElement>(null);
 
   const enabledLangs = (restaurant?.enabled_languages ?? []).filter(l => l !== 'tr');
@@ -428,12 +431,13 @@ export default function RestaurantDashboard() {
     const { data: newCat, error } = await supabase.from('menu_categories').insert({
       restaurant_id: restaurant.id,
       name_tr: catForm.name_tr,
+      image_url: catForm.image_url || null,
       sort_order: categories.length,
       translations: {},
     }).select().single();
     if (error) { setMsg(error.message); }
     else {
-      setCatForm({ name_tr: '' }); setShowCatForm(false);
+      setCatForm({ name_tr: '', image_url: '' }); setShowCatForm(false);
       loadCategories(restaurant.id);
       if (newCat && enabledLangs.length > 0) {
         setTranslating(newCat.id);
@@ -443,6 +447,29 @@ export default function RestaurantDashboard() {
       }
     }
     setSaving(false);
+  }
+
+  async function uploadCategoryImage(file: File, target: 'new' | string) {
+    if (!restaurant) return;
+    setUploadingCatImage(target);
+    const ext = file.name.split('.').pop();
+    const fileName = `${restaurant.slug}/categories/${target === 'new' ? Date.now() : target}-${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('menu-images').upload(fileName, file, { upsert: true });
+    if (error) { setMsg('Görsel yükleme hatası: ' + error.message); setUploadingCatImage(null); return; }
+    const { data: urlData } = supabase.storage.from('menu-images').getPublicUrl(fileName);
+    if (target === 'new') {
+      setCatForm(prev => ({ ...prev, image_url: urlData.publicUrl }));
+    } else {
+      await supabase.from('menu_categories').update({ image_url: urlData.publicUrl }).eq('id', target);
+      loadCategories(restaurant.id);
+    }
+    setUploadingCatImage(null);
+  }
+
+  async function removeCategoryImage(id: string) {
+    if (!restaurant) return;
+    await supabase.from('menu_categories').update({ image_url: null }).eq('id', id);
+    loadCategories(restaurant.id);
   }
   async function updateCategory(id: string) {
     if (!restaurant) return;
@@ -597,6 +624,9 @@ export default function RestaurantDashboard() {
         <button onClick={() => setActiveTab('qr')} style={{ padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', background: 'none', border: 'none', borderBottom: activeTab === 'qr' ? '2px solid #1c1917' : '2px solid transparent', color: activeTab === 'qr' ? '#1c1917' : '#a8a29e', marginBottom: -2, transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 6 }}>
           <CiGrid2H size={16} /> QR Kodları
         </button>
+        <button onClick={() => setActiveTab('promos')} style={{ padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', background: 'none', border: 'none', borderBottom: activeTab === 'promos' ? '2px solid #1c1917' : '2px solid transparent', color: activeTab === 'promos' ? '#1c1917' : '#a8a29e', marginBottom: -2, transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <CiStar size={16} /> Promosyonlar
+        </button>
         <button onClick={() => setActiveTab('profile')} style={{ padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', background: 'none', border: 'none', borderBottom: activeTab === 'profile' ? '2px solid #1c1917' : '2px solid transparent', color: activeTab === 'profile' ? '#1c1917' : '#a8a29e', marginBottom: -2, transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 6 }}>
           <CiUser size={16} /> Profil
         </button>
@@ -604,6 +634,7 @@ export default function RestaurantDashboard() {
 
       {activeTab === 'profile' && <ProfileTab restaurant={restaurant} onUpdate={(r) => setRestaurant(r)} />}
       {activeTab === 'qr' && <QRManager restaurant={restaurant} />}
+      {activeTab === 'promos' && <PromosTab restaurant={restaurant} />}
 
       {activeTab === 'menu' && (
         <>
@@ -624,7 +655,22 @@ export default function RestaurantDashboard() {
             <form onSubmit={addCategory} style={{ ...S.card, display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div>
                 <label style={S.label}>Kategori Adı *</label>
-                <input style={S.input} value={catForm.name_tr} onChange={e => setCatForm({ name_tr: e.target.value })} required placeholder="Örn: Ana Yemekler" />
+                <input style={S.input} value={catForm.name_tr} onChange={e => setCatForm({ ...catForm, name_tr: e.target.value })} required placeholder="Örn: Ana Yemekler" />
+              </div>
+              <div>
+                <label style={S.label}>Kategori Görseli</label>
+                <input ref={catFileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadCategoryImage(e.target.files[0], 'new'); }} />
+                {catForm.image_url ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <img src={catForm.image_url} alt="" style={{ width: 64, height: 64, borderRadius: 8, objectFit: 'cover', border: '1px solid #e7e5e4' }} />
+                    <button type="button" onClick={() => catFileRef.current?.click()} disabled={uploadingCatImage === 'new'} style={{ ...S.btnSm, fontSize: 11 }}>{uploadingCatImage === 'new' ? '...' : 'Değiştir'}</button>
+                    <button type="button" onClick={() => setCatForm({ ...catForm, image_url: '' })} style={{ ...S.btnDanger, fontSize: 11 }}><CiTrash size={12} /></button>
+                  </div>
+                ) : (
+                  <button type="button" onClick={() => catFileRef.current?.click()} disabled={uploadingCatImage === 'new'} style={{ ...S.btnSm, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <CiCamera size={14} /> {uploadingCatImage === 'new' ? 'Yükleniyor...' : 'Görsel Yükle'}
+                  </button>
+                )}
               </div>
               {enabledLangs.length > 0 && (
                 <p style={{ fontSize: 11, color: '#4338CA', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -647,10 +693,20 @@ export default function RestaurantDashboard() {
                   </div>
                 ) : (
                   <>
-                    <button onClick={() => setSelectedCat(c.id)} style={{ ...S.btnSm, background: selectedCat === c.id ? '#1c1917' : '#fff', color: selectedCat === c.id ? '#fff' : '#44403c' }}>
+                    <button onClick={() => setSelectedCat(c.id)} style={{ ...S.btnSm, background: selectedCat === c.id ? '#1c1917' : '#fff', color: selectedCat === c.id ? '#fff' : '#44403c', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      {c.image_url ? (
+                        <img src={c.image_url} alt="" style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }} />
+                      ) : null}
                       {c.name_tr} ({items.filter(i => i.category_id === c.id).length})
                       <TranslationBadges translations={c.translations} />
                     </button>
+                    <label style={{ background: 'none', border: 'none', color: '#a8a29e', cursor: 'pointer', fontSize: 12, padding: '0 2px', display: 'inline-flex', alignItems: 'center' }} title="Kategori görseli">
+                      <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploadingCatImage === c.id} onChange={e => { if (e.target.files?.[0]) uploadCategoryImage(e.target.files[0], c.id); }} />
+                      {uploadingCatImage === c.id ? <span style={{ fontSize: 10 }}>...</span> : <CiCamera size={14} />}
+                    </label>
+                    {c.image_url && (
+                      <button onClick={() => removeCategoryImage(c.id)} style={{ background: 'none', border: 'none', color: '#a8a29e', cursor: 'pointer', padding: '0 2px' }} title="Görseli kaldır"><CiTrash size={13} /></button>
+                    )}
                     <button onClick={() => { setEditingCat(c.id); setEditCatForm({ name_tr: c.name_tr }); }} style={{ background: 'none', border: 'none', color: '#a8a29e', cursor: 'pointer', fontSize: 12, padding: '0 2px' }} title="Düzenle"><CiEdit size={14} /></button>
                     <button onClick={() => deleteCategory(c.id)} style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: 14, padding: '0 2px' }}>×</button>
                   </>
@@ -796,6 +852,350 @@ export default function RestaurantDashboard() {
           {filteredItems.length === 0 && <div style={{ textAlign: 'center', color: '#a8a29e', padding: 40, fontSize: 14 }}>{selectedCat ? 'Bu kategoride henüz ürün yok.' : 'Henüz ürün eklenmedi.'}</div>}
         </>
       )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Promos Tab Component                                               */
+/* ------------------------------------------------------------------ */
+
+const DAYS_TR = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+
+type PromoFormState = {
+  id: string | null;
+  title_tr: string;
+  title_en: string;
+  description_tr: string;
+  description_en: string;
+  image_url: string;
+  cta_text_tr: string;
+  cta_text_en: string;
+  cta_url: string;
+  is_active: boolean;
+  schedule_enabled: boolean;
+  schedule_start_time: string;
+  schedule_end_time: string;
+  schedule_days: number[];
+  show_once_per_session: boolean;
+};
+
+const emptyPromoForm: PromoFormState = {
+  id: null,
+  title_tr: '',
+  title_en: '',
+  description_tr: '',
+  description_en: '',
+  image_url: '',
+  cta_text_tr: 'Detaylar',
+  cta_text_en: 'Details',
+  cta_url: '',
+  is_active: true,
+  schedule_enabled: false,
+  schedule_start_time: '00:00',
+  schedule_end_time: '23:59',
+  schedule_days: [0, 1, 2, 3, 4, 5, 6],
+  show_once_per_session: true,
+};
+
+function PromosTab({ restaurant }: { restaurant: Restaurant }) {
+  const [promos, setPromos] = useState<Promo[]>([]);
+  const [form, setForm] = useState<PromoFormState>(emptyPromoForm);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const promoFileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurant.id]);
+
+  async function load() {
+    const { data } = await supabase
+      .from('restaurant_promos')
+      .select('*')
+      .eq('restaurant_id', restaurant.id)
+      .order('sort_order');
+    setPromos((data || []) as Promo[]);
+  }
+
+  function normalizeTime(t: string): string {
+    // DB may return 'HH:MM:SS'; form expects 'HH:MM'
+    return (t || '').split(':').slice(0, 2).join(':').padStart(5, '0');
+  }
+
+  function startEdit(p: Promo) {
+    setForm({
+      id: p.id,
+      title_tr: p.title_tr || '',
+      title_en: p.title_en || '',
+      description_tr: p.description_tr || '',
+      description_en: p.description_en || '',
+      image_url: p.image_url || '',
+      cta_text_tr: p.cta_text_tr || 'Detaylar',
+      cta_text_en: p.cta_text_en || 'Details',
+      cta_url: p.cta_url || '',
+      is_active: p.is_active,
+      schedule_enabled: p.schedule_enabled,
+      schedule_start_time: normalizeTime(p.schedule_start_time),
+      schedule_end_time: normalizeTime(p.schedule_end_time),
+      schedule_days: p.schedule_days || [0, 1, 2, 3, 4, 5, 6],
+      show_once_per_session: p.show_once_per_session,
+    });
+    setShowForm(true);
+  }
+
+  function resetForm() {
+    setForm(emptyPromoForm);
+    setShowForm(false);
+  }
+
+  async function uploadImage(file: File) {
+    setUploading(true);
+    const ext = file.name.split('.').pop();
+    const fileName = `${restaurant.slug}/promos/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('menu-images').upload(fileName, file, { upsert: true });
+    if (error) { setMsg('Görsel yükleme hatası: ' + error.message); setUploading(false); return; }
+    const { data: urlData } = supabase.storage.from('menu-images').getPublicUrl(fileName);
+    setForm(prev => ({ ...prev, image_url: urlData.publicUrl }));
+    setUploading(false);
+  }
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    const payload = {
+      restaurant_id: restaurant.id,
+      title_tr: form.title_tr,
+      title_en: form.title_en || null,
+      description_tr: form.description_tr || null,
+      description_en: form.description_en || null,
+      image_url: form.image_url || null,
+      cta_text_tr: form.cta_text_tr || null,
+      cta_text_en: form.cta_text_en || null,
+      cta_url: form.cta_url || null,
+      is_active: form.is_active,
+      schedule_enabled: form.schedule_enabled,
+      schedule_start_time: form.schedule_start_time,
+      schedule_end_time: form.schedule_end_time,
+      schedule_days: form.schedule_days,
+      show_once_per_session: form.show_once_per_session,
+    };
+    if (form.id) {
+      const { error } = await supabase.from('restaurant_promos').update(payload).eq('id', form.id);
+      if (error) setMsg('Hata: ' + error.message);
+      else setMsg('Promo güncellendi');
+    } else {
+      const { error } = await supabase.from('restaurant_promos').insert({ ...payload, sort_order: promos.length });
+      if (error) setMsg('Hata: ' + error.message);
+      else setMsg('Promo eklendi');
+    }
+    setSaving(false);
+    resetForm();
+    load();
+    setTimeout(() => setMsg(''), 3000);
+  }
+
+  async function toggleActive(p: Promo) {
+    await supabase.from('restaurant_promos').update({ is_active: !p.is_active }).eq('id', p.id);
+    load();
+  }
+
+  async function remove(id: string) {
+    if (!confirm('Bu promo silinecek. Emin misiniz?')) return;
+    await supabase.from('restaurant_promos').delete().eq('id', id);
+    load();
+  }
+
+  function toggleDay(day: number) {
+    setForm(prev => ({
+      ...prev,
+      schedule_days: prev.schedule_days.includes(day)
+        ? prev.schedule_days.filter(d => d !== day)
+        : [...prev.schedule_days, day].sort(),
+    }));
+  }
+
+  return (
+    <div>
+      {msg && (
+        <div style={{ padding: '10px 14px', background: msg.includes('Hata') ? '#fef2f2' : '#f0fdf4', border: `1px solid ${msg.includes('Hata') ? '#fecaca' : '#bbf7d0'}`, borderRadius: 8, color: msg.includes('Hata') ? '#dc2626' : '#16a34a', fontSize: 13, marginBottom: 16, cursor: 'pointer' }} onClick={() => setMsg('')}>
+          {msg} <span style={{ float: 'right' }}>✕</span>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1c1917' }}>Promosyonlar</h3>
+        <button onClick={() => { if (showForm) resetForm(); else { setForm(emptyPromoForm); setShowForm(true); } }} style={S.btnSm}>
+          {showForm ? 'İptal' : '+ Yeni Promo'}
+        </button>
+      </div>
+
+      {showForm && (
+        <form onSubmit={save} style={{ ...S.card, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {/* Image */}
+          <div>
+            <label style={S.label}>Promo Görseli</label>
+            <input ref={promoFileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadImage(e.target.files[0]); }} />
+            {form.image_url ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <img src={form.image_url} alt="" style={{ width: 120, height: 72, borderRadius: 8, objectFit: 'cover', border: '1px solid #e7e5e4' }} />
+                <button type="button" onClick={() => promoFileRef.current?.click()} disabled={uploading} style={S.btnSm}>{uploading ? '...' : 'Değiştir'}</button>
+                <button type="button" onClick={() => setForm({ ...form, image_url: '' })} style={S.btnDanger}><CiTrash size={12} /></button>
+              </div>
+            ) : (
+              <button type="button" onClick={() => promoFileRef.current?.click()} disabled={uploading} style={{ ...S.btnSm, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <CiCamera size={14} /> {uploading ? 'Yükleniyor...' : 'Görsel Yükle'}
+              </button>
+            )}
+          </div>
+
+          <div style={S.grid2}>
+            <div>
+              <label style={S.label}>Başlık (TR) *</label>
+              <input style={S.input} value={form.title_tr} onChange={e => setForm({ ...form, title_tr: e.target.value })} required placeholder="Happy Hour!" />
+            </div>
+            <div>
+              <label style={S.label}>Başlık (EN)</label>
+              <input style={S.input} value={form.title_en} onChange={e => setForm({ ...form, title_en: e.target.value })} placeholder="Happy Hour!" />
+            </div>
+          </div>
+
+          <div style={S.grid2}>
+            <div>
+              <label style={S.label}>Açıklama (TR)</label>
+              <input style={S.input} value={form.description_tr} onChange={e => setForm({ ...form, description_tr: e.target.value })} placeholder="Tüm içeceklerde %30 indirim" />
+            </div>
+            <div>
+              <label style={S.label}>Açıklama (EN)</label>
+              <input style={S.input} value={form.description_en} onChange={e => setForm({ ...form, description_en: e.target.value })} placeholder="30% off all drinks" />
+            </div>
+          </div>
+
+          <div style={S.grid3}>
+            <div>
+              <label style={S.label}>CTA Metin (TR)</label>
+              <input style={S.input} value={form.cta_text_tr} onChange={e => setForm({ ...form, cta_text_tr: e.target.value })} placeholder="Detaylar" />
+            </div>
+            <div>
+              <label style={S.label}>CTA Metin (EN)</label>
+              <input style={S.input} value={form.cta_text_en} onChange={e => setForm({ ...form, cta_text_en: e.target.value })} placeholder="Details" />
+            </div>
+            <div>
+              <label style={S.label}>CTA Link</label>
+              <input style={S.input} value={form.cta_url} onChange={e => setForm({ ...form, cta_url: e.target.value })} placeholder="https://..." />
+            </div>
+          </div>
+
+          {/* Schedule */}
+          <div style={{ borderTop: '1px solid #f5f5f4', paddingTop: 12 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', color: '#44403c', fontWeight: 600 }}>
+              <input type="checkbox" checked={form.schedule_enabled} onChange={e => setForm({ ...form, schedule_enabled: e.target.checked })} />
+              Saat Planlaması
+            </label>
+            {form.schedule_enabled && (
+              <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={S.grid2}>
+                  <div>
+                    <label style={S.label}>Başlangıç</label>
+                    <input type="time" style={S.input} value={form.schedule_start_time} onChange={e => setForm({ ...form, schedule_start_time: e.target.value })} />
+                  </div>
+                  <div>
+                    <label style={S.label}>Bitiş</label>
+                    <input type="time" style={S.input} value={form.schedule_end_time} onChange={e => setForm({ ...form, schedule_end_time: e.target.value })} />
+                  </div>
+                </div>
+                <div>
+                  <label style={S.label}>Günler</label>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {DAYS_TR.map((label, idx) => {
+                      const selected = form.schedule_days.includes(idx);
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => toggleDay(idx)}
+                          style={{
+                            padding: '6px 12px',
+                            fontSize: 12,
+                            borderRadius: 20,
+                            cursor: 'pointer',
+                            border: selected ? '2px solid #16a34a' : '1px solid #d6d3d1',
+                            background: selected ? '#dcfce7' : '#fff',
+                            color: selected ? '#16a34a' : '#44403c',
+                            fontWeight: selected ? 700 : 400,
+                          }}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#44403c' }}>
+              <input type="checkbox" checked={form.is_active} onChange={e => setForm({ ...form, is_active: e.target.checked })} />
+              Aktif
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#44403c' }}>
+              <input type="checkbox" checked={form.show_once_per_session} onChange={e => setForm({ ...form, show_once_per_session: e.target.checked })} />
+              Session başına bir kez göster
+            </label>
+          </div>
+
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button type="submit" disabled={saving} style={S.btn}>{saving ? '...' : form.id ? 'Güncelle' : 'Kaydet'}</button>
+            <button type="button" onClick={resetForm} style={S.btnSm}>İptal</button>
+          </div>
+        </form>
+      )}
+
+      {promos.length === 0 && !showForm && (
+        <div style={{ textAlign: 'center', color: '#a8a29e', padding: 40, fontSize: 14 }}>
+          Henüz promo eklenmedi.
+        </div>
+      )}
+
+      {promos.map(p => (
+        <div key={p.id} style={{ ...S.card, opacity: p.is_active ? 1 : 0.55 }}>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+            {p.image_url ? (
+              <img src={p.image_url} alt="" style={{ width: 84, height: 56, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
+            ) : (
+              <div style={{ width: 84, height: 56, borderRadius: 8, background: '#f5f5f4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <CiImageOn size={24} style={{ color: '#a8a29e' }} />
+              </div>
+            )}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 15, fontWeight: 600, color: '#1c1917' }}>{p.title_tr}</div>
+              {p.description_tr && <div style={{ fontSize: 13, color: '#78716c', marginTop: 2 }}>{p.description_tr}</div>}
+              <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                <span style={{ ...S.badge, background: p.is_active ? '#dcfce7' : '#fee2e2', color: p.is_active ? '#16a34a' : '#dc2626' }}>
+                  {p.is_active ? 'Aktif' : 'Pasif'}
+                </span>
+                {p.schedule_enabled && (
+                  <span style={{ fontSize: 11, color: '#78716c' }}>
+                    {normalizeTime(p.schedule_start_time)} - {normalizeTime(p.schedule_end_time)}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 6, marginTop: 10, borderTop: '1px solid #f5f5f4', paddingTop: 10 }}>
+            <button onClick={() => toggleActive(p)} style={{ ...S.btnSm, color: p.is_active ? '#16a34a' : '#dc2626' }}>
+              {p.is_active ? 'Aktif' : 'Pasif'}
+            </button>
+            <button onClick={() => startEdit(p)} style={S.btnSm}>Düzenle</button>
+            <button onClick={() => remove(p.id)} style={S.btnDanger}>Sil</button>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
