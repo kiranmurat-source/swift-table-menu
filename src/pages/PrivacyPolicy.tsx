@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import TabbledLogo from '@/components/TabbledLogo';
 
 const content = {
   tr: {
@@ -40,7 +41,10 @@ export default function PrivacyPolicy() {
     <div style={{ minHeight: '100vh', background: '#fafaf9', fontFamily: "'Inter', -apple-system, sans-serif", color: '#1c1917' }}>
       <div style={{ borderBottom: '1px solid #e7e5e4', background: '#fff', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: 720, margin: '0 auto', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <a href="/" style={{ textDecoration: 'none', color: '#1c1917', fontSize: 18, fontWeight: 700, letterSpacing: '-0.3px' }}>← tabbled</a>
+          <a href="/" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8, color: '#1c1917' }}>
+            <span style={{ fontSize: 16, fontWeight: 700, color: '#78716c' }}>←</span>
+            <TabbledLogo sizeClass="h-7" href={null} />
+          </a>
           <div style={{ display: 'flex', gap: 4, background: '#f5f5f4', borderRadius: 8, padding: 3 }}>
             {(['tr', 'en'] as const).map((l) => (
               <button key={l} onClick={() => setLang(l)} style={{ padding: '6px 14px', fontSize: 13, fontWeight: 600, border: 'none', borderRadius: 6, cursor: 'pointer', transition: 'all 0.2s', background: lang === l ? '#fff' : 'transparent', color: lang === l ? '#1c1917' : '#78716c', boxShadow: lang === l ? '0 1px 3px rgba(0,0,0,0.08)' : 'none' }}>{l.toUpperCase()}</button>

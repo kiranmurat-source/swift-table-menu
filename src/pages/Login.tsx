@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import TabbledLogo from '@/components/TabbledLogo';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -23,8 +24,8 @@ export default function Login() {
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fafaf9', fontFamily: "'Inter', -apple-system, sans-serif" }}>
       <div style={{ width: '100%', maxWidth: 400, padding: 32 }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <a href="/" style={{ textDecoration: 'none', color: '#1c1917', fontSize: 24, fontWeight: 800, letterSpacing: '-0.5px' }}>tabbled</a>
-          <p style={{ color: '#78716c', fontSize: 14, marginTop: 8 }}>Hesabınıza giriş yapın</p>
+          <TabbledLogo sizeClass="h-14" />
+          <p style={{ color: '#78716c', fontSize: 14, marginTop: 12 }}>Hesabınıza giriş yapın</p>
         </div>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>

@@ -233,11 +233,11 @@ export default function PublicMenu() {
           <CiForkAndKnife size={32} style={{ color: theme.mutedText }} />
         </div>
         <p className="text-lg" style={{ fontFamily: headingFont, fontWeight: 700 }}>{UI.notFound[lang]}</p>
-        <a
-          href="https://tabbled.com"
-          className="text-sm hover:underline"
-          style={{ color: theme.accent, fontWeight: 500 }}
-        >tabbled.com</a>
+        <a href="https://tabbled.com" aria-label="Tabbled" className="hover:opacity-80 transition-opacity">
+          <span className="inline-flex items-center" style={{ background: '#111', padding: '4px 12px', borderRadius: 6 }}>
+            <img src="/tabbled-logo.png" alt="Tabbled" className="h-5 w-auto block" />
+          </span>
+        </a>
       </div>
     );
   }
@@ -380,15 +380,11 @@ export default function PublicMenu() {
         </div>
 
         {/* Powered by */}
-        <div className="absolute bottom-6 left-0 right-0 text-center">
-          <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
-            Powered by{' '}
-            <a
-              href="https://tabbled.com"
-              className="hover:underline"
-              style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}
-            >Tabbled</a>
-          </p>
+        <div className="absolute bottom-6 left-0 right-0 flex flex-col items-center gap-1.5">
+          <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.5)' }}>Powered by</span>
+          <a href="https://tabbled.com" aria-label="Tabbled" className="hover:opacity-80 transition-opacity">
+            <img src="/tabbled-logo.png" alt="Tabbled" className="h-5 w-auto block" />
+          </a>
         </div>
       </div>
     );
@@ -755,16 +751,14 @@ export default function PublicMenu() {
         className="fixed bottom-0 left-0 right-0 backdrop-blur-sm py-3 z-10"
         style={{ backgroundColor: theme.bg, borderTop: `1px solid ${theme.divider}` }}
       >
-        <p className="text-center text-xs" style={{ color: theme.mutedText }}>
-          Powered by{' '}
-          <a
-            href="https://tabbled.com"
-            className="hover:underline"
-            style={{ color: theme.accent, fontWeight: 500 }}
-          >
-            Tabbled
+        <div className="flex items-center justify-center gap-2">
+          <span className="text-[10px]" style={{ color: theme.mutedText }}>Powered by</span>
+          <a href="https://tabbled.com" aria-label="Tabbled" className="hover:opacity-80 transition-opacity inline-flex">
+            <span className="inline-flex items-center" style={{ background: '#111', padding: '2px 8px', borderRadius: 4 }}>
+              <img src="/tabbled-logo.png" alt="Tabbled" className="h-4 w-auto block" />
+            </span>
           </a>
-        </p>
+        </div>
       </footer>
 
       {/* Item Detail Modal */}

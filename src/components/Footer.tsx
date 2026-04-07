@@ -13,7 +13,7 @@ const Footer = () => (
     <div className="container mx-auto px-4 lg:px-8">
       <div className="grid md:grid-cols-3 gap-8 items-center">
         <div>
-          <TabbledLogo />
+          <TabbledLogo sizeClass="h-7" />
         </div>
 
         <div className="flex flex-wrap gap-x-6 gap-y-2">
