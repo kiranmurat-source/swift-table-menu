@@ -3,10 +3,11 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import {
   CiStar, CiApple, CiTempHigh, CiMapPin, CiPhone, CiGlobe,
-  CiForkAndKnife, CiCircleRemove,
+  CiForkAndKnife, CiCircleRemove, CiFilter,
 } from 'react-icons/ci';
-import { AllergenBadgeList } from '../components/AllergenIcon';
+import { AllergenBadgeList, AllergenIcon } from '../components/AllergenIcon';
 import { getTheme, type MenuTheme } from '../lib/themes';
+import { getAllergenInfo } from '../lib/allergens';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -55,6 +56,40 @@ function t(translations: Translations | null | undefined, field: string, fallbac
 }
 
 const LANG_LABELS: Record<LangCode, string> = { tr: 'Türkçe', en: 'English', ar: 'العربية', zh: '中文' };
+
+const FILTER_ALLERGEN_KEYS = [
+  'gluten', 'wheat', 'milk', 'eggs', 'fish', 'shrimp', 'nuts', 'soya', 'sesame', 'sulfur-dioxide-sulphites',
+];
+
+const FILTER_LABELS: Record<LangCode, {
+  filters: string; clearAll: string; apply: string; freeFrom: string; preferences: string;
+  popular: string; new: string; vegetarian: string; vegan: string; showing: string; noResults: string;
+}> = {
+  tr: {
+    filters: 'Filtreler', clearAll: 'Temizle', apply: 'Uygula',
+    freeFrom: 'Alerjen İçermeyen', preferences: 'Tercihler',
+    popular: 'Popüler', new: 'Yeni', vegetarian: 'Vejetaryen', vegan: 'Vegan',
+    showing: 'ürün gösteriliyor', noResults: 'Filtreye uygun ürün bulunamadı',
+  },
+  en: {
+    filters: 'Filters', clearAll: 'Clear All', apply: 'Apply',
+    freeFrom: 'Free From', preferences: 'Preferences',
+    popular: 'Popular', new: 'New', vegetarian: 'Vegetarian', vegan: 'Vegan',
+    showing: 'items showing', noResults: 'No items match your filters',
+  },
+  ar: {
+    filters: 'تصفية', clearAll: 'مسح الكل', apply: 'تطبيق',
+    freeFrom: 'خالي من', preferences: 'التفضيلات',
+    popular: 'شائع', new: 'جديد', vegetarian: 'نباتي', vegan: 'نباتي صرف',
+    showing: 'عنصر معروض', noResults: 'لا توجد عناصر مطابقة',
+  },
+  zh: {
+    filters: '筛选', clearAll: '清除全部', apply: '应用',
+    freeFrom: '不含', preferences: '偏好',
+    popular: '热门', new: '新品', vegetarian: '素食', vegan: '纯素',
+    showing: '个项目', noResults: '没有符合条件的项目',
+  },
+};
 
 const UI: Record<string, Record<LangCode, string>> = {
   all:          { tr: 'Tümü', en: 'All', ar: 'الكل', zh: '全部' },
@@ -114,6 +149,9 @@ export default function PublicMenu() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [showSplash, setShowSplash] = useState(true);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [excludeAllergens, setExcludeAllergens] = useState<string[]>([]);
+  const [preferences, setPreferences] = useState<string[]>([]);
 
   const theme = useMemo<MenuTheme>(() => getTheme(restaurant?.theme_color), [restaurant?.theme_color]);
 
@@ -350,11 +388,51 @@ export default function PublicMenu() {
   /*  MENU VIEW                                                        */
   /* ================================================================ */
 
-  const filteredItems = activeCategory ? items.filter((i) => i.category_id === activeCategory) : items;
+  // Apply filters (allergen exclude AND, preferences OR) then category
+  const activeFilterCount = excludeAllergens.length + preferences.length;
+  const filterApplied = activeFilterCount > 0;
+
+  const globallyFilteredItems = (() => {
+    let list = items;
+    if (excludeAllergens.length > 0) {
+      list = list.filter((item) => {
+        const itemAllergens = item.allergens || [];
+        return !excludeAllergens.some((a) => itemAllergens.includes(a));
+      });
+    }
+    if (preferences.length > 0) {
+      list = list.filter((item) => {
+        const itemAllergens = item.allergens || [];
+        return preferences.some((pref) => {
+          if (pref === 'popular') return item.is_popular;
+          if (pref === 'new') return item.is_new;
+          if (pref === 'vegetarian') return itemAllergens.includes('vegetarian') || item.is_vegetarian;
+          if (pref === 'vegan') return itemAllergens.includes('vegan');
+          return false;
+        });
+      });
+    }
+    return list;
+  })();
+
+  // Visible categories: only those with at least one item after filtering
+  const categoryCountMap = new Map<string, number>();
+  for (const it of globallyFilteredItems) {
+    categoryCountMap.set(it.category_id, (categoryCountMap.get(it.category_id) ?? 0) + 1);
+  }
+  const visibleCategories = categories.filter((c) => (categoryCountMap.get(c.id) ?? 0) > 0);
+
+  // If the active category got filtered out, fall back to "All"
+  const effectiveActiveCategory =
+    activeCategory && (categoryCountMap.get(activeCategory) ?? 0) > 0 ? activeCategory : null;
+
+  const filteredItems = effectiveActiveCategory
+    ? globallyFilteredItems.filter((i) => i.category_id === effectiveActiveCategory)
+    : globallyFilteredItems;
   const categoryMap = new Map(categories.map((c) => [c.id, c]));
   const groupedItems: { category: MenuCategory | null; items: MenuItem[] }[] = [];
 
-  if (!activeCategory) {
+  if (!effectiveActiveCategory) {
     const catOrder = new Map(categories.map((c, i) => [c.id, i]));
     const groups = new Map<string, MenuItem[]>();
     for (const item of filteredItems) {
@@ -368,7 +446,9 @@ export default function PublicMenu() {
     }
   }
 
-  const hasNoItems = filteredItems.length === 0 && !activeCategory && items.length === 0;
+  const hasNoItems = filteredItems.length === 0 && !effectiveActiveCategory && items.length === 0;
+  const hasNoFilterResults = filterApplied && globallyFilteredItems.length === 0;
+  const fl = FILTER_LABELS[lang];
 
   return (
     <div
@@ -468,27 +548,57 @@ export default function PublicMenu() {
             )}
           </div>
 
-          {availableLanguages.length > 1 && (
-            <div className="flex items-center gap-2 mt-4">
-              <CiGlobe size={14} style={{ color: theme.mutedText }} />
-              <div className="flex gap-1">
-                {availableLanguages.map((l) => (
-                  <button
-                    key={l}
-                    onClick={() => setLang(l)}
-                    className="px-2.5 py-1 rounded-md text-xs transition-all"
-                    style={{
-                      backgroundColor: lang === l ? theme.accent : theme.categoryBg,
-                      color: lang === l ? theme.categoryActiveText : theme.mutedText,
-                      fontWeight: 500,
-                    }}
-                  >
-                    {LANG_LABELS[l]}
-                  </button>
-                ))}
+          <div className="flex items-center justify-between gap-2 mt-4">
+            {availableLanguages.length > 1 ? (
+              <div className="flex items-center gap-2">
+                <CiGlobe size={14} style={{ color: theme.mutedText }} />
+                <div className="flex gap-1">
+                  {availableLanguages.map((l) => (
+                    <button
+                      key={l}
+                      onClick={() => setLang(l)}
+                      className="px-2.5 py-1 rounded-md text-xs transition-all"
+                      style={{
+                        backgroundColor: lang === l ? theme.accent : theme.categoryBg,
+                        color: lang === l ? theme.categoryActiveText : theme.mutedText,
+                        fontWeight: 500,
+                      }}
+                    >
+                      {LANG_LABELS[l]}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            ) : <div />}
+
+            <button
+              onClick={() => setIsFilterOpen(true)}
+              aria-label={fl.filters}
+              className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs transition-all"
+              style={{
+                backgroundColor: activeFilterCount > 0 ? theme.categoryActiveBg : theme.categoryBg,
+                color: activeFilterCount > 0 ? theme.categoryActiveText : theme.mutedText,
+                fontWeight: 500,
+                minHeight: 32,
+              }}
+            >
+              <CiFilter size={16} />
+              <span>{fl.filters}</span>
+              {activeFilterCount > 0 && (
+                <span
+                  className="inline-flex items-center justify-center rounded-full text-[10px] tabular-nums"
+                  style={{
+                    minWidth: 16, height: 16, padding: '0 4px',
+                    backgroundColor: theme.accent,
+                    color: theme.key === 'white' ? '#FFFFFF' : theme.bg,
+                    fontWeight: 700,
+                  }}
+                >
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -506,27 +616,32 @@ export default function PublicMenu() {
               onClick={() => setActiveCategory(null)}
               className="flex-shrink-0 px-4 py-1.5 rounded-full text-sm transition-all"
               style={{
-                backgroundColor: activeCategory === null ? theme.categoryActiveBg : theme.categoryBg,
-                color: activeCategory === null ? theme.categoryActiveText : theme.mutedText,
+                backgroundColor: effectiveActiveCategory === null ? theme.categoryActiveBg : theme.categoryBg,
+                color: effectiveActiveCategory === null ? theme.categoryActiveText : theme.mutedText,
                 fontWeight: 500,
                 scrollSnapAlign: 'start',
               }}
             >
               {UI.all[lang]}
             </button>
-            {categories.map((cat) => (
+            {visibleCategories.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
                 className="flex-shrink-0 px-4 py-1.5 rounded-full text-sm transition-all"
                 style={{
-                  backgroundColor: activeCategory === cat.id ? theme.categoryActiveBg : theme.categoryBg,
-                  color: activeCategory === cat.id ? theme.categoryActiveText : theme.mutedText,
+                  backgroundColor: effectiveActiveCategory === cat.id ? theme.categoryActiveBg : theme.categoryBg,
+                  color: effectiveActiveCategory === cat.id ? theme.categoryActiveText : theme.mutedText,
                   fontWeight: 500,
                   scrollSnapAlign: 'start',
                 }}
               >
                 {t(cat.translations, 'name', cat.name_tr, lang)}
+                {filterApplied && (
+                  <span className="ml-1.5 opacity-70 tabular-nums">
+                    ({categoryCountMap.get(cat.id) ?? 0})
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -535,7 +650,36 @@ export default function PublicMenu() {
 
       {/* Content */}
       <main className="max-w-[480px] mx-auto px-4 py-4 pb-20">
-        {hasNoItems ? (
+        {filterApplied && !hasNoItems && (
+          <p
+            className="text-[11px] mb-3 text-center"
+            style={{ color: theme.mutedText, fontWeight: 400 }}
+          >
+            {globallyFilteredItems.length} {fl.showing}
+          </p>
+        )}
+        {hasNoFilterResults ? (
+          <div className="text-center py-16">
+            <div
+              className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3"
+              style={{ backgroundColor: theme.cardBg }}
+            >
+              <CiFilter size={28} style={{ color: theme.mutedText }} />
+            </div>
+            <p className="text-sm mb-3" style={{ color: theme.mutedText }}>{fl.noResults}</p>
+            <button
+              onClick={() => { setExcludeAllergens([]); setPreferences([]); }}
+              className="text-xs px-4 py-2 rounded-full"
+              style={{
+                backgroundColor: theme.accent,
+                color: theme.key === 'white' ? '#FFFFFF' : theme.bg,
+                fontWeight: 500,
+              }}
+            >
+              {fl.clearAll}
+            </button>
+          </div>
+        ) : hasNoItems ? (
           <div className="text-center py-16">
             <div
               className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3"
@@ -545,7 +689,7 @@ export default function PublicMenu() {
             </div>
             <p className="text-sm" style={{ color: theme.mutedText }}>{UI.noItems[lang]}</p>
           </div>
-        ) : activeCategory ? (
+        ) : effectiveActiveCategory ? (
           <div className="flex flex-col gap-3">
             {filteredItems.map((item) => (
               <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} />
@@ -603,6 +747,190 @@ export default function PublicMenu() {
       {selectedItem && (
         <ItemDetailModal item={selectedItem} lang={lang} theme={theme} onClose={() => setSelectedItem(null)} />
       )}
+
+      {/* Filter Panel */}
+      {isFilterOpen && (
+        <FilterPanel
+          lang={lang}
+          theme={theme}
+          excludeAllergens={excludeAllergens}
+          preferences={preferences}
+          onToggleAllergen={(key) =>
+            setExcludeAllergens((prev) =>
+              prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+            )
+          }
+          onTogglePreference={(key) =>
+            setPreferences((prev) =>
+              prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+            )
+          }
+          onClearAll={() => { setExcludeAllergens([]); setPreferences([]); }}
+          onClose={() => setIsFilterOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Filter Panel                                                       */
+/* ------------------------------------------------------------------ */
+
+function FilterPanel({
+  lang, theme, excludeAllergens, preferences,
+  onToggleAllergen, onTogglePreference, onClearAll, onClose,
+}: {
+  lang: LangCode;
+  theme: MenuTheme;
+  excludeAllergens: string[];
+  preferences: string[];
+  onToggleAllergen: (key: string) => void;
+  onTogglePreference: (key: string) => void;
+  onClearAll: () => void;
+  onClose: () => void;
+}) {
+  const fl = FILTER_LABELS[lang];
+  const headingFont = "'Playfair Display', serif";
+  const bodyFont = "'Inter', sans-serif";
+  const iconLang: 'tr' | 'en' = lang === 'tr' ? 'tr' : 'en';
+
+  const prefChips: { key: string; label: string }[] = [
+    { key: 'popular', label: fl.popular },
+    { key: 'new', label: fl.new },
+    { key: 'vegetarian', label: fl.vegetarian },
+    { key: 'vegan', label: fl.vegan },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+
+      <div
+        className="relative w-full max-w-[480px] rounded-t-3xl sm:rounded-3xl max-h-[85vh] overflow-y-auto shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+        style={{ backgroundColor: theme.cardBg, color: theme.text, fontFamily: bodyFont }}
+      >
+        {/* Header */}
+        <div
+          className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 backdrop-blur-sm"
+          style={{ backgroundColor: theme.cardBg, borderBottom: `1px solid ${theme.divider}` }}
+        >
+          <h2 className="text-lg" style={{ fontFamily: headingFont, fontWeight: 700, color: theme.text }}>
+            {fl.filters}
+          </h2>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClearAll}
+              className="text-xs px-3 py-1.5 rounded-full transition-all"
+              style={{ color: theme.mutedText, fontWeight: 500 }}
+            >
+              {fl.clearAll}
+            </button>
+            <button
+              onClick={onClose}
+              aria-label="Close"
+              className="w-8 h-8 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: theme.badgeBg, color: theme.text }}
+            >
+              <CiCircleRemove size={20} />
+            </button>
+          </div>
+        </div>
+
+        <div className="p-5 space-y-6">
+          {/* Free From */}
+          <div>
+            <h3
+              className="text-xs uppercase tracking-wider mb-3"
+              style={{ color: theme.mutedText, fontWeight: 600 }}
+            >
+              {fl.freeFrom}
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {FILTER_ALLERGEN_KEYS.map((key) => {
+                const info = getAllergenInfo(key);
+                if (!info) return null;
+                const label = iconLang === 'tr' ? info.label_tr : info.label_en;
+                const selected = excludeAllergens.includes(key);
+                return (
+                  <button
+                    key={key}
+                    onClick={() => onToggleAllergen(key)}
+                    className="inline-flex items-center gap-1.5 px-3 rounded-full text-xs transition-all"
+                    style={{
+                      minHeight: 36,
+                      backgroundColor: selected ? theme.categoryActiveBg : theme.categoryBg,
+                      color: selected ? theme.categoryActiveText : theme.text,
+                      border: `1px solid ${selected ? theme.accent : theme.cardBorder}`,
+                      fontWeight: 500,
+                    }}
+                  >
+                    <AllergenIcon
+                      allergenKey={key}
+                      size={16}
+                      invert={selected ? theme.key !== 'white' : theme.invertIcons}
+                    />
+                    <span>{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Preferences */}
+          <div>
+            <h3
+              className="text-xs uppercase tracking-wider mb-3"
+              style={{ color: theme.mutedText, fontWeight: 600 }}
+            >
+              {fl.preferences}
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {prefChips.map(({ key, label }) => {
+                const selected = preferences.includes(key);
+                return (
+                  <button
+                    key={key}
+                    onClick={() => onTogglePreference(key)}
+                    className="inline-flex items-center gap-1.5 px-4 rounded-full text-xs transition-all"
+                    style={{
+                      minHeight: 36,
+                      backgroundColor: selected ? theme.categoryActiveBg : theme.categoryBg,
+                      color: selected ? theme.categoryActiveText : theme.text,
+                      border: `1px solid ${selected ? theme.accent : theme.cardBorder}`,
+                      fontWeight: 500,
+                    }}
+                  >
+                    {key === 'popular' && <CiStar size={14} />}
+                    {key === 'vegetarian' && <CiApple size={14} />}
+                    <span>{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Apply */}
+        <div
+          className="sticky bottom-0 p-4 backdrop-blur-sm"
+          style={{ backgroundColor: theme.cardBg, borderTop: `1px solid ${theme.divider}` }}
+        >
+          <button
+            onClick={onClose}
+            className="w-full py-3 rounded-full text-sm shadow-lg transition-all"
+            style={{
+              backgroundColor: theme.accent,
+              color: theme.key === 'white' ? '#FFFFFF' : theme.bg,
+              fontWeight: 600,
+              minHeight: 44,
+            }}
+          >
+            {fl.apply}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
