@@ -1,8 +1,11 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
-import { CiWheat, CiDroplet, CiCircleAlert, CiApple, CiLemon, CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiStar, CiTempHigh, CiWavePulse1, CiGlobe, CiPen, CiGrid2H, CiUser, CiImageOn, CiTrash, CiLink } from 'react-icons/ci';
+import { CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiApple, CiStar, CiTempHigh, CiGlobe, CiPen, CiGrid2H, CiUser, CiImageOn, CiTrash, CiLink, CiBoxes } from 'react-icons/ci';
 import QRManager from '../components/QRManager';
+import { ALLERGEN_LIST, getAllergenInfo } from '../lib/allergens';
+import { AllergenIcon } from '../components/AllergenIcon';
+import { THEMES } from '../lib/themes';
 
 type Translations = {
   [lang: string]: {
@@ -28,15 +31,7 @@ type Restaurant = {
   social_x: string | null; social_tiktok: string | null; social_website: string | null;
 };
 
-const ALLERGEN_OPTIONS: { value: string; label: string; icon: React.ReactNode }[] = [
-  { value: 'gluten', label: 'Gluten', icon: <CiWheat size={14} /> },
-  { value: 'dairy', label: 'Süt Ürünü', icon: <CiDroplet size={14} /> },
-  { value: 'egg', label: 'Yumurta', icon: <CiCircleAlert size={14} /> },
-  { value: 'nuts', label: 'Kuruyemiş', icon: <CiApple size={14} /> },
-  { value: 'seafood', label: 'Deniz Ürünü', icon: <CiWavePulse1 size={14} /> },
-  { value: 'soy', label: 'Soya', icon: <CiLemon size={14} /> },
-  { value: 'spicy', label: 'Acı', icon: <CiTempHigh size={14} /> },
-];
+const ALLERGEN_OPTIONS = ALLERGEN_LIST.map(a => ({ value: a.key, label: a.label_tr }));
 
 const SUPABASE_URL = 'https://qmnrawqvkwehufebbkxp.supabase.co';
 
@@ -73,6 +68,7 @@ async function triggerTranslation(table: string, recordId: string, languages: st
 /* ------------------------------------------------------------------ */
 
 function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate: (r: Restaurant) => void }) {
+  const [currentTheme, setCurrentTheme] = useState<string>(restaurant.theme_color || 'white');
   const [form, setForm] = useState({
     name: restaurant.name,
     address: restaurant.address || '',
@@ -151,6 +147,23 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
     await supabase.from('restaurants').update({ [field]: null }).eq('id', restaurant.id);
     onUpdate({ ...restaurant, [field]: null });
     setMsg(type === 'logo' ? 'Logo kaldirildi' : 'Kapak gorseli kaldirildi');
+    setTimeout(() => setMsg(''), 3000);
+  }
+
+  async function handleThemeChange(themeKey: string) {
+    const prev = currentTheme;
+    setCurrentTheme(themeKey);
+    const { error } = await supabase
+      .from('restaurants')
+      .update({ theme_color: themeKey })
+      .eq('id', restaurant.id);
+    if (error) {
+      setCurrentTheme(prev);
+      setMsg('Hata: ' + error.message);
+    } else {
+      onUpdate({ ...restaurant, theme_color: themeKey });
+      setMsg('Tema güncellendi');
+    }
     setTimeout(() => setMsg(''), 3000);
   }
 
@@ -265,6 +278,47 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
           <label style={S.label}>Web Sitesi</label>
           <input style={S.input} value={form.social_website} onChange={e => setForm({ ...form, social_website: e.target.value })} placeholder="https://restoraniniz.com" />
         </div>
+
+        {/* Theme Selector */}
+        <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1c1917', marginTop: 8, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <CiBoxes size={16} /> Menü Teması
+        </h4>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          {Object.values(THEMES).map((t) => {
+            const selected = currentTheme === t.key;
+            return (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => handleThemeChange(t.key)}
+                style={{
+                  width: 96,
+                  height: 72,
+                  borderRadius: 10,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                  border: selected ? '2px solid #1c1917' : '1px solid #d6d3d1',
+                  boxShadow: selected ? '0 0 0 2px #fff, 0 0 0 4px #1c1917' : 'none',
+                  background: t.bg,
+                  color: t.text,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 4,
+                }}
+              >
+                <span>{t.label_tr.split(' ')[0]}</span>
+                <span style={{ fontSize: 10, opacity: 0.7 }}>{t.label_tr.split(' ').slice(1).join(' ')}</span>
+              </button>
+            );
+          })}
+        </div>
+        <p style={{ fontSize: 11, color: '#78716c', margin: 0 }}>
+          Tema sadece müşterilerinizin göreceği genel menü sayfasını etkiler.
+        </p>
 
         {/* Menu Preview Link */}
         <div style={{ padding: '10px 14px', background: '#f5f5f4', borderRadius: 8, fontSize: 13, color: '#78716c' }}>
@@ -655,11 +709,33 @@ export default function RestaurantDashboard() {
               <div>
                 <label style={S.label}>Alerjenler</label>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {ALLERGEN_OPTIONS.map(a => (
-                    <button key={a.value} type="button" onClick={() => toggleAllergen(a.value)} style={{ padding: '6px 12px', fontSize: 12, borderRadius: 20, cursor: 'pointer', transition: 'all 0.15s', border: itemForm.allergens.includes(a.value) ? '2px solid #16a34a' : '1px solid #d6d3d1', background: itemForm.allergens.includes(a.value) ? '#dcfce7' : '#fff', color: itemForm.allergens.includes(a.value) ? '#16a34a' : '#44403c', fontWeight: itemForm.allergens.includes(a.value) ? 700 : 400 }}>
-                      {a.icon} {a.label}
-                    </button>
-                  ))}
+                  {ALLERGEN_OPTIONS.map(a => {
+                    const selected = itemForm.allergens.includes(a.value);
+                    return (
+                      <button
+                        key={a.value}
+                        type="button"
+                        onClick={() => toggleAllergen(a.value)}
+                        style={{
+                          padding: '6px 10px',
+                          fontSize: 12,
+                          borderRadius: 20,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s',
+                          border: selected ? '2px solid #16a34a' : '1px solid #d6d3d1',
+                          background: selected ? '#dcfce7' : '#fff',
+                          color: selected ? '#16a34a' : '#44403c',
+                          fontWeight: selected ? 700 : 400,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                        }}
+                      >
+                        <AllergenIcon allergenKey={a.value} size={16} />
+                        {a.label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
@@ -677,7 +753,7 @@ export default function RestaurantDashboard() {
           )}
 
           {filteredItems.map(item => {
-            const allergenIconList = (item.allergens || []).map(a => ALLERGEN_OPTIONS.find(o => o.value === a)?.icon).filter(Boolean);
+            const allergenKeys = (item.allergens || []).filter(a => getAllergenInfo(a));
             const isTranslating = translating === item.id;
             return (
               <div key={item.id} style={{ ...S.card, opacity: item.is_available ? 1 : 0.45, position: 'relative' }}>
@@ -699,7 +775,11 @@ export default function RestaurantDashboard() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
                       <span style={{ fontSize: 14, fontWeight: 700, color: '#1c1917' }}>₺{Number(item.price).toFixed(2)}</span>
                       {item.calories && <span style={{ fontSize: 11, color: '#a8a29e', display: 'inline-flex', alignItems: 'center', gap: 2 }}><CiTempHigh size={12} /> {item.calories} kcal</span>}
-                      {allergenIconList.length > 0 && <span style={{ fontSize: 12, display: 'inline-flex', gap: 2, alignItems: 'center' }} title={(item.allergens || []).join(', ')}>{allergenIconList.map((icon, idx) => <span key={idx}>{icon}</span>)}</span>}
+                      {allergenKeys.length > 0 && (
+                        <span style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }} title={allergenKeys.join(', ')}>
+                          {allergenKeys.map(a => <AllergenIcon key={a} allergenKey={a} size={14} />)}
+                        </span>
+                      )}
                     </div>
                   </div>
                   {item.image_url && <img src={item.image_url} alt="" style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover', marginLeft: 12 }} />}

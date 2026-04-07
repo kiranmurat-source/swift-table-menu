@@ -2,10 +2,11 @@ import { useEffect, useState, useMemo } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import {
-  CiWheat, CiDroplet, CiCircleAlert, CiApple, CiLemon, CiStar,
-  CiTempHigh, CiWavePulse1, CiMapPin, CiPhone, CiGlobe,
+  CiStar, CiApple, CiTempHigh, CiMapPin, CiPhone, CiGlobe,
   CiForkAndKnife, CiCircleRemove,
 } from 'react-icons/ci';
+import { AllergenBadgeList } from '../components/AllergenIcon';
+import { getTheme, type MenuTheme } from '../lib/themes';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -23,6 +24,7 @@ interface Restaurant {
   address: string | null; phone: string | null; is_active: boolean;
   description_tr: string | null; tagline: string | null;
   enabled_languages: string[]; translations: Translations;
+  theme_color: string | null;
   social_instagram: string | null; social_facebook: string | null;
   social_x: string | null; social_tiktok: string | null; social_website: string | null;
 }
@@ -54,16 +56,6 @@ function t(translations: Translations | null | undefined, field: string, fallbac
 
 const LANG_LABELS: Record<LangCode, string> = { tr: 'Türkçe', en: 'English', ar: 'العربية', zh: '中文' };
 
-const ALLERGEN_CONFIG: Record<string, { icon: React.ComponentType<{ size?: number; className?: string }>; label: Record<LangCode, string>; color: string; bg: string }> = {
-  gluten:  { icon: CiWheat,       label: { tr: 'Gluten', en: 'Gluten', ar: 'غلوتين', zh: '麸质' },         color: '#B45309', bg: '#FEF3C7' },
-  dairy:   { icon: CiDroplet,     label: { tr: 'Süt', en: 'Dairy', ar: 'ألبان', zh: '乳制品' },           color: '#1D4ED8', bg: '#DBEAFE' },
-  egg:     { icon: CiCircleAlert, label: { tr: 'Yumurta', en: 'Egg', ar: 'بيض', zh: '鸡蛋' },            color: '#B45309', bg: '#FEF9C3' },
-  nuts:    { icon: CiApple,       label: { tr: 'Kuruyemiş', en: 'Nuts', ar: 'مكسرات', zh: '坚果' },      color: '#9A3412', bg: '#FFEDD5' },
-  seafood: { icon: CiWavePulse1,  label: { tr: 'Deniz Ürünü', en: 'Seafood', ar: 'مأكولات بحرية', zh: '海鲜' }, color: '#0E7490', bg: '#CFFAFE' },
-  soy:     { icon: CiLemon,       label: { tr: 'Soya', en: 'Soy', ar: 'صويا', zh: '大豆' },              color: '#4D7C0F', bg: '#ECFCCB' },
-  spicy:   { icon: CiTempHigh,    label: { tr: 'Acı', en: 'Spicy', ar: 'حار', zh: '辣' },                color: '#DC2626', bg: '#FEF2F2' },
-};
-
 const UI: Record<string, Record<LangCode, string>> = {
   all:          { tr: 'Tümü', en: 'All', ar: 'الكل', zh: '全部' },
   loading:      { tr: 'Menü yükleniyor...', en: 'Loading menu...', ar: 'جاري تحميل القائمة...', zh: '菜单加载中...' },
@@ -80,7 +72,7 @@ const UI: Record<string, Record<LangCode, string>> = {
 };
 
 /* ------------------------------------------------------------------ */
-/*  Social Media SVG Icons (inline, no extra deps)                     */
+/*  Social Media SVG Icons                                             */
 /* ------------------------------------------------------------------ */
 
 const SocialIcon = ({ type, size = 20 }: { type: string; size?: number }) => {
@@ -123,6 +115,8 @@ export default function PublicMenu() {
   const [showSplash, setShowSplash] = useState(true);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
+  const theme = useMemo<MenuTheme>(() => getTheme(restaurant?.theme_color), [restaurant?.theme_color]);
+
   const lang: LangCode = useMemo(() => {
     if (langParam === 'tr') return 'tr';
     if (!restaurant) return 'tr';
@@ -160,13 +154,22 @@ export default function PublicMenu() {
     fetchData();
   }, [slug]);
 
+  const headingFont = "'Playfair Display', serif";
+  const bodyFont = "'Inter', sans-serif";
+
   /* ---- Loading ---- */
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FAFAF7] flex items-center justify-center">
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: theme.bg, color: theme.text, fontFamily: bodyFont }}
+      >
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-[#A8B977] border-t-transparent rounded-full animate-spin" />
-          <p className="text-[#9CA3AF] text-sm tracking-wide">{UI.loading[lang]}</p>
+          <div
+            className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin"
+            style={{ borderColor: theme.accent, borderTopColor: 'transparent' }}
+          />
+          <p className="text-sm tracking-wide" style={{ color: theme.mutedText }}>{UI.loading[lang]}</p>
         </div>
       </div>
     );
@@ -175,12 +178,22 @@ export default function PublicMenu() {
   /* ---- Not found ---- */
   if (!restaurant) {
     return (
-      <div className="min-h-screen bg-[#FAFAF7] flex flex-col items-center justify-center gap-4 px-4">
-        <div className="w-16 h-16 rounded-2xl bg-[#422B21]/10 flex items-center justify-center">
-          <CiForkAndKnife size={32} className="text-[#422B21]/40" />
+      <div
+        className="min-h-screen flex flex-col items-center justify-center gap-4 px-4"
+        style={{ backgroundColor: theme.bg, color: theme.text, fontFamily: bodyFont }}
+      >
+        <div
+          className="w-16 h-16 rounded-2xl flex items-center justify-center"
+          style={{ backgroundColor: theme.cardBg }}
+        >
+          <CiForkAndKnife size={32} style={{ color: theme.mutedText }} />
         </div>
-        <p className="font-bold text-lg text-[#1A1A1A]">{UI.notFound[lang]}</p>
-        <a href="https://tabbled.com" className="text-[#A8B977] font-medium text-sm hover:underline">tabbled.com</a>
+        <p className="text-lg" style={{ fontFamily: headingFont, fontWeight: 700 }}>{UI.notFound[lang]}</p>
+        <a
+          href="https://tabbled.com"
+          className="text-sm hover:underline"
+          style={{ color: theme.accent, fontWeight: 500 }}
+        >tabbled.com</a>
       </div>
     );
   }
@@ -202,16 +215,16 @@ export default function PublicMenu() {
     return (
       <div
         className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden"
-        style={{ fontFamily: "'Montserrat', sans-serif" }}
+        style={{ backgroundColor: theme.bg, color: theme.text, fontFamily: bodyFont }}
       >
         {/* Background */}
         {coverImage ? (
           <>
             <img src={coverImage} alt="" className="absolute inset-0 w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-black/60" />
+            <div className="absolute inset-0" style={{ backgroundColor: theme.splashOverlay }} />
           </>
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-[#422B21] via-[#5C3D2E] to-[#422B21]" />
+          <div className="absolute inset-0" style={{ backgroundColor: theme.bg }} />
         )}
 
         {/* Content */}
@@ -221,27 +234,43 @@ export default function PublicMenu() {
             <img
               src={restaurant.logo_url}
               alt={restaurant.name}
-              className="w-28 h-28 rounded-2xl object-cover border-2 border-white/20 shadow-2xl mb-6"
+              className="w-28 h-28 rounded-2xl object-cover shadow-2xl mb-6"
+              style={{ border: `2px solid ${theme.cardBorder}` }}
             />
           ) : (
-            <div className="w-28 h-28 rounded-2xl bg-[#A8B977] flex items-center justify-center border-2 border-white/20 shadow-2xl mb-6">
-              <span className="font-bold text-4xl text-white">{restaurant.name.charAt(0).toUpperCase()}</span>
+            <div
+              className="w-28 h-28 rounded-2xl flex items-center justify-center shadow-2xl mb-6"
+              style={{ backgroundColor: theme.cardBg, border: `2px solid ${theme.cardBorder}` }}
+            >
+              <span
+                className="text-4xl"
+                style={{ fontFamily: headingFont, fontWeight: 700, color: theme.text }}
+              >{restaurant.name.charAt(0).toUpperCase()}</span>
             </div>
           )}
 
           {/* Name */}
-          <h1 className="text-3xl font-extrabold text-white mb-2 drop-shadow-lg">{restaurant.name}</h1>
+          <h1
+            className="text-3xl mb-2 drop-shadow-lg"
+            style={{ fontFamily: headingFont, fontWeight: 700, color: '#FFFFFF' }}
+          >{restaurant.name}</h1>
 
           {/* Tagline */}
           {restaurant.tagline && (
-            <p className="text-white/70 text-sm font-light mb-6 leading-relaxed">
+            <p
+              className="text-sm mb-6 leading-relaxed"
+              style={{ color: 'rgba(255,255,255,0.8)', fontWeight: 300 }}
+            >
               {t(restaurant.translations, 'tagline', restaurant.tagline, lang)}
             </p>
           )}
 
           {/* Table badge */}
           {table && (
-            <div className="bg-[#A8B977] text-white text-sm font-bold px-5 py-2 rounded-xl mb-6 shadow-lg">
+            <div
+              className="text-sm px-5 py-2 rounded-xl mb-6 shadow-lg"
+              style={{ backgroundColor: theme.accent, color: theme.key === 'white' ? '#FFFFFF' : theme.bg, fontWeight: 600 }}
+            >
               {UI.table[lang]} {table}
             </div>
           )}
@@ -255,7 +284,8 @@ export default function PublicMenu() {
                   href={url!}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition-all duration-200 hover:scale-110"
+                  className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#FFFFFF' }}
                 >
                   <SocialIcon type={type} size={18} />
                 </a>
@@ -266,23 +296,32 @@ export default function PublicMenu() {
           {/* CTA Button */}
           <button
             onClick={() => setShowSplash(false)}
-            className="bg-[#A8B977] hover:bg-[#96A768] text-white font-bold text-base px-10 py-3.5 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+            className="text-base px-10 py-3.5 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+            style={{
+              backgroundColor: theme.accent,
+              color: theme.key === 'white' ? '#FFFFFF' : theme.bg,
+              fontFamily: bodyFont,
+              fontWeight: 500,
+            }}
           >
             {UI.viewMenu[lang]}
           </button>
 
-          {/* Language switcher on splash */}
+          {/* Language switcher */}
           {availableLanguages.length > 1 && (
             <div className="flex items-center gap-2 mt-6">
-              <CiGlobe size={14} className="text-white/40" />
+              <CiGlobe size={14} style={{ color: 'rgba(255,255,255,0.6)' }} />
               <div className="flex gap-1">
                 {availableLanguages.map((l) => (
                   <button
                     key={l}
                     onClick={() => setLang(l)}
-                    className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
-                      lang === l ? 'bg-white/25 text-white' : 'bg-white/10 text-white/50 hover:bg-white/15'
-                    }`}
+                    className="px-2.5 py-1 rounded-md text-xs transition-all"
+                    style={{
+                      backgroundColor: lang === l ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.1)',
+                      color: lang === l ? '#FFFFFF' : 'rgba(255,255,255,0.6)',
+                      fontWeight: 500,
+                    }}
                   >
                     {LANG_LABELS[l]}
                   </button>
@@ -294,9 +333,13 @@ export default function PublicMenu() {
 
         {/* Powered by */}
         <div className="absolute bottom-6 left-0 right-0 text-center">
-          <p className="text-white/30 text-xs">
+          <p className="text-xs" style={{ color: 'rgba(255,255,255,0.4)' }}>
             Powered by{' '}
-            <a href="https://tabbled.com" className="text-white/50 font-medium hover:text-white/70 transition-colors">Tabbled</a>
+            <a
+              href="https://tabbled.com"
+              className="hover:underline"
+              style={{ color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}
+            >Tabbled</a>
           </p>
         </div>
       </div>
@@ -328,52 +371,83 @@ export default function PublicMenu() {
   const hasNoItems = filteredItems.length === 0 && !activeCategory && items.length === 0;
 
   return (
-    <div className="min-h-screen bg-[#FAFAF7]" style={{ fontFamily: "'Montserrat', sans-serif" }}>
+    <div
+      className="min-h-screen"
+      style={{ backgroundColor: theme.bg, color: theme.text, fontFamily: bodyFont }}
+    >
       {/* Cover Image */}
       {coverImage && (
-        <div className="relative h-44 bg-[#422B21]">
+        <div className="relative h-44" style={{ backgroundColor: theme.cardBg }}>
           <img src={coverImage} alt="" className="w-full h-full object-cover opacity-80" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#422B21] via-[#422B21]/40 to-transparent" />
+          <div
+            className="absolute inset-0"
+            style={{ background: `linear-gradient(to top, ${theme.bg}, transparent)` }}
+          />
         </div>
       )}
 
       {/* Header */}
-      <header className={`bg-[#422B21] text-white px-4 ${coverImage ? '-mt-20 relative z-10 pt-4 pb-5' : 'py-6'}`}>
+      <header
+        className={`px-4 ${coverImage ? '-mt-20 relative z-10 pt-4 pb-5' : 'py-6'}`}
+        style={{ color: theme.text }}
+      >
         <div className="max-w-[480px] mx-auto">
           <div className="flex items-start gap-4">
             {restaurant.logo_url ? (
-              <img src={restaurant.logo_url} alt={restaurant.name} className="w-16 h-16 rounded-xl object-cover flex-shrink-0 border-2 border-white/20 shadow-lg" />
+              <img
+                src={restaurant.logo_url}
+                alt={restaurant.name}
+                className="w-16 h-16 rounded-xl object-cover flex-shrink-0 shadow-lg"
+                style={{ border: `2px solid ${theme.cardBorder}` }}
+              />
             ) : (
-              <div className="w-16 h-16 rounded-xl bg-[#A8B977] flex items-center justify-center flex-shrink-0 border-2 border-white/20 shadow-lg">
-                <span className="font-bold text-2xl text-white">{restaurant.name.charAt(0).toUpperCase()}</span>
+              <div
+                className="w-16 h-16 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg"
+                style={{ backgroundColor: theme.cardBg, border: `2px solid ${theme.cardBorder}` }}
+              >
+                <span style={{ fontFamily: headingFont, fontWeight: 700, fontSize: 24, color: theme.text }}>
+                  {restaurant.name.charAt(0).toUpperCase()}
+                </span>
               </div>
             )}
             <div className="flex-1 min-w-0 pt-0.5">
-              <h1 className="font-bold text-xl leading-tight">{restaurant.name}</h1>
+              <h1 className="text-xl leading-tight" style={{ fontFamily: headingFont, fontWeight: 700, color: theme.text }}>
+                {restaurant.name}
+              </h1>
               {restaurant.tagline && (
-                <p className="text-white/50 text-xs mt-1 font-light leading-relaxed">
+                <p className="text-xs mt-1 leading-relaxed" style={{ color: theme.mutedText, fontWeight: 300 }}>
                   {t(restaurant.translations, 'tagline', restaurant.tagline, lang)}
                 </p>
               )}
               <div className="flex flex-col gap-0.5 mt-2">
                 {restaurant.address && (
-                  <p className="text-white/60 text-xs flex items-center gap-1.5">
-                    <CiMapPin size={13} className="flex-shrink-0 text-white/40" />
+                  <p className="text-xs flex items-center gap-1.5" style={{ color: theme.mutedText }}>
+                    <CiMapPin size={13} className="flex-shrink-0" />
                     <span className="truncate">{restaurant.address}</span>
                   </p>
                 )}
                 {restaurant.phone && (
-                  <a href={`tel:${restaurant.phone}`} className="text-white/60 text-xs flex items-center gap-1.5 hover:text-white/80 transition-colors">
-                    <CiPhone size={13} className="flex-shrink-0 text-white/40" />
+                  <a
+                    href={`tel:${restaurant.phone}`}
+                    className="text-xs flex items-center gap-1.5 hover:underline"
+                    style={{ color: theme.mutedText }}
+                  >
+                    <CiPhone size={13} className="flex-shrink-0" />
                     {restaurant.phone}
                   </a>
                 )}
               </div>
-              {/* Social icons in header */}
               {socials.length > 0 && (
                 <div className="flex items-center gap-2 mt-2">
                   {socials.map(({ type, url }) => (
-                    <a key={type} href={url!} target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-white/70 transition-colors">
+                    <a
+                      key={type}
+                      href={url!}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:opacity-80 transition-opacity"
+                      style={{ color: theme.mutedText }}
+                    >
                       <SocialIcon type={type} size={14} />
                     </a>
                   ))}
@@ -381,7 +455,14 @@ export default function PublicMenu() {
               )}
             </div>
             {table && (
-              <span className="bg-[#A8B977] text-white text-xs font-bold px-3 py-1.5 rounded-lg flex-shrink-0 shadow-sm">
+              <span
+                className="text-xs px-3 py-1.5 rounded-lg flex-shrink-0 shadow-sm"
+                style={{
+                  backgroundColor: theme.accent,
+                  color: theme.key === 'white' ? '#FFFFFF' : theme.bg,
+                  fontWeight: 600,
+                }}
+              >
                 {UI.table[lang]} {table}
               </span>
             )}
@@ -389,10 +470,19 @@ export default function PublicMenu() {
 
           {availableLanguages.length > 1 && (
             <div className="flex items-center gap-2 mt-4">
-              <CiGlobe size={14} className="text-white/40" />
+              <CiGlobe size={14} style={{ color: theme.mutedText }} />
               <div className="flex gap-1">
                 {availableLanguages.map((l) => (
-                  <button key={l} onClick={() => setLang(l)} className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${lang === l ? 'bg-[#A8B977] text-white' : 'bg-white/10 text-white/60 hover:bg-white/20'}`}>
+                  <button
+                    key={l}
+                    onClick={() => setLang(l)}
+                    className="px-2.5 py-1 rounded-md text-xs transition-all"
+                    style={{
+                      backgroundColor: lang === l ? theme.accent : theme.categoryBg,
+                      color: lang === l ? theme.categoryActiveText : theme.mutedText,
+                      fontWeight: 500,
+                    }}
+                  >
                     {LANG_LABELS[l]}
                   </button>
                 ))}
@@ -403,14 +493,39 @@ export default function PublicMenu() {
       </header>
 
       {/* Category Tab Bar */}
-      <div className="sticky top-0 z-20 bg-[#FAFAF7]/95 backdrop-blur-sm border-b border-[#E8E6E0]">
+      <div
+        className="sticky top-0 z-20 backdrop-blur-sm"
+        style={{ backgroundColor: theme.bg, borderBottom: `1px solid ${theme.divider}` }}
+      >
         <div className="max-w-[480px] mx-auto">
-          <div className="flex gap-2 px-4 py-3 overflow-x-auto" style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
-            <button onClick={() => setActiveCategory(null)} className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${activeCategory === null ? 'bg-[#422B21] text-white shadow-sm' : 'bg-white border border-[#E8E6E0] text-[#6B7280] hover:border-[#422B21]/30'}`} style={{ scrollSnapAlign: 'start' }}>
+          <div
+            className="flex gap-2 px-4 py-3 overflow-x-auto"
+            style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+          >
+            <button
+              onClick={() => setActiveCategory(null)}
+              className="flex-shrink-0 px-4 py-1.5 rounded-full text-sm transition-all"
+              style={{
+                backgroundColor: activeCategory === null ? theme.categoryActiveBg : theme.categoryBg,
+                color: activeCategory === null ? theme.categoryActiveText : theme.mutedText,
+                fontWeight: 500,
+                scrollSnapAlign: 'start',
+              }}
+            >
               {UI.all[lang]}
             </button>
             {categories.map((cat) => (
-              <button key={cat.id} onClick={() => setActiveCategory(cat.id)} className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${activeCategory === cat.id ? 'bg-[#422B21] text-white shadow-sm' : 'bg-white border border-[#E8E6E0] text-[#6B7280] hover:border-[#422B21]/30'}`} style={{ scrollSnapAlign: 'start' }}>
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                className="flex-shrink-0 px-4 py-1.5 rounded-full text-sm transition-all"
+                style={{
+                  backgroundColor: activeCategory === cat.id ? theme.categoryActiveBg : theme.categoryBg,
+                  color: activeCategory === cat.id ? theme.categoryActiveText : theme.mutedText,
+                  fontWeight: 500,
+                  scrollSnapAlign: 'start',
+                }}
+              >
                 {t(cat.translations, 'name', cat.name_tr, lang)}
               </button>
             ))}
@@ -422,33 +537,44 @@ export default function PublicMenu() {
       <main className="max-w-[480px] mx-auto px-4 py-4 pb-20">
         {hasNoItems ? (
           <div className="text-center py-16">
-            <div className="w-14 h-14 rounded-2xl bg-[#A8B977]/10 flex items-center justify-center mx-auto mb-3">
-              <CiForkAndKnife size={28} className="text-[#A8B977]/50" />
+            <div
+              className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3"
+              style={{ backgroundColor: theme.cardBg }}
+            >
+              <CiForkAndKnife size={28} style={{ color: theme.mutedText }} />
             </div>
-            <p className="text-[#9CA3AF] text-sm">{UI.noItems[lang]}</p>
+            <p className="text-sm" style={{ color: theme.mutedText }}>{UI.noItems[lang]}</p>
           </div>
         ) : activeCategory ? (
           <div className="flex flex-col gap-3">
             {filteredItems.map((item) => (
-              <MenuItemCard key={item.id} item={item} lang={lang} onSelect={setSelectedItem} />
+              <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} />
             ))}
             {filteredItems.length === 0 && (
-              <p className="text-center text-[#9CA3AF] text-sm py-8">{UI.noItemsInCat[lang]}</p>
+              <p className="text-center text-sm py-8" style={{ color: theme.mutedText }}>{UI.noItemsInCat[lang]}</p>
             )}
           </div>
         ) : (
           groupedItems.map(({ category, items: catItems }) => (
             <div key={category?.id ?? 'other'} className="mb-6">
               <div className="flex items-center gap-3 mb-3 pt-2">
-                <h2 className="text-sm font-bold text-[#422B21] tracking-wide uppercase">
+                <h2
+                  className="text-sm tracking-wide uppercase"
+                  style={{ fontFamily: headingFont, fontWeight: 700, color: theme.text }}
+                >
                   {category ? t(category.translations, 'name', category.name_tr, lang) : UI.other[lang]}
                 </h2>
-                <div className="flex-1 h-px bg-[#E8E6E0]" />
-                <span className="text-[11px] text-[#9CA3AF] font-medium bg-[#F3F2EE] px-2 py-0.5 rounded-full">{catItems.length}</span>
+                <div className="flex-1 h-px" style={{ backgroundColor: theme.divider }} />
+                <span
+                  className="text-[11px] px-2 py-0.5 rounded-full"
+                  style={{ color: theme.mutedText, backgroundColor: theme.badgeBg, fontWeight: 500 }}
+                >
+                  {catItems.length}
+                </span>
               </div>
               <div className="flex flex-col gap-3">
                 {catItems.map((item) => (
-                  <MenuItemCard key={item.id} item={item} lang={lang} onSelect={setSelectedItem} />
+                  <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} />
                 ))}
               </div>
             </div>
@@ -457,16 +583,25 @@ export default function PublicMenu() {
       </main>
 
       {/* Footer */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-[#FAFAF7]/95 backdrop-blur-sm border-t border-[#E8E6E0] py-3 z-10">
-        <p className="text-center text-[#9CA3AF] text-xs">
+      <footer
+        className="fixed bottom-0 left-0 right-0 backdrop-blur-sm py-3 z-10"
+        style={{ backgroundColor: theme.bg, borderTop: `1px solid ${theme.divider}` }}
+      >
+        <p className="text-center text-xs" style={{ color: theme.mutedText }}>
           Powered by{' '}
-          <a href="https://tabbled.com" className="text-[#A8B977] font-medium hover:underline">Tabbled</a>
+          <a
+            href="https://tabbled.com"
+            className="hover:underline"
+            style={{ color: theme.accent, fontWeight: 500 }}
+          >
+            Tabbled
+          </a>
         </p>
       </footer>
 
       {/* Item Detail Modal */}
       {selectedItem && (
-        <ItemDetailModal item={selectedItem} lang={lang} onClose={() => setSelectedItem(null)} />
+        <ItemDetailModal item={selectedItem} lang={lang} theme={theme} onClose={() => setSelectedItem(null)} />
       )}
     </div>
   );
@@ -476,48 +611,75 @@ export default function PublicMenu() {
 /*  Menu Item Card                                                     */
 /* ------------------------------------------------------------------ */
 
-function MenuItemCard({ item, lang, onSelect }: { item: MenuItem; lang: LangCode; onSelect: (item: MenuItem) => void }) {
+function MenuItemCard({ item, lang, theme, onSelect }: { item: MenuItem; lang: LangCode; theme: MenuTheme; onSelect: (item: MenuItem) => void }) {
   const name = t(item.translations, 'name', item.name_tr, lang);
   const description = t(item.translations, 'description', item.description_tr, lang);
   const hasBadges = item.is_popular || item.is_new || item.is_vegetarian;
   const hasAllergens = item.allergens && item.allergens.length > 0;
+  const headingFont = "'Playfair Display', serif";
 
   return (
     <div
-      className="bg-white border border-[#E8E6E0] rounded-2xl p-3 flex gap-3 hover:shadow-md hover:border-[#D5D3CC] transition-all duration-200 cursor-pointer active:scale-[0.99]"
+      className="rounded-2xl p-3 flex gap-3 hover:shadow-md transition-all duration-200 cursor-pointer active:scale-[0.99]"
+      style={{
+        backgroundColor: theme.cardBg,
+        border: `1px solid ${theme.cardBorder}`,
+      }}
       onClick={() => onSelect(item)}
     >
       {item.image_url ? (
         <img src={item.image_url} alt={name} className="w-[88px] h-[88px] rounded-xl object-cover flex-shrink-0" />
       ) : (
-        <div className="w-[88px] h-[88px] rounded-xl flex-shrink-0 bg-gradient-to-br from-[#A8B977]/15 to-[#E4A07A]/15 flex items-center justify-center">
-          <CiForkAndKnife size={28} className="text-[#A8B977]/30" />
+        <div
+          className="w-[88px] h-[88px] rounded-xl flex-shrink-0 flex items-center justify-center"
+          style={{ backgroundColor: theme.badgeBg }}
+        >
+          <CiForkAndKnife size={28} style={{ color: theme.mutedText }} />
         </div>
       )}
       <div className="flex-1 min-w-0 flex flex-col py-0.5">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-semibold text-[15px] text-[#1A1A1A] leading-snug line-clamp-2">
-            {name || <span className="text-[#9CA3AF] italic">—</span>}
+          <h3
+            className="text-[15px] leading-snug line-clamp-2"
+            style={{ fontFamily: headingFont, fontWeight: 700, color: theme.text }}
+          >
+            {name || <span className="italic" style={{ color: theme.mutedText }}>—</span>}
           </h3>
-          <span className="text-[15px] font-bold text-[#A8B977] flex-shrink-0 tabular-nums">
+          <span
+            className="text-[15px] flex-shrink-0 tabular-nums"
+            style={{ color: theme.price, fontWeight: 500 }}
+          >
             {Number(item.price).toFixed(2)} ₺
           </span>
         </div>
         {description && (
-          <p className="text-[12px] text-[#6B7280] font-light mt-1 line-clamp-2 leading-relaxed">{description}</p>
+          <p className="text-[12px] mt-1 line-clamp-2 leading-relaxed" style={{ color: theme.mutedText, fontWeight: 300 }}>
+            {description}
+          </p>
         )}
         {hasBadges && (
           <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
             {item.is_popular && (
-              <span className="inline-flex items-center gap-1 bg-[#FEF3C7] text-[#B45309] text-[10px] font-semibold px-2 py-0.5 rounded-full">
+              <span
+                className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
+                style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, fontWeight: 600 }}
+              >
                 <CiStar size={11} /> {UI.popular[lang]}
               </span>
             )}
             {item.is_new && (
-              <span className="inline-flex items-center gap-0.5 bg-[#DBEAFE] text-[#1D4ED8] text-[10px] font-semibold px-2 py-0.5 rounded-full">{UI.newItem[lang]}</span>
+              <span
+                className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full"
+                style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, fontWeight: 600 }}
+              >
+                {UI.newItem[lang]}
+              </span>
             )}
             {item.is_vegetarian && (
-              <span className="inline-flex items-center gap-1 bg-[#DCFCE7] text-[#16A34A] text-[10px] font-semibold px-2 py-0.5 rounded-full">
+              <span
+                className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
+                style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, fontWeight: 600 }}
+              >
                 <CiApple size={11} /> {UI.vegetarian[lang]}
               </span>
             )}
@@ -525,20 +687,18 @@ function MenuItemCard({ item, lang, onSelect }: { item: MenuItem; lang: LangCode
         )}
         {(item.calories || hasAllergens) && (
           <div className="flex items-center justify-between mt-auto pt-1.5">
-            {item.calories ? <span className="text-[11px] text-[#9CA3AF] font-light">{item.calories} kcal</span> : <span />}
+            {item.calories ? (
+              <span className="text-[11px]" style={{ color: theme.mutedText, fontWeight: 300 }}>
+                {item.calories} kcal
+              </span>
+            ) : <span />}
             {hasAllergens && (
-              <div className="flex items-center gap-1">
-                {item.allergens!.map((a) => {
-                  const config = ALLERGEN_CONFIG[a];
-                  if (!config) return null;
-                  const Icon = config.icon;
-                  return (
-                    <span key={a} className="w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: config.bg }} title={config.label[lang]}>
-                      <Icon size={12} style={{ color: config.color }} />
-                    </span>
-                  );
-                })}
-              </div>
+              <AllergenBadgeList
+                allergens={item.allergens}
+                size={16}
+                lang={lang === 'ar' || lang === 'zh' ? 'en' : lang}
+                invert={theme.invertIcons}
+              />
             )}
           </div>
         )}
@@ -551,97 +711,115 @@ function MenuItemCard({ item, lang, onSelect }: { item: MenuItem; lang: LangCode
 /*  Item Detail Modal                                                  */
 /* ------------------------------------------------------------------ */
 
-function ItemDetailModal({ item, lang, onClose }: { item: MenuItem; lang: LangCode; onClose: () => void }) {
+function ItemDetailModal({ item, lang, theme, onClose }: { item: MenuItem; lang: LangCode; theme: MenuTheme; onClose: () => void }) {
   const name = t(item.translations, 'name', item.name_tr, lang);
   const description = t(item.translations, 'description', item.description_tr, lang);
   const hasAllergens = item.allergens && item.allergens.length > 0;
+  const headingFont = "'Playfair Display', serif";
+  const bodyFont = "'Inter', sans-serif";
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={onClose}>
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
-      {/* Modal */}
       <div
-        className="relative bg-white w-full max-w-[480px] rounded-t-3xl sm:rounded-3xl max-h-[85vh] overflow-y-auto shadow-2xl"
+        className="relative w-full max-w-[480px] rounded-t-3xl sm:rounded-3xl max-h-[85vh] overflow-y-auto shadow-2xl"
         onClick={(e) => e.stopPropagation()}
-        style={{ fontFamily: "'Montserrat', sans-serif" }}
+        style={{ backgroundColor: theme.bg, color: theme.text, fontFamily: bodyFont }}
       >
-        {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-black/30 hover:bg-black/50 flex items-center justify-center text-white transition-colors"
+          className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+          style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: '#FFFFFF' }}
         >
           <CiCircleRemove size={20} />
         </button>
 
-        {/* Image */}
         {item.image_url ? (
           <img src={item.image_url} alt={name} className="w-full h-64 object-cover rounded-t-3xl sm:rounded-t-3xl" />
         ) : (
-          <div className="w-full h-48 bg-gradient-to-br from-[#A8B977]/20 to-[#E4A07A]/20 flex items-center justify-center rounded-t-3xl">
-            <CiForkAndKnife size={56} className="text-[#A8B977]/30" />
+          <div
+            className="w-full h-48 flex items-center justify-center rounded-t-3xl"
+            style={{ backgroundColor: theme.cardBg }}
+          >
+            <CiForkAndKnife size={56} style={{ color: theme.mutedText }} />
           </div>
         )}
 
-        {/* Content */}
         <div className="p-5">
-          {/* Badges */}
           {(item.is_popular || item.is_new || item.is_vegetarian) && (
             <div className="flex flex-wrap items-center gap-2 mb-3">
               {item.is_popular && (
-                <span className="inline-flex items-center gap-1 bg-[#FEF3C7] text-[#B45309] text-xs font-semibold px-3 py-1 rounded-full">
+                <span
+                  className="inline-flex items-center gap-1 text-xs px-3 py-1 rounded-full"
+                  style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, fontWeight: 600 }}
+                >
                   <CiStar size={14} /> {UI.popular[lang]}
                 </span>
               )}
               {item.is_new && (
-                <span className="inline-flex items-center gap-0.5 bg-[#DBEAFE] text-[#1D4ED8] text-xs font-semibold px-3 py-1 rounded-full">{UI.newItem[lang]}</span>
+                <span
+                  className="inline-flex items-center gap-0.5 text-xs px-3 py-1 rounded-full"
+                  style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, fontWeight: 600 }}
+                >
+                  {UI.newItem[lang]}
+                </span>
               )}
               {item.is_vegetarian && (
-                <span className="inline-flex items-center gap-1 bg-[#DCFCE7] text-[#16A34A] text-xs font-semibold px-3 py-1 rounded-full">
+                <span
+                  className="inline-flex items-center gap-1 text-xs px-3 py-1 rounded-full"
+                  style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, fontWeight: 600 }}
+                >
                   <CiApple size={14} /> {UI.vegetarian[lang]}
                 </span>
               )}
             </div>
           )}
 
-          {/* Name + Price */}
           <div className="flex items-start justify-between gap-3 mb-3">
-            <h2 className="text-xl font-bold text-[#1A1A1A] leading-tight">{name}</h2>
-            <span className="text-xl font-bold text-[#A8B977] flex-shrink-0 tabular-nums">
+            <h2
+              className="text-xl leading-tight"
+              style={{ fontFamily: headingFont, fontWeight: 700, color: theme.text }}
+            >
+              {name}
+            </h2>
+            <span
+              className="text-xl flex-shrink-0 tabular-nums"
+              style={{ color: theme.price, fontWeight: 500 }}
+            >
               {Number(item.price).toFixed(2)} ₺
             </span>
           </div>
 
-          {/* Description */}
           {description && (
-            <p className="text-sm text-[#6B7280] font-light leading-relaxed mb-4">{description}</p>
+            <p className="text-sm leading-relaxed mb-4" style={{ color: theme.mutedText, fontWeight: 300 }}>
+              {description}
+            </p>
           )}
 
-          {/* Calories */}
           {item.calories && (
-            <div className="flex items-center gap-2 text-sm text-[#9CA3AF] mb-4">
+            <div className="flex items-center gap-2 text-sm mb-4" style={{ color: theme.mutedText }}>
               <CiTempHigh size={16} />
               <span>{item.calories} kcal</span>
             </div>
           )}
 
-          {/* Allergens */}
           {hasAllergens && (
-            <div className="border-t border-[#E8E6E0] pt-4">
-              <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-2">{UI.allergens[lang]}</p>
-              <div className="flex flex-wrap gap-2">
-                {item.allergens!.map((a) => {
-                  const config = ALLERGEN_CONFIG[a];
-                  if (!config) return null;
-                  const Icon = config.icon;
-                  return (
-                    <span key={a} className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full" style={{ backgroundColor: config.bg, color: config.color }}>
-                      <Icon size={14} /> {config.label[lang]}
-                    </span>
-                  );
-                })}
-              </div>
+            <div className="pt-4" style={{ borderTop: `1px solid ${theme.divider}` }}>
+              <p
+                className="text-xs uppercase tracking-wider mb-3"
+                style={{ color: theme.mutedText, fontWeight: 600 }}
+              >
+                {UI.allergens[lang]}
+              </p>
+              <AllergenBadgeList
+                allergens={item.allergens}
+                size={24}
+                showLabel
+                lang={lang === 'ar' || lang === 'zh' ? 'en' : lang}
+                invert={theme.invertIcons}
+                labelColor={theme.text}
+              />
             </div>
           )}
         </div>
