@@ -1,7 +1,44 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, ReactNode, CSSProperties } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
 import { CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiApple, CiStar, CiTempHigh, CiGlobe, CiPen, CiGrid2H, CiUser, CiImageOn, CiTrash, CiLink, CiBoxes } from 'react-icons/ci';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  horizontalListSortingStrategy,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+type SortableRenderProps = {
+  setNodeRef: (node: HTMLElement | null) => void;
+  style: CSSProperties;
+  attributes: Record<string, unknown>;
+  listeners: Record<string, unknown> | undefined;
+  isDragging: boolean;
+};
+
+function Sortable({ id, children }: { id: string; children: (p: SortableRenderProps) => ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style: CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : 'auto',
+  };
+  return <>{children({ setNodeRef, style, attributes: attributes as Record<string, unknown>, listeners, isDragging })}</>;
+}
 import QRManager from '../components/QRManager';
 import { ALLERGEN_LIST, getAllergenInfo } from '../lib/allergens';
 import { AllergenIcon } from '../components/AllergenIcon';
@@ -466,6 +503,51 @@ export default function RestaurantDashboard() {
     setItems(data || []);
   }
 
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  async function persistCategoryOrder(ordered: Category[]) {
+    await Promise.all(
+      ordered.map((c, i) => supabase.from('menu_categories').update({ sort_order: i }).eq('id', c.id))
+    );
+  }
+
+  async function persistItemOrder(ordered: MenuItem[]) {
+    await Promise.all(
+      ordered.map((it, i) => supabase.from('menu_items').update({ sort_order: i }).eq('id', it.id))
+    );
+  }
+
+  function handleCategoryDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setCategories((prev) => {
+      const oldIndex = prev.findIndex((c) => c.id === active.id);
+      const newIndex = prev.findIndex((c) => c.id === over.id);
+      if (oldIndex < 0 || newIndex < 0) return prev;
+      const next = arrayMove(prev, oldIndex, newIndex);
+      persistCategoryOrder(next);
+      return next;
+    });
+  }
+
+  function handleItemDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id || !selectedCat) return;
+    setItems((prev) => {
+      const inCat = prev.filter((i) => i.category_id === selectedCat);
+      const others = prev.filter((i) => i.category_id !== selectedCat);
+      const oldIndex = inCat.findIndex((i) => i.id === active.id);
+      const newIndex = inCat.findIndex((i) => i.id === over.id);
+      if (oldIndex < 0 || newIndex < 0) return prev;
+      const reordered = arrayMove(inCat, oldIndex, newIndex);
+      persistItemOrder(reordered);
+      return [...others, ...reordered];
+    });
+  }
+
   async function generateAIDescription() {
     if (!restaurant || !itemForm.name_tr) return;
     setGeneratingAI(true);
@@ -787,8 +869,12 @@ export default function RestaurantDashboard() {
                 </span>
               )}
             </button>
+            <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleCategoryDragEnd}>
+              <SortableContext items={categories.map(c => c.id)} strategy={horizontalListSortingStrategy}>
             {categories.map(c => (
-              <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Sortable key={c.id} id={c.id}>
+                {({ setNodeRef, style, attributes, listeners }) => (
+              <div ref={setNodeRef} style={{ display: 'flex', alignItems: 'center', gap: 2, ...style }} {...attributes}>
                 {editingCat === c.id ? (
                   <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                     <input style={{ ...S.input, width: 140, padding: '4px 8px', fontSize: 12 }} value={editCatForm.name_tr} onChange={e => setEditCatForm({ name_tr: e.target.value })} />
@@ -797,6 +883,9 @@ export default function RestaurantDashboard() {
                   </div>
                 ) : (
                   <>
+                    <span {...(listeners as Record<string, unknown>)} style={{ cursor: 'grab', color: '#a8a29e', display: 'inline-flex', alignItems: 'center', padding: '0 2px', touchAction: 'none' }} title="Sürükleyerek sırala">
+                      <CiBoxes size={14} />
+                    </span>
                     <button onClick={() => setSelectedCat(c.id)} style={{ ...S.btnSm, background: selectedCat === c.id ? '#1c1917' : '#fff', color: selectedCat === c.id ? '#fff' : '#44403c', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                       {c.image_url ? (
                         <img src={c.image_url} alt="" style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }} />
@@ -821,7 +910,11 @@ export default function RestaurantDashboard() {
                   </>
                 )}
               </div>
+                )}
+              </Sortable>
             ))}
+              </SortableContext>
+            </DndContext>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -931,17 +1024,27 @@ export default function RestaurantDashboard() {
             </form>
           )}
 
+          <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleItemDragEnd}>
+            <SortableContext items={filteredItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
           {filteredItems.map(item => {
             const allergenKeys = (item.allergens || []).filter(a => getAllergenInfo(a));
             const isTranslating = translating === item.id;
+            const dragEnabled = !!selectedCat && !searchQuery.trim();
             return (
-              <div key={item.id} style={{ ...S.card, opacity: item.is_available ? 1 : 0.45, position: 'relative' }}>
+              <Sortable key={item.id} id={item.id}>
+                {({ setNodeRef, style, attributes, listeners }) => (
+              <div ref={setNodeRef} style={{ ...S.card, opacity: item.is_available ? 1 : 0.45, position: 'relative', ...style }} {...attributes}>
                 {isTranslating && (
                   <div style={{ position: 'absolute', top: 8, right: 8, fontSize: 10, color: '#4338CA', display: 'flex', alignItems: 'center', gap: 4 }}>
                     <CiGlobe size={12} /> Çevriliyor...
                   </div>
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  {dragEnabled && (
+                    <span {...(listeners as Record<string, unknown>)} style={{ cursor: 'grab', color: '#a8a29e', display: 'inline-flex', alignItems: 'center', padding: '4px 6px 4px 0', marginRight: 4, touchAction: 'none', alignSelf: 'center' }} title="Sürükleyerek sırala">
+                      <CiBoxes size={18} />
+                    </span>
+                  )}
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                       <span style={{ fontSize: 15, fontWeight: 600, color: '#1c1917' }}>{item.name_tr}</span>
@@ -971,8 +1074,12 @@ export default function RestaurantDashboard() {
                   {!selectedCat && <span style={{ fontSize: 11, color: '#a8a29e', alignSelf: 'center', marginLeft: 'auto' }}>{catName(item.category_id)}</span>}
                 </div>
               </div>
+                )}
+              </Sortable>
             );
           })}
+            </SortableContext>
+          </DndContext>
           {filteredItems.length === 0 && <div style={{ textAlign: 'center', color: '#a8a29e', padding: 40, fontSize: 14 }}>{selectedCat ? 'Bu kategoride henüz ürün yok.' : 'Henüz ürün eklenmedi.'}</div>}
         </>
       )}

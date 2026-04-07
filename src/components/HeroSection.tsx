@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { CiCircleChevRight, CiPlay1, CiStar } from "react-icons/ci";
-import heroImage from "@/assets/hero-restaurant.png";
+import heroImageWebp from "@/assets/hero-restaurant.webp";
+import heroImageJpg from "@/assets/hero-restaurant.jpg";
 
 const avatarColors = ["bg-grapefruit", "bg-sage", "bg-salmon", "bg-gold"];
 const avatarLetters = ["A", "M", "S", "K"];
@@ -59,11 +60,19 @@ const HeroSection = () => {
 
           {/* Right: Hero Image */}
           <div className="flex justify-center lg:justify-end">
-            <img
-              src={heroImage}
-              alt="Restoranda QR menü kullanan misafirler"
-              className="w-full max-w-xl rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] object-cover"
-            />
+            <picture>
+              <source srcSet={heroImageWebp} type="image/webp" />
+              <img
+                src={heroImageJpg}
+                alt="Restoranda QR menü kullanan misafirler"
+                width={1600}
+                height={892}
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
+                className="w-full max-w-xl rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] object-cover"
+              />
+            </picture>
           </div>
         </div>
       </div>
