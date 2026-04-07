@@ -55,9 +55,10 @@ interface PromoPopupProps {
   theme: MenuTheme;
   lang: 'tr' | 'en' | 'ar' | 'zh';
   onClose: () => void;
+  onNavigateCategory?: (categoryId: string) => void;
 }
 
-export default function PromoPopup({ promo, theme, lang, onClose }: PromoPopupProps) {
+export default function PromoPopup({ promo, theme, lang, onClose, onNavigateCategory }: PromoPopupProps) {
   const [visible, setVisible] = useState(false);
   const headingFont = "'Playfair Display', serif";
   const bodyFont = "'Inter', sans-serif";
@@ -88,8 +89,15 @@ export default function PromoPopup({ promo, theme, lang, onClose }: PromoPopupPr
   };
 
   const handleCta = () => {
-    if (promo.cta_url) {
-      window.open(promo.cta_url, '_blank', 'noopener,noreferrer');
+    const target = (promo.cta_url || '').trim();
+    if (target) {
+      if (/^https?:\/\//i.test(target)) {
+        // Legacy: external URL
+        window.open(target, '_blank', 'noopener,noreferrer');
+      } else if (onNavigateCategory) {
+        // New: category ID
+        onNavigateCategory(target);
+      }
     }
     handleClose();
   };

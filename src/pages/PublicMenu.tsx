@@ -720,7 +720,11 @@ export default function PublicMenu() {
           </div>
         ) : (
           groupedItems.map(({ category, items: catItems }) => (
-            <div key={category?.id ?? 'other'} className="mb-6">
+            <div
+              key={category?.id ?? 'other'}
+              id={category ? `category-${category.id}` : undefined}
+              className="mb-6 scroll-mt-20"
+            >
               <div className="flex items-center gap-3 mb-3 pt-2">
                 <h2
                   className="text-sm tracking-wide uppercase"
@@ -775,6 +779,13 @@ export default function PublicMenu() {
           theme={theme}
           lang={lang}
           onClose={() => setActivePromo(null)}
+          onNavigateCategory={(categoryId) => {
+            setActiveCategory(null);
+            setTimeout(() => {
+              const el = document.getElementById(`category-${categoryId}`);
+              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 50);
+          }}
         />
       )}
 

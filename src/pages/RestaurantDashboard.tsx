@@ -900,6 +900,7 @@ const emptyPromoForm: PromoFormState = {
 
 function PromosTab({ restaurant }: { restaurant: Restaurant }) {
   const [promos, setPromos] = useState<Promo[]>([]);
+  const [promoCategories, setPromoCategories] = useState<Category[]>([]);
   const [form, setForm] = useState<PromoFormState>(emptyPromoForm);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -913,12 +914,12 @@ function PromosTab({ restaurant }: { restaurant: Restaurant }) {
   }, [restaurant.id]);
 
   async function load() {
-    const { data } = await supabase
-      .from('restaurant_promos')
-      .select('*')
-      .eq('restaurant_id', restaurant.id)
-      .order('sort_order');
-    setPromos((data || []) as Promo[]);
+    const [{ data: promoData }, { data: catData }] = await Promise.all([
+      supabase.from('restaurant_promos').select('*').eq('restaurant_id', restaurant.id).order('sort_order'),
+      supabase.from('menu_categories').select('*').eq('restaurant_id', restaurant.id).eq('is_active', true).order('sort_order'),
+    ]);
+    setPromos((promoData || []) as Promo[]);
+    setPromoCategories((catData || []) as Category[]);
   }
 
   function normalizeTime(t: string): string {
@@ -1084,8 +1085,17 @@ function PromosTab({ restaurant }: { restaurant: Restaurant }) {
               <input style={S.input} value={form.cta_text_en} onChange={e => setForm({ ...form, cta_text_en: e.target.value })} placeholder="Details" />
             </div>
             <div>
-              <label style={S.label}>CTA Link</label>
-              <input style={S.input} value={form.cta_url} onChange={e => setForm({ ...form, cta_url: e.target.value })} placeholder="https://..." />
+              <label style={S.label}>CTA Yönlendirme</label>
+              <select
+                style={S.input}
+                value={form.cta_url}
+                onChange={e => setForm({ ...form, cta_url: e.target.value })}
+              >
+                <option value="">Popup'ı kapat (yönlendirme yok)</option>
+                {promoCategories.map(c => (
+                  <option key={c.id} value={c.id}>{c.name_tr}</option>
+                ))}
+              </select>
             </div>
           </div>
 
