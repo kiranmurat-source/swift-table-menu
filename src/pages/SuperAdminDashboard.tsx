@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { CiCircleCheck, CiCircleRemove, CiEdit, CiShop, CiMoneyBill, CiWarning } from 'react-icons/ci';
+import { CiCircleCheck, CiCircleRemove, CiEdit, CiShop, CiMoneyBill, CiWarning, CiViewList, CiCamera, CiCalendar, CiViewBoard, CiDollar, CiTimer, CiBoxList, CiWavePulse1, CiGrid2H } from 'react-icons/ci';
 
 type Restaurant = { id: string; name: string; slug: string; is_active: boolean; subscription_status: string; current_plan: string; created_at: string; address: string | null; phone: string | null; };
 type Profile = { id: string; email: string; full_name: string | null; role: string; restaurant_id: string | null; };
@@ -8,6 +8,20 @@ type Plan = { id: string; name: string; price_monthly: number | null; price_year
 type Subscription = { id: string; restaurant_id: string; plan_id: string; start_date: string; end_date: string; status: string; payment_method: string; notes: string | null; };
 type Feature = { id: string; category: string; name: string; description: string | null; sort_order: number; };
 type PlanFeature = { id: string; plan_id: string; feature_id: string; value: string; };
+type KPIData = {
+  totalItems: number; activeItems: number; passiveItems: number;
+  photoPercentage: number;
+  activeRestaurants: number; passiveRestaurants: number;
+  weeklyNewItems: number;
+  planDistribution: { name: string; count: number }[];
+  monthlyRevenue: number;
+  expiringSoon: number; expiringNames: string[];
+  avgMenuSize: number;
+  recentlyActiveRestaurants: number;
+  emptyMenuRestaurants: number; emptyMenuNames: string[];
+  qrCreatedRestaurants: number;
+  totalRestaurants: number;
+};
 
 const CATEGORIES = ['MENÜ', 'AI ARAÇLARI', 'SİPARİŞ & SERVİS', 'MÜŞTERİ DENEYİMİ', 'PAZARLAMA & SOSYAL', 'YÖNETİM'];
 
@@ -51,10 +65,85 @@ export default function SuperAdminDashboard() {
   const [editUserForm, setEditUserForm] = useState({ full_name: '', restaurant_id: '' });
   const [changingPlan, setChangingPlan] = useState<string | null>(null);
   const [newPlanId, setNewPlanId] = useState('');
+  const [kpiData, setKpiData] = useState<KPIData | null>(null);
 
   useEffect(() => { loadAll(); }, []);
 
-  async function loadAll() { loadRestaurants(); loadUsers(); loadPlans(); loadSubscriptions(); loadFeatures(); loadPlanFeatures(); }
+  async function loadAll() { loadRestaurants(); loadUsers(); loadPlans(); loadSubscriptions(); loadFeatures(); loadPlanFeatures(); loadKPIData(); }
+
+  async function loadKPIData() {
+    const [itemsRes, restsRes, subsRes, plansRes, qrsRes] = await Promise.all([
+      supabase.from('menu_items').select('id, is_available, image_url, restaurant_id, created_at, updated_at'),
+      supabase.from('restaurants').select('id, name, is_active'),
+      supabase.from('subscriptions').select('id, restaurant_id, plan_id, end_date, status'),
+      supabase.from('subscription_plans').select('id, name, price_yearly'),
+      supabase.from('qr_codes').select('restaurant_id'),
+    ]);
+    const itemsList = itemsRes.data || [];
+    const restsList = restsRes.data || [];
+    const subsList = subsRes.data || [];
+    const plansList = plansRes.data || [];
+    const qrsList = qrsRes.data || [];
+
+    const totalItems = itemsList.length;
+    const activeItems = itemsList.filter((i: any) => i.is_available).length;
+    const passiveItems = totalItems - activeItems;
+    const withPhoto = itemsList.filter((i: any) => i.image_url && i.image_url !== '').length;
+    const photoPercentage = totalItems > 0 ? Math.round((withPhoto / totalItems) * 100) : 0;
+    const activeRestaurants = restsList.filter((r: any) => r.is_active).length;
+    const passiveRestaurants = restsList.length - activeRestaurants;
+    const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const weeklyNewItems = itemsList.filter((i: any) => i.created_at && new Date(i.created_at).getTime() >= weekAgo).length;
+
+    const activeSubsLocal = subsList.filter((s: any) => s.status === 'active');
+    const planDistribution = plansList
+      .map((p: any) => ({ name: p.name, count: activeSubsLocal.filter((s: any) => s.plan_id === p.id).length }))
+      .filter((p: any) => p.count > 0);
+    const monthlyRev = activeSubsLocal.reduce((sum: number, s: any) => {
+      const plan = plansList.find((p: any) => p.id === s.plan_id);
+      return sum + (plan?.price_yearly ? Number(plan.price_yearly) / 12 : 0);
+    }, 0);
+    const now = Date.now();
+    const in30Days = now + 30 * 24 * 60 * 60 * 1000;
+    const expiringList = activeSubsLocal.filter((s: any) => {
+      const end = new Date(s.end_date).getTime();
+      return end > now && end <= in30Days;
+    });
+    const expiringNames = expiringList
+      .map((s: any) => restsList.find((r: any) => r.id === s.restaurant_id)?.name)
+      .filter(Boolean) as string[];
+
+    const itemCountByRest: Record<string, number> = {};
+    itemsList.forEach((i: any) => {
+      if (i.restaurant_id) itemCountByRest[i.restaurant_id] = (itemCountByRest[i.restaurant_id] || 0) + 1;
+    });
+    const counts = Object.values(itemCountByRest);
+    const avgMenuSize = counts.length > 0 ? counts.reduce((a, b) => a + b, 0) / counts.length : 0;
+
+    const recentRestIds = new Set(
+      itemsList
+        .filter((i: any) => i.updated_at && new Date(i.updated_at).getTime() >= weekAgo)
+        .map((i: any) => i.restaurant_id)
+    );
+    const recentlyActiveRestaurants = recentRestIds.size;
+
+    const restsWithItems = new Set(itemsList.map((i: any) => i.restaurant_id));
+    const emptyMenuList = restsList.filter((r: any) => !restsWithItems.has(r.id));
+    const qrCreatedRestaurants = new Set(qrsList.map((q: any) => q.restaurant_id)).size;
+
+    setKpiData({
+      totalItems, activeItems, passiveItems, photoPercentage,
+      activeRestaurants, passiveRestaurants, weeklyNewItems,
+      planDistribution, monthlyRevenue: monthlyRev,
+      expiringSoon: expiringList.length, expiringNames,
+      avgMenuSize,
+      recentlyActiveRestaurants,
+      emptyMenuRestaurants: emptyMenuList.length,
+      emptyMenuNames: emptyMenuList.map((r: any) => r.name),
+      qrCreatedRestaurants,
+      totalRestaurants: restsList.length,
+    });
+  }
   async function loadRestaurants() {
     const { data } = await supabase.from('restaurants').select('*').order('created_at', { ascending: false });
     setRestaurants(data || []);
@@ -339,6 +428,7 @@ export default function SuperAdminDashboard() {
 
       {/* ============ RESTORANLAR ============ */}
       {tab === 'restaurants' && (<>
+        {kpiData && <KPISections data={kpiData} />}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1c1917' }}>Restoranlar</h2>
           <button onClick={() => setShowForm(!showForm)} style={S.btn}>{showForm ? 'Iptal' : '+ Restoran & Kullanici Ekle'}</button>
@@ -661,6 +751,155 @@ export default function SuperAdminDashboard() {
           Degerlere tikla ve duzenle: true, false veya ozel deger (2 dil, 3 tablet, 5 vs.) girebilirsin. Enter ile kaydet, Escape ile iptal.
         </div>
       </>)}
+    </div>
+  );
+}
+
+// ============ KPI DASHBOARD COMPONENTS ============
+
+const KPI_STYLES: Record<string, React.CSSProperties> = {
+  sectionWrap: { marginBottom: 24 },
+  sectionHeader: {
+    fontSize: 13, fontWeight: 700, color: '#a8a29e',
+    textTransform: 'uppercase', letterSpacing: 1,
+    borderBottom: '1px solid #e7e5e4', paddingBottom: 8, marginBottom: 16,
+  },
+  grid4: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 },
+  grid3: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 },
+  card: {
+    background: '#fff', border: '1px solid #e7e5e4', borderRadius: 12,
+    padding: 20, display: 'flex', flexDirection: 'column', gap: 8,
+  },
+  cardHeader: { display: 'flex', alignItems: 'center', gap: 8, color: '#78716c' },
+  cardTitle: { fontSize: 13, fontWeight: 600, color: '#44403c' },
+  cardMetric: {
+    fontFamily: "'Playfair Display', serif",
+    fontSize: 30, fontWeight: 700, color: '#1c1917', lineHeight: 1.1, marginTop: 4,
+  },
+  cardSub: { fontSize: 12, color: '#a8a29e', fontWeight: 300 },
+};
+
+function KPICard({ icon, title, value, sub, valueColor, titleAttr }: {
+  icon: React.ReactNode; title: string; value: React.ReactNode; sub?: string;
+  valueColor?: string; titleAttr?: string;
+}) {
+  return (
+    <div style={KPI_STYLES.card} title={titleAttr}>
+      <div style={KPI_STYLES.cardHeader}>
+        {icon}
+        <span style={KPI_STYLES.cardTitle}>{title}</span>
+      </div>
+      <div style={{ ...KPI_STYLES.cardMetric, color: valueColor || '#1c1917' }}>{value}</div>
+      {sub && <div style={KPI_STYLES.cardSub}>{sub}</div>}
+    </div>
+  );
+}
+
+function KPISections({ data }: { data: KPIData }) {
+  const photoColor = data.photoPercentage >= 80 ? '#16a34a' : data.photoPercentage >= 50 ? '#d97706' : '#dc2626';
+  const expiringColor = data.expiringSoon > 0 ? '#d97706' : '#1c1917';
+  const emptyColor = data.emptyMenuRestaurants > 0 ? '#dc2626' : '#16a34a';
+  const iconProps = { size: 18, style: { color: '#78716c' } };
+
+  return (
+    <div>
+      {/* SISTEM SAGLIGI */}
+      <div style={KPI_STYLES.sectionWrap}>
+        <div style={KPI_STYLES.sectionHeader}>SISTEM SAGLIGI</div>
+        <div style={KPI_STYLES.grid4}>
+          <KPICard
+            icon={<CiViewList {...iconProps} />}
+            title="Toplam Menu Urunu"
+            value={data.totalItems}
+            sub={`${data.activeItems} aktif, ${data.passiveItems} pasif`}
+          />
+          <KPICard
+            icon={<CiCamera {...iconProps} />}
+            title="Fotografli Urun Orani"
+            value={`%${data.photoPercentage}`}
+            valueColor={photoColor}
+            sub="Gorseli olan urunler"
+          />
+          <KPICard
+            icon={<CiShop {...iconProps} />}
+            title="Aktif / Pasif Restoran"
+            value={`${data.activeRestaurants} / ${data.passiveRestaurants}`}
+            sub={`Toplam ${data.totalRestaurants} restoran`}
+          />
+          <KPICard
+            icon={<CiCalendar {...iconProps} />}
+            title="Bu Hafta Eklenen Urun"
+            value={data.weeklyNewItems}
+            sub="Son 7 gun"
+          />
+        </div>
+      </div>
+
+      {/* IS METRIKLERI */}
+      <div style={KPI_STYLES.sectionWrap}>
+        <div style={KPI_STYLES.sectionHeader}>IS METRIKLERI</div>
+        <div style={KPI_STYLES.grid4}>
+          <KPICard
+            icon={<CiViewBoard {...iconProps} />}
+            title="Plan Dagilimi"
+            value={
+              <span style={{ fontSize: 18 }}>
+                {data.planDistribution.length > 0
+                  ? data.planDistribution.map(p => `${p.name}: ${p.count}`).join(' | ')
+                  : '—'}
+              </span>
+            }
+            sub="Aktif uyelikler"
+          />
+          <KPICard
+            icon={<CiDollar {...iconProps} />}
+            title="Aylik Gelir"
+            value={`₺${Math.round(data.monthlyRevenue).toLocaleString('tr-TR')}`}
+            sub="/ ay (yillik/12)"
+          />
+          <KPICard
+            icon={<CiTimer {...iconProps} />}
+            title="30 Gun Icinde Dolacak"
+            value={data.expiringSoon}
+            valueColor={expiringColor}
+            sub={data.expiringNames.length > 0 ? data.expiringNames.slice(0, 3).join(', ') + (data.expiringNames.length > 3 ? '...' : '') : 'Yok'}
+            titleAttr={data.expiringNames.join('\n')}
+          />
+          <KPICard
+            icon={<CiBoxList {...iconProps} />}
+            title="Ortalama Menu Boyutu"
+            value={data.avgMenuSize.toFixed(1)}
+            sub="urun/restoran"
+          />
+        </div>
+      </div>
+
+      {/* KULLANIM */}
+      <div style={KPI_STYLES.sectionWrap}>
+        <div style={KPI_STYLES.sectionHeader}>KULLANIM</div>
+        <div style={KPI_STYLES.grid3}>
+          <KPICard
+            icon={<CiWavePulse1 {...iconProps} />}
+            title="Son 7 Gunde Aktif"
+            value={data.recentlyActiveRestaurants}
+            sub="Menusunu guncelleyenler"
+          />
+          <KPICard
+            icon={<CiCircleRemove {...iconProps} />}
+            title="Bos Menulu Restoran"
+            value={data.emptyMenuRestaurants}
+            valueColor={emptyColor}
+            sub={data.emptyMenuNames.length > 0 ? data.emptyMenuNames.slice(0, 3).join(', ') + (data.emptyMenuNames.length > 3 ? '...' : '') : 'Yok'}
+            titleAttr={data.emptyMenuNames.join('\n')}
+          />
+          <KPICard
+            icon={<CiGrid2H {...iconProps} />}
+            title="QR Kodlu Restoran"
+            value={`${data.qrCreatedRestaurants} / ${data.totalRestaurants}`}
+            sub="QR olusturulmus"
+          />
+        </div>
+      </div>
     </div>
   );
 }
