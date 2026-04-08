@@ -779,43 +779,73 @@ export default function RestaurantDashboard() {
   const totalMissingPhotos = items.filter(i => !i.image_url).length;
   const catName = (id: string) => categories.find(c => c.id === id)?.name_tr || '';
 
+  const sidebarItems = [
+    { key: 'menu', label: 'Menü', icon: CiEdit },
+    { key: 'translations', label: 'Çeviri Merkezi', icon: CiGlobe },
+    { key: 'qr', label: 'QR Kodları', icon: CiGrid2H },
+    { key: 'promos', label: 'Promosyonlar', icon: CiStar },
+    { key: 'profile', label: 'Profil', icon: CiUser },
+  ] as const;
+
   return (
-    <div style={S.wrap}>
-      <h2 style={{ fontSize: 22, fontWeight: 700, color: '#1c1917', marginBottom: 4 }}>{restaurant.name}</h2>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-        <p style={{ fontSize: 13, color: '#a8a29e', margin: 0 }}>Restoran Yönetimi</p>
-        {enabledLangs.length > 0 && (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#4338CA', background: '#EEF2FF', padding: '2px 8px', borderRadius: 12 }}>
-            <CiGlobe size={12} /> {enabledLangs.map(l => l.toUpperCase()).join(', ')}
-          </span>
-        )}
-        {hasAI && (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#9333EA', background: '#F3E8FF', padding: '2px 8px', borderRadius: 12 }}>
-            <CiPen size={12} /> AI Açıklama
-          </span>
-        )}
-      </div>
+    <div className="flex min-h-screen bg-white">
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex flex-col w-[220px] shrink-0 border-r border-gray-200 bg-[#fafafa] sticky top-0 self-start min-h-screen">
+        <div className="p-4 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            {restaurant.logo_url && (
+              <img src={restaurant.logo_url} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" />
+            )}
+            <div className="min-w-0">
+              <p className="font-semibold text-sm text-stone-900 truncate">{restaurant.name}</p>
+              <p className="text-xs text-stone-500">Restoran Yönetimi</p>
+            </div>
+          </div>
+        </div>
+        <nav className="flex-1 py-2">
+          {sidebarItems.map((item) => {
+            const Icon = item.icon;
+            const active = activeTab === item.key;
+            return (
+              <button
+                key={item.key}
+                onClick={() => setActiveTab(item.key)}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors border-l-[3px] ${
+                  active
+                    ? 'bg-gray-100 text-stone-900 font-semibold border-rose-600'
+                    : 'text-stone-500 hover:bg-gray-50 hover:text-stone-700 border-transparent'
+                }`}
+              >
+                <Icon size={20} />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+        <div className="p-4 border-t border-gray-200">
+          <p className="text-xs text-stone-400">Powered by Tabbled</p>
+        </div>
+      </aside>
 
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '2px solid #e7e5e4' }}>
-        <button onClick={() => setActiveTab('menu')} style={{ padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', background: 'none', border: 'none', borderBottom: activeTab === 'menu' ? '2px solid #1c1917' : '2px solid transparent', color: activeTab === 'menu' ? '#1c1917' : '#a8a29e', marginBottom: -2, transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <CiEdit size={16} /> Menü
-        </button>
-        <button onClick={() => setActiveTab('translations')} style={{ padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', background: 'none', border: 'none', borderBottom: activeTab === 'translations' ? '2px solid #1c1917' : '2px solid transparent', color: activeTab === 'translations' ? '#1c1917' : '#a8a29e', marginBottom: -2, transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <CiGlobe size={16} /> Çeviri Merkezi
-        </button>
-        <button onClick={() => setActiveTab('qr')} style={{ padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', background: 'none', border: 'none', borderBottom: activeTab === 'qr' ? '2px solid #1c1917' : '2px solid transparent', color: activeTab === 'qr' ? '#1c1917' : '#a8a29e', marginBottom: -2, transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <CiGrid2H size={16} /> QR Kodları
-        </button>
-        <button onClick={() => setActiveTab('promos')} style={{ padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', background: 'none', border: 'none', borderBottom: activeTab === 'promos' ? '2px solid #1c1917' : '2px solid transparent', color: activeTab === 'promos' ? '#1c1917' : '#a8a29e', marginBottom: -2, transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <CiStar size={16} /> Promosyonlar
-        </button>
-        <button onClick={() => setActiveTab('profile')} style={{ padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', background: 'none', border: 'none', borderBottom: activeTab === 'profile' ? '2px solid #1c1917' : '2px solid transparent', color: activeTab === 'profile' ? '#1c1917' : '#a8a29e', marginBottom: -2, transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <CiUser size={16} /> Profil
-        </button>
-      </div>
+      {/* Main content */}
+      <main className="flex-1 min-w-0 pb-24 md:pb-0">
+        <div style={S.wrap}>
+          <h2 className="md:hidden" style={{ fontSize: 22, fontWeight: 700, color: '#1c1917', marginBottom: 4 }}>{restaurant.name}</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+            <p className="md:hidden" style={{ fontSize: 13, color: '#a8a29e', margin: 0 }}>Restoran Yönetimi</p>
+            {enabledLangs.length > 0 && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#4338CA', background: '#EEF2FF', padding: '2px 8px', borderRadius: 12 }}>
+                <CiGlobe size={12} /> {enabledLangs.map(l => l.toUpperCase()).join(', ')}
+              </span>
+            )}
+            {hasAI && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#9333EA', background: '#F3E8FF', padding: '2px 8px', borderRadius: 12 }}>
+                <CiPen size={12} /> AI Açıklama
+              </span>
+            )}
+          </div>
 
-      {activeTab === 'profile' && <ProfileTab restaurant={restaurant} onUpdate={(r) => setRestaurant(r)} />}
+          {activeTab === 'profile' && <ProfileTab restaurant={restaurant} onUpdate={(r) => setRestaurant(r)} />}
       {activeTab === 'qr' && <QRManager restaurant={restaurant} />}
       {activeTab === 'promos' && <PromosTab restaurant={restaurant} />}
       {activeTab === 'translations' && (
@@ -1096,6 +1126,28 @@ export default function RestaurantDashboard() {
           {filteredItems.length === 0 && <div style={{ textAlign: 'center', color: '#a8a29e', padding: 40, fontSize: 14 }}>{selectedCat ? 'Bu kategoride henüz ürün yok.' : 'Henüz ürün eklenmedi.'}</div>}
         </>
       )}
+        </div>
+      </main>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 flex justify-around py-2">
+        {sidebarItems.map((item) => {
+          const Icon = item.icon;
+          const active = activeTab === item.key;
+          return (
+            <button
+              key={item.key}
+              onClick={() => setActiveTab(item.key)}
+              className={`flex flex-col items-center gap-1 px-2 py-1 text-[10px] transition-colors ${
+                active ? 'text-rose-600' : 'text-stone-400 hover:text-stone-600'
+              }`}
+            >
+              <Icon size={20} />
+              <span className="truncate max-w-[64px]">{item.label}</span>
+            </button>
+          );
+        })}
+      </nav>
     </div>
   );
 }
