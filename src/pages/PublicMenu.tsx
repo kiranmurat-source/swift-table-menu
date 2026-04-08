@@ -9,12 +9,21 @@ import { AllergenBadgeList, AllergenIcon } from '../components/AllergenIcon';
 import { getTheme, type MenuTheme } from '../lib/themes';
 import { getAllergenInfo } from '../lib/allergens';
 import PromoPopup, { isPromoVisible, type Promo } from '../components/PromoPopup';
+import { getLanguage, isRTL } from '../lib/languages';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
-type LangCode = 'tr' | 'en' | 'ar' | 'zh';
+type LangCode = string;
+type UiLangCode = 'tr' | 'en' | 'ar' | 'zh';
+
+// Map an arbitrary language code to the closest built-in UI language.
+// Only tr/en/ar/zh have hardcoded UI strings; everything else falls back to en.
+function toUiLang(lang: string): UiLangCode {
+  if (lang === 'tr' || lang === 'en' || lang === 'ar' || lang === 'zh') return lang;
+  return 'en';
+}
 
 interface Translations {
   [lang: string]: { name?: string; description?: string; tagline?: string };
@@ -53,20 +62,27 @@ interface MenuItem {
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
-function t(translations: Translations | null | undefined, field: string, fallback: string | null | undefined, lang: LangCode): string {
+function t(
+  translations: Translations | null | undefined,
+  field: string,
+  fallback: string | null | undefined,
+  lang: LangCode,
+  englishFallback?: string | null,
+): string {
   if (lang === 'tr') return fallback ?? '';
+  if (lang === 'en' && englishFallback && englishFallback.trim() !== '') {
+    return englishFallback;
+  }
   const val = translations?.[lang]?.[field as keyof Translations[string]];
   if (val && typeof val === 'string' && val.trim() !== '') return val;
   return fallback ?? '';
 }
 
-const LANG_LABELS: Record<LangCode, string> = { tr: 'Türkçe', en: 'English', ar: 'العربية', zh: '中文' };
-
 const FILTER_ALLERGEN_KEYS = [
   'gluten', 'wheat', 'milk', 'eggs', 'fish', 'shrimp', 'nuts', 'soya', 'sesame', 'sulfur-dioxide-sulphites',
 ];
 
-const FILTER_LABELS: Record<LangCode, {
+const FILTER_LABELS: Record<UiLangCode, {
   filters: string; clearAll: string; apply: string; freeFrom: string; preferences: string;
   popular: string; new: string; vegetarian: string; vegan: string; showing: string; noResults: string;
 }> = {
@@ -96,7 +112,7 @@ const FILTER_LABELS: Record<LangCode, {
   },
 };
 
-const UI: Record<string, Record<LangCode, string>> = {
+const UI: Record<string, Record<UiLangCode, string>> = {
   all:          { tr: 'Tümü', en: 'All', ar: 'الكل', zh: '全部' },
   loading:      { tr: 'Menü yükleniyor...', en: 'Loading menu...', ar: 'جاري تحميل القائمة...', zh: '菜单加载中...' },
   notFound:     { tr: 'Bu menü mevcut değil', en: 'This menu does not exist', ar: 'هذه القائمة غير موجودة', zh: '此菜单不存在' },
@@ -151,7 +167,7 @@ export default function PublicMenu() {
   const { slug } = useParams<{ slug: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const table = searchParams.get('table');
-  const langParam = (searchParams.get('lang') as LangCode) || 'tr';
+  const langParam: LangCode = searchParams.get('lang') || 'tr';
 
   const [loading, setLoading] = useState(true);
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
@@ -260,7 +276,7 @@ export default function PublicMenu() {
         >
           <CiForkAndKnife size={32} style={{ color: theme.mutedText }} />
         </div>
-        <p className="text-lg" style={{ fontFamily: headingFont, fontWeight: 700 }}>{UI.notFound[lang]}</p>
+        <p className="text-lg" style={{ fontFamily: headingFont, fontWeight: 700 }}>{UI.notFound[toUiLang(lang)]}</p>
         <a href="https://tabbled.com" aria-label="Tabbled" className="hover:opacity-80 transition-opacity">
           <img src="/tabbled-logo.png" alt="Tabbled" className="h-5 w-auto block" />
         </a>
@@ -343,7 +359,7 @@ export default function PublicMenu() {
               className="text-sm px-5 py-2 rounded-xl mb-6 shadow-lg"
               style={{ backgroundColor: theme.accent, color: theme.key === 'white' ? '#FFFFFF' : theme.bg, fontWeight: 600 }}
             >
-              {UI.table[lang]} {table}
+              {UI.table[toUiLang(lang)]} {table}
             </div>
           )}
 
@@ -380,7 +396,7 @@ export default function PublicMenu() {
               fontWeight: 500,
             }}
           >
-            {UI.viewMenu[lang]}
+            {UI.viewMenu[toUiLang(lang)]}
           </button>
 
           {/* Language switcher */}
@@ -399,7 +415,7 @@ export default function PublicMenu() {
                       fontWeight: 500,
                     }}
                   >
-                    {LANG_LABELS[l]}
+                    {getLanguage(l)?.nativeName || l}
                   </button>
                 ))}
               </div>
@@ -482,7 +498,7 @@ export default function PublicMenu() {
 
   const hasNoItems = filteredItems.length === 0 && !effectiveActiveCategory && items.length === 0;
   const hasNoFilterResults = filterApplied && globallyFilteredItems.length === 0;
-  const fl = FILTER_LABELS[lang];
+  const fl = FILTER_LABELS[toUiLang(lang)];
 
   return (
     <div
@@ -589,7 +605,7 @@ export default function PublicMenu() {
                   fontWeight: 600,
                 }}
               >
-                {UI.table[lang]} {table}
+                {UI.table[toUiLang(lang)]} {table}
               </span>
             )}
           </div>
@@ -610,7 +626,7 @@ export default function PublicMenu() {
                         fontWeight: 500,
                       }}
                     >
-                      {LANG_LABELS[l]}
+                      {getLanguage(l)?.nativeName || l}
                     </button>
                   ))}
                 </div>
@@ -668,7 +684,7 @@ export default function PublicMenu() {
                 scrollSnapAlign: 'start',
               }}
             >
-              {UI.all[lang]}
+              {UI.all[toUiLang(lang)]}
             </button>
             {visibleCategories.map((cat) => (
               <button
@@ -743,7 +759,7 @@ export default function PublicMenu() {
             >
               <CiForkAndKnife size={28} style={{ color: theme.mutedText }} />
             </div>
-            <p className="text-sm" style={{ color: theme.mutedText }}>{UI.noItems[lang]}</p>
+            <p className="text-sm" style={{ color: theme.mutedText }}>{UI.noItems[toUiLang(lang)]}</p>
           </div>
         ) : effectiveActiveCategory ? (
           <div className="flex flex-col gap-3">
@@ -751,7 +767,7 @@ export default function PublicMenu() {
               <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} />
             ))}
             {filteredItems.length === 0 && (
-              <p className="text-center text-sm py-8" style={{ color: theme.mutedText }}>{UI.noItemsInCat[lang]}</p>
+              <p className="text-center text-sm py-8" style={{ color: theme.mutedText }}>{UI.noItemsInCat[toUiLang(lang)]}</p>
             )}
           </div>
         ) : (
@@ -766,7 +782,7 @@ export default function PublicMenu() {
                   className="text-sm tracking-wide uppercase"
                   style={{ fontFamily: headingFont, fontWeight: 700, color: theme.text }}
                 >
-                  {category ? t(category.translations, 'name', category.name_tr, lang) : UI.other[lang]}
+                  {category ? t(category.translations, 'name', category.name_tr, lang) : UI.other[toUiLang(lang)]}
                 </h2>
                 <div className="flex-1 h-px" style={{ backgroundColor: theme.divider }} />
                 <span
@@ -809,7 +825,7 @@ export default function PublicMenu() {
         <PromoPopup
           promo={activePromo}
           theme={theme}
-          lang={lang}
+          lang={toUiLang(lang)}
           onClose={() => setActivePromo(null)}
           onNavigateCategory={(categoryId) => {
             setActiveCategory(null);
@@ -863,7 +879,7 @@ function FilterPanel({
   onClearAll: () => void;
   onClose: () => void;
 }) {
-  const fl = FILTER_LABELS[lang];
+  const fl = FILTER_LABELS[toUiLang(lang)];
   const headingFont = "'Playfair Display', serif";
   const bodyFont = "'Inter', sans-serif";
   const iconLang: 'tr' | 'en' = lang === 'tr' ? 'tr' : 'en';
@@ -1052,17 +1068,17 @@ function MenuItemCard({ item, lang, theme, onSelect }: { item: MenuItem; lang: L
             <div className="flex flex-wrap items-center gap-1.5 mt-2">
               {item.is_popular && (
                 <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, fontWeight: 600 }}>
-                  <CiStar size={11} /> {UI.popular[lang]}
+                  <CiStar size={11} /> {UI.popular[toUiLang(lang)]}
                 </span>
               )}
               {item.is_new && (
                 <span className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, fontWeight: 600 }}>
-                  {UI.newItem[lang]}
+                  {UI.newItem[toUiLang(lang)]}
                 </span>
               )}
               {item.is_vegetarian && (
                 <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, fontWeight: 600 }}>
-                  <CiApple size={11} /> {UI.vegetarian[lang]}
+                  <CiApple size={11} /> {UI.vegetarian[toUiLang(lang)]}
                 </span>
               )}
             </div>
@@ -1073,7 +1089,7 @@ function MenuItemCard({ item, lang, theme, onSelect }: { item: MenuItem; lang: L
                 <span className="text-[11px]" style={{ color: theme.mutedText, fontWeight: 300 }}>{item.calories} kcal</span>
               ) : <span />}
               {hasAllergens && (
-                <AllergenBadgeList allergens={item.allergens} size={16} lang={lang === 'ar' || lang === 'zh' ? 'en' : lang} invert={theme.invertIcons} />
+                <AllergenBadgeList allergens={item.allergens} size={16} lang={toUiLang(lang) === 'ar' || toUiLang(lang) === 'zh' ? 'en' : (toUiLang(lang) as 'tr' | 'en')} invert={theme.invertIcons} />
               )}
             </div>
           )}
@@ -1128,7 +1144,7 @@ function MenuItemCard({ item, lang, theme, onSelect }: { item: MenuItem; lang: L
                 className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
                 style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, fontWeight: 600 }}
               >
-                <CiStar size={11} /> {UI.popular[lang]}
+                <CiStar size={11} /> {UI.popular[toUiLang(lang)]}
               </span>
             )}
             {item.is_new && (
@@ -1136,7 +1152,7 @@ function MenuItemCard({ item, lang, theme, onSelect }: { item: MenuItem; lang: L
                 className="inline-flex items-center gap-0.5 text-[10px] px-2 py-0.5 rounded-full"
                 style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, fontWeight: 600 }}
               >
-                {UI.newItem[lang]}
+                {UI.newItem[toUiLang(lang)]}
               </span>
             )}
             {item.is_vegetarian && (
@@ -1144,7 +1160,7 @@ function MenuItemCard({ item, lang, theme, onSelect }: { item: MenuItem; lang: L
                 className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
                 style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, fontWeight: 600 }}
               >
-                <CiApple size={11} /> {UI.vegetarian[lang]}
+                <CiApple size={11} /> {UI.vegetarian[toUiLang(lang)]}
               </span>
             )}
           </div>
@@ -1160,7 +1176,7 @@ function MenuItemCard({ item, lang, theme, onSelect }: { item: MenuItem; lang: L
               <AllergenBadgeList
                 allergens={item.allergens}
                 size={16}
-                lang={lang === 'ar' || lang === 'zh' ? 'en' : lang}
+                lang={toUiLang(lang) === 'ar' || toUiLang(lang) === 'zh' ? 'en' : (toUiLang(lang) as 'tr' | 'en')}
                 invert={theme.invertIcons}
               />
             )}
@@ -1218,7 +1234,7 @@ function ItemDetailModal({ item, lang, theme, onClose }: { item: MenuItem; lang:
                   className="inline-flex items-center gap-1 text-xs px-3 py-1 rounded-full"
                   style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, fontWeight: 600 }}
                 >
-                  <CiStar size={14} /> {UI.popular[lang]}
+                  <CiStar size={14} /> {UI.popular[toUiLang(lang)]}
                 </span>
               )}
               {item.is_new && (
@@ -1226,7 +1242,7 @@ function ItemDetailModal({ item, lang, theme, onClose }: { item: MenuItem; lang:
                   className="inline-flex items-center gap-0.5 text-xs px-3 py-1 rounded-full"
                   style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, fontWeight: 600 }}
                 >
-                  {UI.newItem[lang]}
+                  {UI.newItem[toUiLang(lang)]}
                 </span>
               )}
               {item.is_vegetarian && (
@@ -1234,7 +1250,7 @@ function ItemDetailModal({ item, lang, theme, onClose }: { item: MenuItem; lang:
                   className="inline-flex items-center gap-1 text-xs px-3 py-1 rounded-full"
                   style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, fontWeight: 600 }}
                 >
-                  <CiApple size={14} /> {UI.vegetarian[lang]}
+                  <CiApple size={14} /> {UI.vegetarian[toUiLang(lang)]}
                 </span>
               )}
             </div>
@@ -1274,13 +1290,13 @@ function ItemDetailModal({ item, lang, theme, onClose }: { item: MenuItem; lang:
                 className="text-xs uppercase tracking-wider mb-3"
                 style={{ color: theme.mutedText, fontWeight: 600 }}
               >
-                {UI.allergens[lang]}
+                {UI.allergens[toUiLang(lang)]}
               </p>
               <AllergenBadgeList
                 allergens={item.allergens}
                 size={24}
                 showLabel
-                lang={lang === 'ar' || lang === 'zh' ? 'en' : lang}
+                lang={toUiLang(lang) === 'ar' || toUiLang(lang) === 'zh' ? 'en' : (toUiLang(lang) as 'tr' | 'en')}
                 invert={theme.invertIcons}
                 labelColor={theme.text}
               />

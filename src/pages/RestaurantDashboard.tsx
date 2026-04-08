@@ -40,6 +40,7 @@ function Sortable({ id, children }: { id: string; children: (p: SortableRenderPr
   return <>{children({ setNodeRef, style, attributes: attributes as Record<string, unknown>, listeners, isDragging })}</>;
 }
 import QRManager from '../components/QRManager';
+import TranslationCenter from '../components/TranslationCenter';
 import { ALLERGEN_LIST, getAllergenInfo } from '../lib/allergens';
 import { AllergenIcon } from '../components/AllergenIcon';
 import { THEMES } from '../lib/themes';
@@ -475,7 +476,7 @@ export default function RestaurantDashboard() {
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [editCatForm, setEditCatForm] = useState({ name_tr: '' });
   const [uploading, setUploading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'menu' | 'qr' | 'profile' | 'promos'>('menu');
+  const [activeTab, setActiveTab] = useState<'menu' | 'translations' | 'qr' | 'profile' | 'promos'>('menu');
   const fileRef = useRef<HTMLInputElement>(null);
 
   const enabledLangs = (restaurant?.enabled_languages ?? []).filter(l => l !== 'tr');
@@ -800,6 +801,9 @@ export default function RestaurantDashboard() {
         <button onClick={() => setActiveTab('menu')} style={{ padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', background: 'none', border: 'none', borderBottom: activeTab === 'menu' ? '2px solid #1c1917' : '2px solid transparent', color: activeTab === 'menu' ? '#1c1917' : '#a8a29e', marginBottom: -2, transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 6 }}>
           <CiEdit size={16} /> Menü
         </button>
+        <button onClick={() => setActiveTab('translations')} style={{ padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', background: 'none', border: 'none', borderBottom: activeTab === 'translations' ? '2px solid #1c1917' : '2px solid transparent', color: activeTab === 'translations' ? '#1c1917' : '#a8a29e', marginBottom: -2, transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <CiGlobe size={16} /> Çeviri Merkezi
+        </button>
         <button onClick={() => setActiveTab('qr')} style={{ padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', background: 'none', border: 'none', borderBottom: activeTab === 'qr' ? '2px solid #1c1917' : '2px solid transparent', color: activeTab === 'qr' ? '#1c1917' : '#a8a29e', marginBottom: -2, transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 6 }}>
           <CiGrid2H size={16} /> QR Kodları
         </button>
@@ -814,6 +818,15 @@ export default function RestaurantDashboard() {
       {activeTab === 'profile' && <ProfileTab restaurant={restaurant} onUpdate={(r) => setRestaurant(r)} />}
       {activeTab === 'qr' && <QRManager restaurant={restaurant} />}
       {activeTab === 'promos' && <PromosTab restaurant={restaurant} />}
+      {activeTab === 'translations' && (
+        <TranslationCenter
+          restaurantId={restaurant.id}
+          enabledLanguages={restaurant.enabled_languages ?? ['tr']}
+          onEnabledLanguagesChange={(langs) =>
+            setRestaurant({ ...restaurant, enabled_languages: langs })
+          }
+        />
+      )}
 
       {activeTab === 'menu' && (
         <>

@@ -5,9 +5,9 @@ const GOOGLE_API_KEY = Deno.env.get("GOOGLE_TRANSLATE_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+// Map internal language codes to Google Translate API codes where they
+// differ. Any language not listed here is passed through unchanged.
 const GOOGLE_LANG_CODES: Record<string, string> = {
-  en: "en",
-  ar: "ar",
   zh: "zh-CN",
 };
 
@@ -103,7 +103,7 @@ serve(async (req) => {
     else if (table === "restaurants") fieldsToTranslate.push("description", "tagline");
 
     for (const lang of languages) {
-      if (!GOOGLE_LANG_CODES[lang]) continue;
+      if (lang === "tr") continue; // source language, skip
       translations[lang] = translations[lang] || {};
 
       for (const field of fieldsToTranslate) {
