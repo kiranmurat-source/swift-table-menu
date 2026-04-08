@@ -441,7 +441,10 @@ export default function TranslationCenter({
   async function callTranslateFn(table: 'menu_items' | 'menu_categories', recordId: string, langs: string[]) {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/translate-menu`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+      },
       body: JSON.stringify({ table, record_id: recordId, languages: langs }),
     });
     if (!res.ok) {
