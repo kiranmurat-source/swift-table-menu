@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, ReactNode, CSSProperties } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
-import { CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiApple, CiStar, CiTempHigh, CiGlobe, CiPen, CiGrid2H, CiUser, CiImageOn, CiTrash, CiLink, CiBoxes, CiCircleChevDown, CiCircleChevUp, CiCirclePlus, CiClock1 } from 'react-icons/ci';
+import { CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiApple, CiStar, CiTempHigh, CiGlobe, CiPen, CiGrid2H, CiUser, CiImageOn, CiTrash, CiLink, CiBoxes, CiCircleChevDown, CiCircleChevUp, CiCirclePlus, CiClock1, CiWheat, CiTimer } from 'react-icons/ci';
 import {
   DndContext,
   closestCenter,
@@ -60,6 +60,33 @@ type Category = { id: string; name_tr: string; name_en: string | null; sort_orde
 type PeriodicDay = { enabled: boolean; start: string; end: string; all_day?: boolean };
 type PeriodicSchedule = Partial<Record<'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday', PeriodicDay>>;
 
+type PriceVariant = {
+  name_tr: string;
+  name_en: string;
+  price: number;
+  calories: number | null;
+};
+
+type Nutrition = {
+  serving_size?: string;
+  calories?: number;
+  calories_from_fat?: number;
+  total_fat?: number;
+  saturated_fat?: number;
+  trans_fat?: number;
+  cholesterol?: number;
+  sodium?: number;
+  total_carb?: number;
+  dietary_fiber?: number;
+  sugars?: number;
+  protein?: number;
+  vitamin_a?: number;
+  vitamin_c?: number;
+  calcium?: number;
+  iron?: number;
+  show_on_menu?: boolean;
+};
+
 type MenuItem = {
   id: string; category_id: string; name_tr: string; name_en: string | null;
   description_tr: string | null; description_en: string | null; price: number;
@@ -71,6 +98,9 @@ type MenuItem = {
   schedule_start: string | null;
   schedule_end: string | null;
   schedule_periodic: PeriodicSchedule;
+  price_variants: PriceVariant[];
+  nutrition: Nutrition | null;
+  prep_time: number | null;
   translations: Translations;
 };
 type Restaurant = {
@@ -294,6 +324,55 @@ function InlinePrice({ value, isSoldOut, onSave }: { value: number; isSoldOut: b
   );
 }
 
+type VariantDraft = { name_tr: string; name_en: string; price: string; calories: string };
+
+type NutritionDraft = {
+  show_on_menu: boolean;
+  serving_size: string;
+  calories: string;
+  calories_from_fat: string;
+  total_fat: string;
+  saturated_fat: string;
+  trans_fat: string;
+  cholesterol: string;
+  sodium: string;
+  total_carb: string;
+  dietary_fiber: string;
+  sugars: string;
+  protein: string;
+  vitamin_a: string;
+  vitamin_c: string;
+  calcium: string;
+  iron: string;
+};
+
+const emptyNutritionDraft = (): NutritionDraft => ({
+  show_on_menu: true,
+  serving_size: '',
+  calories: '',
+  calories_from_fat: '',
+  total_fat: '',
+  saturated_fat: '',
+  trans_fat: '',
+  cholesterol: '',
+  sodium: '',
+  total_carb: '',
+  dietary_fiber: '',
+  sugars: '',
+  protein: '',
+  vitamin_a: '',
+  vitamin_c: '',
+  calcium: '',
+  iron: '',
+});
+
+// Numeric field keys on the nutrition draft (everything except show_on_menu and serving_size)
+const NUTRITION_NUMERIC_KEYS: Array<keyof NutritionDraft> = [
+  'calories', 'calories_from_fat', 'total_fat', 'saturated_fat', 'trans_fat',
+  'cholesterol', 'sodium', 'total_carb', 'dietary_fiber', 'sugars', 'protein',
+  'vitamin_a', 'vitamin_c', 'calcium', 'iron',
+];
+
 const emptyItemForm = {
   name_tr: '', description_tr: '', price: '', image_url: '', calories: '',
   allergens: [] as string[], is_vegetarian: false, is_new: false, is_featured: false,
@@ -302,6 +381,11 @@ const emptyItemForm = {
   schedule_start: '',
   schedule_end: '',
   schedule_periodic: defaultPeriodicSchedule(),
+  category_id: '' as string,
+  variants: [] as VariantDraft[],
+  nutrition: emptyNutritionDraft(),
+  nutritionOpen: false,
+  prep_time: '',
 };
 
 async function triggerTranslation(table: string, recordId: string, languages: string[]) {
@@ -762,6 +846,21 @@ export default function RestaurantDashboard() {
     });
   }
 
+  function handleChildCategoryDragEnd(parentId: string, event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setCategories((prev) => {
+      const scope = prev.filter((c) => c.parent_id === parentId);
+      const others = prev.filter((c) => c.parent_id !== parentId);
+      const oldIndex = scope.findIndex((c) => c.id === active.id);
+      const newIndex = scope.findIndex((c) => c.id === over.id);
+      if (oldIndex < 0 || newIndex < 0) return prev;
+      const reordered = arrayMove(scope, oldIndex, newIndex);
+      persistCategoryOrder(reordered);
+      return [...others, ...reordered];
+    });
+  }
+
   function handleItemDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id || !selectedCat) return;
@@ -894,15 +993,87 @@ export default function RestaurantDashboard() {
   async function addOrUpdateItem(e: React.FormEvent) {
     e.preventDefault();
     if (!restaurant || !selectedCat) return;
+
+    // Resolve target category: form dropdown overrides the currently-open list
+    const targetCategoryId = itemForm.category_id || selectedCat;
+
+    // Validate + normalise variants
+    let priceForDb = parseFloat(itemForm.price);
+    let priceVariants: PriceVariant[] = [];
+    if (itemForm.variants.length > 0) {
+      if (itemForm.variants.length < 2) {
+        setMsg('Çoklu fiyat modu için en az 2 varyant gerekir. Tek fiyata dönmek için "Tek fiyata dön" linkini kullanın.');
+        return;
+      }
+      const parsed: PriceVariant[] = [];
+      for (const v of itemForm.variants) {
+        const price = parseFloat(v.price);
+        if (!v.name_tr.trim() || !Number.isFinite(price) || price <= 0) {
+          setMsg('Her varyant için TR isim ve geçerli fiyat zorunludur.');
+          return;
+        }
+        parsed.push({
+          name_tr: v.name_tr.trim(),
+          name_en: v.name_en.trim(),
+          price,
+          calories: v.calories ? parseInt(v.calories) : null,
+        });
+      }
+      priceVariants = parsed;
+      priceForDb = Math.min(...parsed.map((p) => p.price));
+    } else if (!Number.isFinite(priceForDb) || priceForDb < 0) {
+      setMsg('Geçerli bir fiyat girin.');
+      return;
+    }
+
+    // Build nutrition jsonb from draft; NULL if nothing filled
+    const nd = itemForm.nutrition;
+    const nutritionPayload: Nutrition | null = (() => {
+      const anyNumeric = NUTRITION_NUMERIC_KEYS.some((k) => (nd[k] || '').trim() !== '');
+      const hasServing = nd.serving_size.trim() !== '';
+      if (!anyNumeric && !hasServing) return null;
+      const out: Nutrition = { show_on_menu: nd.show_on_menu };
+      if (hasServing) out.serving_size = nd.serving_size.trim();
+      for (const k of NUTRITION_NUMERIC_KEYS) {
+        const raw = (nd[k] || '').trim();
+        if (raw === '') continue;
+        const num = parseFloat(raw);
+        if (!Number.isFinite(num) || num < 0) continue;
+        (out as Record<string, unknown>)[k] = num;
+      }
+      return out;
+    })();
+
+    // calories column stays in sync with nutrition.calories (or clears when
+    // nutrition is blank)
+    const caloriesForDb: number | null = nutritionPayload?.calories != null
+      ? nutritionPayload.calories
+      : null;
+
     setSaving(true);
+
+    // If category changed during edit, append to the new category's end
+    const movedCategory = editingItem && targetCategoryId !== selectedCat;
+    const newSortOrder =
+      movedCategory
+        ? items.filter((i) => i.category_id === targetCategoryId).length
+        : editingItem
+        ? undefined
+        : items.filter((i) => i.category_id === targetCategoryId).length;
+
     const payload = {
       restaurant_id: restaurant.id,
-      category_id: selectedCat,
+      category_id: targetCategoryId,
       name_tr: itemForm.name_tr,
       description_tr: itemForm.description_tr || null,
-      price: parseFloat(itemForm.price),
+      price: priceForDb,
+      price_variants: priceVariants,
+      nutrition: nutritionPayload,
+      prep_time: itemForm.prep_time && Number.isFinite(parseInt(itemForm.prep_time))
+        ? Math.max(1, Math.min(999, parseInt(itemForm.prep_time)))
+        : null,
       image_url: itemForm.image_url || null,
-      calories: itemForm.calories ? parseInt(itemForm.calories) : null,
+      calories: caloriesForDb,
       allergens: itemForm.allergens.length > 0 ? itemForm.allergens : null,
       is_vegetarian: itemForm.is_vegetarian,
       is_new: itemForm.is_new,
@@ -912,7 +1083,7 @@ export default function RestaurantDashboard() {
       schedule_start: itemForm.schedule_type === 'date_range' && itemForm.schedule_start ? itemForm.schedule_start : null,
       schedule_end: itemForm.schedule_type === 'date_range' && itemForm.schedule_end ? itemForm.schedule_end : null,
       schedule_periodic: itemForm.schedule_type === 'periodic' ? itemForm.schedule_periodic : {},
-      sort_order: editingItem ? undefined : items.filter(i => i.category_id === selectedCat).length,
+      sort_order: newSortOrder,
     };
 
     let savedId = editingItem;
@@ -964,6 +1135,30 @@ export default function RestaurantDashboard() {
         }
       }
     }
+    const variantDrafts: VariantDraft[] = Array.isArray(item.price_variants)
+      ? item.price_variants.map((v) => ({
+          name_tr: v.name_tr || '',
+          name_en: v.name_en || '',
+          price: v.price != null ? v.price.toString() : '',
+          calories: v.calories != null ? v.calories.toString() : '',
+        }))
+      : [];
+
+    // Hydrate nutrition draft: if item has nutrition use it, otherwise fall
+    // back to legacy calories column so nothing silently disappears.
+    const srcNutr = item.nutrition;
+    const nutrDraft: NutritionDraft = emptyNutritionDraft();
+    if (srcNutr && typeof srcNutr === 'object') {
+      nutrDraft.show_on_menu = srcNutr.show_on_menu !== false;
+      nutrDraft.serving_size = srcNutr.serving_size || '';
+      for (const key of NUTRITION_NUMERIC_KEYS) {
+        const val = (srcNutr as Record<string, unknown>)[key];
+        if (typeof val === 'number') nutrDraft[key] = val.toString();
+      }
+    } else if (item.calories != null) {
+      nutrDraft.calories = item.calories.toString();
+    }
+    const nutritionOpen = !!srcNutr;
     setItemForm({
       name_tr: item.name_tr,
       description_tr: item.description_tr || '',
@@ -979,6 +1174,11 @@ export default function RestaurantDashboard() {
       schedule_start: item.schedule_start ? item.schedule_start.slice(0, 16) : '',
       schedule_end: item.schedule_end ? item.schedule_end.slice(0, 16) : '',
       schedule_periodic: mergedPeriodic,
+      category_id: item.category_id,
+      variants: variantDrafts,
+      nutrition: nutrDraft,
+      nutritionOpen,
+      prep_time: item.prep_time != null ? item.prep_time.toString() : '',
     });
     setShowItemForm(true);
     setSelectedCat(item.category_id);
@@ -1222,6 +1422,41 @@ export default function RestaurantDashboard() {
           {showItemForm && selectedCat && (
             <form onSubmit={addOrUpdateItem} style={{ ...S.card, display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div>
+                <label style={S.label}>Kategori *</label>
+                <select
+                  style={S.input}
+                  value={itemForm.category_id || selectedCat}
+                  onChange={e => setItemForm({ ...itemForm, category_id: e.target.value })}
+                  required
+                >
+                  {(() => {
+                    const options: React.ReactElement[] = [];
+                    const parents = categories.filter(c => !c.parent_id).sort((a, b) => a.sort_order - b.sort_order);
+                    for (const p of parents) {
+                      const kids = categories.filter(c => c.parent_id === p.id).sort((a, b) => a.sort_order - b.sort_order);
+                      // Parent is selectable only when it has no children (items can live there directly)
+                      if (kids.length === 0) {
+                        options.push(<option key={p.id} value={p.id}>{p.name_tr}</option>);
+                      } else {
+                        options.push(
+                          <option key={p.id} value={p.id} disabled>
+                            {p.name_tr}
+                          </option>,
+                        );
+                        for (const k of kids) {
+                          options.push(
+                            <option key={k.id} value={k.id}>
+                              {'\u00A0\u00A0\u00A0\u00A0— '}{k.name_tr}
+                            </option>,
+                          );
+                        }
+                      }
+                    }
+                    return options;
+                  })()}
+                </select>
+              </div>
+              <div>
                 <label style={S.label}>Ürün Adı *</label>
                 <input style={S.input} value={itemForm.name_tr} onChange={e => setItemForm({ ...itemForm, name_tr: e.target.value })} required placeholder="Örn: Mercimek Çorbası" />
               </div>
@@ -1236,22 +1471,192 @@ export default function RestaurantDashboard() {
                   )}
                 </div>
               </div>
-              <div style={S.grid3}>
-                <div><label style={S.label}>Fiyat (₺) *</label><input type="number" step="0.01" style={S.input} value={itemForm.price} onChange={e => setItemForm({ ...itemForm, price: e.target.value })} required /></div>
-                <div><label style={S.label}>Kalori (kcal)</label><input type="number" style={S.input} value={itemForm.calories} onChange={e => setItemForm({ ...itemForm, calories: e.target.value })} placeholder="Örn: 450" /></div>
-                <div>
-                  <label style={S.label}>Görsel</label>
-                  <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) handleImageUpload(e.target.files[0]); }} />
-                  {itemForm.image_url ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <img src={getOptimizedImageUrl(itemForm.image_url, 'thumbnail')} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover' }} />
-                      <button type="button" onClick={() => setItemForm({ ...itemForm, image_url: '' })} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11, color: '#dc2626' }}>Kaldır</button>
+              {/* Single price vs variant mode */}
+              {itemForm.variants.length === 0 ? (
+                <div style={S.grid2}>
+                  <div>
+                    <label style={S.label}>Fiyat (₺) *</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      style={S.input}
+                      value={itemForm.price}
+                      onChange={e => setItemForm({ ...itemForm, price: e.target.value })}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setItemForm({
+                          ...itemForm,
+                          variants: [
+                            { name_tr: '', name_en: '', price: itemForm.price || '', calories: '' },
+                            { name_tr: '', name_en: '', price: '', calories: '' },
+                          ],
+                        })
+                      }
+                      style={{ ...S.btnSm, marginTop: 6, display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11 }}
+                    >
+                      <CiCirclePlus size={14} /> Varyant Ekle (Boyut)
+                    </button>
+                  </div>
+                  <div>
+                    <label style={S.label}>Görsel</label>
+                    <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) handleImageUpload(e.target.files[0]); }} />
+                    {itemForm.image_url ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <img src={getOptimizedImageUrl(itemForm.image_url, 'thumbnail')} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover' }} />
+                        <button type="button" onClick={() => setItemForm({ ...itemForm, image_url: '' })} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11, color: '#dc2626' }}>Kaldır</button>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} style={{ ...S.btnSm, width: '100%' }}>
+                        {uploading ? 'Yükleniyor...' : <><CiCamera size={14} /> Görsel Seç</>}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <label style={{ ...S.label, margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <CiCirclePlus size={14} /> Fiyat Varyantları
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!confirm('Tüm varyantlar silinecek ve tek fiyata dönülecek. Devam edilsin mi?')) return;
+                        const fallback = itemForm.variants[0]?.price || itemForm.price || '';
+                        setItemForm({ ...itemForm, variants: [], price: fallback });
+                      }}
+                      style={{ background: 'none', border: 'none', color: '#dc2626', fontSize: 11, cursor: 'pointer', textDecoration: 'underline' }}
+                    >
+                      Tek fiyata dön
+                    </button>
+                  </div>
+                  {itemForm.variants.map((v, idx) => (
+                    <div key={idx} style={{ border: '1px solid #e7e5e4', borderRadius: 8, padding: 10, background: '#fafaf9' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: '#78716c', textTransform: 'uppercase', letterSpacing: 0.5 }}>Varyant {idx + 1}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const next = itemForm.variants.filter((_, i) => i !== idx);
+                            setItemForm({ ...itemForm, variants: next });
+                          }}
+                          style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', padding: 2, display: 'inline-flex', alignItems: 'center' }}
+                          title="Varyantı sil"
+                          disabled={itemForm.variants.length <= 2}
+                        >
+                          <CiTrash size={14} />
+                        </button>
+                      </div>
+                      <div style={S.grid2}>
+                        <div>
+                          <label style={{ ...S.label, fontSize: 11 }}>İsim (TR) *</label>
+                          <input
+                            style={{ ...S.input, padding: '6px 10px', fontSize: 13 }}
+                            value={v.name_tr}
+                            onChange={e => {
+                              const next = [...itemForm.variants];
+                              next[idx] = { ...next[idx], name_tr: e.target.value };
+                              setItemForm({ ...itemForm, variants: next });
+                            }}
+                            placeholder="Küçük"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label style={{ ...S.label, fontSize: 11 }}>İsim (EN)</label>
+                          <input
+                            style={{ ...S.input, padding: '6px 10px', fontSize: 13 }}
+                            value={v.name_en}
+                            onChange={e => {
+                              const next = [...itemForm.variants];
+                              next[idx] = { ...next[idx], name_en: e.target.value };
+                              setItemForm({ ...itemForm, variants: next });
+                            }}
+                            placeholder="Small"
+                          />
+                        </div>
+                      </div>
+                      <div style={{ ...S.grid2, marginTop: 6 }}>
+                        <div>
+                          <label style={{ ...S.label, fontSize: 11 }}>Fiyat (₺) *</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            style={{ ...S.input, padding: '6px 10px', fontSize: 13 }}
+                            value={v.price}
+                            onChange={e => {
+                              const next = [...itemForm.variants];
+                              next[idx] = { ...next[idx], price: e.target.value };
+                              setItemForm({ ...itemForm, variants: next });
+                            }}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label style={{ ...S.label, fontSize: 11 }}>Kalori (kcal)</label>
+                          <input
+                            type="number"
+                            style={{ ...S.input, padding: '6px 10px', fontSize: 13 }}
+                            value={v.calories}
+                            onChange={e => {
+                              const next = [...itemForm.variants];
+                              next[idx] = { ...next[idx], calories: e.target.value };
+                              setItemForm({ ...itemForm, variants: next });
+                            }}
+                          />
+                        </div>
+                      </div>
                     </div>
-                  ) : (
-                    <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} style={{ ...S.btnSm, width: '100%' }}>
-                      {uploading ? 'Yükleniyor...' : <><CiCamera size={14} /> Görsel Seç</>}
+                  ))}
+                  {itemForm.variants.length < 10 && (
+                    <button
+                      type="button"
+                      onClick={() => setItemForm({ ...itemForm, variants: [...itemForm.variants, { name_tr: '', name_en: '', price: '', calories: '' }] })}
+                      style={{ ...S.btnSm, alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11 }}
+                    >
+                      <CiCirclePlus size={14} /> Varyant Ekle
                     </button>
                   )}
+                  {/* Görsel yine gerekli */}
+                  <div>
+                    <label style={S.label}>Görsel</label>
+                    <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) handleImageUpload(e.target.files[0]); }} />
+                    {itemForm.image_url ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <img src={getOptimizedImageUrl(itemForm.image_url, 'thumbnail')} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover' }} />
+                        <button type="button" onClick={() => setItemForm({ ...itemForm, image_url: '' })} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11, color: '#dc2626' }}>Kaldır</button>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} style={{ ...S.btnSm }}>
+                        {uploading ? 'Yükleniyor...' : <><CiCamera size={14} /> Görsel Seç</>}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+              <div>
+                <label style={S.label}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <CiTimer size={16} /> Hazırlanma Süresi
+                  </span>
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <input
+                    type="number"
+                    min={1}
+                    max={999}
+                    step={1}
+                    placeholder="15"
+                    value={itemForm.prep_time}
+                    onChange={e => setItemForm({ ...itemForm, prep_time: e.target.value })}
+                    style={{ ...S.input, width: 100 }}
+                  />
+                  <span style={{ fontSize: 13, color: '#78716c' }}>dk</span>
                 </div>
               </div>
               <div>
@@ -1305,6 +1710,128 @@ export default function RestaurantDashboard() {
                 <input type="checkbox" checked={itemForm.is_sold_out} onChange={e => setItemForm({ ...itemForm, is_sold_out: e.target.checked })} />
                 <CiCircleRemove size={14} /> Tükendi olarak işaretle
               </label>
+
+              {/* Nutrition Facts (collapsible) */}
+              <div style={{ borderTop: '1px solid #e7e5e4', paddingTop: 12, marginTop: 4 }}>
+                <button
+                  type="button"
+                  onClick={() => setItemForm({ ...itemForm, nutritionOpen: !itemForm.nutritionOpen })}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    cursor: 'pointer',
+                    color: '#1c1917',
+                  }}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600 }}>
+                    <CiWheat size={16} /> Besin Değerleri
+                    {!itemForm.nutritionOpen && itemForm.nutrition.calories && (
+                      <span style={{ ...S.badge, background: '#EEF2FF', color: '#4338CA', marginLeft: 6 }}>
+                        {itemForm.nutrition.calories} kcal
+                      </span>
+                    )}
+                  </span>
+                  {itemForm.nutritionOpen ? <CiCircleChevUp size={18} /> : <CiCircleChevDown size={18} />}
+                </button>
+                {itemForm.nutritionOpen && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#44403c', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={itemForm.nutrition.show_on_menu}
+                        onChange={e => setItemForm({ ...itemForm, nutrition: { ...itemForm.nutrition, show_on_menu: e.target.checked } })}
+                      />
+                      Menüde Göster
+                    </label>
+                    <div>
+                      <label style={{ ...S.label, fontSize: 11 }}>Porsiyon Boyutu</label>
+                      <input
+                        style={S.input}
+                        value={itemForm.nutrition.serving_size}
+                        onChange={e => setItemForm({ ...itemForm, nutrition: { ...itemForm.nutrition, serving_size: e.target.value } })}
+                        placeholder="Örn: 1 porsiyon (250g)"
+                      />
+                    </div>
+
+                    {(() => {
+                      type NutrNumKey = typeof NUTRITION_NUMERIC_KEYS[number];
+                      const setNutr = (k: NutrNumKey, val: string) =>
+                        setItemForm({ ...itemForm, nutrition: { ...itemForm.nutrition, [k]: val } });
+                      const numField = (k: NutrNumKey, label: string, unit: string) => (
+                        <div key={k}>
+                          <label style={{ ...S.label, fontSize: 11 }}>{label}</label>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              style={{ ...S.input, padding: '6px 10px', fontSize: 13, flex: 1 }}
+                              value={itemForm.nutrition[k]}
+                              onChange={e => setNutr(k, e.target.value)}
+                            />
+                            <span style={{ fontSize: 11, color: '#78716c', minWidth: 26 }}>{unit}</span>
+                          </div>
+                        </div>
+                      );
+                      const Group = ({ title, children }: { title: string; children: React.ReactNode }) => (
+                        <div style={{ border: '1px solid #e7e5e4', borderRadius: 8, padding: 10, background: '#fafaf9' }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: '#78716c', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>
+                            {title}
+                          </div>
+                          <div style={S.grid2}>{children}</div>
+                        </div>
+                      );
+                      return (
+                        <>
+                          <Group title="Temel">
+                            {numField('calories', 'Kalori', 'kcal')}
+                            {numField('calories_from_fat', 'Yağdan Kalori', 'kcal')}
+                          </Group>
+                          <Group title="Yağlar">
+                            {numField('total_fat', 'Toplam Yağ', 'g')}
+                            {numField('saturated_fat', 'Doymuş Yağ', 'g')}
+                            {numField('trans_fat', 'Trans Yağ', 'g')}
+                          </Group>
+                          <Group title="Diğer">
+                            {numField('cholesterol', 'Kolesterol', 'mg')}
+                            {numField('sodium', 'Sodyum', 'mg')}
+                          </Group>
+                          <Group title="Karbonhidratlar">
+                            {numField('total_carb', 'Toplam Karbonhidrat', 'g')}
+                            {numField('dietary_fiber', 'Lif', 'g')}
+                            {numField('sugars', 'Şeker', 'g')}
+                          </Group>
+                          <div>
+                            {numField('protein', 'Protein', 'g')}
+                          </div>
+                          <Group title="Vitaminler & Mineraller (% GRD)">
+                            {numField('vitamin_a', 'A Vitamini', '%')}
+                            {numField('vitamin_c', 'C Vitamini', '%')}
+                            {numField('calcium', 'Kalsiyum', '%')}
+                            {numField('iron', 'Demir', '%')}
+                          </Group>
+                        </>
+                      );
+                    })()}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!confirm('Tüm besin değerleri silinecek. Devam edilsin mi?')) return;
+                        setItemForm({ ...itemForm, nutrition: emptyNutritionDraft() });
+                      }}
+                      style={{ ...S.btnDanger, alignSelf: 'flex-start', fontSize: 11 }}
+                    >
+                      <CiTrash size={12} /> Besin Değerlerini Temizle
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {/* Scheduling */}
               <div style={{ borderTop: '1px solid #e7e5e4', paddingTop: 12, marginTop: 4 }}>
@@ -1481,7 +2008,39 @@ export default function RestaurantDashboard() {
                     )}
                   </div>
                   <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0 }}>
-                    <InlinePrice value={Number(item.price)} isSoldOut={item.is_sold_out} onSave={(n) => updateItemPrice(item.id, n)} />
+                    {Array.isArray(item.price_variants) && item.price_variants.length > 0 ? (
+                      (() => {
+                        const prices = item.price_variants.map(v => Number(v.price));
+                        const min = Math.min(...prices);
+                        const max = Math.max(...prices);
+                        return (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); startEdit(item); }}
+                            title="Varyantları düzenle"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              fontSize: 13,
+                              fontWeight: 600,
+                              color: '#1c1917',
+                              textDecoration: item.is_sold_out ? 'line-through' : 'none',
+                              background: '#fff',
+                              border: '1px dashed #d6d3d1',
+                              borderRadius: 6,
+                              padding: '4px 8px',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <CiBoxes size={13} />
+                            {min.toFixed(0)} ₺ – {max.toFixed(0)} ₺
+                          </button>
+                        );
+                      })()
+                    ) : (
+                      <InlinePrice value={Number(item.price)} isSoldOut={item.is_sold_out} onSave={(n) => updateItemPrice(item.id, n)} />
+                    )}
                   </div>
                   <button
                     type="button"
@@ -1664,27 +2223,39 @@ export default function RestaurantDashboard() {
                                         {renderItemsSection(c.id)}
                                       </div>
                                     )}
-                                    {childCats.map(child => {
-                                      const childOpen = expandedCats.has(child.id);
-                                      return (
-                                        <div key={child.id}>
-                                          {renderCategoryHeader(child, undefined, { isSub: true })}
-                                          {childOpen && (
-                                            <>
-                                              <div style={{ ...S.itemsContainer, marginLeft: 0 }}>
-                                                {renderItemsSection(child.id)}
-                                              </div>
-                                              <button
-                                                onClick={() => { setSelectedCat(child.id); setShowItemForm(true); setEditingItem(null); setItemForm(emptyItemForm); }}
-                                                style={{ ...S.btnSm, marginLeft: 0, marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                                              >
-                                                <CiCirclePlus size={14} /> Ürün Ekle
-                                              </button>
-                                            </>
-                                          )}
-                                        </div>
-                                      );
-                                    })}
+                                    <DndContext
+                                      sensors={dndSensors}
+                                      collisionDetection={closestCenter}
+                                      onDragEnd={(event) => handleChildCategoryDragEnd(c.id, event)}
+                                    >
+                                      <SortableContext items={childCats.map(cc => cc.id)} strategy={verticalListSortingStrategy}>
+                                        {childCats.map(child => {
+                                          const childOpen = expandedCats.has(child.id);
+                                          return (
+                                            <Sortable key={child.id} id={child.id}>
+                                              {({ setNodeRef: setChildRef, style: childStyle, attributes: childAttrs, listeners: childListeners }) => (
+                                                <div ref={setChildRef} style={childStyle} {...childAttrs}>
+                                                  {renderCategoryHeader(child, childListeners as Record<string, unknown>, { isSub: true })}
+                                                  {childOpen && (
+                                                    <>
+                                                      <div style={{ ...S.itemsContainer, marginLeft: 0 }}>
+                                                        {renderItemsSection(child.id)}
+                                                      </div>
+                                                      <button
+                                                        onClick={() => { setSelectedCat(child.id); setShowItemForm(true); setEditingItem(null); setItemForm({ ...emptyItemForm, category_id: child.id }); }}
+                                                        style={{ ...S.btnSm, marginLeft: 0, marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                                                      >
+                                                        <CiCirclePlus size={14} /> Ürün Ekle
+                                                      </button>
+                                                    </>
+                                                  )}
+                                                </div>
+                                              )}
+                                            </Sortable>
+                                          );
+                                        })}
+                                      </SortableContext>
+                                    </DndContext>
                                   </div>
                                 ) : (
                                   <>
@@ -1692,7 +2263,7 @@ export default function RestaurantDashboard() {
                                       {renderItemsSection(c.id)}
                                     </div>
                                     <button
-                                      onClick={() => { setSelectedCat(c.id); setShowItemForm(true); setEditingItem(null); setItemForm(emptyItemForm); }}
+                                      onClick={() => { setSelectedCat(c.id); setShowItemForm(true); setEditingItem(null); setItemForm({ ...emptyItemForm, category_id: c.id }); }}
                                       style={{ ...S.btnSm, marginLeft: 36, marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
                                     >
                                       <CiCirclePlus size={14} /> Ürün Ekle

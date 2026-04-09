@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { getOptimizedImageUrl } from '../lib/imageUtils';
 import {
   CiStar, CiApple, CiTempHigh, CiMapPin, CiPhone, CiGlobe,
-  CiForkAndKnife, CiCircleRemove, CiFilter,
+  CiForkAndKnife, CiCircleRemove, CiFilter, CiTimer,
 } from 'react-icons/ci';
 import { AllergenBadgeList, AllergenIcon } from '../components/AllergenIcon';
 import { getTheme, type MenuTheme } from '../lib/themes';
@@ -54,6 +54,33 @@ interface MenuCategory {
 interface PeriodicDayVal { enabled?: boolean; start?: string; end?: string; all_day?: boolean }
 type PeriodicScheduleVal = Partial<Record<'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday', PeriodicDayVal>>;
 
+interface PriceVariant {
+  name_tr: string;
+  name_en: string;
+  price: number;
+  calories: number | null;
+}
+
+interface Nutrition {
+  serving_size?: string;
+  calories?: number;
+  calories_from_fat?: number;
+  total_fat?: number;
+  saturated_fat?: number;
+  trans_fat?: number;
+  cholesterol?: number;
+  sodium?: number;
+  total_carb?: number;
+  dietary_fiber?: number;
+  sugars?: number;
+  protein?: number;
+  vitamin_a?: number;
+  vitamin_c?: number;
+  calcium?: number;
+  iron?: number;
+  show_on_menu?: boolean;
+}
+
 interface MenuItem {
   id: string; restaurant_id: string; category_id: string;
   name_tr: string; description_tr: string | null; price: number;
@@ -65,8 +92,36 @@ interface MenuItem {
   schedule_start: string | null;
   schedule_end: string | null;
   schedule_periodic: PeriodicScheduleVal;
+  price_variants: PriceVariant[];
+  nutrition: Nutrition | null;
+  prep_time: number | null;
   allergens: string[] | null; calories: number | null;
   sort_order: number; translations: Translations;
+}
+
+function hasVariants(item: MenuItem): boolean {
+  return Array.isArray(item.price_variants) && item.price_variants.length > 0;
+}
+
+function minVariantPrice(item: MenuItem): number {
+  if (!hasVariants(item)) return Number(item.price);
+  return Math.min(...item.price_variants.map((v) => Number(v.price)));
+}
+
+function formatPriceDisplay(item: MenuItem, uiLang: UiLangCode): string {
+  if (hasVariants(item)) {
+    const min = minVariantPrice(item).toFixed(2);
+    const template = UI.startingFrom[uiLang] || UI.startingFrom.en;
+    return template.replace('{price}', min);
+  }
+  return `${Number(item.price).toFixed(2)} ₺`;
+}
+
+function variantDisplayName(v: PriceVariant, lang: LangCode): string {
+  if (lang === 'en') return v.name_en?.trim() || v.name_tr;
+  if (lang === 'tr') return v.name_tr;
+  // Other languages: prefer EN, fallback TR
+  return v.name_en?.trim() || v.name_tr;
 }
 
 function isItemVisibleBySchedule(item: MenuItem, now: Date = new Date()): boolean {
@@ -158,6 +213,34 @@ const UI: Record<string, Record<UiLangCode, string>> = {
   other:        { tr: 'Diğer', en: 'Other', ar: 'أخرى', zh: '其他' },
   viewMenu:     { tr: 'Menüyü Görüntüle', en: 'View Menu', ar: 'عرض القائمة', zh: '查看菜单' },
   allergens:    { tr: 'Alerjenler', en: 'Allergens', ar: 'مسببات الحساسية', zh: '过敏原' },
+  startingFrom: { tr: "{price} ₺'den başlayan", en: 'Starting from {price} ₺', ar: 'يبدأ من {price} ₺', zh: '起价 {price} ₺' },
+  sizeOptions:  { tr: 'Boyut Seçenekleri', en: 'Size Options', ar: 'خيارات الحجم', zh: '规格选项' },
+  soldOut:      { tr: 'Tükendi', en: 'Sold Out', ar: 'نفد', zh: '售罄' },
+  nutritionTitle:   { tr: 'Besin Değerleri', en: 'Nutrition Facts', ar: 'القيم الغذائية', zh: '营养成分' },
+  servingSize:      { tr: 'Porsiyon', en: 'Serving', ar: 'الحصة', zh: '份量' },
+  calories:         { tr: 'Kalori', en: 'Calories', ar: 'السعرات', zh: '卡路里' },
+  caloriesFromFat:  { tr: 'Yağdan', en: 'From Fat', ar: 'من الدهون', zh: '来自脂肪' },
+  totalFat:         { tr: 'Toplam Yağ', en: 'Total Fat', ar: 'الدهون', zh: '总脂肪' },
+  saturatedFat:     { tr: 'Doymuş Yağ', en: 'Saturated Fat', ar: 'دهون مشبعة', zh: '饱和脂肪' },
+  transFat:         { tr: 'Trans Yağ', en: 'Trans Fat', ar: 'دهون متحولة', zh: '反式脂肪' },
+  cholesterol:      { tr: 'Kolesterol', en: 'Cholesterol', ar: 'الكوليسترول', zh: '胆固醇' },
+  sodium:           { tr: 'Sodyum', en: 'Sodium', ar: 'الصوديوم', zh: '钠' },
+  totalCarb:        { tr: 'Toplam Karbonhidrat', en: 'Total Carbohydrate', ar: 'الكربوهيدرات', zh: '总碳水化合物' },
+  dietaryFiber:     { tr: 'Lif', en: 'Dietary Fiber', ar: 'الألياف', zh: '膳食纤维' },
+  sugars:           { tr: 'Şeker', en: 'Sugars', ar: 'السكريات', zh: '糖' },
+  protein:          { tr: 'Protein', en: 'Protein', ar: 'البروتين', zh: '蛋白质' },
+  vitaminA:         { tr: 'A Vitamini', en: 'Vitamin A', ar: 'فيتامين أ', zh: '维生素A' },
+  vitaminC:         { tr: 'C Vitamini', en: 'Vitamin C', ar: 'فيتامين ج', zh: '维生素C' },
+  calcium:          { tr: 'Kalsiyum', en: 'Calcium', ar: 'الكالسيوم', zh: '钙' },
+  iron:             { tr: 'Demir', en: 'Iron', ar: 'الحديد', zh: '铁' },
+  dailyValue:       {
+    tr: '* % Günlük Referans Değer (2000 kcal diyete göre)',
+    en: '* % Daily Value (based on 2,000 calorie diet)',
+    ar: '* % القيمة اليومية (بناءً على نظام 2000 سعرة)',
+    zh: '* % 每日参考值（基于2000卡路里饮食）',
+  },
+  prepTime:         { tr: 'Hazırlanma Süresi', en: 'Prep Time', ar: 'وقت التحضير', zh: '准备时间' },
+  minutes:          { tr: 'dk', en: 'min', ar: 'دقيقة', zh: '分钟' },
 };
 
 /* ------------------------------------------------------------------ */
@@ -1254,6 +1337,9 @@ function MenuItemCard({ item, lang, theme, onSelect }: { item: MenuItem; lang: L
   const headingFont = "'Playfair Display', serif";
   const isFeatured = item.is_featured;
   const isSoldOut = item.is_sold_out;
+  const displayCalories = item.nutrition?.calories ?? item.calories ?? null;
+  const prepTime = item.prep_time ?? null;
+  const minutesLabel = UI.minutes[toUiLang(lang)];
   const soldOutLabel = SOLD_OUT_LABELS[toUiLang(lang)];
   const soldOutWrapperStyle: React.CSSProperties = isSoldOut ? { opacity: 0.6, filter: 'grayscale(0.3)' } : {};
   const soldOutPriceStyle: React.CSSProperties = isSoldOut ? { textDecoration: 'line-through' } : {};
@@ -1286,7 +1372,7 @@ function MenuItemCard({ item, lang, theme, onSelect }: { item: MenuItem; lang: L
               {name || <span className="italic" style={{ color: theme.mutedText }}>—</span>}
             </h3>
             <span className="text-lg flex-shrink-0 tabular-nums" style={{ color: theme.price, fontWeight: 500, ...soldOutPriceStyle }}>
-              {Number(item.price).toFixed(2)} ₺
+              {formatPriceDisplay(item, toUiLang(lang))}
             </span>
           </div>
           {SoldOutBadge && <div className="mb-1">{SoldOutBadge}</div>}
@@ -1314,11 +1400,17 @@ function MenuItemCard({ item, lang, theme, onSelect }: { item: MenuItem; lang: L
               )}
             </div>
           )}
-          {(item.calories || hasAllergens) && (
+          {(displayCalories != null || prepTime != null || hasAllergens) && (
             <div className="flex items-center justify-between mt-2 pt-2" style={{ borderTop: `1px solid ${theme.divider}` }}>
-              {item.calories ? (
-                <span className="text-[11px]" style={{ color: theme.mutedText, fontWeight: 300 }}>{item.calories} kcal</span>
-              ) : <span />}
+              <span className="inline-flex items-center gap-1.5 text-[11px]" style={{ color: theme.mutedText, fontWeight: 300 }}>
+                {displayCalories != null && <span>{displayCalories} kcal</span>}
+                {displayCalories != null && prepTime != null && <span aria-hidden>·</span>}
+                {prepTime != null && (
+                  <span className="inline-flex items-center gap-0.5">
+                    <CiTimer size={12} /> {prepTime} {minutesLabel}
+                  </span>
+                )}
+              </span>
               {hasAllergens && (
                 <AllergenBadgeList allergens={item.allergens} size={16} lang={toUiLang(lang) === 'ar' || toUiLang(lang) === 'zh' ? 'en' : (toUiLang(lang) as 'tr' | 'en')} invert={theme.invertIcons} />
               )}
@@ -1361,7 +1453,7 @@ function MenuItemCard({ item, lang, theme, onSelect }: { item: MenuItem; lang: L
             className="text-[15px] flex-shrink-0 tabular-nums"
             style={{ color: theme.price, fontWeight: 500, ...soldOutPriceStyle }}
           >
-            {Number(item.price).toFixed(2)} ₺
+            {formatPriceDisplay(item, toUiLang(lang))}
           </span>
         </div>
         {SoldOutBadge && <div className="mt-1">{SoldOutBadge}</div>}
@@ -1398,13 +1490,17 @@ function MenuItemCard({ item, lang, theme, onSelect }: { item: MenuItem; lang: L
             )}
           </div>
         )}
-        {(item.calories || hasAllergens) && (
+        {(displayCalories != null || prepTime != null || hasAllergens) && (
           <div className="flex items-center justify-between mt-auto pt-1.5">
-            {item.calories ? (
-              <span className="text-[11px]" style={{ color: theme.mutedText, fontWeight: 300 }}>
-                {item.calories} kcal
-              </span>
-            ) : <span />}
+            <span className="inline-flex items-center gap-1.5 text-[11px]" style={{ color: theme.mutedText, fontWeight: 300 }}>
+              {displayCalories != null && <span>{displayCalories} kcal</span>}
+              {displayCalories != null && prepTime != null && <span aria-hidden>·</span>}
+              {prepTime != null && (
+                <span className="inline-flex items-center gap-0.5">
+                  <CiTimer size={12} /> {prepTime} {minutesLabel}
+                </span>
+              )}
+            </span>
             {hasAllergens && (
               <AllergenBadgeList
                 allergens={item.allergens}
@@ -1496,13 +1592,30 @@ function ItemDetailModal({ item, lang, theme, onClose }: { item: MenuItem; lang:
             >
               {name}
             </h2>
-            <span
-              className="text-xl flex-shrink-0 tabular-nums"
-              style={{ color: theme.price, fontWeight: 500 }}
-            >
-              {Number(item.price).toFixed(2)} ₺
-            </span>
+            {!hasVariants(item) && (
+              <span
+                className="text-xl flex-shrink-0 tabular-nums"
+                style={{
+                  color: theme.price,
+                  fontWeight: 500,
+                  textDecoration: item.is_sold_out ? 'line-through' : 'none',
+                }}
+              >
+                {Number(item.price).toFixed(2)} ₺
+              </span>
+            )}
           </div>
+
+          {item.is_sold_out && (
+            <div className="mb-3">
+              <span
+                className="inline-flex items-center gap-1 text-xs px-3 py-1 rounded-full"
+                style={{ backgroundColor: '#fee2e2', color: '#dc2626', fontWeight: 700 }}
+              >
+                {UI.soldOut[toUiLang(lang)]}
+              </span>
+            </div>
+          )}
 
           {description && (
             <p className="text-sm leading-relaxed mb-4" style={{ color: theme.mutedText, fontWeight: 300 }}>
@@ -1510,10 +1623,71 @@ function ItemDetailModal({ item, lang, theme, onClose }: { item: MenuItem; lang:
             </p>
           )}
 
-          {item.calories && (
+          {/* Variants list */}
+          {hasVariants(item) && (
+            <div
+              className="mb-4 rounded-2xl overflow-hidden"
+              style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}` }}
+            >
+              <div
+                className="px-4 py-2 text-[11px] uppercase tracking-wider"
+                style={{
+                  color: theme.mutedText,
+                  fontWeight: 600,
+                  borderBottom: `1px solid ${theme.divider}`,
+                }}
+              >
+                {UI.sizeOptions[toUiLang(lang)]}
+              </div>
+              {item.price_variants.map((v, idx) => (
+                <div
+                  key={idx}
+                  className="px-4 py-3 flex items-start justify-between gap-3"
+                  style={{
+                    borderBottom: idx < item.price_variants.length - 1 ? `1px solid ${theme.divider}` : 'none',
+                  }}
+                >
+                  <div className="min-w-0">
+                    <div
+                      className="text-sm"
+                      style={{ color: theme.text, fontWeight: 600 }}
+                    >
+                      {variantDisplayName(v, lang)}
+                    </div>
+                    {v.calories != null && (
+                      <div className="text-[11px] mt-0.5" style={{ color: theme.mutedText, fontWeight: 300 }}>
+                        {v.calories} kcal
+                      </div>
+                    )}
+                  </div>
+                  <span
+                    className="text-sm flex-shrink-0 tabular-nums"
+                    style={{
+                      color: theme.price,
+                      fontWeight: 600,
+                      textDecoration: item.is_sold_out ? 'line-through' : 'none',
+                    }}
+                  >
+                    {Number(v.price).toFixed(2)} ₺
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {!hasVariants(item) && item.calories && (
             <div className="flex items-center gap-2 text-sm mb-4" style={{ color: theme.mutedText }}>
               <CiTempHigh size={16} />
               <span>{item.calories} kcal</span>
+            </div>
+          )}
+
+          {item.prep_time != null && (
+            <div className="flex items-center gap-2 text-sm mb-4" style={{ color: theme.mutedText }}>
+              <CiTimer size={16} />
+              <span>
+                {UI.prepTime[toUiLang(lang)]}: {item.prep_time} {UI.minutes[toUiLang(lang)]}
+              </span>
             </div>
           )}
 
@@ -1535,7 +1709,123 @@ function ItemDetailModal({ item, lang, theme, onClose }: { item: MenuItem; lang:
               />
             </div>
           )}
+
+          {item.nutrition && item.nutrition.show_on_menu !== false && (
+            <NutritionFactsTable nutrition={item.nutrition} lang={lang} theme={theme} />
+          )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Nutrition Facts Table (FDA-style)                                  */
+/* ------------------------------------------------------------------ */
+
+function NutritionFactsTable({
+  nutrition,
+  lang,
+  theme,
+}: {
+  nutrition: Nutrition;
+  lang: LangCode;
+  theme: MenuTheme;
+}) {
+  const headingFont = "'Playfair Display', serif";
+  const uiLang = toUiLang(lang);
+
+  // Helper: render a row only if value is a number (0 is allowed)
+  type RowProps = {
+    label: string;
+    value: number | undefined;
+    unit: string;
+    indent?: boolean;
+    bold?: boolean;
+  };
+  const Row = ({ label, value, unit, indent, bold }: RowProps) => {
+    if (typeof value !== 'number') return null;
+    return (
+      <div
+        className="flex items-baseline justify-between py-1"
+        style={{
+          color: theme.text,
+          fontWeight: bold ? 600 : 400,
+          paddingLeft: indent ? 16 : 0,
+        }}
+      >
+        <span className="text-sm">{label}</span>
+        <span className="text-sm tabular-nums" style={{ color: theme.text }}>
+          {value}
+          {unit ? ` ${unit}` : ''}
+        </span>
+      </div>
+    );
+  };
+
+  const Divider = () => (
+    <div className="my-2" style={{ height: 1, backgroundColor: theme.divider }} />
+  );
+
+  return (
+    <div
+      className="mt-5 pt-4"
+      style={{ borderTop: `1px solid ${theme.divider}` }}
+    >
+      <div
+        className="rounded-2xl p-4"
+        style={{
+          backgroundColor: theme.cardBg,
+          border: `1px solid ${theme.cardBorder}`,
+        }}
+      >
+        <h3
+          className="text-base"
+          style={{ fontFamily: headingFont, fontWeight: 700, color: theme.text }}
+        >
+          {UI.nutritionTitle[uiLang]}
+        </h3>
+        {nutrition.serving_size && (
+          <p className="text-xs mt-1" style={{ color: theme.mutedText, fontWeight: 300 }}>
+            {UI.servingSize[uiLang]}: {nutrition.serving_size}
+          </p>
+        )}
+        <Divider />
+
+        <Row label={UI.calories[uiLang]} value={nutrition.calories} unit="kcal" bold />
+        <Row label={UI.caloriesFromFat[uiLang]} value={nutrition.calories_from_fat} unit="kcal" indent />
+
+        <Divider />
+
+        <Row label={UI.totalFat[uiLang]} value={nutrition.total_fat} unit="g" bold />
+        <Row label={UI.saturatedFat[uiLang]} value={nutrition.saturated_fat} unit="g" indent />
+        <Row label={UI.transFat[uiLang]} value={nutrition.trans_fat} unit="g" indent />
+        <Row label={UI.cholesterol[uiLang]} value={nutrition.cholesterol} unit="mg" />
+        <Row label={UI.sodium[uiLang]} value={nutrition.sodium} unit="mg" />
+
+        <Divider />
+
+        <Row label={UI.totalCarb[uiLang]} value={nutrition.total_carb} unit="g" bold />
+        <Row label={UI.dietaryFiber[uiLang]} value={nutrition.dietary_fiber} unit="g" indent />
+        <Row label={UI.sugars[uiLang]} value={nutrition.sugars} unit="g" indent />
+        <Row label={UI.protein[uiLang]} value={nutrition.protein} unit="g" bold />
+
+        {(typeof nutrition.vitamin_a === 'number' ||
+          typeof nutrition.vitamin_c === 'number' ||
+          typeof nutrition.calcium === 'number' ||
+          typeof nutrition.iron === 'number') && (
+          <>
+            <Divider />
+            <Row label={UI.vitaminA[uiLang]} value={nutrition.vitamin_a} unit="%" />
+            <Row label={UI.vitaminC[uiLang]} value={nutrition.vitamin_c} unit="%" />
+            <Row label={UI.calcium[uiLang]} value={nutrition.calcium} unit="%" />
+            <Row label={UI.iron[uiLang]} value={nutrition.iron} unit="%" />
+          </>
+        )}
+
+        <p className="text-[11px] mt-3" style={{ color: theme.mutedText, fontWeight: 300 }}>
+          {UI.dailyValue[uiLang]}
+        </p>
       </div>
     </div>
   );
