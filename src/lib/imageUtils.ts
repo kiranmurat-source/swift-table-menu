@@ -11,12 +11,12 @@ const RENDER_PATH = '/storage/v1/render/image/public/';
 
 export type ImageSize = 'thumbnail' | 'card' | 'detail' | 'cover' | 'original';
 
-const SIZE_CONFIG: Record<ImageSize, { width: number; quality: number }> = {
-  thumbnail: { width: 80, quality: 60 },   // Kategori ikonları, küçük logo
-  card:      { width: 200, quality: 70 },  // Ürün kartları, admin list
-  detail:    { width: 480, quality: 80 },  // Ürün detay modalı, featured kart
-  cover:     { width: 800, quality: 75 },  // Kapak görseli, splash
-  original:  { width: 0, quality: 100 },   // Orijinal — dönüşüm yapma
+const SIZE_CONFIG: Record<ImageSize, { width: number; quality: number; resize: 'contain' | 'cover' }> = {
+  thumbnail: { width: 80,  quality: 60, resize: 'contain' }, // Kategori ikonları, küçük logo
+  card:      { width: 200, quality: 70, resize: 'contain' }, // Ürün kartları, admin list
+  detail:    { width: 480, quality: 80, resize: 'contain' }, // Ürün detay modalı, featured kart
+  cover:     { width: 800, quality: 75, resize: 'cover'   }, // Kapak görseli — tam dolması için cover
+  original:  { width: 0,   quality: 100, resize: 'contain' }, // Orijinal — dönüşüm yapma
 };
 
 export function getOptimizedImageUrl(
@@ -35,5 +35,5 @@ export function getOptimizedImageUrl(
   const config = SIZE_CONFIG[size];
   const renderUrl = url.replace(STORAGE_PATH, RENDER_PATH);
   const separator = renderUrl.includes('?') ? '&' : '?';
-  return `${renderUrl}${separator}width=${config.width}&quality=${config.quality}`;
+  return `${renderUrl}${separator}width=${config.width}&quality=${config.quality}&resize=${config.resize}`;
 }
