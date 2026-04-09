@@ -237,32 +237,72 @@ export default function PublicMenu() {
 
   useEffect(() => {
     if (!slug) return;
-    const loadStartTime = Date.now();
+    const startTime = performance.now();
+    const LOADING_MIN_MS = 1000;
+
     const fetchData = async () => {
       setLoading(true);
-      const { data: rest } = await supabase.from('restaurants').select('*').eq('slug', slug).eq('is_active', true).single();
+
+      // 1. Fetch restaurant first (secondary queries depend on its id)
+      const { data: rest } = await supabase
+        .from('restaurants')
+        .select('*')
+        .eq('slug', slug)
+        .eq('is_active', true)
+        .single();
+
+      const restaurantElapsed = performance.now() - startTime;
+      console.log(`[Tabbled] Restaurant loaded in ${restaurantElapsed.toFixed(0)}ms`);
+
       if (!rest) {
-        const elapsed = Date.now() - loadStartTime;
-        const remaining = Math.max(0, 1500 - elapsed);
+        const remaining = Math.max(0, LOADING_MIN_MS - restaurantElapsed);
         if (remaining > 0) await new Promise((r) => setTimeout(r, remaining));
         setLoading(false);
         return;
       }
+
       setRestaurant(rest);
-      const [{ data: cats }, { data: menuItems }, { data: promoData }] = await Promise.all([
-        supabase.from('menu_categories').select('*').eq('restaurant_id', rest.id).eq('is_active', true).order('sort_order'),
-        supabase.from('menu_items').select('*').eq('restaurant_id', rest.id).eq('is_available', true).order('sort_order'),
-        // NOTE: we still fetch sold_out items to show them with strikethrough/disabled UI
-        supabase.from('restaurant_promos').select('*').eq('restaurant_id', rest.id).eq('is_active', true).order('sort_order'),
-      ]);
-      setCategories(cats ?? []);
-      setItems(menuItems ?? []);
-      setPromos((promoData ?? []) as Promo[]);
-      const elapsed = Date.now() - loadStartTime;
-      const remaining = Math.max(0, 1500 - elapsed);
+
+      // 2. Fire categories/items/promos in PARALLEL. Do NOT await these —
+      // they populate state as they arrive. The loading screen ends as soon as
+      // we have the restaurant (plus the minimum display time), so the splash
+      // can appear immediately; the menu data keeps loading in the background
+      // and is typically ready by the time the user taps "View Menu".
+      void Promise.all([
+        supabase
+          .from('menu_categories')
+          .select('*')
+          .eq('restaurant_id', rest.id)
+          .eq('is_active', true)
+          .order('sort_order'),
+        supabase
+          .from('menu_items')
+          .select('*')
+          .eq('restaurant_id', rest.id)
+          .eq('is_available', true)
+          .order('sort_order'),
+        // NOTE: sold_out items are still fetched (shown with strikethrough / disabled order UI)
+        supabase
+          .from('restaurant_promos')
+          .select('*')
+          .eq('restaurant_id', rest.id)
+          .eq('is_active', true)
+          .order('sort_order'),
+      ]).then(([{ data: cats }, { data: menuItems }, { data: promoData }]) => {
+        setCategories(cats ?? []);
+        setItems(menuItems ?? []);
+        setPromos((promoData ?? []) as Promo[]);
+        console.log(
+          `[Tabbled] Menu data loaded in ${(performance.now() - startTime).toFixed(0)}ms`,
+        );
+      });
+
+      // 3. Release loading once the minimum display time has elapsed.
+      const remaining = Math.max(0, LOADING_MIN_MS - restaurantElapsed);
       if (remaining > 0) await new Promise((r) => setTimeout(r, remaining));
       setLoading(false);
     };
+
     fetchData();
   }, [slug]);
 
@@ -1229,7 +1269,7 @@ function MenuItemCard({ item, lang, theme, onSelect }: { item: MenuItem; lang: L
         onClick={() => onSelect(item)}
       >
         {item.image_url ? (
-          <img src={item.image_url} alt={name} className="w-full h-48 object-cover" />
+          <img src={item.image_url} alt={name} className="w-full h-48 object-cover" loading="lazy" decoding="async" />
         ) : (
           <div className="w-full h-32 flex items-center justify-center" style={{ backgroundColor: theme.badgeBg }}>
             <CiForkAndKnife size={40} style={{ color: theme.mutedText }} />
@@ -1295,7 +1335,7 @@ function MenuItemCard({ item, lang, theme, onSelect }: { item: MenuItem; lang: L
       onClick={() => onSelect(item)}
     >
       {item.image_url ? (
-        <img src={item.image_url} alt={name} className="w-[88px] h-[88px] rounded-xl object-cover flex-shrink-0" />
+        <img src={item.image_url} alt={name} className="w-[88px] h-[88px] rounded-xl object-cover flex-shrink-0" loading="lazy" decoding="async" />
       ) : (
         <div
           className="w-[88px] h-[88px] rounded-xl flex-shrink-0 flex items-center justify-center"
@@ -1404,7 +1444,7 @@ function ItemDetailModal({ item, lang, theme, onClose }: { item: MenuItem; lang:
         </button>
 
         {item.image_url ? (
-          <img src={item.image_url} alt={name} className="w-full h-64 object-cover rounded-t-3xl sm:rounded-t-3xl" />
+          <img src={item.image_url} alt={name} className="w-full h-64 object-cover rounded-t-3xl sm:rounded-t-3xl" loading="lazy" decoding="async" />
         ) : (
           <div
             className="w-full h-48 flex items-center justify-center rounded-t-3xl"
