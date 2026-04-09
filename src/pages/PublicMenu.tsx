@@ -12,6 +12,7 @@ import { getTheme, type MenuTheme } from '../lib/themes';
 import { getAllergenInfo } from '../lib/allergens';
 import PromoPopup, { isPromoVisible, type Promo } from '../components/PromoPopup';
 import { getLanguage, isRTL } from '../lib/languages';
+import { stripHtml } from '../lib/html';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -1377,8 +1378,8 @@ function MenuItemCard({ item, lang, theme, onSelect }: { item: MenuItem; lang: L
           </div>
           {SoldOutBadge && <div className="mb-1">{SoldOutBadge}</div>}
           {description && (
-            <p className="text-[13px] mt-1 leading-relaxed" style={{ color: theme.mutedText, fontWeight: 300 }}>
-              {description}
+            <p className="text-[13px] mt-1 leading-relaxed line-clamp-2" style={{ color: theme.mutedText, fontWeight: 300 }}>
+              {stripHtml(description)}
             </p>
           )}
           {hasBadges && (
@@ -1459,7 +1460,7 @@ function MenuItemCard({ item, lang, theme, onSelect }: { item: MenuItem; lang: L
         {SoldOutBadge && <div className="mt-1">{SoldOutBadge}</div>}
         {description && (
           <p className="text-[12px] mt-1 line-clamp-2 leading-relaxed" style={{ color: theme.mutedText, fontWeight: 300 }}>
-            {description}
+            {stripHtml(description)}
           </p>
         )}
         {hasBadges && (
@@ -1618,9 +1619,11 @@ function ItemDetailModal({ item, lang, theme, onClose }: { item: MenuItem; lang:
           )}
 
           {description && (
-            <p className="text-sm leading-relaxed mb-4" style={{ color: theme.mutedText, fontWeight: 300 }}>
-              {description}
-            </p>
+            <div
+              className="rich-text text-sm leading-relaxed mb-4"
+              style={{ color: theme.mutedText, fontWeight: 300 }}
+              dangerouslySetInnerHTML={{ __html: description }}
+            />
           )}
 
           {/* Variants list */}

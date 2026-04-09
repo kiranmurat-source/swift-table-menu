@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, Fragment, ReactNode, CSSProperties } from 'react';
+import { useEffect, useState, useRef, Fragment, lazy, Suspense, ReactNode, CSSProperties } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
 import { CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiApple, CiStar, CiTempHigh, CiGlobe, CiPen, CiGrid2H, CiUser, CiImageOn, CiTrash, CiLink, CiBoxes, CiCircleChevDown, CiCircleChevUp, CiCirclePlus, CiClock1, CiWheat, CiTimer } from 'react-icons/ci';
@@ -41,6 +41,7 @@ function Sortable({ id, children }: { id: string; children: (p: SortableRenderPr
 }
 import QRManager from '../components/QRManager';
 import TranslationCenter from '../components/TranslationCenter';
+const RichTextEditor = lazy(() => import('../components/RichTextEditor'));
 import { CategoryTabSkeleton, ListSkeleton } from '../components/Skeleton';
 import { getOptimizedImageUrl } from '../lib/imageUtils';
 import { ALLERGEN_LIST, getAllergenInfo } from '../lib/allergens';
@@ -1523,14 +1524,29 @@ export default function RestaurantDashboard() {
               </div>
               <div>
                 <label style={S.label}>Açıklama</label>
-                <div style={{ position: 'relative' }}>
-                  <textarea rows={3} style={{ ...S.input, resize: 'vertical', minHeight: 72, paddingRight: hasAI ? 90 : 14 }} value={itemForm.description_tr} onChange={e => setItemForm({ ...itemForm, description_tr: e.target.value })} placeholder="Kısa bir açıklama yazın veya AI ile oluşturun" />
-                  {hasAI && (
-                    <button type="button" onClick={generateAIDescription} disabled={generatingAI || !itemForm.name_tr} style={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)', padding: '5px 10px', fontSize: 11, fontWeight: 600, borderRadius: 6, cursor: 'pointer', border: 'none', background: generatingAI ? '#E9D5FF' : '#9333EA', color: '#fff', display: 'flex', alignItems: 'center', gap: 4, transition: 'all 0.15s', opacity: !itemForm.name_tr ? 0.5 : 1 }} title="AI ile açıklama oluştur">
-                      <CiPen size={12} /> {generatingAI ? 'Yazılıyor...' : 'AI Yaz'}
-                    </button>
-                  )}
-                </div>
+                <Suspense fallback={
+                  <div style={{ ...S.input, minHeight: 112, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a8a29e', fontSize: 12 }}>
+                    Editör yükleniyor...
+                  </div>
+                }>
+                  <RichTextEditor
+                    content={itemForm.description_tr}
+                    onChange={(html) => setItemForm({ ...itemForm, description_tr: html })}
+                    placeholder="Kısa bir açıklama yazın veya AI ile oluşturun"
+                    minHeight={80}
+                    rightSlot={hasAI ? (
+                      <button
+                        type="button"
+                        onClick={generateAIDescription}
+                        disabled={generatingAI || !itemForm.name_tr}
+                        style={{ padding: '4px 10px', fontSize: 11, fontWeight: 600, borderRadius: 6, cursor: 'pointer', border: 'none', background: generatingAI ? '#E9D5FF' : '#9333EA', color: '#fff', display: 'flex', alignItems: 'center', gap: 4, transition: 'all 0.15s', opacity: !itemForm.name_tr ? 0.5 : 1 }}
+                        title="AI ile açıklama oluştur"
+                      >
+                        <CiPen size={12} /> {generatingAI ? 'Yazılıyor...' : 'AI Yaz'}
+                      </button>
+                    ) : undefined}
+                  />
+                </Suspense>
               </div>
               {/* Single price vs variant mode */}
               {itemForm.variants.length === 0 ? (

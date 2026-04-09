@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, CSSProperties } from 'react';
 import { supabase } from '../lib/supabase';
+import { stripHtml } from '../lib/html';
 import {
   AVAILABLE_LANGUAGES,
   calculateTranslationProgress,
@@ -365,13 +366,14 @@ export default function TranslationCenter({
       setDraftName(record.translations?.[targetLang]?.name || '');
     }
 
-    // Description (only for items)
+    // Description (only for items) — translations are plain text;
+    // strip HTML from TR/EN source in case admin uses rich text editor.
     if (selection.kind === 'item') {
       const item = record as MenuItem;
       if (targetLang === 'tr') {
-        setDraftDesc(item.description_tr || '');
+        setDraftDesc(stripHtml(item.description_tr));
       } else if (targetLang === 'en' && item.description_en && item.description_en.trim() !== '') {
-        setDraftDesc(item.description_en);
+        setDraftDesc(stripHtml(item.description_en));
       } else {
         setDraftDesc(item.translations?.[targetLang]?.description || '');
       }
@@ -767,7 +769,7 @@ export default function TranslationCenter({
                     <>
                       <div style={{ ...S.fieldLabel, marginTop: 12 }}>Açıklama</div>
                       <div style={S.readOnlyBox}>
-                        {(selectedRecord as MenuItem).description_tr || '—'}
+                        {stripHtml((selectedRecord as MenuItem).description_tr) || '—'}
                       </div>
                     </>
                   )}

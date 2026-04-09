@@ -109,3 +109,34 @@
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* Rich text rendered output (public menu detail modal) */
+.rich-text p { margin: 0 0 8px; }
+.rich-text p:last-child { margin-bottom: 0; }
+.rich-text ul, .rich-text ol { margin: 0 0 8px; padding-left: 20px; }
+.rich-text ul { list-style: disc; }
+.rich-text ol { list-style: decimal; }
+.rich-text li { margin: 0 0 4px; }
+.rich-text strong { font-weight: 600; }
+.rich-text em { font-style: italic; }
+.rich-text u { text-decoration: underline; }
+.rich-text s { text-decoration: line-through; }
+
+/* Tiptap editor (admin) */
+.rich-text-editor-content .ProseMirror {
+  outline: none;
+  min-height: 80px;
+}
+.rich-text-editor-content .ProseMirror p { margin: 0 0 6px; }
+.rich-text-editor-content .ProseMirror p:last-child { margin-bottom: 0; }
+.rich-text-editor-content .ProseMirror ul,
+.rich-text-editor-content .ProseMirror ol { margin: 0 0 6px; padding-left: 20px; }
+.rich-text-editor-content .ProseMirror ul { list-style: disc; }
+.rich-text-editor-content .ProseMirror ol { list-style: decimal; }
+.rich-text-editor-content .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #a8a29e;
+  pointer-events: none;
+  height: 0;
+}
