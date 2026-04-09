@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, ReactNode, CSSProperties } from 'react';
+import { useEffect, useState, useRef, Fragment, ReactNode, CSSProperties } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
 import { CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiApple, CiStar, CiTempHigh, CiGlobe, CiPen, CiGrid2H, CiUser, CiImageOn, CiTrash, CiLink, CiBoxes, CiCircleChevDown, CiCircleChevUp, CiCirclePlus, CiClock1, CiWheat, CiTimer } from 'react-icons/ci';
@@ -763,6 +763,8 @@ export default function RestaurantDashboard() {
   const [activeTab, setActiveTab] = useState<'menu' | 'translations' | 'qr' | 'profile' | 'promos'>('menu');
   const [loadingData, setLoadingData] = useState(true);
   const fileRef = useRef<HTMLInputElement>(null);
+  const initialFormJsonRef = useRef<string>('');
+  const formContainerRef = useRef<HTMLDivElement | null>(null);
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
   const toggleExpand = (catId: string) => {
     setExpandedCats(prev => {
@@ -777,6 +779,13 @@ export default function RestaurantDashboard() {
   const enabledLangs = (restaurant?.enabled_languages ?? []).filter(l => l !== 'tr');
   const plan = (restaurant?.current_plan || '').toLowerCase();
   const hasAI = plan === 'pro' || plan === 'premium';
+
+  // Smooth-scroll the inline item form into view when it opens.
+  useEffect(() => {
+    if (showItemForm && formContainerRef.current) {
+      formContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [showItemForm, editingItem]);
 
   useEffect(() => {
     if (user) {
@@ -1096,7 +1105,13 @@ export default function RestaurantDashboard() {
       if (newItem) savedId = newItem.id;
     }
 
-    setItemForm(emptyItemForm); setShowItemForm(false); setEditingItem(null);
+    // Keep the form open after save; just reset dirty snapshot and toast.
+    if (!editingItem && savedId) {
+      setEditingItem(savedId);
+    }
+    snapshotForm(itemForm);
+    setMsg(editingItem ? 'Ürün güncellendi' : 'Ürün eklendi');
+    setTimeout(() => setMsg(''), 3000);
     loadItems(restaurant.id);
 
     if (savedId && enabledLangs.length > 0) {
@@ -1118,6 +1133,45 @@ export default function RestaurantDashboard() {
     await supabase.from('menu_items').update({ is_available: !current }).eq('id', id);
     loadItems(restaurant.id);
   }
+  function snapshotForm(form: typeof itemForm) {
+    initialFormJsonRef.current = JSON.stringify(form);
+  }
+  const hasUnsavedChanges = (() => {
+    if (!showItemForm) return false;
+    return JSON.stringify(itemForm) !== initialFormJsonRef.current;
+  })();
+
+  function openNewItemForm(catId: string) {
+    if (hasUnsavedChanges && !confirm('Kaydedilmemiş değişiklikler var. Çıkmak istediğinize emin misiniz?')) return;
+    setSelectedCat(catId);
+    setShowItemForm(true);
+    setEditingItem(null);
+    const fresh = { ...emptyItemForm, category_id: catId };
+    setItemForm(fresh);
+    snapshotForm(fresh);
+  }
+
+  function handleItemClick(item: MenuItem) {
+    if (showItemForm && editingItem === item.id) {
+      if (hasUnsavedChanges && !confirm('Kaydedilmemiş değişiklikler var. Çıkmak istediğinize emin misiniz?')) return;
+      setShowItemForm(false);
+      setEditingItem(null);
+      setItemForm(emptyItemForm);
+      initialFormJsonRef.current = '';
+      return;
+    }
+    if (hasUnsavedChanges && !confirm('Kaydedilmemiş değişiklikler var. Çıkmak istediğinize emin misiniz?')) return;
+    startEdit(item);
+  }
+
+  function closeItemForm() {
+    if (hasUnsavedChanges && !confirm('Kaydedilmemiş değişiklikler var. Çıkmak istediğinize emin misiniz?')) return;
+    setShowItemForm(false);
+    setEditingItem(null);
+    setItemForm(emptyItemForm);
+    initialFormJsonRef.current = '';
+  }
+
   function startEdit(item: MenuItem) {
     setEditingItem(item.id);
     const baseSchedule = defaultPeriodicSchedule();
@@ -1159,7 +1213,7 @@ export default function RestaurantDashboard() {
       nutrDraft.calories = item.calories.toString();
     }
     const nutritionOpen = !!srcNutr;
-    setItemForm({
+    const nextForm = {
       name_tr: item.name_tr,
       description_tr: item.description_tr || '',
       price: item.price.toString(),
@@ -1179,7 +1233,9 @@ export default function RestaurantDashboard() {
       nutrition: nutrDraft,
       nutritionOpen,
       prep_time: item.prep_time != null ? item.prep_time.toString() : '',
-    });
+    };
+    setItemForm(nextForm);
+    snapshotForm(nextForm);
     setShowItemForm(true);
     setSelectedCat(item.category_id);
   }
@@ -1278,6 +1334,11 @@ export default function RestaurantDashboard() {
     { key: 'promos', label: 'Promosyonlar', icon: CiStar },
     { key: 'profile', label: 'Profil', icon: CiUser },
   ] as const;
+
+  // Inline item form renderer. Assigned during render by the IIFE below so we
+  // can keep the large JSX tree in-place while calling it from inside the
+  // category accordion.
+  let renderItemForm: () => ReactNode = () => null;
 
   return (
     <div className="flex min-h-screen bg-white">
@@ -1419,8 +1480,8 @@ export default function RestaurantDashboard() {
             />
           </div>
 
-          {showItemForm && selectedCat && (
-            <form onSubmit={addOrUpdateItem} style={{ ...S.card, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {(() => { renderItemForm = () => (
+            <form onSubmit={addOrUpdateItem} style={{ ...S.card, display: 'flex', flexDirection: 'column', gap: 10, background: '#fafaf9', borderLeft: '3px solid #1c1917' }}>
               <div>
                 <label style={S.label}>Kategori *</label>
                 <select
@@ -1948,9 +2009,12 @@ export default function RestaurantDashboard() {
                 )}
               </div>
 
-              <button type="submit" disabled={saving} style={{ ...S.btn, alignSelf: 'flex-start' }}>{saving ? '...' : editingItem ? 'Güncelle' : 'Ekle'}</button>
+              <div style={{ display: 'flex', gap: 8, alignSelf: 'flex-end', justifyContent: 'flex-end' }}>
+                <button type="button" onClick={closeItemForm} disabled={saving} style={{ ...S.btnSm, padding: '8px 16px' }}>İptal</button>
+                <button type="submit" disabled={saving} style={{ ...S.btn }}>{saving ? '...' : editingItem ? 'Güncelle' : 'Ekle'}</button>
+              </div>
             </form>
-          )}
+          ); return null; })()}
 
           {/* ================= FineDine-style Category Accordion ================= */}
           {(() => {
@@ -1958,15 +2022,20 @@ export default function RestaurantDashboard() {
               const allergenKeys = (item.allergens || []).filter(a => getAllergenInfo(a));
               const isTranslating = translating === item.id;
               const faded = !item.is_available || item.is_sold_out;
+              const isActiveForm = showItemForm && editingItem === item.id;
               return (
                 <div
                   key={item.id}
-                  style={{ ...S.itemRow, opacity: faded ? 0.6 : 1, background: hoveredItem === item.id ? '#fafafa' : '#fff' }}
+                  style={{
+                    ...S.itemRow,
+                    opacity: faded ? 0.6 : 1,
+                    background: isActiveForm ? '#eef2ff' : hoveredItem === item.id ? '#fafafa' : '#fff',
+                  }}
                   onMouseEnter={() => setHoveredItem(item.id)}
                   onMouseLeave={() => setHoveredItem(null)}
-                  onClick={() => startEdit(item)}
+                  onClick={() => handleItemClick(item)}
                 >
-                  {dragListeners && (
+                  {dragListeners && !isActiveForm && (
                     <span
                       {...dragListeners}
                       onClick={(e) => e.stopPropagation()}
@@ -1975,6 +2044,9 @@ export default function RestaurantDashboard() {
                     >
                       <CiBoxes size={16} />
                     </span>
+                  )}
+                  {dragListeners && isActiveForm && (
+                    <span style={{ width: 16, flexShrink: 0 }} />
                   )}
                   {item.image_url ? (
                     <img src={getOptimizedImageUrl(item.image_url, 'card')} alt="" style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} loading="lazy" decoding="async" />
@@ -2038,6 +2110,10 @@ export default function RestaurantDashboard() {
                           </button>
                         );
                       })()
+                    ) : isActiveForm ? (
+                      <span style={{ fontSize: 13, fontWeight: 600, color: '#a8a29e', padding: '4px 8px' }}>
+                        {Number(item.price).toFixed(2)} ₺
+                      </span>
                     ) : (
                       <InlinePrice value={Number(item.price)} isSoldOut={item.is_sold_out} onSave={(n) => updateItemPrice(item.id, n)} />
                     )}
@@ -2089,27 +2165,49 @@ export default function RestaurantDashboard() {
 
             const renderItemsSection = (catId: string) => {
               const catItems = items.filter(i => i.category_id === catId).sort((a, b) => a.sort_order - b.sort_order);
+              const showNewFormHere = showItemForm && editingItem === null && selectedCat === catId;
               if (catItems.length === 0) {
                 return (
-                  <div style={{ fontSize: 12, color: '#a8a29e', padding: '12px 16px', fontStyle: 'italic' }}>
-                    Bu kategoride henüz ürün yok.
-                  </div>
+                  <>
+                    <div style={{ fontSize: 12, color: '#a8a29e', padding: '12px 16px', fontStyle: 'italic' }}>
+                      Bu kategoride henüz ürün yok.
+                    </div>
+                    {showNewFormHere && (
+                      <div ref={formContainerRef} style={{ padding: '0 0 8px 0' }}>
+                        {renderItemForm()}
+                      </div>
+                    )}
+                  </>
                 );
               }
               return (
-                <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={makeItemDragHandler(catId)}>
-                  <SortableContext items={catItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
-                    {catItems.map(item => (
-                      <Sortable key={item.id} id={item.id}>
-                        {({ setNodeRef, style, attributes, listeners }) => (
-                          <div ref={setNodeRef} style={style} {...attributes}>
-                            {renderItemRow(item, listeners as Record<string, unknown>)}
-                          </div>
-                        )}
-                      </Sortable>
-                    ))}
-                  </SortableContext>
-                </DndContext>
+                <>
+                  <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={makeItemDragHandler(catId)}>
+                    <SortableContext items={catItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
+                      {catItems.map(item => (
+                        <Fragment key={item.id}>
+                          <Sortable id={item.id}>
+                            {({ setNodeRef, style, attributes, listeners }) => (
+                              <div ref={setNodeRef} style={style} {...attributes}>
+                                {renderItemRow(item, listeners as Record<string, unknown>)}
+                              </div>
+                            )}
+                          </Sortable>
+                          {showItemForm && editingItem === item.id && (
+                            <div ref={formContainerRef} style={{ padding: '0 0 8px 0' }}>
+                              {renderItemForm()}
+                            </div>
+                          )}
+                        </Fragment>
+                      ))}
+                    </SortableContext>
+                  </DndContext>
+                  {showNewFormHere && (
+                    <div ref={formContainerRef} style={{ padding: '0 0 8px 0' }}>
+                      {renderItemForm()}
+                    </div>
+                  )}
+                </>
               );
             };
 
@@ -2242,7 +2340,7 @@ export default function RestaurantDashboard() {
                                                         {renderItemsSection(child.id)}
                                                       </div>
                                                       <button
-                                                        onClick={() => { setSelectedCat(child.id); setShowItemForm(true); setEditingItem(null); setItemForm({ ...emptyItemForm, category_id: child.id }); }}
+                                                        onClick={() => openNewItemForm(child.id)}
                                                         style={{ ...S.btnSm, marginLeft: 0, marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
                                                       >
                                                         <CiCirclePlus size={14} /> Ürün Ekle
@@ -2263,7 +2361,7 @@ export default function RestaurantDashboard() {
                                       {renderItemsSection(c.id)}
                                     </div>
                                     <button
-                                      onClick={() => { setSelectedCat(c.id); setShowItemForm(true); setEditingItem(null); setItemForm({ ...emptyItemForm, category_id: c.id }); }}
+                                      onClick={() => openNewItemForm(c.id)}
                                       style={{ ...S.btnSm, marginLeft: 36, marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
                                     >
                                       <CiCirclePlus size={14} /> Ürün Ekle
