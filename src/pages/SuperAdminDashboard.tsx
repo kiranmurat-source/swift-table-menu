@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { StatCardSkeleton } from '../components/Skeleton';
 import { supabase } from '../lib/supabase';
 import { CiCircleCheck, CiCircleRemove, CiEdit, CiShop, CiMoneyBill, CiWarning, CiViewList, CiCamera, CiCalendar, CiViewBoard, CiDollar, CiTimer, CiBoxList, CiWavePulse1, CiGrid2H } from 'react-icons/ci';
 
@@ -428,7 +429,13 @@ export default function SuperAdminDashboard() {
 
       {/* ============ RESTORANLAR ============ */}
       {tab === 'restaurants' && (<>
-        {kpiData && <KPISections data={kpiData} />}
+        {kpiData ? (
+          <KPISections data={kpiData} />
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 20 }}>
+            {[0, 1, 2, 3].map((i) => <StatCardSkeleton key={i} />)}
+          </div>
+        )}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1c1917' }}>Restoranlar</h2>
           <button onClick={() => setShowForm(!showForm)} style={S.btn}>{showForm ? 'Iptal' : '+ Restoran & Kullanici Ekle'}</button>

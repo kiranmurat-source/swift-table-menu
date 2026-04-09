@@ -41,6 +41,7 @@ function Sortable({ id, children }: { id: string; children: (p: SortableRenderPr
 }
 import QRManager from '../components/QRManager';
 import TranslationCenter from '../components/TranslationCenter';
+import { CategoryTabSkeleton, ListSkeleton } from '../components/Skeleton';
 import { ALLERGEN_LIST, getAllergenInfo } from '../lib/allergens';
 import { AllergenIcon } from '../components/AllergenIcon';
 import { THEMES } from '../lib/themes';
@@ -53,13 +54,22 @@ type Translations = {
   };
 };
 
-type Category = { id: string; name_tr: string; name_en: string | null; sort_order: number; is_active: boolean; translations: Translations; image_url: string | null; };
+type Category = { id: string; name_tr: string; name_en: string | null; sort_order: number; is_active: boolean; translations: Translations; image_url: string | null; parent_id: string | null; };
+
+type PeriodicDay = { enabled: boolean; start: string; end: string; all_day?: boolean };
+type PeriodicSchedule = Partial<Record<'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday', PeriodicDay>>;
+
 type MenuItem = {
   id: string; category_id: string; name_tr: string; name_en: string | null;
   description_tr: string | null; description_en: string | null; price: number;
   image_url: string | null; is_available: boolean; is_popular: boolean; sort_order: number;
   calories: number | null; allergens: string[] | null; is_vegetarian: boolean; is_new: boolean;
   is_featured: boolean;
+  is_sold_out: boolean;
+  schedule_type: 'always' | 'date_range' | 'periodic';
+  schedule_start: string | null;
+  schedule_end: string | null;
+  schedule_periodic: PeriodicSchedule;
   translations: Translations;
 };
 type Restaurant = {
@@ -102,7 +112,92 @@ const S: Record<string, React.CSSProperties> = {
   badge: { fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 4, display: 'inline-block', marginRight: 4 },
 };
 
-const emptyItemForm = { name_tr: '', description_tr: '', price: '', image_url: '', calories: '', allergens: [] as string[], is_vegetarian: false, is_new: false, is_featured: false };
+const PERIODIC_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
+type PeriodicDayKey = typeof PERIODIC_DAYS[number];
+const PERIODIC_DAY_LABELS: Record<PeriodicDayKey, string> = {
+  monday: 'Pazartesi', tuesday: 'Salı', wednesday: 'Çarşamba', thursday: 'Perşembe',
+  friday: 'Cuma', saturday: 'Cumartesi', sunday: 'Pazar',
+};
+const defaultPeriodicSchedule = (): Record<PeriodicDayKey, { enabled: boolean; start: string; end: string; all_day: boolean }> => ({
+  monday:    { enabled: false, start: '09:00', end: '17:00', all_day: false },
+  tuesday:   { enabled: false, start: '09:00', end: '17:00', all_day: false },
+  wednesday: { enabled: false, start: '09:00', end: '17:00', all_day: false },
+  thursday:  { enabled: false, start: '09:00', end: '17:00', all_day: false },
+  friday:    { enabled: false, start: '09:00', end: '17:00', all_day: false },
+  saturday:  { enabled: false, start: '09:00', end: '17:00', all_day: false },
+  sunday:    { enabled: false, start: '09:00', end: '17:00', all_day: false },
+});
+
+function InlinePrice({ value, isSoldOut, onSave }: { value: number; isSoldOut: boolean; onSave: (n: number) => Promise<void> }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value.toString());
+  const [saving, setSaving] = useState(false);
+  useEffect(() => { if (!editing) setDraft(value.toString()); }, [value, editing]);
+  const commit = async () => {
+    const n = parseFloat(draft);
+    if (!Number.isFinite(n) || n < 0) { setDraft(value.toString()); setEditing(false); return; }
+    if (n === value) { setEditing(false); return; }
+    setSaving(true);
+    await onSave(n);
+    setSaving(false);
+    setEditing(false);
+  };
+  if (editing) {
+    return (
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+        <input
+          type="number"
+          step="0.01"
+          min="0"
+          autoFocus
+          value={draft}
+          disabled={saving}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') { e.preventDefault(); commit(); }
+            if (e.key === 'Escape') { setDraft(value.toString()); setEditing(false); }
+          }}
+          style={{ width: 80, padding: '4px 8px', fontSize: 14, fontWeight: 700, border: '1px solid #1c1917', borderRadius: 6, outline: 'none' }}
+        />
+        <span style={{ fontSize: 14, color: '#1c1917', fontWeight: 700 }}>₺</span>
+        {saving && <span style={{ fontSize: 10, color: '#78716c' }}>...</span>}
+      </span>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={(e) => { e.stopPropagation(); setEditing(true); }}
+      style={{
+        fontSize: 14,
+        fontWeight: 700,
+        color: '#1c1917',
+        background: 'none',
+        border: '1px dashed transparent',
+        borderRadius: 4,
+        padding: '2px 6px',
+        cursor: 'pointer',
+        textDecoration: isSoldOut ? 'line-through' : 'none',
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#d6d3d1')}
+      onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'transparent')}
+      title="Düzenlemek için tıkla"
+    >
+      ₺{Number(value).toFixed(2)}
+    </button>
+  );
+}
+
+const emptyItemForm = {
+  name_tr: '', description_tr: '', price: '', image_url: '', calories: '',
+  allergens: [] as string[], is_vegetarian: false, is_new: false, is_featured: false,
+  is_sold_out: false,
+  schedule_type: 'always' as 'always' | 'date_range' | 'periodic',
+  schedule_start: '',
+  schedule_end: '',
+  schedule_periodic: defaultPeriodicSchedule(),
+};
 
 async function triggerTranslation(table: string, recordId: string, languages: string[]) {
   if (languages.length === 0) return;
@@ -464,7 +559,7 @@ export default function RestaurantDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showCatForm, setShowCatForm] = useState(false);
   const [showItemForm, setShowItemForm] = useState(false);
-  const [catForm, setCatForm] = useState<{ name_tr: string; image_url: string }>({ name_tr: '', image_url: '' });
+  const [catForm, setCatForm] = useState<{ name_tr: string; image_url: string; parent_id: string | null }>({ name_tr: '', image_url: '', parent_id: null });
   const [uploadingCatImage, setUploadingCatImage] = useState<string | null>(null); // 'new' or category id
   const catFileRef = useRef<HTMLInputElement>(null);
   const [itemForm, setItemForm] = useState(emptyItemForm);
@@ -477,6 +572,7 @@ export default function RestaurantDashboard() {
   const [editCatForm, setEditCatForm] = useState({ name_tr: '' });
   const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState<'menu' | 'translations' | 'qr' | 'profile' | 'promos'>('menu');
+  const [loadingData, setLoadingData] = useState(true);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const enabledLangs = (restaurant?.enabled_languages ?? []).filter(l => l !== 'tr');
@@ -485,11 +581,21 @@ export default function RestaurantDashboard() {
 
   useEffect(() => {
     if (user) {
+      setLoadingData(true);
       supabase.from('profiles').select('restaurant_id').eq('id', user.id).single()
         .then(({ data }) => {
           if (data?.restaurant_id) {
             supabase.from('restaurants').select('*').eq('id', data.restaurant_id).single()
-              .then(({ data: r }) => { if (r) { setRestaurant(r); loadCategories(r.id); loadItems(r.id); } });
+              .then(({ data: r }) => {
+                if (r) {
+                  setRestaurant(r);
+                  Promise.all([loadCategories(r.id), loadItems(r.id)]).finally(() => setLoadingData(false));
+                } else {
+                  setLoadingData(false);
+                }
+              });
+          } else {
+            setLoadingData(false);
           }
         });
     }
@@ -525,12 +631,19 @@ export default function RestaurantDashboard() {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
     setCategories((prev) => {
-      const oldIndex = prev.findIndex((c) => c.id === active.id);
-      const newIndex = prev.findIndex((c) => c.id === over.id);
+      const activeCat = prev.find((c) => c.id === active.id);
+      const overCat = prev.find((c) => c.id === over.id);
+      if (!activeCat || !overCat) return prev;
+      // Only reorder within the same parent scope
+      if ((activeCat.parent_id ?? null) !== (overCat.parent_id ?? null)) return prev;
+      const scope = prev.filter((c) => (c.parent_id ?? null) === (activeCat.parent_id ?? null));
+      const others = prev.filter((c) => (c.parent_id ?? null) !== (activeCat.parent_id ?? null));
+      const oldIndex = scope.findIndex((c) => c.id === active.id);
+      const newIndex = scope.findIndex((c) => c.id === over.id);
       if (oldIndex < 0 || newIndex < 0) return prev;
-      const next = arrayMove(prev, oldIndex, newIndex);
-      persistCategoryOrder(next);
-      return next;
+      const reordered = arrayMove(scope, oldIndex, newIndex);
+      persistCategoryOrder(reordered);
+      return [...others, ...reordered];
     });
   }
 
@@ -592,12 +705,13 @@ export default function RestaurantDashboard() {
       restaurant_id: restaurant.id,
       name_tr: catForm.name_tr,
       image_url: catForm.image_url || null,
-      sort_order: categories.length,
+      parent_id: catForm.parent_id,
+      sort_order: categories.filter(c => (c.parent_id ?? null) === (catForm.parent_id ?? null)).length,
       translations: {},
     }).select().single();
     if (error) { setMsg(error.message); }
     else {
-      setCatForm({ name_tr: '', image_url: '' }); setShowCatForm(false);
+      setCatForm({ name_tr: '', image_url: '', parent_id: null }); setShowCatForm(false);
       loadCategories(restaurant.id);
       if (newCat && enabledLangs.length > 0) {
         setTranslating(newCat.id);
@@ -678,6 +792,11 @@ export default function RestaurantDashboard() {
       is_vegetarian: itemForm.is_vegetarian,
       is_new: itemForm.is_new,
       is_featured: itemForm.is_featured,
+      is_sold_out: itemForm.is_sold_out,
+      schedule_type: itemForm.schedule_type,
+      schedule_start: itemForm.schedule_type === 'date_range' && itemForm.schedule_start ? itemForm.schedule_start : null,
+      schedule_end: itemForm.schedule_type === 'date_range' && itemForm.schedule_end ? itemForm.schedule_end : null,
+      schedule_periodic: itemForm.schedule_type === 'periodic' ? itemForm.schedule_periodic : {},
       sort_order: editingItem ? undefined : items.filter(i => i.category_id === selectedCat).length,
     };
 
@@ -715,6 +834,21 @@ export default function RestaurantDashboard() {
   }
   function startEdit(item: MenuItem) {
     setEditingItem(item.id);
+    const baseSchedule = defaultPeriodicSchedule();
+    const mergedPeriodic = { ...baseSchedule };
+    if (item.schedule_periodic) {
+      for (const day of PERIODIC_DAYS) {
+        const v = (item.schedule_periodic as Record<string, { enabled?: boolean; start?: string; end?: string; all_day?: boolean }>)[day];
+        if (v) {
+          mergedPeriodic[day] = {
+            enabled: !!v.enabled,
+            start: v.start || '09:00',
+            end: v.end || '17:00',
+            all_day: !!v.all_day,
+          };
+        }
+      }
+    }
     setItemForm({
       name_tr: item.name_tr,
       description_tr: item.description_tr || '',
@@ -725,9 +859,36 @@ export default function RestaurantDashboard() {
       is_vegetarian: item.is_vegetarian || false,
       is_new: item.is_new || false,
       is_featured: item.is_featured || false,
+      is_sold_out: item.is_sold_out || false,
+      schedule_type: item.schedule_type || 'always',
+      schedule_start: item.schedule_start ? item.schedule_start.slice(0, 16) : '',
+      schedule_end: item.schedule_end ? item.schedule_end.slice(0, 16) : '',
+      schedule_periodic: mergedPeriodic,
     });
     setShowItemForm(true);
     setSelectedCat(item.category_id);
+  }
+
+  // --- Inline price edit helper ---
+  async function updateItemPrice(itemId: string, newPrice: number) {
+    const prev = items;
+    setItems(prev.map(it => it.id === itemId ? { ...it, price: newPrice } : it));
+    const { error } = await supabase.from('menu_items').update({ price: newPrice }).eq('id', itemId);
+    if (error) {
+      setItems(prev);
+      setMsg('Fiyat güncellenemedi: ' + error.message);
+    }
+  }
+
+  // --- Sold-out toggle helper ---
+  async function toggleSoldOut(itemId: string, current: boolean) {
+    const prev = items;
+    setItems(prev.map(it => it.id === itemId ? { ...it, is_sold_out: !current } : it));
+    const { error } = await supabase.from('menu_items').update({ is_sold_out: !current }).eq('id', itemId);
+    if (error) {
+      setItems(prev);
+      setMsg('Tükendi durumu güncellenemedi');
+    }
   }
   function toggleAllergen(val: string) {
     setItemForm(prev => ({
@@ -751,6 +912,15 @@ export default function RestaurantDashboard() {
     );
   }
 
+  if (loadingData) return (
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px' }}>
+      <CategoryTabSkeleton />
+      <div style={{ marginTop: 16 }}>
+        <ListSkeleton rows={5} />
+      </div>
+    </div>
+  );
+
   if (!restaurant) return (
     <div style={{ maxWidth: 600, margin: '0 auto', padding: '60px 24px', textAlign: 'center' }}>
       <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1c1917', marginBottom: 8 }}>Restoran Atanmadı</h2>
@@ -758,8 +928,15 @@ export default function RestaurantDashboard() {
     </div>
   );
 
+  // Category id → ids including direct children (for parent selection)
+  const categoryScopeIds = (catId: string): string[] => {
+    const children = categories.filter(c => c.parent_id === catId).map(c => c.id);
+    return [catId, ...children];
+  };
   const filteredItems = (() => {
-    let list = selectedCat ? items.filter(i => i.category_id === selectedCat) : items;
+    let list = selectedCat
+      ? items.filter(i => categoryScopeIds(selectedCat).includes(i.category_id))
+      : items;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       list = list.filter(i =>
@@ -880,6 +1057,19 @@ export default function RestaurantDashboard() {
                 <input style={S.input} value={catForm.name_tr} onChange={e => setCatForm({ ...catForm, name_tr: e.target.value })} required placeholder="Örn: Ana Yemekler" />
               </div>
               <div>
+                <label style={S.label}>Üst Kategori</label>
+                <select
+                  style={S.input}
+                  value={catForm.parent_id || ''}
+                  onChange={e => setCatForm({ ...catForm, parent_id: e.target.value || null })}
+                >
+                  <option value="">Ana Kategori (Yok)</option>
+                  {categories.filter(c => !c.parent_id).map(c => (
+                    <option key={c.id} value={c.id}>{c.name_tr}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
                 <label style={S.label}>Kategori Görseli</label>
                 <input ref={catFileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadCategoryImage(e.target.files[0], 'new'); }} />
                 {catForm.image_url ? (
@@ -903,7 +1093,7 @@ export default function RestaurantDashboard() {
             </form>
           )}
 
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 24 }}>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
             <button onClick={() => setSelectedCat(null)} style={{ ...S.btnSm, background: !selectedCat ? '#1c1917' : '#fff', color: !selectedCat ? '#fff' : '#44403c' }}>
               Tümü ({items.length})
               {totalMissingPhotos > 0 && (
@@ -913,8 +1103,8 @@ export default function RestaurantDashboard() {
               )}
             </button>
             <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleCategoryDragEnd}>
-              <SortableContext items={categories.map(c => c.id)} strategy={horizontalListSortingStrategy}>
-            {categories.map(c => (
+              <SortableContext items={categories.filter(c => !c.parent_id).map(c => c.id)} strategy={horizontalListSortingStrategy}>
+            {categories.filter(c => !c.parent_id).map(c => (
               <Sortable key={c.id} id={c.id}>
                 {({ setNodeRef, style, attributes, listeners }) => (
               <div ref={setNodeRef} style={{ display: 'flex', alignItems: 'center', gap: 2, ...style }} {...attributes}>
@@ -933,7 +1123,7 @@ export default function RestaurantDashboard() {
                       {c.image_url ? (
                         <img src={c.image_url} alt="" style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }} />
                       ) : null}
-                      {c.name_tr} ({items.filter(i => i.category_id === c.id).length})
+                      {c.name_tr} ({items.filter(i => categoryScopeIds(c.id).includes(i.category_id)).length})
                       {(missingPhotoCounts.get(c.id) || 0) > 0 && (
                         <span style={{ fontSize: 9, color: '#f59e0b', marginLeft: 2 }}>
                           📷{missingPhotoCounts.get(c.id)}
@@ -960,10 +1150,73 @@ export default function RestaurantDashboard() {
             </DndContext>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1c1917' }}>Ürünler</h3>
-            {selectedCat && <button onClick={() => { setShowItemForm(!showItemForm); setEditingItem(null); setItemForm(emptyItemForm); }} style={S.btnSm}>{showItemForm ? 'İptal' : '+ Ürün Ekle'}</button>}
-          </div>
+          {/* Sub-category row: shown when selected category (or its parent) has children */}
+          {(() => {
+            const sel = selectedCat ? categories.find(c => c.id === selectedCat) : null;
+            const parent = sel ? (sel.parent_id ? categories.find(c => c.id === sel.parent_id) : sel) : null;
+            if (!parent) return null;
+            const children = categories.filter(c => c.parent_id === parent.id);
+            if (children.length === 0) return null;
+            return (
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', paddingLeft: 24, marginBottom: 16, borderLeft: '2px solid #e7e5e4' }}>
+                <button
+                  onClick={() => setSelectedCat(parent.id)}
+                  style={{
+                    ...S.btnSm,
+                    fontSize: 11,
+                    background: selectedCat === parent.id ? '#44403c' : '#fff',
+                    color: selectedCat === parent.id ? '#fff' : '#78716c',
+                  }}
+                >
+                  ↳ {parent.name_tr} (Tümü)
+                </button>
+                {children.map(child => (
+                  <div key={child.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+                    {editingCat === child.id ? (
+                      <>
+                        <input style={{ ...S.input, width: 120, padding: '3px 6px', fontSize: 11 }} value={editCatForm.name_tr} onChange={e => setEditCatForm({ name_tr: e.target.value })} />
+                        <button onClick={() => updateCategory(child.id)} style={{ ...S.btnSm, padding: '2px 6px', fontSize: 11 }}><CiCircleCheck size={12} /></button>
+                        <button onClick={() => setEditingCat(null)} style={{ ...S.btnSm, padding: '2px 6px', fontSize: 11 }}><CiCircleRemove size={12} /></button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => setSelectedCat(child.id)}
+                          style={{
+                            ...S.btnSm,
+                            fontSize: 11,
+                            background: selectedCat === child.id ? '#44403c' : '#fff',
+                            color: selectedCat === child.id ? '#fff' : '#78716c',
+                          }}
+                        >
+                          {child.name_tr} ({items.filter(i => i.category_id === child.id).length})
+                        </button>
+                        <button onClick={() => { setEditingCat(child.id); setEditCatForm({ name_tr: child.name_tr }); }} style={{ background: 'none', border: 'none', color: '#a8a29e', cursor: 'pointer', padding: '0 2px' }} title="Düzenle"><CiEdit size={12} /></button>
+                        <button onClick={() => deleteCategory(child.id)} style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: 13, padding: '0 2px' }}>×</button>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+
+          {(() => {
+            const selectedHasChildren = !!selectedCat && categories.some(c => c.parent_id === selectedCat);
+            return (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1c1917' }}>Ürünler</h3>
+                {selectedCat && !selectedHasChildren && (
+                  <button onClick={() => { setShowItemForm(!showItemForm); setEditingItem(null); setItemForm(emptyItemForm); }} style={S.btnSm}>
+                    {showItemForm ? 'İptal' : '+ Ürün Ekle'}
+                  </button>
+                )}
+                {selectedHasChildren && (
+                  <span style={{ fontSize: 11, color: '#a8a29e' }}>Ürün eklemek için bir alt kategori seçin.</span>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Search */}
           <div style={{ marginBottom: 12 }}>
@@ -1063,6 +1316,127 @@ export default function RestaurantDashboard() {
                   <CiStar size={14} style={{ color: '#f59e0b' }} /> Öne Çıkar
                 </label>
               </div>
+              {/* Sold-out toggle */}
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#44403c' }}>
+                <input type="checkbox" checked={itemForm.is_sold_out} onChange={e => setItemForm({ ...itemForm, is_sold_out: e.target.checked })} />
+                <CiCircleRemove size={14} /> Tükendi olarak işaretle
+              </label>
+
+              {/* Scheduling */}
+              <div style={{ borderTop: '1px solid #e7e5e4', paddingTop: 12, marginTop: 4 }}>
+                <label style={{ ...S.label, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <CiGlobe size={14} /> Zamanlama
+                </label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
+                  {[
+                    { v: 'always', label: 'Her zaman göster' },
+                    { v: 'date_range', label: 'Zaman aralığı (başlangıç – bitiş)' },
+                    { v: 'periodic', label: 'Periyodik (haftalık saat aralığı)' },
+                  ].map(opt => (
+                    <label key={opt.v} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#44403c', cursor: 'pointer' }}>
+                      <input
+                        type="radio"
+                        name="schedule_type"
+                        value={opt.v}
+                        checked={itemForm.schedule_type === opt.v}
+                        onChange={() => setItemForm({ ...itemForm, schedule_type: opt.v as 'always' | 'date_range' | 'periodic' })}
+                      />
+                      {opt.label}
+                    </label>
+                  ))}
+                </div>
+                {itemForm.schedule_type === 'date_range' && (
+                  <div style={S.grid2}>
+                    <div>
+                      <label style={S.label}>Başlangıç</label>
+                      <input
+                        type="datetime-local"
+                        style={S.input}
+                        value={itemForm.schedule_start}
+                        onChange={e => setItemForm({ ...itemForm, schedule_start: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label style={S.label}>Bitiş</label>
+                      <input
+                        type="datetime-local"
+                        style={S.input}
+                        value={itemForm.schedule_end}
+                        onChange={e => setItemForm({ ...itemForm, schedule_end: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                )}
+                {itemForm.schedule_type === 'periodic' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {PERIODIC_DAYS.map(day => {
+                      const d = itemForm.schedule_periodic[day];
+                      return (
+                        <div key={day} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, flexWrap: 'wrap' }}>
+                          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 4, minWidth: 110 }}>
+                            <input
+                              type="checkbox"
+                              checked={d.enabled}
+                              onChange={e => setItemForm({
+                                ...itemForm,
+                                schedule_periodic: { ...itemForm.schedule_periodic, [day]: { ...d, enabled: e.target.checked } },
+                              })}
+                            />
+                            {PERIODIC_DAY_LABELS[day]}
+                          </label>
+                          {d.enabled && (
+                            <>
+                              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                <input
+                                  type="checkbox"
+                                  checked={d.all_day}
+                                  onChange={e => setItemForm({
+                                    ...itemForm,
+                                    schedule_periodic: {
+                                      ...itemForm.schedule_periodic,
+                                      [day]: {
+                                        ...d,
+                                        all_day: e.target.checked,
+                                        start: e.target.checked ? '00:00' : d.start,
+                                        end: e.target.checked ? '23:59' : d.end,
+                                      },
+                                    },
+                                  })}
+                                />
+                                Tüm gün
+                              </label>
+                              {!d.all_day && (
+                                <>
+                                  <input
+                                    type="time"
+                                    value={d.start}
+                                    onChange={e => setItemForm({
+                                      ...itemForm,
+                                      schedule_periodic: { ...itemForm.schedule_periodic, [day]: { ...d, start: e.target.value } },
+                                    })}
+                                    style={{ ...S.input, width: 100, padding: '4px 8px' }}
+                                  />
+                                  <span>–</span>
+                                  <input
+                                    type="time"
+                                    value={d.end}
+                                    onChange={e => setItemForm({
+                                      ...itemForm,
+                                      schedule_periodic: { ...itemForm.schedule_periodic, [day]: { ...d, end: e.target.value } },
+                                    })}
+                                    style={{ ...S.input, width: 100, padding: '4px 8px' }}
+                                  />
+                                </>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
               <button type="submit" disabled={saving} style={{ ...S.btn, alignSelf: 'flex-start' }}>{saving ? '...' : editingItem ? 'Güncelle' : 'Ekle'}</button>
             </form>
           )}
@@ -1076,7 +1450,7 @@ export default function RestaurantDashboard() {
             return (
               <Sortable key={item.id} id={item.id}>
                 {({ setNodeRef, style, attributes, listeners }) => (
-              <div ref={setNodeRef} style={{ ...S.card, opacity: item.is_available ? 1 : 0.45, position: 'relative', ...style }} {...attributes}>
+              <div ref={setNodeRef} style={{ ...S.card, opacity: item.is_available ? (item.is_sold_out ? 0.6 : 1) : 0.45, position: 'relative', ...style }} {...attributes}>
                 {isTranslating && (
                   <div style={{ position: 'absolute', top: 8, right: 8, fontSize: 10, color: '#4338CA', display: 'flex', alignItems: 'center', gap: 4 }}>
                     <CiGlobe size={12} /> Çevriliyor...
@@ -1095,11 +1469,13 @@ export default function RestaurantDashboard() {
                       {item.is_vegetarian && <span style={{ ...S.badge, background: '#dcfce7', color: '#16a34a' }}><CiApple size={12} /></span>}
                       {item.is_new && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309' }}><CiStar size={12} /> Yeni</span>}
                       {item.is_popular && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309' }}><CiStar size={12} /></span>}
-                      {item.is_featured && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309' }}>⭐ Öne Çıkan</span>}
+                      {item.is_featured && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309' }}>Öne Çıkan</span>}
+                      {item.is_sold_out && <span style={{ ...S.badge, background: '#fee2e2', color: '#dc2626', display: 'inline-flex', alignItems: 'center', gap: 3 }}><CiCircleRemove size={11} /> Tükendi</span>}
+                      {item.schedule_type && item.schedule_type !== 'always' && <span style={{ ...S.badge, background: '#dbeafe', color: '#1d4ed8', display: 'inline-flex', alignItems: 'center', gap: 3 }}>Zamanlı</span>}
                     </div>
                     {item.description_tr && <div style={{ fontSize: 13, color: '#78716c', marginTop: 2 }}>{item.description_tr}</div>}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: '#1c1917' }}>₺{Number(item.price).toFixed(2)}</span>
+                      <InlinePrice value={Number(item.price)} isSoldOut={item.is_sold_out} onSave={(n) => updateItemPrice(item.id, n)} />
                       {item.calories && <span style={{ fontSize: 11, color: '#a8a29e', display: 'inline-flex', alignItems: 'center', gap: 2 }}><CiTempHigh size={12} /> {item.calories} kcal</span>}
                       {allergenKeys.length > 0 && (
                         <span style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }} title={allergenKeys.join(', ')}>
@@ -1110,8 +1486,23 @@ export default function RestaurantDashboard() {
                   </div>
                   {item.image_url && <img src={item.image_url} alt="" style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover', marginLeft: 12 }} />}
                 </div>
-                <div style={{ display: 'flex', gap: 6, marginTop: 10, borderTop: '1px solid #f5f5f4', paddingTop: 10 }}>
+                <div style={{ display: 'flex', gap: 6, marginTop: 10, borderTop: '1px solid #f5f5f4', paddingTop: 10, flexWrap: 'wrap' }}>
                   <button onClick={() => toggleItemAvailable(item.id, item.is_available)} style={{ ...S.btnSm, color: item.is_available ? '#16a34a' : '#dc2626' }}>{item.is_available ? 'Aktif' : 'Pasif'}</button>
+                  <button
+                    onClick={() => toggleSoldOut(item.id, item.is_sold_out)}
+                    style={{
+                      ...S.btnSm,
+                      color: item.is_sold_out ? '#dc2626' : '#44403c',
+                      background: item.is_sold_out ? '#fee2e2' : '#fff',
+                      borderColor: item.is_sold_out ? '#fecaca' : '#d6d3d1',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                    title={item.is_sold_out ? 'Tekrar stoğa al' : 'Tükendi olarak işaretle'}
+                  >
+                    <CiCircleRemove size={13} /> {item.is_sold_out ? 'Tükendi' : 'Tükendi mi?'}
+                  </button>
                   <button onClick={() => startEdit(item)} style={S.btnSm}>Düzenle</button>
                   <button onClick={() => deleteItem(item.id)} style={S.btnDanger}>Sil</button>
                   {!selectedCat && <span style={{ fontSize: 11, color: '#a8a29e', alignSelf: 'center', marginLeft: 'auto' }}>{catName(item.category_id)}</span>}

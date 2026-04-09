@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { supabase } from '../lib/supabase';
 import {
   CiStar, CiApple, CiTempHigh, CiMapPin, CiPhone, CiGlobe,
@@ -46,7 +47,11 @@ interface MenuCategory {
   id: string; restaurant_id: string; name_tr: string; description_tr: string | null;
   sort_order: number; is_active: boolean; translations: Translations;
   image_url: string | null;
+  parent_id: string | null;
 }
+
+interface PeriodicDayVal { enabled?: boolean; start?: string; end?: string; all_day?: boolean }
+type PeriodicScheduleVal = Partial<Record<'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday', PeriodicDayVal>>;
 
 interface MenuItem {
   id: string; restaurant_id: string; category_id: string;
@@ -54,8 +59,35 @@ interface MenuItem {
   image_url: string | null; is_available: boolean; is_popular: boolean;
   is_new: boolean; is_vegetarian: boolean;
   is_featured: boolean;
+  is_sold_out: boolean;
+  schedule_type: 'always' | 'date_range' | 'periodic';
+  schedule_start: string | null;
+  schedule_end: string | null;
+  schedule_periodic: PeriodicScheduleVal;
   allergens: string[] | null; calories: number | null;
   sort_order: number; translations: Translations;
+}
+
+function isItemVisibleBySchedule(item: MenuItem, now: Date = new Date()): boolean {
+  if (!item.schedule_type || item.schedule_type === 'always') return true;
+  if (item.schedule_type === 'date_range') {
+    const start = item.schedule_start ? new Date(item.schedule_start) : null;
+    const end = item.schedule_end ? new Date(item.schedule_end) : null;
+    if (start && now < start) return false;
+    if (end && now > end) return false;
+    return true;
+  }
+  if (item.schedule_type === 'periodic') {
+    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
+    const today = days[now.getDay()];
+    const d = item.schedule_periodic?.[today];
+    if (!d || !d.enabled) return false;
+    if (d.all_day) return true;
+    if (!d.start || !d.end) return true;
+    const cur = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    return cur >= d.start && cur <= d.end;
+  }
+  return true;
 }
 
 /* ------------------------------------------------------------------ */
@@ -220,6 +252,7 @@ export default function PublicMenu() {
       const [{ data: cats }, { data: menuItems }, { data: promoData }] = await Promise.all([
         supabase.from('menu_categories').select('*').eq('restaurant_id', rest.id).eq('is_active', true).order('sort_order'),
         supabase.from('menu_items').select('*').eq('restaurant_id', rest.id).eq('is_available', true).order('sort_order'),
+        // NOTE: we still fetch sold_out items to show them with strikethrough/disabled UI
         supabase.from('restaurant_promos').select('*').eq('restaurant_id', rest.id).eq('is_active', true).order('sort_order'),
       ]);
       setCategories(cats ?? []);
@@ -442,8 +475,11 @@ export default function PublicMenu() {
   const activeFilterCount = excludeAllergens.length + preferences.length;
   const filterApplied = activeFilterCount > 0;
 
+  // Filter out items whose schedule says "not now". Sold-out items stay visible.
+  const scheduleFilteredItems = items.filter((it) => isItemVisibleBySchedule(it));
+
   const globallyFilteredItems = (() => {
-    let list = items;
+    let list = scheduleFilteredItems;
     if (excludeAllergens.length > 0) {
       list = list.filter((item) => {
         const itemAllergens = item.allergens || [];
@@ -465,34 +501,72 @@ export default function PublicMenu() {
     return list;
   })();
 
-  // Visible categories: only those with at least one item after filtering
+  // Build parent → children map and resolve item → top-level parent
+  const categoryMap = new Map(categories.map((c) => [c.id, c]));
+  const topLevelParentId = (catId: string): string => {
+    const cat = categoryMap.get(catId);
+    if (!cat) return catId;
+    return cat.parent_id ? topLevelParentId(cat.parent_id) : cat.id;
+  };
+  const childrenOf = (parentId: string) => categories.filter((c) => c.parent_id === parentId);
+
+  // Per top-level parent, count items (descendants included).
   const categoryCountMap = new Map<string, number>();
   for (const it of globallyFilteredItems) {
-    categoryCountMap.set(it.category_id, (categoryCountMap.get(it.category_id) ?? 0) + 1);
+    const top = topLevelParentId(it.category_id);
+    categoryCountMap.set(top, (categoryCountMap.get(top) ?? 0) + 1);
   }
-  const visibleCategories = categories.filter((c) => (categoryCountMap.get(c.id) ?? 0) > 0);
+  // Tab bar only shows parents (top-level) that have at least one visible item.
+  const visibleCategories = categories.filter(
+    (c) => !c.parent_id && (categoryCountMap.get(c.id) ?? 0) > 0,
+  );
 
-  // If the active category got filtered out, fall back to "All"
+  // If the active category got filtered out, fall back to "All". Active category
+  // must be a parent that's visible.
   const effectiveActiveCategory =
     activeCategory && (categoryCountMap.get(activeCategory) ?? 0) > 0 ? activeCategory : null;
 
-  const filteredItems = effectiveActiveCategory
-    ? globallyFilteredItems.filter((i) => i.category_id === effectiveActiveCategory)
+  // When a parent is active, include its direct child items too.
+  const activeScopeIds: Set<string> | null = effectiveActiveCategory
+    ? new Set([effectiveActiveCategory, ...childrenOf(effectiveActiveCategory).map((c) => c.id)])
+    : null;
+
+  const filteredItems = activeScopeIds
+    ? globallyFilteredItems.filter((i) => activeScopeIds.has(i.category_id))
     : globallyFilteredItems;
-  const categoryMap = new Map(categories.map((c) => [c.id, c]));
-  const groupedItems: { category: MenuCategory | null; items: MenuItem[] }[] = [];
+
+  // Group items for display. Outer group = top-level parent; if children exist,
+  // inner sub-groups by child category, otherwise flat list under the parent.
+  type SubGroup = { category: MenuCategory | null; items: MenuItem[] };
+  type Group = { category: MenuCategory | null; items: MenuItem[]; subgroups: SubGroup[] };
+  const groupedItems: Group[] = [];
 
   if (!effectiveActiveCategory) {
     const catOrder = new Map(categories.map((c, i) => [c.id, i]));
-    const groups = new Map<string, MenuItem[]>();
+    const byParent = new Map<string, MenuItem[]>();
     for (const item of filteredItems) {
-      const key = item.category_id;
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key)!.push(item);
+      const parentKey = topLevelParentId(item.category_id);
+      if (!byParent.has(parentKey)) byParent.set(parentKey, []);
+      byParent.get(parentKey)!.push(item);
     }
-    const sortedKeys = [...groups.keys()].sort((a, b) => (catOrder.get(a) ?? 999) - (catOrder.get(b) ?? 999));
-    for (const key of sortedKeys) {
-      groupedItems.push({ category: categoryMap.get(key) ?? null, items: groups.get(key)! });
+    const sortedParents = [...byParent.keys()].sort(
+      (a, b) => (catOrder.get(a) ?? 999) - (catOrder.get(b) ?? 999),
+    );
+    for (const parentId of sortedParents) {
+      const parentCat = categoryMap.get(parentId) ?? null;
+      const parentItems = byParent.get(parentId)!;
+      const children = childrenOf(parentId);
+      if (children.length === 0) {
+        groupedItems.push({ category: parentCat, items: parentItems, subgroups: [] });
+      } else {
+        const directItems = parentItems.filter((i) => i.category_id === parentId);
+        const sub: SubGroup[] = [];
+        for (const child of children.sort((a, b) => a.sort_order - b.sort_order)) {
+          const childItems = parentItems.filter((i) => i.category_id === child.id);
+          if (childItems.length > 0) sub.push({ category: child, items: childItems });
+        }
+        groupedItems.push({ category: parentCat, items: directItems, subgroups: sub });
+      }
     }
   }
 
@@ -500,11 +574,44 @@ export default function PublicMenu() {
   const hasNoFilterResults = filterApplied && globallyFilteredItems.length === 0;
   const fl = FILTER_LABELS[toUiLang(lang)];
 
+  const canonicalUrl = `https://tabbled.com/menu/${restaurant.slug}`;
+  const ogImage = coverImage || restaurant.logo_url || 'https://tabbled.com/tabbled-logo.png';
+  const metaDescription = `${restaurant.name} dijital menüsü. ${restaurant.tagline || ''} ${restaurant.address || ''}`.trim();
+
   return (
     <div
       className="min-h-screen"
       style={{ backgroundColor: theme.bg, color: theme.text, fontFamily: bodyFont }}
     >
+      <Helmet>
+        <title>{`${restaurant.name} — Menü | Tabbled`}</title>
+        <meta name="description" content={metaDescription} />
+        <meta property="og:type" content="restaurant.menu" />
+        <meta property="og:title" content={`${restaurant.name} — Menü`} />
+        <meta property="og:description" content={restaurant.tagline || `${restaurant.name} dijital menüsü`} />
+        <meta property="og:image" content={ogImage} />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:site_name" content="Tabbled" />
+        <meta property="og:locale" content="tr_TR" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`${restaurant.name} — Menü`} />
+        <meta name="twitter:description" content={restaurant.tagline || `${restaurant.name} dijital menüsü`} />
+        <meta name="twitter:image" content={ogImage} />
+        <link rel="canonical" href={canonicalUrl} />
+        <script type="application/ld+json">
+          {JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'Restaurant',
+            name: restaurant.name,
+            description: restaurant.tagline || '',
+            address: restaurant.address || '',
+            telephone: restaurant.phone || '',
+            url: canonicalUrl,
+            image: ogImage,
+            hasMenu: { '@type': 'Menu', url: canonicalUrl },
+          })}
+        </script>
+      </Helmet>
       {/* Cover Image */}
       {coverImage && (
         <div className="relative h-44" style={{ backgroundColor: theme.cardBg }}>
@@ -762,16 +869,60 @@ export default function PublicMenu() {
             <p className="text-sm" style={{ color: theme.mutedText }}>{UI.noItems[toUiLang(lang)]}</p>
           </div>
         ) : effectiveActiveCategory ? (
-          <div className="flex flex-col gap-3">
-            {filteredItems.map((item) => (
-              <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} />
-            ))}
-            {filteredItems.length === 0 && (
-              <p className="text-center text-sm py-8" style={{ color: theme.mutedText }}>{UI.noItemsInCat[toUiLang(lang)]}</p>
-            )}
-          </div>
+          (() => {
+            const activeChildren = childrenOf(effectiveActiveCategory);
+            if (activeChildren.length === 0) {
+              return (
+                <div className="flex flex-col gap-3">
+                  {filteredItems.map((item) => (
+                    <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} />
+                  ))}
+                  {filteredItems.length === 0 && (
+                    <p className="text-center text-sm py-8" style={{ color: theme.mutedText }}>{UI.noItemsInCat[toUiLang(lang)]}</p>
+                  )}
+                </div>
+              );
+            }
+            // Parent with children → show sub-category headers
+            const directItems = filteredItems.filter((i) => i.category_id === effectiveActiveCategory);
+            return (
+              <div>
+                {directItems.length > 0 && (
+                  <div className="flex flex-col gap-3 mb-6">
+                    {directItems.map((item) => (
+                      <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} />
+                    ))}
+                  </div>
+                )}
+                {activeChildren
+                  .sort((a, b) => a.sort_order - b.sort_order)
+                  .map((child) => {
+                    const childItems = filteredItems.filter((i) => i.category_id === child.id);
+                    if (childItems.length === 0) return null;
+                    return (
+                      <div key={child.id} className="mb-6">
+                        <div className="flex items-center gap-3 mb-3 pt-2">
+                          <h3 className="text-xs tracking-wide uppercase" style={{ fontFamily: headingFont, fontWeight: 700, color: theme.text }}>
+                            {t(child.translations, 'name', child.name_tr, lang)}
+                          </h3>
+                          <div className="flex-1 h-px" style={{ backgroundColor: theme.divider }} />
+                          <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ color: theme.mutedText, backgroundColor: theme.badgeBg, fontWeight: 500 }}>
+                            {childItems.length}
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-3">
+                          {childItems.map((item) => (
+                            <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            );
+          })()
         ) : (
-          groupedItems.map(({ category, items: catItems }) => (
+          groupedItems.map(({ category, items: catItems, subgroups }) => (
             <div
               key={category?.id ?? 'other'}
               id={category ? `category-${category.id}` : undefined}
@@ -789,7 +940,7 @@ export default function PublicMenu() {
                   className="text-[11px] px-2 py-0.5 rounded-full"
                   style={{ color: theme.mutedText, backgroundColor: theme.badgeBg, fontWeight: 500 }}
                 >
-                  {catItems.length}
+                  {catItems.length + subgroups.reduce((a, s) => a + s.items.length, 0)}
                 </span>
               </div>
               <div className="flex flex-col gap-3">
@@ -797,6 +948,24 @@ export default function PublicMenu() {
                   <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} />
                 ))}
               </div>
+              {subgroups.map((sg) => (
+                <div key={sg.category?.id ?? 'sub-other'} className="mt-5">
+                  <div className="flex items-center gap-3 mb-3">
+                    <h3 className="text-xs tracking-wide uppercase" style={{ fontFamily: headingFont, fontWeight: 700, color: theme.text }}>
+                      {sg.category ? t(sg.category.translations, 'name', sg.category.name_tr, lang) : ''}
+                    </h3>
+                    <div className="flex-1 h-px" style={{ backgroundColor: theme.divider }} />
+                    <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ color: theme.mutedText, backgroundColor: theme.badgeBg, fontWeight: 500 }}>
+                      {sg.items.length}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    {sg.items.map((item) => (
+                      <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} />
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           ))
         )}
@@ -1028,6 +1197,10 @@ function FilterPanel({
 /*  Menu Item Card                                                     */
 /* ------------------------------------------------------------------ */
 
+const SOLD_OUT_LABELS: Record<UiLangCode, string> = {
+  tr: 'Tükendi', en: 'Sold Out', ar: 'نفد', zh: '售罄',
+};
+
 function MenuItemCard({ item, lang, theme, onSelect }: { item: MenuItem; lang: LangCode; theme: MenuTheme; onSelect: (item: MenuItem) => void }) {
   const name = t(item.translations, 'name', item.name_tr, lang);
   const description = t(item.translations, 'description', item.description_tr, lang);
@@ -1035,12 +1208,24 @@ function MenuItemCard({ item, lang, theme, onSelect }: { item: MenuItem; lang: L
   const hasAllergens = item.allergens && item.allergens.length > 0;
   const headingFont = "'Playfair Display', serif";
   const isFeatured = item.is_featured;
+  const isSoldOut = item.is_sold_out;
+  const soldOutLabel = SOLD_OUT_LABELS[toUiLang(lang)];
+  const soldOutWrapperStyle: React.CSSProperties = isSoldOut ? { opacity: 0.6, filter: 'grayscale(0.3)' } : {};
+  const soldOutPriceStyle: React.CSSProperties = isSoldOut ? { textDecoration: 'line-through' } : {};
+  const SoldOutBadge = isSoldOut ? (
+    <span
+      className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
+      style={{ backgroundColor: '#fee2e2', color: '#dc2626', fontWeight: 700 }}
+    >
+      {soldOutLabel}
+    </span>
+  ) : null;
 
   if (isFeatured) {
     return (
       <div
         className="rounded-2xl overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer active:scale-[0.99]"
-        style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}` }}
+        style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}`, ...soldOutWrapperStyle }}
         onClick={() => onSelect(item)}
       >
         {item.image_url ? (
@@ -1055,10 +1240,11 @@ function MenuItemCard({ item, lang, theme, onSelect }: { item: MenuItem; lang: L
             <h3 className="text-lg leading-snug" style={{ fontFamily: headingFont, fontWeight: 700, color: theme.text }}>
               {name || <span className="italic" style={{ color: theme.mutedText }}>—</span>}
             </h3>
-            <span className="text-lg flex-shrink-0 tabular-nums" style={{ color: theme.price, fontWeight: 500 }}>
+            <span className="text-lg flex-shrink-0 tabular-nums" style={{ color: theme.price, fontWeight: 500, ...soldOutPriceStyle }}>
               {Number(item.price).toFixed(2)} ₺
             </span>
           </div>
+          {SoldOutBadge && <div className="mb-1">{SoldOutBadge}</div>}
           {description && (
             <p className="text-[13px] mt-1 leading-relaxed" style={{ color: theme.mutedText, fontWeight: 300 }}>
               {description}
@@ -1104,6 +1290,7 @@ function MenuItemCard({ item, lang, theme, onSelect }: { item: MenuItem; lang: L
       style={{
         backgroundColor: theme.cardBg,
         border: `1px solid ${theme.cardBorder}`,
+        ...soldOutWrapperStyle,
       }}
       onClick={() => onSelect(item)}
     >
@@ -1127,11 +1314,12 @@ function MenuItemCard({ item, lang, theme, onSelect }: { item: MenuItem; lang: L
           </h3>
           <span
             className="text-[15px] flex-shrink-0 tabular-nums"
-            style={{ color: theme.price, fontWeight: 500 }}
+            style={{ color: theme.price, fontWeight: 500, ...soldOutPriceStyle }}
           >
             {Number(item.price).toFixed(2)} ₺
           </span>
         </div>
+        {SoldOutBadge && <div className="mt-1">{SoldOutBadge}</div>}
         {description && (
           <p className="text-[12px] mt-1 line-clamp-2 leading-relaxed" style={{ color: theme.mutedText, fontWeight: 300 }}>
             {description}
