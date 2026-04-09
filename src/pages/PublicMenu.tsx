@@ -1675,10 +1675,10 @@ function ItemDetailModal({ item, lang, theme, onClose }: { item: MenuItem; lang:
             </div>
           )}
 
-          {!hasVariants(item) && item.calories && (
+          {!hasVariants(item) && !(item.nutrition && item.nutrition.show_on_menu !== false) && (item.nutrition?.calories ?? item.calories) != null && (
             <div className="flex items-center gap-2 text-sm mb-4" style={{ color: theme.mutedText }}>
               <CiTempHigh size={16} />
-              <span>{item.calories} kcal</span>
+              <span>{item.nutrition?.calories ?? item.calories} kcal</span>
             </div>
           )}
 

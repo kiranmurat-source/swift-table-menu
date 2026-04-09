@@ -1772,6 +1772,121 @@ export default function RestaurantDashboard() {
                 <CiCircleRemove size={14} /> Tükendi olarak işaretle
               </label>
 
+              {/* Scheduling */}
+              <div style={{ borderTop: '1px solid #e7e5e4', paddingTop: 12, marginTop: 4 }}>
+                <label style={{ ...S.label, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <CiClock1 size={14} /> Zamanlama
+                </label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
+                  {[
+                    { v: 'always', label: 'Her zaman göster' },
+                    { v: 'date_range', label: 'Zaman aralığı (başlangıç – bitiş)' },
+                    { v: 'periodic', label: 'Periyodik (haftalık saat aralığı)' },
+                  ].map(opt => (
+                    <label key={opt.v} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#44403c', cursor: 'pointer' }}>
+                      <input
+                        type="radio"
+                        name="schedule_type"
+                        value={opt.v}
+                        checked={itemForm.schedule_type === opt.v}
+                        onChange={() => setItemForm({ ...itemForm, schedule_type: opt.v as 'always' | 'date_range' | 'periodic' })}
+                      />
+                      {opt.label}
+                    </label>
+                  ))}
+                </div>
+                {itemForm.schedule_type === 'date_range' && (
+                  <div style={S.grid2}>
+                    <div>
+                      <label style={S.label}>Başlangıç</label>
+                      <input
+                        type="datetime-local"
+                        style={S.input}
+                        value={itemForm.schedule_start}
+                        onChange={e => setItemForm({ ...itemForm, schedule_start: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label style={S.label}>Bitiş</label>
+                      <input
+                        type="datetime-local"
+                        style={S.input}
+                        value={itemForm.schedule_end}
+                        onChange={e => setItemForm({ ...itemForm, schedule_end: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                )}
+                {itemForm.schedule_type === 'periodic' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {PERIODIC_DAYS.map(day => {
+                      const d = itemForm.schedule_periodic[day];
+                      return (
+                        <div key={day} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, flexWrap: 'wrap' }}>
+                          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 4, minWidth: 110 }}>
+                            <input
+                              type="checkbox"
+                              checked={d.enabled}
+                              onChange={e => setItemForm({
+                                ...itemForm,
+                                schedule_periodic: { ...itemForm.schedule_periodic, [day]: { ...d, enabled: e.target.checked } },
+                              })}
+                            />
+                            {PERIODIC_DAY_LABELS[day]}
+                          </label>
+                          {d.enabled && (
+                            <>
+                              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                <input
+                                  type="checkbox"
+                                  checked={d.all_day}
+                                  onChange={e => setItemForm({
+                                    ...itemForm,
+                                    schedule_periodic: {
+                                      ...itemForm.schedule_periodic,
+                                      [day]: {
+                                        ...d,
+                                        all_day: e.target.checked,
+                                        start: e.target.checked ? '00:00' : d.start,
+                                        end: e.target.checked ? '23:59' : d.end,
+                                      },
+                                    },
+                                  })}
+                                />
+                                Tüm gün
+                              </label>
+                              {!d.all_day && (
+                                <>
+                                  <input
+                                    type="time"
+                                    value={d.start}
+                                    onChange={e => setItemForm({
+                                      ...itemForm,
+                                      schedule_periodic: { ...itemForm.schedule_periodic, [day]: { ...d, start: e.target.value } },
+                                    })}
+                                    style={{ ...S.input, width: 100, padding: '4px 8px' }}
+                                  />
+                                  <span>–</span>
+                                  <input
+                                    type="time"
+                                    value={d.end}
+                                    onChange={e => setItemForm({
+                                      ...itemForm,
+                                      schedule_periodic: { ...itemForm.schedule_periodic, [day]: { ...d, end: e.target.value } },
+                                    })}
+                                    style={{ ...S.input, width: 100, padding: '4px 8px' }}
+                                  />
+                                </>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
               {/* Nutrition Facts (collapsible) */}
               <div style={{ borderTop: '1px solid #e7e5e4', paddingTop: 12, marginTop: 4 }}>
                 <button
@@ -1890,121 +2005,6 @@ export default function RestaurantDashboard() {
                     >
                       <CiTrash size={12} /> Besin Değerlerini Temizle
                     </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Scheduling */}
-              <div style={{ borderTop: '1px solid #e7e5e4', paddingTop: 12, marginTop: 4 }}>
-                <label style={{ ...S.label, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <CiClock1 size={14} /> Zamanlama
-                </label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
-                  {[
-                    { v: 'always', label: 'Her zaman göster' },
-                    { v: 'date_range', label: 'Zaman aralığı (başlangıç – bitiş)' },
-                    { v: 'periodic', label: 'Periyodik (haftalık saat aralığı)' },
-                  ].map(opt => (
-                    <label key={opt.v} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#44403c', cursor: 'pointer' }}>
-                      <input
-                        type="radio"
-                        name="schedule_type"
-                        value={opt.v}
-                        checked={itemForm.schedule_type === opt.v}
-                        onChange={() => setItemForm({ ...itemForm, schedule_type: opt.v as 'always' | 'date_range' | 'periodic' })}
-                      />
-                      {opt.label}
-                    </label>
-                  ))}
-                </div>
-                {itemForm.schedule_type === 'date_range' && (
-                  <div style={S.grid2}>
-                    <div>
-                      <label style={S.label}>Başlangıç</label>
-                      <input
-                        type="datetime-local"
-                        style={S.input}
-                        value={itemForm.schedule_start}
-                        onChange={e => setItemForm({ ...itemForm, schedule_start: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <label style={S.label}>Bitiş</label>
-                      <input
-                        type="datetime-local"
-                        style={S.input}
-                        value={itemForm.schedule_end}
-                        onChange={e => setItemForm({ ...itemForm, schedule_end: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                )}
-                {itemForm.schedule_type === 'periodic' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {PERIODIC_DAYS.map(day => {
-                      const d = itemForm.schedule_periodic[day];
-                      return (
-                        <div key={day} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, flexWrap: 'wrap' }}>
-                          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 4, minWidth: 110 }}>
-                            <input
-                              type="checkbox"
-                              checked={d.enabled}
-                              onChange={e => setItemForm({
-                                ...itemForm,
-                                schedule_periodic: { ...itemForm.schedule_periodic, [day]: { ...d, enabled: e.target.checked } },
-                              })}
-                            />
-                            {PERIODIC_DAY_LABELS[day]}
-                          </label>
-                          {d.enabled && (
-                            <>
-                              <label style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                <input
-                                  type="checkbox"
-                                  checked={d.all_day}
-                                  onChange={e => setItemForm({
-                                    ...itemForm,
-                                    schedule_periodic: {
-                                      ...itemForm.schedule_periodic,
-                                      [day]: {
-                                        ...d,
-                                        all_day: e.target.checked,
-                                        start: e.target.checked ? '00:00' : d.start,
-                                        end: e.target.checked ? '23:59' : d.end,
-                                      },
-                                    },
-                                  })}
-                                />
-                                Tüm gün
-                              </label>
-                              {!d.all_day && (
-                                <>
-                                  <input
-                                    type="time"
-                                    value={d.start}
-                                    onChange={e => setItemForm({
-                                      ...itemForm,
-                                      schedule_periodic: { ...itemForm.schedule_periodic, [day]: { ...d, start: e.target.value } },
-                                    })}
-                                    style={{ ...S.input, width: 100, padding: '4px 8px' }}
-                                  />
-                                  <span>–</span>
-                                  <input
-                                    type="time"
-                                    value={d.end}
-                                    onChange={e => setItemForm({
-                                      ...itemForm,
-                                      schedule_periodic: { ...itemForm.schedule_periodic, [day]: { ...d, end: e.target.value } },
-                                    })}
-                                    style={{ ...S.input, width: 100, padding: '4px 8px' }}
-                                  />
-                                </>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      );
-                    })}
                   </div>
                 )}
               </div>
