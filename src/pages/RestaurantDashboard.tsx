@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, Fragment, lazy, Suspense, ReactNode, CSSProperties } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
-import { CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiApple, CiStar, CiTempHigh, CiGlobe, CiPen, CiGrid2H, CiUser, CiImageOn, CiTrash, CiLink, CiBoxes, CiCircleChevDown, CiCircleChevUp, CiCirclePlus, CiClock1, CiWheat, CiTimer } from 'react-icons/ci';
+import { CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiApple, CiStar, CiGlobe, CiPen, CiGrid2H, CiUser, CiImageOn, CiTrash, CiLink, CiBoxes, CiCircleChevDown, CiCircleChevUp, CiCirclePlus, CiClock1, CiWheat, CiTimer } from 'react-icons/ci';
 import {
   DndContext,
   closestCenter,
@@ -43,7 +43,7 @@ import QRManager from '../components/QRManager';
 import TranslationCenter from '../components/TranslationCenter';
 const RichTextEditor = lazy(() => import('../components/RichTextEditor'));
 import { CategoryTabSkeleton, ListSkeleton } from '../components/Skeleton';
-import { getOptimizedImageUrl } from '../lib/imageUtils';
+import { getOptimizedImageUrl, handleImageError } from '../lib/imageUtils';
 import { ALLERGEN_LIST, getAllergenInfo } from '../lib/allergens';
 import { AllergenIcon } from '../components/AllergenIcon';
 import { THEMES } from '../lib/themes';
@@ -375,7 +375,7 @@ const NUTRITION_NUMERIC_KEYS: Array<keyof NutritionDraft> = [
 ];
 
 const emptyItemForm = {
-  name_tr: '', description_tr: '', price: '', image_url: '', calories: '',
+  name_tr: '', description_tr: '', price: '', image_url: '',
   allergens: [] as string[], is_vegetarian: false, is_new: false, is_featured: false,
   is_sold_out: false,
   schedule_type: 'always' as 'always' | 'date_range' | 'periodic',
@@ -541,7 +541,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
             <input ref={logoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadImage(e.target.files[0], 'logo'); }} />
             {restaurant.logo_url ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                <img src={getOptimizedImageUrl(restaurant.logo_url, 'card')} alt="Logo" style={{ width: 80, height: 80, borderRadius: 12, objectFit: 'cover', border: '1px solid #e7e5e4' }} />
+                <img onError={handleImageError} src={getOptimizedImageUrl(restaurant.logo_url, 'card')} alt="Logo" style={{ width: 80, height: 80, borderRadius: 12, objectFit: 'cover', border: '1px solid #e7e5e4' }} />
                 <div style={{ display: 'flex', gap: 6 }}>
                   <button type="button" onClick={() => logoRef.current?.click()} disabled={uploadingLogo} style={{ ...S.btnSm, fontSize: 11, padding: '4px 10px' }}>{uploadingLogo ? '...' : 'Degistir'}</button>
                   <button type="button" onClick={() => removeImage('logo')} style={{ ...S.btnDanger, fontSize: 11, padding: '4px 10px' }}><CiTrash size={12} /></button>
@@ -559,7 +559,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
             <input ref={coverRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadImage(e.target.files[0], 'cover'); }} />
             {coverImage ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                <img src={getOptimizedImageUrl(coverImage, 'detail')} alt="Cover" style={{ width: '100%', height: 80, borderRadius: 8, objectFit: 'cover', border: '1px solid #e7e5e4' }} />
+                <img onError={handleImageError} src={getOptimizedImageUrl(coverImage, 'detail')} alt="Cover" style={{ width: '100%', height: 80, borderRadius: 8, objectFit: 'cover', border: '1px solid #e7e5e4' }} />
                 <div style={{ display: 'flex', gap: 6 }}>
                   <button type="button" onClick={() => coverRef.current?.click()} disabled={uploadingCover} style={{ ...S.btnSm, fontSize: 11, padding: '4px 10px' }}>{uploadingCover ? '...' : 'Degistir'}</button>
                   <button type="button" onClick={() => removeImage('cover')} style={{ ...S.btnDanger, fontSize: 11, padding: '4px 10px' }}><CiTrash size={12} /></button>
@@ -902,7 +902,7 @@ export default function RestaurantDashboard() {
           price: itemForm.price,
           allergens: itemForm.allergens,
           is_vegetarian: itemForm.is_vegetarian,
-          calories: itemForm.calories ? parseInt(itemForm.calories) : null,
+          calories: itemForm.nutrition.calories ? parseInt(itemForm.nutrition.calories) : null,
         }),
       });
       const data = await res.json();
@@ -1219,7 +1219,6 @@ export default function RestaurantDashboard() {
       description_tr: item.description_tr || '',
       price: item.price.toString(),
       image_url: item.image_url || '',
-      calories: item.calories?.toString() || '',
       allergens: item.allergens || [],
       is_vegetarian: item.is_vegetarian || false,
       is_new: item.is_new || false,
@@ -1348,7 +1347,7 @@ export default function RestaurantDashboard() {
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center gap-3">
             {restaurant.logo_url && (
-              <img src={getOptimizedImageUrl(restaurant.logo_url, 'thumbnail')} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" />
+              <img onError={handleImageError} src={getOptimizedImageUrl(restaurant.logo_url, 'thumbnail')} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" />
             )}
             <div className="min-w-0">
               <p className="font-semibold text-sm text-stone-900 truncate">{restaurant.name}</p>
@@ -1451,7 +1450,7 @@ export default function RestaurantDashboard() {
                 <input ref={catFileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadCategoryImage(e.target.files[0], 'new'); }} />
                 {catForm.image_url ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <img src={getOptimizedImageUrl(catForm.image_url, 'thumbnail')} alt="" style={{ width: 64, height: 64, borderRadius: 8, objectFit: 'cover', border: '1px solid #e7e5e4' }} />
+                    <img onError={handleImageError} src={getOptimizedImageUrl(catForm.image_url, 'thumbnail')} alt="" style={{ width: 64, height: 64, borderRadius: 8, objectFit: 'cover', border: '1px solid #e7e5e4' }} />
                     <button type="button" onClick={() => catFileRef.current?.click()} disabled={uploadingCatImage === 'new'} style={{ ...S.btnSm, fontSize: 11 }}>{uploadingCatImage === 'new' ? '...' : 'Değiştir'}</button>
                     <button type="button" onClick={() => setCatForm({ ...catForm, image_url: '' })} style={{ ...S.btnDanger, fontSize: 11 }}><CiTrash size={12} /></button>
                   </div>
@@ -1583,7 +1582,7 @@ export default function RestaurantDashboard() {
                     <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) handleImageUpload(e.target.files[0]); }} />
                     {itemForm.image_url ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <img src={getOptimizedImageUrl(itemForm.image_url, 'thumbnail')} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover' }} />
+                        <img onError={handleImageError} src={getOptimizedImageUrl(itemForm.image_url, 'thumbnail')} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover' }} />
                         <button type="button" onClick={() => setItemForm({ ...itemForm, image_url: '' })} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11, color: '#dc2626' }}>Kaldır</button>
                       </div>
                     ) : (
@@ -1705,7 +1704,7 @@ export default function RestaurantDashboard() {
                     <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) handleImageUpload(e.target.files[0]); }} />
                     {itemForm.image_url ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <img src={getOptimizedImageUrl(itemForm.image_url, 'thumbnail')} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover' }} />
+                        <img onError={handleImageError} src={getOptimizedImageUrl(itemForm.image_url, 'thumbnail')} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover' }} />
                         <button type="button" onClick={() => setItemForm({ ...itemForm, image_url: '' })} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11, color: '#dc2626' }}>Kaldır</button>
                       </div>
                     ) : (
@@ -2065,7 +2064,7 @@ export default function RestaurantDashboard() {
                     <span style={{ width: 16, flexShrink: 0 }} />
                   )}
                   {item.image_url ? (
-                    <img src={getOptimizedImageUrl(item.image_url, 'card')} alt="" style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} loading="lazy" decoding="async" />
+                    <img onError={handleImageError} src={getOptimizedImageUrl(item.image_url, 'card')} alt="" style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} loading="lazy" decoding="async" />
                   ) : (
                     <div style={{ width: 48, height: 48, borderRadius: 8, background: '#f5f5f4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d6d3d1', flexShrink: 0 }}>
                       <CiCamera size={20} />
@@ -2248,7 +2247,7 @@ export default function RestaurantDashboard() {
                     </span>
                   )}
                   {c.image_url ? (
-                    <img src={getOptimizedImageUrl(c.image_url, 'thumbnail')} alt="" style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
+                    <img onError={handleImageError} src={getOptimizedImageUrl(c.image_url, 'thumbnail')} alt="" style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
                   ) : (
                     <div style={{ width: 40, height: 40, borderRadius: 8, background: '#f5f5f4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d6d3d1', flexShrink: 0 }}>
                       <CiCamera size={18} />
@@ -2609,7 +2608,7 @@ function PromosTab({ restaurant }: { restaurant: Restaurant }) {
             <input ref={promoFileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadImage(e.target.files[0]); }} />
             {form.image_url ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <img src={getOptimizedImageUrl(form.image_url, 'card')} alt="" style={{ width: 120, height: 72, borderRadius: 8, objectFit: 'cover', border: '1px solid #e7e5e4' }} />
+                <img onError={handleImageError} src={getOptimizedImageUrl(form.image_url, 'card')} alt="" style={{ width: 120, height: 72, borderRadius: 8, objectFit: 'cover', border: '1px solid #e7e5e4' }} />
                 <button type="button" onClick={() => promoFileRef.current?.click()} disabled={uploading} style={S.btnSm}>{uploading ? '...' : 'Değiştir'}</button>
                 <button type="button" onClick={() => setForm({ ...form, image_url: '' })} style={S.btnDanger}><CiTrash size={12} /></button>
               </div>
@@ -2743,7 +2742,7 @@ function PromosTab({ restaurant }: { restaurant: Restaurant }) {
         <div key={p.id} style={{ ...S.card, opacity: p.is_active ? 1 : 0.55 }}>
           <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
             {p.image_url ? (
-              <img src={getOptimizedImageUrl(p.image_url, 'card')} alt="" style={{ width: 84, height: 56, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
+              <img onError={handleImageError} src={getOptimizedImageUrl(p.image_url, 'card')} alt="" style={{ width: 84, height: 56, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
             ) : (
               <div style={{ width: 84, height: 56, borderRadius: 8, background: '#f5f5f4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <CiImageOn size={24} style={{ color: '#a8a29e' }} />

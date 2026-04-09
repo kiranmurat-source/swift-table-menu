@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { supabase } from '../lib/supabase';
-import { getOptimizedImageUrl } from '../lib/imageUtils';
+import { getOptimizedImageUrl, handleImageError } from '../lib/imageUtils';
 import {
   CiStar, CiApple, CiTempHigh, CiMapPin, CiPhone, CiGlobe,
   CiForkAndKnife, CiCircleRemove, CiFilter, CiTimer,
@@ -337,7 +337,9 @@ export default function PublicMenu() {
         .single();
 
       const restaurantElapsed = performance.now() - startTime;
-      console.log(`[Tabbled] Restaurant loaded in ${restaurantElapsed.toFixed(0)}ms`);
+      if (import.meta.env.DEV) {
+        console.log(`[Tabbled] Restaurant loaded in ${restaurantElapsed.toFixed(0)}ms`);
+      }
 
       if (!rest) {
         const remaining = Math.max(0, LOADING_MIN_MS - restaurantElapsed);
@@ -377,9 +379,11 @@ export default function PublicMenu() {
         setCategories(cats ?? []);
         setItems(menuItems ?? []);
         setPromos((promoData ?? []) as Promo[]);
-        console.log(
-          `[Tabbled] Menu data loaded in ${(performance.now() - startTime).toFixed(0)}ms`,
-        );
+        if (import.meta.env.DEV) {
+          console.log(
+            `[Tabbled] Menu data loaded in ${(performance.now() - startTime).toFixed(0)}ms`,
+          );
+        }
       });
 
       // 3. Release loading once the minimum display time has elapsed.
@@ -467,7 +471,7 @@ export default function PublicMenu() {
         {/* Background */}
         {coverImage ? (
           <>
-            <img src={coverImage} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            <img onError={handleImageError} src={coverImage} alt="" className="absolute inset-0 w-full h-full object-cover" />
             <div className="absolute inset-0" style={{ backgroundColor: theme.splashOverlay }} />
           </>
         ) : (
@@ -744,7 +748,7 @@ export default function PublicMenu() {
       {/* Cover Image */}
       {coverImage && (
         <div className="relative h-44" style={{ backgroundColor: theme.cardBg }}>
-          <img src={coverImage} alt="" className="w-full h-full object-cover opacity-80" />
+          <img onError={handleImageError} src={coverImage} alt="" className="w-full h-full object-cover opacity-80" />
           <div
             className="absolute inset-0"
             style={{ background: `linear-gradient(to top, ${theme.bg}, transparent)` }}
@@ -1361,7 +1365,7 @@ function MenuItemCard({ item, lang, theme, onSelect }: { item: MenuItem; lang: L
         onClick={() => onSelect(item)}
       >
         {item.image_url ? (
-          <img src={getOptimizedImageUrl(item.image_url, 'detail')} alt={name} className="w-full h-48 object-cover" loading="lazy" decoding="async" />
+          <img onError={handleImageError} src={getOptimizedImageUrl(item.image_url, 'detail')} alt={name} className="w-full h-48 object-cover" loading="lazy" decoding="async" />
         ) : (
           <div className="w-full h-32 flex items-center justify-center" style={{ backgroundColor: theme.badgeBg }}>
             <CiForkAndKnife size={40} style={{ color: theme.mutedText }} />
@@ -1433,7 +1437,7 @@ function MenuItemCard({ item, lang, theme, onSelect }: { item: MenuItem; lang: L
       onClick={() => onSelect(item)}
     >
       {item.image_url ? (
-        <img src={getOptimizedImageUrl(item.image_url, 'card')} alt={name} className="w-[88px] h-[88px] rounded-xl object-cover flex-shrink-0" loading="lazy" decoding="async" />
+        <img onError={handleImageError} src={getOptimizedImageUrl(item.image_url, 'card')} alt={name} className="w-[88px] h-[88px] rounded-xl object-cover flex-shrink-0" loading="lazy" decoding="async" />
       ) : (
         <div
           className="w-[88px] h-[88px] rounded-xl flex-shrink-0 flex items-center justify-center"
@@ -1546,7 +1550,7 @@ function ItemDetailModal({ item, lang, theme, onClose }: { item: MenuItem; lang:
         </button>
 
         {item.image_url ? (
-          <img src={getOptimizedImageUrl(item.image_url, 'detail')} alt={name} className="w-full h-64 object-cover rounded-t-3xl sm:rounded-t-3xl" loading="lazy" decoding="async" />
+          <img onError={handleImageError} src={getOptimizedImageUrl(item.image_url, 'detail')} alt={name} className="w-full h-64 object-cover rounded-t-3xl sm:rounded-t-3xl" loading="lazy" decoding="async" />
         ) : (
           <div
             className="w-full h-48 flex items-center justify-center rounded-t-3xl"
