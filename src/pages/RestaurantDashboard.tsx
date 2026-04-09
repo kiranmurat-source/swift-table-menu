@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, ReactNode, CSSProperties } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
-import { CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiApple, CiStar, CiTempHigh, CiGlobe, CiPen, CiGrid2H, CiUser, CiImageOn, CiTrash, CiLink, CiBoxes } from 'react-icons/ci';
+import { CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiApple, CiStar, CiTempHigh, CiGlobe, CiPen, CiGrid2H, CiUser, CiImageOn, CiTrash, CiLink, CiBoxes, CiCircleChevDown, CiCircleChevUp, CiCirclePlus, CiClock1 } from 'react-icons/ci';
 import {
   DndContext,
   closestCenter,
@@ -110,7 +110,111 @@ const S: Record<string, React.CSSProperties> = {
   grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 },
   grid3: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 },
   badge: { fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 4, display: 'inline-block', marginRight: 4 },
+  // FineDine-style accordion & compact rows
+  catAccordionRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    padding: '12px 16px',
+    background: '#fff',
+    borderRadius: 12,
+    border: '1px solid #e7e5e4',
+    marginBottom: 8,
+    transition: 'all 0.15s',
+  },
+  subCatWrap: {
+    marginLeft: 24,
+    borderLeft: '2px solid #e7e5e4',
+    paddingLeft: 12,
+  },
+  itemRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    padding: '8px 12px',
+    borderBottom: '1px solid #f5f5f4',
+    background: '#fff',
+    cursor: 'pointer',
+    transition: 'background 0.1s',
+  },
+  itemsContainer: {
+    background: '#fafafa',
+    border: '1px solid #e7e5e4',
+    borderRadius: 8,
+    margin: '4px 0 12px 36px',
+    padding: '4px 0',
+    overflow: 'hidden',
+  },
+  inlinePriceBox: {
+    width: 110,
+    padding: '6px 10px',
+    border: '1px solid #d6d3d1',
+    borderRadius: 8,
+    fontSize: 13,
+    fontWeight: 600,
+    textAlign: 'right' as const,
+    fontFamily: 'Inter, sans-serif',
+    background: '#fff',
+    outline: 'none',
+  },
+  soldOutBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 3,
+    padding: '2px 8px',
+    background: '#fee2e2',
+    color: '#dc2626',
+    borderRadius: 12,
+    fontSize: 10,
+    fontWeight: 600,
+  },
+  translationBadge: {
+    display: 'inline-flex',
+    padding: '1px 6px',
+    background: '#EEF2FF',
+    color: '#4338CA',
+    borderRadius: 4,
+    fontSize: 9,
+    fontWeight: 600,
+  },
+  missingPhotoWarning: {
+    fontSize: 11,
+    color: '#dc2626',
+    fontWeight: 500,
+  },
+  accordionActions: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    marginLeft: 'auto',
+  },
 };
+
+// Toggle switch style helpers
+const toggleSwitchStyle = (on: boolean): React.CSSProperties => ({
+  position: 'relative',
+  display: 'inline-block',
+  width: 36,
+  height: 20,
+  borderRadius: 999,
+  background: on ? '#16a34a' : '#d6d3d1',
+  border: 'none',
+  cursor: 'pointer',
+  padding: 0,
+  transition: 'background 0.15s',
+  flexShrink: 0,
+});
+const toggleKnobStyle = (on: boolean): React.CSSProperties => ({
+  position: 'absolute',
+  top: 2,
+  left: on ? 18 : 2,
+  width: 16,
+  height: 16,
+  background: '#fff',
+  borderRadius: '50%',
+  boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+  transition: 'left 0.15s',
+});
 
 const PERIODIC_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 type PeriodicDayKey = typeof PERIODIC_DAYS[number];
@@ -574,6 +678,16 @@ export default function RestaurantDashboard() {
   const [activeTab, setActiveTab] = useState<'menu' | 'translations' | 'qr' | 'profile' | 'promos'>('menu');
   const [loadingData, setLoadingData] = useState(true);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
+  const toggleExpand = (catId: string) => {
+    setExpandedCats(prev => {
+      const next = new Set(prev);
+      if (next.has(catId)) next.delete(catId);
+      else next.add(catId);
+      return next;
+    });
+  };
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
   const enabledLangs = (restaurant?.enabled_languages ?? []).filter(l => l !== 'tr');
   const plan = (restaurant?.current_plan || '').toLowerCase();
@@ -1084,151 +1198,25 @@ export default function RestaurantDashboard() {
                   </button>
                 )}
               </div>
-              {enabledLangs.length > 0 && (
-                <p style={{ fontSize: 11, color: '#4338CA', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <CiGlobe size={12} /> Çeviriler kaydettikten sonra otomatik oluşturulacak
-                </p>
-              )}
               <button type="submit" disabled={saving} style={{ ...S.btn, alignSelf: 'flex-start' }}>{saving ? '...' : 'Ekle'}</button>
             </form>
           )}
 
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
-            <button onClick={() => setSelectedCat(null)} style={{ ...S.btnSm, background: !selectedCat ? '#1c1917' : '#fff', color: !selectedCat ? '#fff' : '#44403c' }}>
-              Tümü ({items.length})
-              {totalMissingPhotos > 0 && (
-                <span style={{ marginLeft: 6, fontSize: 10, color: '#f59e0b', display: 'inline-flex', alignItems: 'center', gap: 2 }}>
-                  <CiCamera size={11} /> {totalMissingPhotos} fotoğraf eksik
-                </span>
-              )}
-            </button>
-            <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleCategoryDragEnd}>
-              <SortableContext items={categories.filter(c => !c.parent_id).map(c => c.id)} strategy={horizontalListSortingStrategy}>
-            {categories.filter(c => !c.parent_id).map(c => (
-              <Sortable key={c.id} id={c.id}>
-                {({ setNodeRef, style, attributes, listeners }) => (
-              <div ref={setNodeRef} style={{ display: 'flex', alignItems: 'center', gap: 2, ...style }} {...attributes}>
-                {editingCat === c.id ? (
-                  <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                    <input style={{ ...S.input, width: 140, padding: '4px 8px', fontSize: 12 }} value={editCatForm.name_tr} onChange={e => setEditCatForm({ name_tr: e.target.value })} />
-                    <button onClick={() => updateCategory(c.id)} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11 }}><CiCircleCheck size={14} /></button>
-                    <button onClick={() => setEditingCat(null)} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11 }}><CiCircleRemove size={14} /></button>
-                  </div>
-                ) : (
-                  <>
-                    <span {...(listeners as Record<string, unknown>)} style={{ cursor: 'grab', color: '#a8a29e', display: 'inline-flex', alignItems: 'center', padding: '0 2px', touchAction: 'none' }} title="Sürükleyerek sırala">
-                      <CiBoxes size={14} />
-                    </span>
-                    <button onClick={() => setSelectedCat(c.id)} style={{ ...S.btnSm, background: selectedCat === c.id ? '#1c1917' : '#fff', color: selectedCat === c.id ? '#fff' : '#44403c', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                      {c.image_url ? (
-                        <img src={c.image_url} alt="" style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }} />
-                      ) : null}
-                      {c.name_tr} ({items.filter(i => categoryScopeIds(c.id).includes(i.category_id)).length})
-                      {(missingPhotoCounts.get(c.id) || 0) > 0 && (
-                        <span style={{ fontSize: 9, color: '#f59e0b', marginLeft: 2 }}>
-                          📷{missingPhotoCounts.get(c.id)}
-                        </span>
-                      )}
-                      <TranslationBadges translations={c.translations} />
-                    </button>
-                    <label style={{ background: 'none', border: 'none', color: '#a8a29e', cursor: 'pointer', fontSize: 12, padding: '0 2px', display: 'inline-flex', alignItems: 'center' }} title="Kategori görseli">
-                      <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploadingCatImage === c.id} onChange={e => { if (e.target.files?.[0]) uploadCategoryImage(e.target.files[0], c.id); }} />
-                      {uploadingCatImage === c.id ? <span style={{ fontSize: 10 }}>...</span> : <CiCamera size={14} />}
-                    </label>
-                    {c.image_url && (
-                      <button onClick={() => removeCategoryImage(c.id)} style={{ background: 'none', border: 'none', color: '#a8a29e', cursor: 'pointer', padding: '0 2px' }} title="Görseli kaldır"><CiTrash size={13} /></button>
-                    )}
-                    <button onClick={() => { setEditingCat(c.id); setEditCatForm({ name_tr: c.name_tr }); }} style={{ background: 'none', border: 'none', color: '#a8a29e', cursor: 'pointer', fontSize: 12, padding: '0 2px' }} title="Düzenle"><CiEdit size={14} /></button>
-                    <button onClick={() => deleteCategory(c.id)} style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: 14, padding: '0 2px' }}>×</button>
-                  </>
-                )}
-              </div>
-                )}
-              </Sortable>
-            ))}
-              </SortableContext>
-            </DndContext>
+          {/* Summary line */}
+          <div style={{ fontSize: 13, color: '#78716c', marginBottom: 10 }}>
+            Toplam: <b style={{ color: '#1c1917' }}>{items.length}</b> ürün
+            {totalMissingPhotos > 0 && <> · <span style={S.missingPhotoWarning}>{totalMissingPhotos} fotoğraf eksik</span></>}
           </div>
-
-          {/* Sub-category row: shown when selected category (or its parent) has children */}
-          {(() => {
-            const sel = selectedCat ? categories.find(c => c.id === selectedCat) : null;
-            const parent = sel ? (sel.parent_id ? categories.find(c => c.id === sel.parent_id) : sel) : null;
-            if (!parent) return null;
-            const children = categories.filter(c => c.parent_id === parent.id);
-            if (children.length === 0) return null;
-            return (
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', paddingLeft: 24, marginBottom: 16, borderLeft: '2px solid #e7e5e4' }}>
-                <button
-                  onClick={() => setSelectedCat(parent.id)}
-                  style={{
-                    ...S.btnSm,
-                    fontSize: 11,
-                    background: selectedCat === parent.id ? '#44403c' : '#fff',
-                    color: selectedCat === parent.id ? '#fff' : '#78716c',
-                  }}
-                >
-                  ↳ {parent.name_tr} (Tümü)
-                </button>
-                {children.map(child => (
-                  <div key={child.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
-                    {editingCat === child.id ? (
-                      <>
-                        <input style={{ ...S.input, width: 120, padding: '3px 6px', fontSize: 11 }} value={editCatForm.name_tr} onChange={e => setEditCatForm({ name_tr: e.target.value })} />
-                        <button onClick={() => updateCategory(child.id)} style={{ ...S.btnSm, padding: '2px 6px', fontSize: 11 }}><CiCircleCheck size={12} /></button>
-                        <button onClick={() => setEditingCat(null)} style={{ ...S.btnSm, padding: '2px 6px', fontSize: 11 }}><CiCircleRemove size={12} /></button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => setSelectedCat(child.id)}
-                          style={{
-                            ...S.btnSm,
-                            fontSize: 11,
-                            background: selectedCat === child.id ? '#44403c' : '#fff',
-                            color: selectedCat === child.id ? '#fff' : '#78716c',
-                          }}
-                        >
-                          {child.name_tr} ({items.filter(i => i.category_id === child.id).length})
-                        </button>
-                        <button onClick={() => { setEditingCat(child.id); setEditCatForm({ name_tr: child.name_tr }); }} style={{ background: 'none', border: 'none', color: '#a8a29e', cursor: 'pointer', padding: '0 2px' }} title="Düzenle"><CiEdit size={12} /></button>
-                        <button onClick={() => deleteCategory(child.id)} style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', fontSize: 13, padding: '0 2px' }}>×</button>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-            );
-          })()}
-
-          {(() => {
-            const selectedHasChildren = !!selectedCat && categories.some(c => c.parent_id === selectedCat);
-            return (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1c1917' }}>Ürünler</h3>
-                {selectedCat && !selectedHasChildren && (
-                  <button onClick={() => { setShowItemForm(!showItemForm); setEditingItem(null); setItemForm(emptyItemForm); }} style={S.btnSm}>
-                    {showItemForm ? 'İptal' : '+ Ürün Ekle'}
-                  </button>
-                )}
-                {selectedHasChildren && (
-                  <span style={{ fontSize: 11, color: '#a8a29e' }}>Ürün eklemek için bir alt kategori seçin.</span>
-                )}
-              </div>
-            );
-          })()}
 
           {/* Search */}
-          <div style={{ marginBottom: 12 }}>
+          <div style={{ marginBottom: 12, display: 'flex', gap: 8 }}>
             <input
-              style={S.input}
+              style={{ ...S.input, flex: 1 }}
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Ürün ara..."
+              placeholder="Bir ürün veya kategori ara..."
             />
           </div>
-
-          {!selectedCat && <p style={{ fontSize: 13, color: '#a8a29e', marginBottom: 16 }}>Ürün eklemek için bir kategori seçin.</p>}
 
           {showItemForm && selectedCat && (
             <form onSubmit={addOrUpdateItem} style={{ ...S.card, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1239,7 +1227,7 @@ export default function RestaurantDashboard() {
               <div>
                 <label style={S.label}>Açıklama</label>
                 <div style={{ position: 'relative' }}>
-                  <input style={S.input} value={itemForm.description_tr} onChange={e => setItemForm({ ...itemForm, description_tr: e.target.value })} placeholder="Kısa bir açıklama yazın veya AI ile oluşturun" />
+                  <textarea rows={3} style={{ ...S.input, resize: 'vertical', minHeight: 72, paddingRight: hasAI ? 90 : 14 }} value={itemForm.description_tr} onChange={e => setItemForm({ ...itemForm, description_tr: e.target.value })} placeholder="Kısa bir açıklama yazın veya AI ile oluşturun" />
                   {hasAI && (
                     <button type="button" onClick={generateAIDescription} disabled={generatingAI || !itemForm.name_tr} style={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)', padding: '5px 10px', fontSize: 11, fontWeight: 600, borderRadius: 6, cursor: 'pointer', border: 'none', background: generatingAI ? '#E9D5FF' : '#9333EA', color: '#fff', display: 'flex', alignItems: 'center', gap: 4, transition: 'all 0.15s', opacity: !itemForm.name_tr ? 0.5 : 1 }} title="AI ile açıklama oluştur">
                       <CiPen size={12} /> {generatingAI ? 'Yazılıyor...' : 'AI Yaz'}
@@ -1247,11 +1235,6 @@ export default function RestaurantDashboard() {
                   )}
                 </div>
               </div>
-              {enabledLangs.length > 0 && (
-                <p style={{ fontSize: 11, color: '#4338CA', margin: '-4px 0 0 0', display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <CiGlobe size={12} /> Çeviriler kaydettikten sonra otomatik oluşturulacak
-                </p>
-              )}
               <div style={S.grid3}>
                 <div><label style={S.label}>Fiyat (₺) *</label><input type="number" step="0.01" style={S.input} value={itemForm.price} onChange={e => setItemForm({ ...itemForm, price: e.target.value })} required /></div>
                 <div><label style={S.label}>Kalori (kcal)</label><input type="number" style={S.input} value={itemForm.calories} onChange={e => setItemForm({ ...itemForm, calories: e.target.value })} placeholder="Örn: 450" /></div>
@@ -1325,7 +1308,7 @@ export default function RestaurantDashboard() {
               {/* Scheduling */}
               <div style={{ borderTop: '1px solid #e7e5e4', paddingTop: 12, marginTop: 4 }}>
                 <label style={{ ...S.label, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <CiGlobe size={14} /> Zamanlama
+                  <CiClock1 size={14} /> Zamanlama
                 </label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
                   {[
@@ -1441,80 +1424,291 @@ export default function RestaurantDashboard() {
             </form>
           )}
 
-          <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleItemDragEnd}>
-            <SortableContext items={filteredItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
-          {filteredItems.map(item => {
-            const allergenKeys = (item.allergens || []).filter(a => getAllergenInfo(a));
-            const isTranslating = translating === item.id;
-            const dragEnabled = !!selectedCat && !searchQuery.trim();
-            return (
-              <Sortable key={item.id} id={item.id}>
-                {({ setNodeRef, style, attributes, listeners }) => (
-              <div ref={setNodeRef} style={{ ...S.card, opacity: item.is_available ? (item.is_sold_out ? 0.6 : 1) : 0.45, position: 'relative', ...style }} {...attributes}>
-                {isTranslating && (
-                  <div style={{ position: 'absolute', top: 8, right: 8, fontSize: 10, color: '#4338CA', display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <CiGlobe size={12} /> Çevriliyor...
-                  </div>
-                )}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  {dragEnabled && (
-                    <span {...(listeners as Record<string, unknown>)} style={{ cursor: 'grab', color: '#a8a29e', display: 'inline-flex', alignItems: 'center', padding: '4px 6px 4px 0', marginRight: 4, touchAction: 'none', alignSelf: 'center' }} title="Sürükleyerek sırala">
-                      <CiBoxes size={18} />
+          {/* ================= FineDine-style Category Accordion ================= */}
+          {(() => {
+            const renderItemRow = (item: MenuItem, dragListeners?: Record<string, unknown>) => {
+              const allergenKeys = (item.allergens || []).filter(a => getAllergenInfo(a));
+              const isTranslating = translating === item.id;
+              const faded = !item.is_available || item.is_sold_out;
+              return (
+                <div
+                  key={item.id}
+                  style={{ ...S.itemRow, opacity: faded ? 0.6 : 1, background: hoveredItem === item.id ? '#fafafa' : '#fff' }}
+                  onMouseEnter={() => setHoveredItem(item.id)}
+                  onMouseLeave={() => setHoveredItem(null)}
+                  onClick={() => startEdit(item)}
+                >
+                  {dragListeners && (
+                    <span
+                      {...dragListeners}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ cursor: 'grab', color: '#a8a29e', display: 'inline-flex', alignItems: 'center', touchAction: 'none', flexShrink: 0 }}
+                      title="Sürükleyerek sırala"
+                    >
+                      <CiBoxes size={16} />
                     </span>
                   )}
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 15, fontWeight: 600, color: '#1c1917' }}>{item.name_tr}</span>
-                      <TranslationBadges translations={item.translations} />
-                      {item.is_vegetarian && <span style={{ ...S.badge, background: '#dcfce7', color: '#16a34a' }}><CiApple size={12} /></span>}
-                      {item.is_new && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309' }}><CiStar size={12} /> Yeni</span>}
-                      {item.is_popular && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309' }}><CiStar size={12} /></span>}
-                      {item.is_featured && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309' }}>Öne Çıkan</span>}
-                      {item.is_sold_out && <span style={{ ...S.badge, background: '#fee2e2', color: '#dc2626', display: 'inline-flex', alignItems: 'center', gap: 3 }}><CiCircleRemove size={11} /> Tükendi</span>}
-                      {item.schedule_type && item.schedule_type !== 'always' && <span style={{ ...S.badge, background: '#dbeafe', color: '#1d4ed8', display: 'inline-flex', alignItems: 'center', gap: 3 }}>Zamanlı</span>}
+                  {item.image_url ? (
+                    <img src={item.image_url} alt="" style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
+                  ) : (
+                    <div style={{ width: 48, height: 48, borderRadius: 8, background: '#f5f5f4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d6d3d1', flexShrink: 0 }}>
+                      <CiCamera size={20} />
                     </div>
-                    {item.description_tr && <div style={{ fontSize: 13, color: '#78716c', marginTop: 2 }}>{item.description_tr}</div>}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 6 }}>
-                      <InlinePrice value={Number(item.price)} isSoldOut={item.is_sold_out} onSave={(n) => updateItemPrice(item.id, n)} />
-                      {item.calories && <span style={{ fontSize: 11, color: '#a8a29e', display: 'inline-flex', alignItems: 'center', gap: 2 }}><CiTempHigh size={12} /> {item.calories} kcal</span>}
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 14, fontWeight: 500, color: '#1c1917', textDecoration: item.is_sold_out ? 'line-through' : 'none' }}>{item.name_tr}</span>
+                      {item.translations && Object.keys(item.translations).length > 0 && (
+                        <span style={S.translationBadge}>EN</span>
+                      )}
+                      {item.is_sold_out && <span style={S.soldOutBadge}><CiCircleRemove size={10} /> Tükendi</span>}
+                      {item.is_vegetarian && <span style={{ ...S.badge, background: '#dcfce7', color: '#16a34a', marginRight: 0 }}><CiApple size={10} /></span>}
+                      {item.is_new && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309', marginRight: 0 }}>Yeni</span>}
+                      {item.is_featured && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309', marginRight: 0 }}>Öne Çıkan</span>}
+                      {item.schedule_type !== 'always' && <span style={{ ...S.badge, background: '#dbeafe', color: '#1d4ed8', marginRight: 0, display: 'inline-flex', alignItems: 'center', gap: 2 }}><CiClock1 size={10} />Zamanlı</span>}
                       {allergenKeys.length > 0 && (
-                        <span style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }} title={allergenKeys.join(', ')}>
-                          {allergenKeys.map(a => <AllergenIcon key={a} allergenKey={a} size={14} />)}
+                        <span style={{ display: 'inline-flex', gap: 2, alignItems: 'center' }} title={allergenKeys.join(', ')}>
+                          {allergenKeys.slice(0, 3).map(a => <AllergenIcon key={a} allergenKey={a} size={12} />)}
                         </span>
                       )}
+                      {isTranslating && <span style={{ fontSize: 9, color: '#4338CA' }}><CiGlobe size={10} /> Çevriliyor...</span>}
                     </div>
+                    {item.description_tr && (
+                      <div style={{ fontSize: 12, color: '#a8a29e', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {item.description_tr}
+                      </div>
+                    )}
                   </div>
-                  {item.image_url && <img src={item.image_url} alt="" style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover', marginLeft: 12 }} />}
-                </div>
-                <div style={{ display: 'flex', gap: 6, marginTop: 10, borderTop: '1px solid #f5f5f4', paddingTop: 10, flexWrap: 'wrap' }}>
-                  <button onClick={() => toggleItemAvailable(item.id, item.is_available)} style={{ ...S.btnSm, color: item.is_available ? '#16a34a' : '#dc2626' }}>{item.is_available ? 'Aktif' : 'Pasif'}</button>
+                  <div onClick={(e) => e.stopPropagation()} style={{ flexShrink: 0 }}>
+                    <InlinePrice value={Number(item.price)} isSoldOut={item.is_sold_out} onSave={(n) => updateItemPrice(item.id, n)} />
+                  </div>
                   <button
-                    onClick={() => toggleSoldOut(item.id, item.is_sold_out)}
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); toggleItemAvailable(item.id, item.is_available); }}
+                    style={toggleSwitchStyle(item.is_available)}
+                    title={item.is_available ? 'Pasif yap' : 'Aktif yap'}
+                  >
+                    <span style={toggleKnobStyle(item.is_available)} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); deleteItem(item.id); }}
                     style={{
-                      ...S.btnSm,
-                      color: item.is_sold_out ? '#dc2626' : '#44403c',
-                      background: item.is_sold_out ? '#fee2e2' : '#fff',
-                      borderColor: item.is_sold_out ? '#fecaca' : '#d6d3d1',
+                      background: 'none',
+                      border: 'none',
+                      color: hoveredItem === item.id ? '#dc2626' : 'transparent',
+                      cursor: 'pointer',
+                      padding: 4,
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: 4,
+                      transition: 'color 0.15s',
+                      flexShrink: 0,
                     }}
-                    title={item.is_sold_out ? 'Tekrar stoğa al' : 'Tükendi olarak işaretle'}
+                    title="Sil"
                   >
-                    <CiCircleRemove size={13} /> {item.is_sold_out ? 'Tükendi' : 'Tükendi mi?'}
+                    <CiTrash size={16} />
                   </button>
-                  <button onClick={() => startEdit(item)} style={S.btnSm}>Düzenle</button>
-                  <button onClick={() => deleteItem(item.id)} style={S.btnDanger}>Sil</button>
-                  {!selectedCat && <span style={{ fontSize: 11, color: '#a8a29e', alignSelf: 'center', marginLeft: 'auto' }}>{catName(item.category_id)}</span>}
                 </div>
-              </div>
-                )}
-              </Sortable>
+              );
+            };
+
+            const makeItemDragHandler = (catId: string) => (event: DragEndEvent) => {
+              const { active, over } = event;
+              if (!over || active.id === over.id) return;
+              setItems(prev => {
+                const inCat = prev.filter(i => i.category_id === catId);
+                const others = prev.filter(i => i.category_id !== catId);
+                const oldIndex = inCat.findIndex(i => i.id === active.id);
+                const newIndex = inCat.findIndex(i => i.id === over.id);
+                if (oldIndex < 0 || newIndex < 0) return prev;
+                const reordered = arrayMove(inCat, oldIndex, newIndex);
+                persistItemOrder(reordered);
+                return [...others, ...reordered];
+              });
+            };
+
+            const renderItemsSection = (catId: string) => {
+              const catItems = items.filter(i => i.category_id === catId).sort((a, b) => a.sort_order - b.sort_order);
+              if (catItems.length === 0) {
+                return (
+                  <div style={{ fontSize: 12, color: '#a8a29e', padding: '12px 16px', fontStyle: 'italic' }}>
+                    Bu kategoride henüz ürün yok.
+                  </div>
+                );
+              }
+              return (
+                <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={makeItemDragHandler(catId)}>
+                  <SortableContext items={catItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
+                    {catItems.map(item => (
+                      <Sortable key={item.id} id={item.id}>
+                        {({ setNodeRef, style, attributes, listeners }) => (
+                          <div ref={setNodeRef} style={style} {...attributes}>
+                            {renderItemRow(item, listeners as Record<string, unknown>)}
+                          </div>
+                        )}
+                      </Sortable>
+                    ))}
+                  </SortableContext>
+                </DndContext>
+              );
+            };
+
+            const renderCategoryHeader = (
+              c: Category,
+              dragListeners: Record<string, unknown> | undefined,
+              opts: { isSub?: boolean } = {}
+            ) => {
+              const isOpen = expandedCats.has(c.id);
+              const totalInScope = items.filter(i => categoryScopeIds(c.id).includes(i.category_id)).length;
+              const missing = missingPhotoCounts.get(c.id) || 0;
+              const isEditing = editingCat === c.id;
+              return (
+                <div style={{ ...S.catAccordionRow, padding: opts.isSub ? '10px 14px' : '12px 16px' }}>
+                  {dragListeners && (
+                    <span
+                      {...dragListeners}
+                      style={{ cursor: 'grab', color: '#a8a29e', display: 'inline-flex', alignItems: 'center', touchAction: 'none', flexShrink: 0 }}
+                      title="Sürükleyerek sırala"
+                    >
+                      <CiBoxes size={16} />
+                    </span>
+                  )}
+                  {c.image_url ? (
+                    <img src={c.image_url} alt="" style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
+                  ) : (
+                    <div style={{ width: 40, height: 40, borderRadius: 8, background: '#f5f5f4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d6d3d1', flexShrink: 0 }}>
+                      <CiCamera size={18} />
+                    </div>
+                  )}
+                  <div style={{ flex: 1, minWidth: 0, cursor: 'pointer' }} onClick={() => !isEditing && toggleExpand(c.id)}>
+                    {isEditing ? (
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }} onClick={(e) => e.stopPropagation()}>
+                        <input style={{ ...S.input, width: 220, padding: '6px 10px', fontSize: 13 }} value={editCatForm.name_tr} onChange={e => setEditCatForm({ name_tr: e.target.value })} autoFocus />
+                        <button onClick={() => updateCategory(c.id)} style={{ ...S.btnSm, padding: '4px 8px' }}><CiCircleCheck size={14} /></button>
+                        <button onClick={() => setEditingCat(null)} style={{ ...S.btnSm, padding: '4px 8px' }}><CiCircleRemove size={14} /></button>
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: opts.isSub ? 13 : 15, fontWeight: 600, color: '#1c1917' }}>{c.name_tr}</span>
+                          {c.translations && Object.keys(c.translations).length > 0 && <span style={S.translationBadge}>EN</span>}
+                        </div>
+                        <div style={{ fontSize: 11, color: '#78716c', marginTop: 2 }}>
+                          {totalInScope} ürün
+                          {missing > 0 && <> · <span style={S.missingPhotoWarning}>{missing} fotoğraf eksik</span></>}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  {!isEditing && (
+                    <div style={S.accordionActions} onClick={(e) => e.stopPropagation()}>
+                      <label style={{ color: '#a8a29e', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', padding: 4 }} title="Kategori görseli">
+                        <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploadingCatImage === c.id} onChange={e => { if (e.target.files?.[0]) uploadCategoryImage(e.target.files[0], c.id); }} />
+                        {uploadingCatImage === c.id ? <span style={{ fontSize: 10 }}>...</span> : <CiCamera size={16} />}
+                      </label>
+                      {c.image_url && (
+                        <button onClick={() => removeCategoryImage(c.id)} style={{ background: 'none', border: 'none', color: '#a8a29e', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }} title="Görseli kaldır"><CiTrash size={14} /></button>
+                      )}
+                      <button onClick={() => { setEditingCat(c.id); setEditCatForm({ name_tr: c.name_tr }); }} style={{ background: 'none', border: 'none', color: '#a8a29e', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }} title="Düzenle"><CiEdit size={16} /></button>
+                      <button onClick={() => deleteCategory(c.id)} style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }} title="Sil"><CiTrash size={16} /></button>
+                      <button
+                        type="button"
+                        onClick={() => toggleExpand(c.id)}
+                        style={{ background: 'none', border: 'none', color: '#78716c', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }}
+                        title={isOpen ? 'Kapat' : 'Aç'}
+                      >
+                        {isOpen ? <CiCircleChevUp size={20} /> : <CiCircleChevDown size={20} />}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            };
+
+            // Search mode: flat compact list
+            if (searchQuery.trim()) {
+              if (filteredItems.length === 0) {
+                return <div style={{ textAlign: 'center', color: '#a8a29e', padding: 40, fontSize: 14 }}>Eşleşen ürün bulunamadı.</div>;
+              }
+              return (
+                <div style={{ border: '1px solid #e7e5e4', borderRadius: 12, overflow: 'hidden', background: '#fff' }}>
+                  {filteredItems.map(item => renderItemRow(item))}
+                </div>
+              );
+            }
+
+            const rootCats = categories.filter(c => !c.parent_id);
+            if (rootCats.length === 0) {
+              return <div style={{ textAlign: 'center', color: '#a8a29e', padding: 40, fontSize: 14 }}>Henüz kategori eklenmedi.</div>;
+            }
+
+            return (
+              <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleCategoryDragEnd}>
+                <SortableContext items={rootCats.map(c => c.id)} strategy={verticalListSortingStrategy}>
+                  {rootCats.map(c => {
+                    const isOpen = expandedCats.has(c.id);
+                    const childCats = categories.filter(cc => cc.parent_id === c.id).sort((a, b) => a.sort_order - b.sort_order);
+                    return (
+                      <Sortable key={c.id} id={c.id}>
+                        {({ setNodeRef, style, attributes, listeners }) => (
+                          <div ref={setNodeRef} style={style} {...attributes}>
+                            {renderCategoryHeader(c, listeners as Record<string, unknown>)}
+                            {isOpen && (
+                              <div style={{ marginBottom: 12 }}>
+                                {childCats.length > 0 ? (
+                                  <div style={S.subCatWrap}>
+                                    {/* Direct items under parent (if any) */}
+                                    {items.some(i => i.category_id === c.id) && (
+                                      <div style={{ ...S.itemsContainer, margin: '4px 0 8px 0' }}>
+                                        {renderItemsSection(c.id)}
+                                      </div>
+                                    )}
+                                    {childCats.map(child => {
+                                      const childOpen = expandedCats.has(child.id);
+                                      return (
+                                        <div key={child.id}>
+                                          {renderCategoryHeader(child, undefined, { isSub: true })}
+                                          {childOpen && (
+                                            <>
+                                              <div style={{ ...S.itemsContainer, marginLeft: 0 }}>
+                                                {renderItemsSection(child.id)}
+                                              </div>
+                                              <button
+                                                onClick={() => { setSelectedCat(child.id); setShowItemForm(true); setEditingItem(null); setItemForm(emptyItemForm); }}
+                                                style={{ ...S.btnSm, marginLeft: 0, marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                                              >
+                                                <CiCirclePlus size={14} /> Ürün Ekle
+                                              </button>
+                                            </>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                ) : (
+                                  <>
+                                    <div style={S.itemsContainer}>
+                                      {renderItemsSection(c.id)}
+                                    </div>
+                                    <button
+                                      onClick={() => { setSelectedCat(c.id); setShowItemForm(true); setEditingItem(null); setItemForm(emptyItemForm); }}
+                                      style={{ ...S.btnSm, marginLeft: 36, marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                                    >
+                                      <CiCirclePlus size={14} /> Ürün Ekle
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </Sortable>
+                    );
+                  })}
+                </SortableContext>
+              </DndContext>
             );
-          })}
-            </SortableContext>
-          </DndContext>
-          {filteredItems.length === 0 && <div style={{ textAlign: 'center', color: '#a8a29e', padding: 40, fontSize: 14 }}>{selectedCat ? 'Bu kategoride henüz ürün yok.' : 'Henüz ürün eklenmedi.'}</div>}
+          })()}
         </>
       )}
         </div>
