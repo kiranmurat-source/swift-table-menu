@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { supabase } from '../lib/supabase';
+import { getOptimizedImageUrl } from '../lib/imageUtils';
 import {
   CiStar, CiApple, CiTempHigh, CiMapPin, CiPhone, CiGlobe,
   CiForkAndKnife, CiCircleRemove, CiFilter,
@@ -357,7 +358,8 @@ export default function PublicMenu() {
     );
   }
 
-  const coverImage = restaurant.cover_image_url || restaurant.cover_url;
+  const coverImageRaw = restaurant.cover_image_url || restaurant.cover_url;
+  const coverImage = getOptimizedImageUrl(coverImageRaw, 'cover');
   const socials = [
     { type: 'instagram', url: restaurant.social_instagram },
     { type: 'facebook', url: restaurant.social_facebook },
@@ -393,7 +395,7 @@ export default function PublicMenu() {
           {/* Logo */}
           {restaurant.logo_url ? (
             <img
-              src={restaurant.logo_url}
+              src={getOptimizedImageUrl(restaurant.logo_url, 'card')}
               alt={restaurant.name}
               className="w-28 h-28 rounded-2xl object-cover shadow-2xl mb-6"
               style={{ border: `2px solid ${theme.cardBorder}` }}
@@ -615,7 +617,10 @@ export default function PublicMenu() {
   const fl = FILTER_LABELS[toUiLang(lang)];
 
   const canonicalUrl = `https://tabbled.com/menu/${restaurant.slug}`;
-  const ogImage = coverImage || restaurant.logo_url || 'https://tabbled.com/tabbled-logo.png';
+  const ogImage =
+    getOptimizedImageUrl(coverImageRaw, 'cover') ||
+    getOptimizedImageUrl(restaurant.logo_url, 'cover') ||
+    'https://tabbled.com/tabbled-logo.png';
   const metaDescription = `${restaurant.name} dijital menüsü. ${restaurant.tagline || ''} ${restaurant.address || ''}`.trim();
 
   return (
@@ -672,7 +677,7 @@ export default function PublicMenu() {
           <div className="flex items-start gap-4">
             {restaurant.logo_url ? (
               <img
-                src={restaurant.logo_url}
+                src={getOptimizedImageUrl(restaurant.logo_url, 'thumbnail')}
                 alt={restaurant.name}
                 className="w-16 h-16 rounded-xl object-cover flex-shrink-0 shadow-lg"
                 style={{ border: `2px solid ${theme.cardBorder}` }}
@@ -850,7 +855,7 @@ export default function PublicMenu() {
               >
                 {cat.image_url && (
                   <img
-                    src={cat.image_url}
+                    src={getOptimizedImageUrl(cat.image_url, 'thumbnail')}
                     alt=""
                     className="w-6 h-6 rounded-full object-cover flex-shrink-0"
                   />
@@ -1269,7 +1274,7 @@ function MenuItemCard({ item, lang, theme, onSelect }: { item: MenuItem; lang: L
         onClick={() => onSelect(item)}
       >
         {item.image_url ? (
-          <img src={item.image_url} alt={name} className="w-full h-48 object-cover" loading="lazy" decoding="async" />
+          <img src={getOptimizedImageUrl(item.image_url, 'detail')} alt={name} className="w-full h-48 object-cover" loading="lazy" decoding="async" />
         ) : (
           <div className="w-full h-32 flex items-center justify-center" style={{ backgroundColor: theme.badgeBg }}>
             <CiForkAndKnife size={40} style={{ color: theme.mutedText }} />
@@ -1335,7 +1340,7 @@ function MenuItemCard({ item, lang, theme, onSelect }: { item: MenuItem; lang: L
       onClick={() => onSelect(item)}
     >
       {item.image_url ? (
-        <img src={item.image_url} alt={name} className="w-[88px] h-[88px] rounded-xl object-cover flex-shrink-0" loading="lazy" decoding="async" />
+        <img src={getOptimizedImageUrl(item.image_url, 'card')} alt={name} className="w-[88px] h-[88px] rounded-xl object-cover flex-shrink-0" loading="lazy" decoding="async" />
       ) : (
         <div
           className="w-[88px] h-[88px] rounded-xl flex-shrink-0 flex items-center justify-center"
@@ -1444,7 +1449,7 @@ function ItemDetailModal({ item, lang, theme, onClose }: { item: MenuItem; lang:
         </button>
 
         {item.image_url ? (
-          <img src={item.image_url} alt={name} className="w-full h-64 object-cover rounded-t-3xl sm:rounded-t-3xl" loading="lazy" decoding="async" />
+          <img src={getOptimizedImageUrl(item.image_url, 'detail')} alt={name} className="w-full h-64 object-cover rounded-t-3xl sm:rounded-t-3xl" loading="lazy" decoding="async" />
         ) : (
           <div
             className="w-full h-48 flex items-center justify-center rounded-t-3xl"
