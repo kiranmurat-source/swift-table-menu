@@ -5,6 +5,8 @@ export interface MenuTheme {
   text: string;
   cardBg: string;
   cardBorder: string;
+  cardShadow: string;
+  modalBg: string;
   price: string;
   accent: string;
   mutedText: string;
@@ -26,9 +28,11 @@ export const THEMES: Record<string, MenuTheme> = {
     label_tr: 'Beyaz (Klasik)',
     bg: '#FFFFFF',
     text: '#111111',
-    cardBg: '#F5F5F5',
-    cardBorder: '#E5E5E5',
-    price: '#111111',
+    cardBg: '#FFFFFF',
+    cardBorder: 'rgba(0,0,0,0.06)',
+    cardShadow: '0 1px 3px rgba(0,0,0,0.04)',
+    modalBg: '#FFFFFF',
+    price: '#FF4F7A',
     accent: '#111111',
     mutedText: '#6B7280',
     splashOverlay: 'rgba(0,0,0,0.5)',
@@ -46,19 +50,21 @@ export const THEMES: Record<string, MenuTheme> = {
     label_tr: 'Siyah (Elegance)',
     bg: '#111111',
     text: '#FFFFFF',
-    cardBg: '#1F1F1F',
-    cardBorder: '#333333',
-    price: '#FFFFFF',
+    cardBg: '#1a1a1a',
+    cardBorder: 'rgba(255,255,255,0.08)',
+    cardShadow: 'none',
+    modalBg: '#222222',
+    price: '#FF6B8A',
     accent: '#FFFFFF',
     mutedText: '#9CA3AF',
     splashOverlay: 'rgba(0,0,0,0.7)',
     badgeBg: '#374151',
     badgeText: '#D1D5DB',
-    categoryBg: '#1F1F1F',
+    categoryBg: '#1a1a1a',
     categoryActiveBg: '#FFFFFF',
     categoryActiveText: '#111111',
-    inputBg: '#1F1F1F',
-    divider: '#333333',
+    inputBg: '#1a1a1a',
+    divider: 'rgba(255,255,255,0.08)',
     invertIcons: true,
   },
   red: {
@@ -68,6 +74,8 @@ export const THEMES: Record<string, MenuTheme> = {
     text: '#FFFFFF',
     cardBg: 'rgba(255,255,255,0.15)',
     cardBorder: 'rgba(255,255,255,0.25)',
+    cardShadow: '0 1px 3px rgba(0,0,0,0.04)',
+    modalBg: '#DC2626',
     price: '#FFFFFF',
     accent: '#FFFFFF',
     mutedText: 'rgba(255,255,255,0.7)',

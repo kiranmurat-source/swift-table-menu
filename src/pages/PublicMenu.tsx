@@ -537,7 +537,7 @@ export default function PublicMenu() {
         {coverImage ? (
           <>
             <img onError={handleImageError} src={coverImage} alt="" className="absolute inset-0 w-full h-full object-cover" />
-            <div className="absolute inset-0" style={{ backgroundColor: theme.splashOverlay }} />
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.1) 100%)' }} />
           </>
         ) : (
           <div className="absolute inset-0" style={{ backgroundColor: theme.bg }} />
@@ -971,14 +971,14 @@ export default function PublicMenu() {
 
       {/* Category Tab Bar */}
       <div
-        className="sticky top-0 z-20 backdrop-blur-sm"
-        style={{ backgroundColor: theme.bg, borderBottom: `1px solid ${theme.divider}` }}
+        className="sticky top-0 z-20"
+        style={{ backgroundColor: `${theme.bg}ee`, backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', borderBottom: `1px solid ${theme.divider}` }}
       >
-        <div className="max-w-[480px] mx-auto flex items-center">
+        <div className="max-w-[480px] mx-auto flex items-center" style={{ minHeight: 48 }}>
           <div
             ref={tabBarRef}
-            className="flex gap-2 px-4 py-3 overflow-x-auto flex-1 min-w-0"
-            style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+            className="flex gap-2 px-4 overflow-x-auto flex-1 min-w-0"
+            style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch', paddingTop: 8, paddingBottom: 8 }}
           >
             <button
               onClick={() => handleTabClick(null)}
@@ -1061,7 +1061,7 @@ export default function PublicMenu() {
       </div>
 
       {/* Content */}
-      <main className="max-w-[480px] mx-auto px-4 py-4 pb-20">
+      <main className="max-w-[480px] mx-auto pb-20" style={{ padding: '16px 16px 80px' }}>
         {filterApplied && !hasNoItems && (
           <p
             className="text-[11px] mb-3 text-center"
@@ -1106,7 +1106,7 @@ export default function PublicMenu() {
             const activeChildren = childrenOf(effectiveActiveCategory);
             if (activeChildren.length === 0) {
               return (
-                <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-3' : 'flex flex-col gap-3'}>
+                <div className={viewMode === 'grid' ? 'grid grid-cols-2' : 'flex flex-col'} style={{ gap: 8 }}>
                   {filteredItems.map((item) => (
                     <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} />
                   ))}
@@ -1121,7 +1121,7 @@ export default function PublicMenu() {
             return (
               <div>
                 {directItems.length > 0 && (
-                  <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-3 mb-6' : 'flex flex-col gap-3 mb-6'}>
+                  <div className={viewMode === 'grid' ? 'grid grid-cols-2' : 'flex flex-col'} style={{ gap: 8, marginBottom: 32 }}>
                     {directItems.map((item) => (
                       <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} />
                     ))}
@@ -1133,17 +1133,19 @@ export default function PublicMenu() {
                     const childItems = filteredItems.filter((i) => i.category_id === child.id);
                     if (childItems.length === 0) return null;
                     return (
-                      <div key={child.id} className="mb-6">
-                        <div className="flex items-center gap-3 mb-3 pt-2">
-                          <h3 className="text-xs tracking-wide uppercase" style={{ fontFamily: headingFont, fontWeight: 700, color: theme.text }}>
-                            {t(child.translations, 'name', child.name_tr, lang)}
-                          </h3>
-                          <div className="flex-1 h-px" style={{ backgroundColor: theme.divider }} />
-                          <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ color: theme.mutedText, backgroundColor: theme.badgeBg, fontWeight: 500 }}>
-                            {childItems.length}
-                          </span>
+                      <div key={child.id} style={{ marginBottom: 32 }}>
+                        <div style={{ marginBottom: 12 }}>
+                          <div className="flex items-baseline gap-2">
+                            <h3 style={{ fontFamily: headingFont, fontWeight: 700, fontSize: 16, letterSpacing: '-0.02em', color: theme.text }}>
+                              {t(child.translations, 'name', child.name_tr, lang)}
+                            </h3>
+                            <span className="text-[12px]" style={{ color: theme.mutedText, fontWeight: 400 }}>
+                              ({childItems.length})
+                            </span>
+                          </div>
+                          <div style={{ height: 1, backgroundColor: theme.divider, opacity: 0.15, marginTop: 8 }} />
                         </div>
-                        <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-3' : 'flex flex-col gap-3'}>
+                        <div className={viewMode === 'grid' ? 'grid grid-cols-2' : 'flex flex-col'} style={{ gap: 8 }}>
                           {childItems.map((item) => (
                             <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} />
                           ))}
@@ -1155,45 +1157,45 @@ export default function PublicMenu() {
             );
           })()
         ) : (
-          groupedItems.map(({ category, items: catItems, subgroups }) => (
+          groupedItems.map(({ category, items: catItems, subgroups }) => {
+            const totalCount = catItems.length + subgroups.reduce((a, s) => a + s.items.length, 0);
+            return (
             <div
               key={category?.id ?? 'other'}
               id={category ? `category-${category.id}` : undefined}
               data-category-id={category?.id}
-              className="mb-6 scroll-mt-20"
+              className="scroll-mt-20"
+              style={{ marginBottom: 32 }}
             >
-              <div className="flex items-center gap-3 mb-3 pt-2">
-                <h2
-                  className="text-sm tracking-wide uppercase"
-                  style={{ fontFamily: headingFont, fontWeight: 700, color: theme.text }}
-                >
-                  {category ? t(category.translations, 'name', category.name_tr, lang) : UI.other[toUiLang(lang)]}
-                </h2>
-                <div className="flex-1 h-px" style={{ backgroundColor: theme.divider }} />
-                <span
-                  className="text-[11px] px-2 py-0.5 rounded-full"
-                  style={{ color: theme.mutedText, backgroundColor: theme.badgeBg, fontWeight: 500 }}
-                >
-                  {catItems.length + subgroups.reduce((a, s) => a + s.items.length, 0)}
-                </span>
+              <div style={{ marginBottom: 12, paddingTop: 0 }}>
+                <div className="flex items-baseline gap-2">
+                  <h2
+                    style={{ fontFamily: headingFont, fontWeight: 700, fontSize: 20, letterSpacing: '-0.03em', color: theme.text }}
+                  >
+                    {category ? t(category.translations, 'name', category.name_tr, lang) : UI.other[toUiLang(lang)]}
+                  </h2>
+                  <span className="text-[12px]" style={{ color: theme.mutedText, fontWeight: 400 }}>
+                    ({totalCount} {toUiLang(lang) === 'tr' ? 'ürün' : toUiLang(lang) === 'ar' ? 'عنصر' : toUiLang(lang) === 'zh' ? '项' : 'items'})
+                  </span>
+                </div>
+                <div style={{ height: 1, backgroundColor: theme.divider, opacity: 0.15, marginTop: 8 }} />
               </div>
-              <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-3' : 'flex flex-col gap-3'}>
+              <div className={viewMode === 'grid' ? 'grid grid-cols-2' : 'flex flex-col'} style={{ gap: 8 }}>
                 {catItems.map((item) => (
                   <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} />
                 ))}
               </div>
               {subgroups.map((sg) => (
-                <div key={sg.category?.id ?? 'sub-other'} className="mt-5">
-                  <div className="flex items-center gap-3 mb-3">
-                    <h3 className="text-xs tracking-wide uppercase" style={{ fontFamily: headingFont, fontWeight: 700, color: theme.text }}>
+                <div key={sg.category?.id ?? 'sub-other'} style={{ marginTop: 20 }}>
+                  <div className="flex items-baseline gap-2" style={{ marginBottom: 12 }}>
+                    <h3 style={{ fontFamily: headingFont, fontWeight: 700, fontSize: 16, letterSpacing: '-0.02em', color: theme.text }}>
                       {sg.category ? t(sg.category.translations, 'name', sg.category.name_tr, lang) : ''}
                     </h3>
-                    <div className="flex-1 h-px" style={{ backgroundColor: theme.divider }} />
-                    <span className="text-[11px] px-2 py-0.5 rounded-full" style={{ color: theme.mutedText, backgroundColor: theme.badgeBg, fontWeight: 500 }}>
-                      {sg.items.length}
+                    <span className="text-[12px]" style={{ color: theme.mutedText, fontWeight: 400 }}>
+                      ({sg.items.length})
                     </span>
                   </div>
-                  <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-3' : 'flex flex-col gap-3'}>
+                  <div className={viewMode === 'grid' ? 'grid grid-cols-2' : 'flex flex-col'} style={{ gap: 8 }}>
                     {sg.items.map((item) => (
                       <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} />
                     ))}
@@ -1201,7 +1203,8 @@ export default function PublicMenu() {
                 </div>
               ))}
             </div>
-          ))
+            );
+          })
         )}
       </main>
 
@@ -1300,12 +1303,12 @@ function FilterPanel({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" style={{ animation: 'modalBackdropIn 0.2s ease-out' }} />
 
       <div
         className="relative w-full max-w-[480px] rounded-t-3xl sm:rounded-3xl max-h-[85vh] overflow-y-auto shadow-2xl"
         onClick={(e) => e.stopPropagation()}
-        style={{ backgroundColor: theme.cardBg, color: theme.text, fontFamily: bodyFont }}
+        style={{ backgroundColor: theme.modalBg, color: theme.text, fontFamily: bodyFont, animation: 'modalSlideUp 0.3s ease-out forwards' }}
       >
         {/* Header */}
         <div
@@ -1451,8 +1454,8 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list' }: { item
   const prepTime = item.prep_time ?? null;
   const minutesLabel = UI.minutes[toUiLang(lang)];
   const soldOutLabel = SOLD_OUT_LABELS[toUiLang(lang)];
-  const soldOutWrapperStyle: React.CSSProperties = isSoldOut ? { opacity: 0.6, filter: 'grayscale(0.3)' } : {};
-  const soldOutPriceStyle: React.CSSProperties = isSoldOut ? { textDecoration: 'line-through' } : {};
+  const soldOutWrapperStyle: React.CSSProperties = isSoldOut ? { opacity: 0.6 } : {};
+  const soldOutPriceStyle: React.CSSProperties = isSoldOut ? { textDecoration: 'line-through', opacity: 0.5 } : {};
   const SoldOutBadge = isSoldOut ? (
     <span
       className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
@@ -1465,37 +1468,54 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list' }: { item
   if (isFeatured) {
     return (
       <div
-        className="rounded-2xl overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer active:scale-[0.99]"
-        style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}`, ...soldOutWrapperStyle }}
+        className="rounded-2xl overflow-hidden transition-all duration-200 cursor-pointer active:scale-[0.98]"
+        style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}`, boxShadow: theme.cardShadow, ...soldOutWrapperStyle }}
         onClick={() => onSelect(item)}
       >
-        {item.image_url ? (
-          <img onError={handleImageError} src={getOptimizedImageUrl(item.image_url, 'detail')} alt={name} className="w-full h-48 object-cover" loading="lazy" decoding="async" />
-        ) : (
-          <div className="w-full h-32 flex items-center justify-center" style={{ backgroundColor: theme.badgeBg }}>
-            <CiForkAndKnife size={40} style={{ color: theme.mutedText }} />
-          </div>
-        )}
-        <div className="p-4">
-          <div className="flex items-start justify-between gap-2 mb-1">
-            <h3 className="text-lg leading-snug" style={{ fontFamily: headingFont, fontWeight: 700, color: theme.text }}>
+        <div className="relative">
+          {item.image_url ? (
+            <img onError={handleImageError} src={getOptimizedImageUrl(item.image_url, 'detail')} alt={name} className="w-full h-48 object-cover" loading="lazy" decoding="async" />
+          ) : (
+            <div
+              className="w-full flex items-center justify-center"
+              style={{ height: 128, backgroundColor: `${theme.accent}15`, borderRadius: '8px 8px 0 0' }}
+            >
+              <span style={{ fontSize: 28, fontWeight: 700, color: `${theme.accent}80`, fontFamily: headingFont }}>
+                {name.charAt(0).toUpperCase()}
+              </span>
+            </div>
+          )}
+          {isSoldOut && (
+            <div
+              className="absolute inset-0 flex items-center justify-center"
+              style={{ backgroundColor: theme.key === 'black' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)' }}
+            >
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', backgroundColor: '#dc2626', padding: '3px 10px', borderRadius: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {soldOutLabel}
+              </span>
+            </div>
+          )}
+        </div>
+        <div style={{ padding: 12 }}>
+          <div className="flex items-start justify-between gap-2" style={{ marginBottom: 4 }}>
+            <h3 style={{ fontFamily: bodyFont, fontWeight: 600, fontSize: 14, lineHeight: 1.3, color: theme.text }}>
               {name || <span className="italic" style={{ color: theme.mutedText }}>—</span>}
             </h3>
-            <span className="text-lg flex-shrink-0 tabular-nums" style={{ color: theme.price, fontWeight: 500, ...soldOutPriceStyle }}>
+            <span className="flex-shrink-0 tabular-nums" style={{ fontFamily: bodyFont, fontWeight: 700, fontSize: 16, color: theme.price, ...soldOutPriceStyle }}>
               {formatPriceDisplay(item, toUiLang(lang))}
             </span>
           </div>
-          {SoldOutBadge && <div className="mb-1">{SoldOutBadge}</div>}
+          {SoldOutBadge && <div style={{ marginBottom: 4 }}>{SoldOutBadge}</div>}
           {description && (
-            <p className="text-[13px] mt-1 leading-relaxed line-clamp-2" style={{ color: theme.mutedText, fontWeight: 300 }}>
+            <p className="line-clamp-2" style={{ fontFamily: bodyFont, fontSize: 12, fontWeight: 400, lineHeight: 1.5, color: theme.mutedText, marginTop: 4 }}>
               {stripHtml(description)}
             </p>
           )}
           {hasBadges && (
-            <div className="flex flex-wrap items-center gap-1.5 mt-2">
+            <div className="flex flex-wrap items-center" style={{ gap: 6, marginTop: 8 }}>
               {item.is_popular && (
                 <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, fontWeight: 600 }}>
-                  <CiStar size={11} /> {UI.popular[toUiLang(lang)]}
+                  <CiStar size={10} /> {UI.popular[toUiLang(lang)]}
                 </span>
               )}
               {item.is_new && (
@@ -1505,19 +1525,19 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list' }: { item
               )}
               {item.is_vegetarian && (
                 <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, fontWeight: 600 }}>
-                  <CiApple size={11} /> {UI.vegetarian[toUiLang(lang)]}
+                  <CiApple size={10} /> {UI.vegetarian[toUiLang(lang)]}
                 </span>
               )}
             </div>
           )}
           {(displayCalories != null || prepTime != null || hasAllergens) && (
-            <div className="flex items-center justify-between mt-2 pt-2" style={{ borderTop: `1px solid ${theme.divider}` }}>
+            <div className="flex items-center justify-between" style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${theme.divider}` }}>
               <span className="inline-flex items-center gap-1.5 text-[11px]" style={{ color: theme.mutedText, fontWeight: 300 }}>
                 {displayCalories != null && <span>{displayCalories} kcal</span>}
                 {displayCalories != null && prepTime != null && <span aria-hidden>·</span>}
                 {prepTime != null && (
                   <span className="inline-flex items-center gap-0.5">
-                    <CiTimer size={12} /> {prepTime} {minutesLabel}
+                    <CiTimer size={11} /> {prepTime} {minutesLabel}
                   </span>
                 )}
               </span>
@@ -1535,27 +1555,44 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list' }: { item
   if (viewMode === 'grid') {
     return (
       <div
-        className="rounded-2xl overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer active:scale-[0.99]"
-        style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}`, ...soldOutWrapperStyle }}
+        className="rounded-2xl overflow-hidden transition-all duration-200 cursor-pointer active:scale-[0.98]"
+        style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}`, boxShadow: theme.cardShadow, ...soldOutWrapperStyle }}
         onClick={() => onSelect(item)}
       >
-        {item.image_url ? (
-          <img onError={handleImageError} src={getOptimizedImageUrl(item.image_url, 'card')} alt={name} className="w-full h-32 object-cover" loading="lazy" decoding="async" />
-        ) : (
-          <div className="w-full h-24 flex items-center justify-center" style={{ backgroundColor: theme.badgeBg }}>
-            <CiForkAndKnife size={28} style={{ color: theme.mutedText }} />
-          </div>
-        )}
-        <div className="p-3">
-          <h3 className="text-[13px] leading-snug line-clamp-2 mb-1" style={{ fontFamily: headingFont, fontWeight: 700, color: theme.text }}>
+        <div className="relative">
+          {item.image_url ? (
+            <img onError={handleImageError} src={getOptimizedImageUrl(item.image_url, 'card')} alt={name} className="w-full object-cover" style={{ height: 128 }} loading="lazy" decoding="async" />
+          ) : (
+            <div
+              className="w-full flex items-center justify-center"
+              style={{ aspectRatio: '4/3', borderRadius: '8px 8px 0 0', backgroundColor: `${theme.accent}15` }}
+            >
+              <span style={{ fontSize: 28, fontWeight: 700, color: `${theme.accent}80`, fontFamily: headingFont }}>
+                {name.charAt(0).toUpperCase()}
+              </span>
+            </div>
+          )}
+          {isSoldOut && (
+            <div
+              className="absolute inset-0 flex items-center justify-center"
+              style={{ backgroundColor: theme.key === 'black' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)' }}
+            >
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', backgroundColor: '#dc2626', padding: '3px 10px', borderRadius: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {soldOutLabel}
+              </span>
+            </div>
+          )}
+        </div>
+        <div style={{ padding: 12 }}>
+          <h3 className="line-clamp-2" style={{ fontFamily: bodyFont, fontWeight: 600, fontSize: 14, lineHeight: 1.3, color: theme.text, marginBottom: 4 }}>
             {name || <span className="italic" style={{ color: theme.mutedText }}>—</span>}
           </h3>
-          {SoldOutBadge && <div className="mb-1">{SoldOutBadge}</div>}
-          <span className="text-[13px] tabular-nums" style={{ color: theme.price, fontWeight: 500, ...soldOutPriceStyle }}>
+          {SoldOutBadge && <div style={{ marginBottom: 4 }}>{SoldOutBadge}</div>}
+          <span className="tabular-nums" style={{ fontFamily: bodyFont, fontWeight: 700, fontSize: 15, color: theme.price, ...soldOutPriceStyle }}>
             {formatPriceDisplay(item, toUiLang(lang))}
           </span>
           {(displayCalories != null || prepTime != null) && (
-            <div className="flex items-center gap-1.5 mt-1">
+            <div className="flex items-center" style={{ gap: 4, marginTop: 4 }}>
               <span className="text-[10px]" style={{ color: theme.mutedText }}>
                 {displayCalories != null && <span>{displayCalories} kcal</span>}
                 {displayCalories != null && prepTime != null && <span> · </span>}
@@ -1569,55 +1606,73 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list' }: { item
   }
 
   /* ---- List card (default) ---- */
+  const bodyFont = "'Inter', sans-serif";
   return (
     <div
-      className="rounded-2xl p-3 flex gap-3 hover:shadow-md transition-all duration-200 cursor-pointer active:scale-[0.99]"
+      className="rounded-2xl flex transition-all duration-200 cursor-pointer active:scale-[0.98]"
       style={{
+        padding: 12,
+        gap: 12,
         backgroundColor: theme.cardBg,
         border: `1px solid ${theme.cardBorder}`,
+        boxShadow: theme.cardShadow,
         ...soldOutWrapperStyle,
       }}
       onClick={() => onSelect(item)}
     >
-      {item.image_url ? (
-        <img onError={handleImageError} src={getOptimizedImageUrl(item.image_url, 'card')} alt={name} className="w-[88px] h-[88px] rounded-xl object-cover flex-shrink-0" loading="lazy" decoding="async" />
-      ) : (
-        <div
-          className="w-[88px] h-[88px] rounded-xl flex-shrink-0 flex items-center justify-center"
-          style={{ backgroundColor: theme.badgeBg }}
-        >
-          <CiForkAndKnife size={28} style={{ color: theme.mutedText }} />
-        </div>
-      )}
-      <div className="flex-1 min-w-0 flex flex-col py-0.5">
+      <div className="relative flex-shrink-0">
+        {item.image_url ? (
+          <img onError={handleImageError} src={getOptimizedImageUrl(item.image_url, 'card')} alt={name} className="w-[88px] h-[88px] rounded-lg object-cover" loading="lazy" decoding="async" />
+        ) : (
+          <div
+            className="w-[88px] h-[88px] rounded-lg flex items-center justify-center"
+            style={{ backgroundColor: `${theme.accent}15` }}
+          >
+            <span style={{ fontSize: 28, fontWeight: 700, color: `${theme.accent}80`, fontFamily: headingFont }}>
+              {name.charAt(0).toUpperCase()}
+            </span>
+          </div>
+        )}
+        {isSoldOut && (
+          <div
+            className="absolute inset-0 rounded-lg flex items-center justify-center"
+            style={{ backgroundColor: theme.key === 'black' ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.5)' }}
+          >
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', backgroundColor: '#dc2626', padding: '3px 10px', borderRadius: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              {soldOutLabel}
+            </span>
+          </div>
+        )}
+      </div>
+      <div className="flex-1 min-w-0 flex flex-col">
         <div className="flex items-start justify-between gap-2">
           <h3
-            className="text-[15px] leading-snug line-clamp-2"
-            style={{ fontFamily: headingFont, fontWeight: 700, color: theme.text }}
+            className="line-clamp-2"
+            style={{ fontFamily: bodyFont, fontWeight: 600, fontSize: 14, lineHeight: 1.3, color: theme.text }}
           >
             {name || <span className="italic" style={{ color: theme.mutedText }}>—</span>}
           </h3>
           <span
-            className="text-[15px] flex-shrink-0 tabular-nums"
-            style={{ color: theme.price, fontWeight: 500, ...soldOutPriceStyle }}
+            className="flex-shrink-0 tabular-nums"
+            style={{ fontFamily: bodyFont, fontWeight: 700, fontSize: 16, color: theme.price, ...soldOutPriceStyle }}
           >
             {formatPriceDisplay(item, toUiLang(lang))}
           </span>
         </div>
-        {SoldOutBadge && <div className="mt-1">{SoldOutBadge}</div>}
+        {SoldOutBadge && <div style={{ marginTop: 4 }}>{SoldOutBadge}</div>}
         {description && (
-          <p className="text-[12px] mt-1 line-clamp-2 leading-relaxed" style={{ color: theme.mutedText, fontWeight: 300 }}>
+          <p className="line-clamp-2" style={{ fontFamily: bodyFont, fontSize: 12, fontWeight: 400, lineHeight: 1.5, color: theme.mutedText, marginTop: 4 }}>
             {stripHtml(description)}
           </p>
         )}
         {hasBadges && (
-          <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+          <div className="flex flex-wrap items-center" style={{ gap: 6, marginTop: 8 }}>
             {item.is_popular && (
               <span
                 className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
                 style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, fontWeight: 600 }}
               >
-                <CiStar size={11} /> {UI.popular[toUiLang(lang)]}
+                <CiStar size={10} /> {UI.popular[toUiLang(lang)]}
               </span>
             )}
             {item.is_new && (
@@ -1633,19 +1688,19 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list' }: { item
                 className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
                 style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, fontWeight: 600 }}
               >
-                <CiApple size={11} /> {UI.vegetarian[toUiLang(lang)]}
+                <CiApple size={10} /> {UI.vegetarian[toUiLang(lang)]}
               </span>
             )}
           </div>
         )}
         {(displayCalories != null || prepTime != null || hasAllergens) && (
-          <div className="flex items-center justify-between mt-auto pt-1.5">
+          <div className="flex items-center justify-between mt-auto" style={{ paddingTop: 4 }}>
             <span className="inline-flex items-center gap-1.5 text-[11px]" style={{ color: theme.mutedText, fontWeight: 300 }}>
               {displayCalories != null && <span>{displayCalories} kcal</span>}
               {displayCalories != null && prepTime != null && <span aria-hidden>·</span>}
               {prepTime != null && (
                 <span className="inline-flex items-center gap-0.5">
-                  <CiTimer size={12} /> {prepTime} {minutesLabel}
+                  <CiTimer size={11} /> {prepTime} {minutesLabel}
                 </span>
               )}
             </span>
@@ -1677,12 +1732,16 @@ function ItemDetailModal({ item, lang, theme, onClose }: { item: MenuItem; lang:
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <style>{`
+        @keyframes modalSlideUp { from { transform: translateY(100%); opacity: 0.5; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes modalBackdropIn { from { opacity: 0; } to { opacity: 1; } }
+      `}</style>
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" style={{ animation: 'modalBackdropIn 0.2s ease-out' }} />
 
       <div
         className="relative w-full max-w-[480px] rounded-t-3xl sm:rounded-3xl max-h-[85vh] overflow-y-auto shadow-2xl"
         onClick={(e) => e.stopPropagation()}
-        style={{ backgroundColor: theme.bg, color: theme.text, fontFamily: bodyFont }}
+        style={{ backgroundColor: theme.modalBg, color: theme.text, fontFamily: bodyFont, animation: 'modalSlideUp 0.3s ease-out forwards' }}
       >
         <button
           onClick={onClose}
@@ -1696,10 +1755,12 @@ function ItemDetailModal({ item, lang, theme, onClose }: { item: MenuItem; lang:
           <img onError={handleImageError} src={getOptimizedImageUrl(item.image_url, 'detail')} alt={name} className="w-full h-64 object-cover rounded-t-3xl sm:rounded-t-3xl" loading="lazy" decoding="async" />
         ) : (
           <div
-            className="w-full h-48 flex items-center justify-center rounded-t-3xl"
-            style={{ backgroundColor: theme.cardBg }}
+            className="w-full flex items-center justify-center rounded-t-3xl"
+            style={{ height: 192, backgroundColor: `${theme.accent}15` }}
           >
-            <CiForkAndKnife size={56} style={{ color: theme.mutedText }} />
+            <span style={{ fontSize: 48, fontWeight: 700, color: `${theme.accent}80`, fontFamily: headingFont }}>
+              {name.charAt(0).toUpperCase()}
+            </span>
           </div>
         )}
 
@@ -1744,8 +1805,9 @@ function ItemDetailModal({ item, lang, theme, onClose }: { item: MenuItem; lang:
               <span
                 className="text-xl flex-shrink-0 tabular-nums"
                 style={{
+                  fontFamily: bodyFont,
                   color: theme.price,
-                  fontWeight: 500,
+                  fontWeight: 700,
                   textDecoration: item.is_sold_out ? 'line-through' : 'none',
                 }}
               >
