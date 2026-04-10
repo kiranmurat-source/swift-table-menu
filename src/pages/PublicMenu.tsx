@@ -1028,8 +1028,11 @@ export default function PublicMenu() {
               );
             })}
           </div>
-          {/* Grid/List Toggle */}
-          <div className="flex-shrink-0 flex gap-1 pr-4">
+          {/* Grid/List Toggle — same row, right side */}
+          <div
+            className="flex-shrink-0 flex items-center gap-1"
+            style={{ paddingRight: 16, paddingLeft: 8, borderLeft: `1px solid ${theme.divider}` }}
+          >
             <button
               onClick={() => setViewMode('list')}
               className="flex items-center justify-center"
@@ -1448,6 +1451,7 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list' }: { item
   const hasBadges = item.is_popular || item.is_new || item.is_vegetarian;
   const hasAllergens = item.allergens && item.allergens.length > 0;
   const headingFont = "'Playfair Display', serif";
+  const bodyFont = "'Inter', sans-serif";
   const isFeatured = item.is_featured;
   const isSoldOut = item.is_sold_out;
   const displayCalories = item.nutrition?.calories ?? item.calories ?? null;
@@ -1606,7 +1610,6 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list' }: { item
   }
 
   /* ---- List card (default) ---- */
-  const bodyFont = "'Inter', sans-serif";
   return (
     <div
       className="rounded-2xl flex transition-all duration-200 cursor-pointer active:scale-[0.98]"
