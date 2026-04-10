@@ -54,6 +54,7 @@ interface Restaurant {
   feature_cart: boolean;
   feature_whatsapp_order: boolean;
   feature_feedback: boolean;
+  feature_discount_codes: boolean;
   google_place_id: string | null;
 }
 
@@ -322,6 +323,17 @@ const UI: Record<string, Record<UiLangCode, string>> = {
   rateGoogleBtn:    { tr: "Google'da Değerlendir", en: 'Rate on Google', ar: 'قيّم على جوجل', zh: '在Google上评价' },
   noThanks:         { tr: 'Hayır, teşekkürler', en: 'No, thanks', ar: 'لا، شكراً', zh: '不了，谢谢' },
   fbOk:             { tr: 'Tamam', en: 'OK', ar: 'حسناً', zh: '好的' },
+  // Discount
+  enterDiscountCode:  { tr: 'İndirim kodu girin...', en: 'Enter discount code...', ar: '...أدخل رمز الخصم', zh: '请输入折扣码...' },
+  applyCode:          { tr: 'Uygula', en: 'Apply', ar: 'تطبيق', zh: '应用' },
+  invalidCode:        { tr: 'Geçersiz indirim kodu', en: 'Invalid discount code', ar: 'رمز خصم غير صالح', zh: '无效的折扣码' },
+  codeExpired:        { tr: 'Bu kodun süresi dolmuş', en: 'This code has expired', ar: 'انتهت صلاحية هذا الرمز', zh: '此折扣码已过期' },
+  codeInactive:       { tr: 'Bu kod artık geçerli değil', en: 'This code is no longer valid', ar: 'هذا الرمز لم يعد صالحاً', zh: '此折扣码已失效' },
+  codeNotYetActive:   { tr: 'Bu kod henüz aktif değil', en: 'This code is not yet active', ar: 'هذا الرمز ليس نشطاً بعد', zh: '此折扣码尚未生效' },
+  codeLimitReached:   { tr: 'Bu kod kullanım limitine ulaşmış', en: 'This code has reached its usage limit', ar: 'وصل هذا الرمز لحد الاستخدام', zh: '此折扣码已达使用上限' },
+  minOrderRequired:   { tr: 'Minimum sipariş tutarı:', en: 'Minimum order amount:', ar: ':الحد الأدنى للطلب', zh: '最低订单金额：' },
+  percentOff:         { tr: 'indirim', en: 'off', ar: 'خصم', zh: '折扣' },
+  discountApplied:    { tr: 'uygulandı', en: 'applied', ar: 'مطبّق', zh: '已应用' },
 };
 
 /* ------------------------------------------------------------------ */
@@ -1363,10 +1375,15 @@ export default function PublicMenu() {
           note={cart.note}
           totalAmount={cart.totalAmount}
           totalItems={cart.totalItems}
+          subtotal={cart.subtotal}
+          discountAmount={cart.discountAmount}
+          appliedDiscount={cart.appliedDiscount}
           onUpdateQuantity={cart.updateQuantity}
           onDeleteItem={cart.deleteItem}
           onSetNote={cart.setNote}
           onClearCart={cart.clearCart}
+          onApplyDiscount={cart.applyDiscount}
+          onRemoveDiscount={cart.removeDiscount}
           onClose={() => setCartDrawerOpen(false)}
           theme={theme}
           lang={lang}
@@ -1382,9 +1399,23 @@ export default function PublicMenu() {
             sendViaWhatsApp: UI.sendWhatsApp[toUiLang(lang)],
             whatsappNotAvailable: UI.whatsappNA[toUiLang(lang)],
           }}
+          discountUi={{
+            enterDiscountCode: UI.enterDiscountCode[toUiLang(lang)],
+            apply: UI.applyCode[toUiLang(lang)],
+            invalidCode: UI.invalidCode[toUiLang(lang)],
+            codeExpired: UI.codeExpired[toUiLang(lang)],
+            codeInactive: UI.codeInactive[toUiLang(lang)],
+            codeNotYetActive: UI.codeNotYetActive[toUiLang(lang)],
+            codeLimitReached: UI.codeLimitReached[toUiLang(lang)],
+            minOrderRequired: UI.minOrderRequired[toUiLang(lang)],
+            percentOff: UI.percentOff[toUiLang(lang)],
+            discountApplied: UI.discountApplied[toUiLang(lang)],
+          }}
+          restaurantId={restaurant.id}
           restaurantName={restaurant.name}
           whatsappNumber={restaurant.feature_whatsapp_order !== false ? restaurant.social_whatsapp : null}
           tableNumber={table}
+          discountEnabled={restaurant.feature_discount_codes !== false}
         />
       )}
 

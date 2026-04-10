@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 
 export interface CartItem {
   id: string;
@@ -9,9 +9,17 @@ export interface CartItem {
   image_url?: string;
 }
 
+export interface AppliedDiscount {
+  code: string;
+  type: 'percentage' | 'fixed';
+  value: number;
+  minOrderAmount: number;
+}
+
 interface CartState {
   items: CartItem[];
   note: string;
+  appliedDiscount: AppliedDiscount | null;
 }
 
 function cartKey(id: string, variant?: string): string {
@@ -19,7 +27,7 @@ function cartKey(id: string, variant?: string): string {
 }
 
 export function useCart() {
-  const [state, setState] = useState<CartState>({ items: [], note: '' });
+  const [state, setState] = useState<CartState>({ items: [], note: '', appliedDiscount: null });
 
   const addItem = useCallback((item: Omit<CartItem, 'quantity'>) => {
     setState(prev => {
@@ -74,7 +82,7 @@ export function useCart() {
   }, []);
 
   const clearCart = useCallback(() => {
-    setState({ items: [], note: '' });
+    setState({ items: [], note: '', appliedDiscount: null });
   }, []);
 
   const isInCart = useCallback((id: string, variant?: string): boolean => {
@@ -87,10 +95,37 @@ export function useCart() {
     return state.items.find(i => cartKey(i.id, i.variant) === key)?.quantity ?? 0;
   }, [state.items]);
 
-  const totalAmount = useMemo(() =>
+  const applyDiscount = useCallback((discount: AppliedDiscount) => {
+    setState(prev => ({ ...prev, appliedDiscount: discount }));
+  }, []);
+
+  const removeDiscount = useCallback(() => {
+    setState(prev => ({ ...prev, appliedDiscount: null }));
+  }, []);
+
+  const subtotal = useMemo(() =>
     state.items.reduce((sum, i) => sum + i.price * i.quantity, 0),
     [state.items],
   );
+
+  const discountAmount = useMemo(() => {
+    const d = state.appliedDiscount;
+    if (!d || subtotal < d.minOrderAmount) return 0;
+    if (d.type === 'percentage') {
+      return Math.round(subtotal * d.value / 100 * 100) / 100;
+    }
+    return Math.min(d.value, subtotal);
+  }, [state.appliedDiscount, subtotal]);
+
+  // Auto-remove discount if subtotal drops below minimum
+  useEffect(() => {
+    const d = state.appliedDiscount;
+    if (d && subtotal > 0 && subtotal < d.minOrderAmount) {
+      setState(prev => ({ ...prev, appliedDiscount: null }));
+    }
+  }, [subtotal, state.appliedDiscount]);
+
+  const totalAmount = subtotal - discountAmount;
 
   const totalItems = useMemo(() =>
     state.items.reduce((sum, i) => sum + i.quantity, 0),
@@ -102,6 +137,9 @@ export function useCart() {
     note: state.note,
     totalAmount,
     totalItems,
+    subtotal,
+    discountAmount,
+    appliedDiscount: state.appliedDiscount,
     addItem,
     removeItem,
     deleteItem,
@@ -110,5 +148,7 @@ export function useCart() {
     clearCart,
     isInCart,
     getItemQuantity,
+    applyDiscount,
+    removeDiscount,
   };
 }

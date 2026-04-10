@@ -1,8 +1,10 @@
 import { CiCircleRemove } from 'react-icons/ci';
 import { getOptimizedImageUrl, handleImageError } from '../lib/imageUtils';
 import type { MenuTheme } from '../lib/themes';
-import type { CartItem } from '../lib/useCart';
+import type { CartItem, AppliedDiscount } from '../lib/useCart';
 import QuantitySelector from './QuantitySelector';
+import DiscountCodeInput, { type DiscountUIStrings } from './DiscountCodeInput';
+import { supabase } from '../lib/supabase';
 
 /* WhatsApp SVG (reused from PublicMenu social icons) */
 const WhatsAppIcon = ({ size = 18 }: { size?: number }) => (
@@ -13,17 +15,17 @@ const WhatsAppIcon = ({ size = 18 }: { size?: number }) => (
 
 interface WhatsAppTemplate {
   title: string; table: string; takeaway: string;
-  total: string; note: string; sentVia: string;
+  total: string; subtotal: string; discount: string; note: string; sentVia: string;
 }
 
 const WA_TEMPLATES: Record<string, WhatsAppTemplate> = {
-  tr: { title: 'Yeni Sipariş', table: 'Masa', takeaway: 'Paket', total: 'Toplam', note: 'Not', sentVia: 'tabbled.com ile gönderildi' },
-  en: { title: 'New Order', table: 'Table', takeaway: 'Takeaway', total: 'Total', note: 'Note', sentVia: 'Sent via tabbled.com' },
-  ar: { title: 'طلب جديد', table: 'طاولة', takeaway: 'سفري', total: 'المجموع', note: 'ملاحظة', sentVia: 'tabbled.com أُرسل عبر' },
-  zh: { title: '新订单', table: '桌号', takeaway: '外带', total: '合计', note: '备注', sentVia: '通过 tabbled.com 发送' },
-  de: { title: 'Neue Bestellung', table: 'Tisch', takeaway: 'Zum Mitnehmen', total: 'Gesamt', note: 'Notiz', sentVia: 'Gesendet über tabbled.com' },
-  fr: { title: 'Nouvelle Commande', table: 'Table', takeaway: 'À emporter', total: 'Total', note: 'Note', sentVia: 'Envoyé via tabbled.com' },
-  ru: { title: 'Новый заказ', table: 'Стол', takeaway: 'С собой', total: 'Итого', note: 'Примечание', sentVia: 'Отправлено через tabbled.com' },
+  tr: { title: 'Yeni Sipariş', table: 'Masa', takeaway: 'Paket', total: 'Toplam', subtotal: 'Ara Toplam', discount: 'İndirim', note: 'Not', sentVia: 'tabbled.com ile gönderildi' },
+  en: { title: 'New Order', table: 'Table', takeaway: 'Takeaway', total: 'Total', subtotal: 'Subtotal', discount: 'Discount', note: 'Note', sentVia: 'Sent via tabbled.com' },
+  ar: { title: 'طلب جديد', table: 'طاولة', takeaway: 'سفري', total: 'المجموع', subtotal: 'المجموع الفرعي', discount: 'الخصم', note: 'ملاحظة', sentVia: 'tabbled.com أُرسل عبر' },
+  zh: { title: '新订单', table: '桌号', takeaway: '外带', total: '合计', subtotal: '小计', discount: '折扣', note: '备注', sentVia: '通过 tabbled.com 发送' },
+  de: { title: 'Neue Bestellung', table: 'Tisch', takeaway: 'Zum Mitnehmen', total: 'Gesamt', subtotal: 'Zwischensumme', discount: 'Rabatt', note: 'Notiz', sentVia: 'Gesendet über tabbled.com' },
+  fr: { title: 'Nouvelle Commande', table: 'Table', takeaway: 'À emporter', total: 'Total', subtotal: 'Sous-total', discount: 'Réduction', note: 'Note', sentVia: 'Envoyé via tabbled.com' },
+  ru: { title: 'Новый заказ', table: 'Стол', takeaway: 'С собой', total: 'Итого', subtotal: 'Подытог', discount: 'Скидка', note: 'Примечание', sentVia: 'Отправлено через tabbled.com' },
 };
 
 interface CartUIStrings {
@@ -38,24 +40,35 @@ interface Props {
   note: string;
   totalAmount: number;
   totalItems: number;
+  subtotal: number;
+  discountAmount: number;
+  appliedDiscount: AppliedDiscount | null;
   onUpdateQuantity: (id: string, qty: number, variant?: string) => void;
   onDeleteItem: (id: string, variant?: string) => void;
   onSetNote: (note: string) => void;
   onClearCart: () => void;
+  onApplyDiscount: (d: AppliedDiscount) => void;
+  onRemoveDiscount: () => void;
   onClose: () => void;
   theme: MenuTheme;
   lang: string;
   ui: CartUIStrings;
+  discountUi: DiscountUIStrings;
+  restaurantId: string;
   restaurantName: string;
   whatsappNumber: string | null;
   tableNumber: string | null;
+  discountEnabled: boolean;
 }
 
 function buildWhatsAppUrl(
   number: string,
   restaurantName: string,
   items: CartItem[],
+  subtotal: number,
+  discountAmount: number,
   totalAmount: number,
+  appliedDiscount: AppliedDiscount | null,
   note: string,
   tableNumber: string | null,
   lang: string,
@@ -78,7 +91,15 @@ function buildWhatsAppUrl(
   msg += `━━━━━━━━━━━━━━━━\n`;
   msg += lines.join('\n');
   msg += `\n━━━━━━━━━━━━━━━━\n\n`;
-  msg += `💰 *${t.total}: ${totalAmount.toFixed(2)} ₺*\n`;
+
+  if (appliedDiscount && discountAmount > 0) {
+    msg += `💰 ${t.subtotal}: ${subtotal.toFixed(2)} ₺\n`;
+    msg += `🏷 ${t.discount} (${appliedDiscount.code}): -${discountAmount.toFixed(2)} ₺\n`;
+    msg += `💰 *${t.total}: ${totalAmount.toFixed(2)} ₺*\n`;
+  } else {
+    msg += `💰 *${t.total}: ${totalAmount.toFixed(2)} ₺*\n`;
+  }
+
   if (note.trim()) msg += `\n📝 ${t.note}: ${note}\n`;
   msg += `\n— ${t.sentVia}`;
 
@@ -86,9 +107,9 @@ function buildWhatsAppUrl(
 }
 
 export default function CartDrawer({
-  items, note, totalAmount, totalItems,
-  onUpdateQuantity, onDeleteItem, onSetNote, onClearCart, onClose,
-  theme, lang, ui, restaurantName, whatsappNumber, tableNumber,
+  items, note, totalAmount, totalItems, subtotal, discountAmount, appliedDiscount,
+  onUpdateQuantity, onDeleteItem, onSetNote, onClearCart, onApplyDiscount, onRemoveDiscount, onClose,
+  theme, lang, ui, discountUi, restaurantId, restaurantName, whatsappNumber, tableNumber, discountEnabled,
 }: Props) {
   const handleClear = () => {
     if (window.confirm(ui.emptyCartConfirm)) {
@@ -97,9 +118,18 @@ export default function CartDrawer({
     }
   };
 
-  const handleWhatsApp = () => {
+  const handleWhatsApp = async () => {
     if (!whatsappNumber) return;
-    const url = buildWhatsAppUrl(whatsappNumber, restaurantName, items, totalAmount, note, tableNumber, lang);
+
+    // Increment discount usage via RPC
+    if (appliedDiscount) {
+      await supabase.rpc('increment_discount_usage', {
+        p_restaurant_id: restaurantId,
+        p_code: appliedDiscount.code,
+      });
+    }
+
+    const url = buildWhatsAppUrl(whatsappNumber, restaurantName, items, subtotal, discountAmount, totalAmount, appliedDiscount, note, tableNumber, lang);
     window.open(url, '_blank');
     onClose();
   };
@@ -244,13 +274,45 @@ export default function CartDrawer({
           )}
         </div>
 
-        {/* Footer — total + WhatsApp */}
+        {/* Footer — discount + total + WhatsApp */}
         {items.length > 0 && (
           <div style={{ padding: '12px 20px', paddingBottom: 'calc(12px + env(safe-area-inset-bottom))', borderTop: `1px solid ${theme.divider}` }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, fontSize: 16, fontWeight: 700 }}>
-              <span>{ui.total}</span>
-              <span>{totalAmount.toFixed(2)} ₺</span>
-            </div>
+            {/* Discount code input */}
+            {discountEnabled && (
+              <DiscountCodeInput
+                restaurantId={restaurantId}
+                subtotal={subtotal}
+                appliedDiscount={appliedDiscount}
+                onApply={onApplyDiscount}
+                onRemove={onRemoveDiscount}
+                theme={theme}
+                ui={discountUi}
+                currency="₺"
+              />
+            )}
+
+            {/* Subtotal + discount + total */}
+            {appliedDiscount && discountAmount > 0 ? (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: theme.mutedText, marginBottom: 4 }}>
+                  <span>{ui.total}</span>
+                  <span>{subtotal.toFixed(2)} ₺</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#22c55e', marginBottom: 4 }}>
+                  <span>🏷 {appliedDiscount.code}</span>
+                  <span>-{discountAmount.toFixed(2)} ₺</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 700 }}>
+                  <span>{ui.total}</span>
+                  <span>{totalAmount.toFixed(2)} ₺</span>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, fontSize: 16, fontWeight: 700 }}>
+                <span>{ui.total}</span>
+                <span>{totalAmount.toFixed(2)} ₺</span>
+              </div>
+            )}
             {whatsappNumber ? (
               <button
                 type="button"
