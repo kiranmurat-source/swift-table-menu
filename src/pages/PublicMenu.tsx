@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { getOptimizedImageUrl, handleImageError } from '../lib/imageUtils';
 import {
   CiStar, CiApple, CiTempHigh, CiMapPin, CiPhone, CiGlobe,
-  CiForkAndKnife, CiCircleRemove, CiFilter, CiTimer, CiGrid41, CiViewList, CiDiscount1,
+  CiForkAndKnife, CiCircleRemove, CiFilter, CiTimer, CiGrid41, CiViewList, CiDiscount1, CiChat1,
 } from 'react-icons/ci';
 import { AllergenBadgeList, AllergenIcon } from '../components/AllergenIcon';
 import { getTheme, type MenuTheme } from '../lib/themes';
@@ -19,6 +19,7 @@ import { useCart } from '../lib/useCart';
 import QuantitySelector from '../components/QuantitySelector';
 import CartBottomBar from '../components/CartBottomBar';
 import CartDrawer from '../components/CartDrawer';
+import FeedbackModal from '../components/FeedbackModal';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -52,6 +53,8 @@ interface Restaurant {
   feature_waiter_calls: boolean;
   feature_cart: boolean;
   feature_whatsapp_order: boolean;
+  feature_feedback: boolean;
+  google_place_id: string | null;
 }
 
 interface MenuCategory {
@@ -305,6 +308,20 @@ const UI: Record<string, Record<UiLangCode, string>> = {
   selectVariant:    { tr: 'Seçenek seçin', en: 'Select option', ar: 'اختر خيارًا', zh: '选择规格' },
   sendWhatsApp:     { tr: 'WhatsApp ile Gönder', en: 'Send via WhatsApp', ar: 'أرسل عبر واتساب', zh: '通过WhatsApp发送' },
   whatsappNA:       { tr: 'Bu restoran henüz WhatsApp siparişi kabul etmiyor', en: 'This restaurant does not accept WhatsApp orders yet', ar: 'هذا المطعم لا يقبل طلبات واتساب بعد', zh: '该餐厅暂不接受WhatsApp订单' },
+  // Feedback
+  howWasIt:         { tr: 'Nasıl Buldunuz?', en: 'How Was It?', ar: 'كيف كانت تجربتك؟', zh: '感觉如何？' },
+  rateExperience:   { tr: 'Deneyiminizi Değerlendirin', en: 'Rate Your Experience', ar: 'قيّم تجربتك', zh: '评价您的体验' },
+  shareExperience:  { tr: 'Deneyiminizi paylaşın... (isteğe bağlı)', en: 'Share your experience... (optional)', ar: '...شاركنا تجربتك (اختياري)', zh: '分享您的体验...（可选）' },
+  fbYourName:       { tr: 'Adınız (isteğe bağlı)', en: 'Your name (optional)', ar: '(اسمك (اختياري', zh: '您的姓名（可选）' },
+  fbSubmit:         { tr: 'Gönder', en: 'Submit', ar: 'إرسال', zh: '提交' },
+  fbThankYou:       { tr: 'Teşekkür Ederiz!', en: 'Thank You!', ar: '!شكراً لك', zh: '谢谢！' },
+  fbReceived:       { tr: 'Geri bildiriminiz restoran için çok değerli.', en: 'Your feedback is very valuable to the restaurant.', ar: '.تقييمك قيّم جداً للمطعم', zh: '您的反馈对餐厅非常有价值。' },
+  fbReceivedLow:    { tr: 'Geri bildiriminiz bize ulaştı. Deneyiminizi iyileştirmek için çalışacağız.', en: 'Your feedback has been received. We will work to improve your experience.', ar: '.تم استلام تقييمك. سنعمل على تحسين تجربتك', zh: '我们已收到您的反馈，将努力改善您的体验。' },
+  rateOnGoogle:     { tr: "Google'da da değerlendirir misiniz?", en: 'Would you also rate us on Google?', ar: 'هل يمكنك تقييمنا على جوجل أيضاً؟', zh: '您也可以在Google上评价我们吗？' },
+  googleHelps:      { tr: 'Restoranımıza çok yardımcı olursunuz.', en: 'It would really help our restaurant.', ar: '.سيساعد مطعمنا كثيراً', zh: '这对我们的餐厅非常有帮助。' },
+  rateGoogleBtn:    { tr: "Google'da Değerlendir", en: 'Rate on Google', ar: 'قيّم على جوجل', zh: '在Google上评价' },
+  noThanks:         { tr: 'Hayır, teşekkürler', en: 'No, thanks', ar: 'لا، شكراً', zh: '不了，谢谢' },
+  fbOk:             { tr: 'Tamam', en: 'OK', ar: 'حسناً', zh: '好的' },
 };
 
 /* ------------------------------------------------------------------ */
@@ -366,6 +383,7 @@ export default function PublicMenu() {
   const [promos, setPromos] = useState<Promo[]>([]);
   const [activePromo, setActivePromo] = useState<Promo | null>(null);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const cart = useCart();
 
   const theme = useMemo<MenuTheme>(() => getTheme(restaurant?.theme_color), [restaurant?.theme_color]);
@@ -984,6 +1002,16 @@ export default function PublicMenu() {
                   ))}
                 </div>
               )}
+              {restaurant.feature_feedback !== false && (
+                <button
+                  type="button"
+                  onClick={() => setFeedbackOpen(true)}
+                  className="flex items-center gap-1 mt-2 hover:opacity-80 transition-opacity"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: theme.mutedText, fontSize: 11, fontWeight: 500, padding: 0 }}
+                >
+                  <CiChat1 size={12} /> {UI.howWasIt[toUiLang(lang)]}
+                </button>
+              )}
             </div>
             {table && (
               <span
@@ -1401,6 +1429,32 @@ export default function PublicMenu() {
           }
           onClearAll={() => { setExcludeAllergens([]); setPreferences([]); }}
           onClose={() => setIsFilterOpen(false)}
+        />
+      )}
+
+      {/* Feedback Modal */}
+      {feedbackOpen && (
+        <FeedbackModal
+          restaurantId={restaurant.id}
+          googlePlaceId={restaurant.google_place_id}
+          tableNumber={table}
+          lang={lang}
+          theme={theme}
+          ui={{
+            rateExperience: UI.rateExperience[toUiLang(lang)],
+            shareExperience: UI.shareExperience[toUiLang(lang)],
+            yourName: UI.fbYourName[toUiLang(lang)],
+            submit: UI.fbSubmit[toUiLang(lang)],
+            thankYou: UI.fbThankYou[toUiLang(lang)],
+            feedbackReceived: UI.fbReceived[toUiLang(lang)],
+            feedbackReceivedLow: UI.fbReceivedLow[toUiLang(lang)],
+            rateOnGoogle: UI.rateOnGoogle[toUiLang(lang)],
+            googleHelps: UI.googleHelps[toUiLang(lang)],
+            rateOnGoogleBtn: UI.rateGoogleBtn[toUiLang(lang)],
+            noThanks: UI.noThanks[toUiLang(lang)],
+            ok: UI.fbOk[toUiLang(lang)],
+          }}
+          onClose={() => setFeedbackOpen(false)}
         />
       )}
     </div>

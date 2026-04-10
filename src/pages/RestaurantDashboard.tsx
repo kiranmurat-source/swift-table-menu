@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef, Fragment, lazy, Suspense, ReactNode, CSSProperties } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
-import { CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiApple, CiStar, CiGlobe, CiPen, CiGrid2H, CiUser, CiImageOn, CiTrash, CiLink, CiBoxes, CiCircleChevDown, CiCircleChevUp, CiCirclePlus, CiClock1, CiWheat, CiTimer, CiCircleInfo, CiBellOn, CiClock2, CiMenuBurger, CiGrid41, CiDiscount1, CiPalette } from 'react-icons/ci';
+import { CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiApple, CiStar, CiGlobe, CiPen, CiGrid2H, CiUser, CiImageOn, CiTrash, CiLink, CiBoxes, CiCircleChevDown, CiCircleChevUp, CiCirclePlus, CiClock1, CiWheat, CiTimer, CiCircleInfo, CiBellOn, CiClock2, CiMenuBurger, CiGrid41, CiDiscount1, CiPalette, CiChat1 } from 'react-icons/ci';
+import FeedbackPanel from '../components/FeedbackPanel';
 import {
   DndContext,
   closestCenter,
@@ -117,6 +118,8 @@ type Restaurant = {
   feature_waiter_calls: boolean;
   feature_cart: boolean;
   feature_whatsapp_order: boolean;
+  feature_feedback: boolean;
+  google_place_id: string | null;
 };
 
 const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
@@ -435,6 +438,8 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
     feature_waiter_calls: restaurant.feature_waiter_calls ?? true,
     feature_cart: restaurant.feature_cart ?? true,
     feature_whatsapp_order: restaurant.feature_whatsapp_order ?? true,
+    feature_feedback: restaurant.feature_feedback ?? true,
+    google_place_id: restaurant.google_place_id || '',
   });
   const [workingHours, setWorkingHours] = useState<Record<string, { open: string; close: string; closed: boolean }>>(() => {
     const wh = restaurant.working_hours || {};
@@ -469,6 +474,8 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
       feature_waiter_calls: form.feature_waiter_calls,
       feature_cart: form.feature_cart,
       feature_whatsapp_order: form.feature_whatsapp_order,
+      feature_feedback: form.feature_feedback,
+      google_place_id: form.google_place_id || null,
     }).eq('id', restaurant.id);
 
     if (error) {
@@ -493,6 +500,8 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
         feature_waiter_calls: form.feature_waiter_calls,
         feature_cart: form.feature_cart,
         feature_whatsapp_order: form.feature_whatsapp_order,
+        feature_feedback: form.feature_feedback,
+        google_place_id: form.google_place_id || null,
       });
     }
     setSaving(false);
@@ -663,6 +672,11 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
             <input style={S.input} value={form.social_google_maps} onChange={e => setForm({ ...form, social_google_maps: e.target.value })} placeholder="https://maps.google.com/..." />
           </div>
         </div>
+        <div style={{ marginTop: 8 }}>
+          <label style={S.label}>Google Place ID</label>
+          <input style={S.input} value={form.google_place_id} onChange={e => setForm({ ...form, google_place_id: e.target.value })} placeholder="ChIJ... (Google Maps'ten kopyalayın)" />
+          <div style={{ fontSize: 10, color: '#999', marginTop: 2 }}>Yüksek puanlı müşterileri Google Reviews'a yönlendirmek için gerekli</div>
+        </div>
 
         {/* Working Hours */}
         <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1c1917', marginTop: 8, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -710,6 +724,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
             { key: 'feature_waiter_calls' as const, label: 'Garson Çağırma', desc: 'QR menüde garson çağırma butonları' },
             { key: 'feature_cart' as const, label: 'Sepet', desc: 'Müşteriler sepete ürün ekleyebilir' },
             { key: 'feature_whatsapp_order' as const, label: 'WhatsApp Sipariş', desc: 'Sepetten WhatsApp ile sipariş gönderme' },
+            { key: 'feature_feedback' as const, label: 'Geri Bildirim', desc: 'Müşterilerden yıldız puanı ve yorum toplayın' },
           ]).map(feat => (
             <label key={feat.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 8, border: '1px solid #f3f4f6', backgroundColor: form[feat.key] ? '#f0fdf4' : '#fafafa', cursor: 'pointer' }}>
               <div>
@@ -810,7 +825,7 @@ export default function RestaurantDashboard() {
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [editCatForm, setEditCatForm] = useState({ name_tr: '' });
   const [uploading, setUploading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'menu' | 'translations' | 'qr' | 'profile' | 'promos' | 'calls'>('menu');
+  const [activeTab, setActiveTab] = useState<'menu' | 'translations' | 'qr' | 'profile' | 'promos' | 'calls' | 'feedback'>('menu');
   const [pendingCallCount, setPendingCallCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
@@ -1456,6 +1471,7 @@ export default function RestaurantDashboard() {
       title: 'Müşteri İlişkileri',
       items: [
         { key: 'calls' as const, label: 'Çağrılar', icon: CiBellOn, badge: pendingCallCount },
+        { key: 'feedback' as const, label: 'Geri Bildirim', icon: CiChat1 },
         { key: 'promos' as const, label: 'Promosyonlar', icon: CiDiscount1 },
       ],
     },
@@ -1583,6 +1599,7 @@ export default function RestaurantDashboard() {
       {activeTab === 'qr' && <QRManager restaurant={restaurant} />}
       {activeTab === 'promos' && <PromosTab restaurant={restaurant} />}
       {activeTab === 'calls' && <WaiterCallsPanel restaurantId={restaurant.id} />}
+      {activeTab === 'feedback' && <FeedbackPanel restaurantId={restaurant.id} />}
       {activeTab === 'translations' && (
         <TranslationCenter
           restaurantId={restaurant.id}
