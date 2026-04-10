@@ -13,6 +13,7 @@ import { getAllergenInfo } from '../lib/allergens';
 import PromoPopup, { isPromoVisible, type Promo } from '../components/PromoPopup';
 import { getLanguage, isRTL } from '../lib/languages';
 import { stripHtml } from '../lib/html';
+import AnimatedLogo from '../components/AnimatedLogo';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -402,25 +403,10 @@ export default function PublicMenu() {
   if (loading) {
     return (
       <div
-        className="min-h-screen flex flex-col items-center justify-center gap-6"
-        style={{ backgroundColor: '#FAFAF7', fontFamily: bodyFont }}
+        className="min-h-screen flex flex-col items-center justify-center"
+        style={{ backgroundColor: '#fff', fontFamily: bodyFont }}
       >
-        {/* Tabbled Logo */}
-        <img
-          src="/tabbled-logo.png"
-          alt="Tabbled"
-          className="w-48 h-auto animate-pulse"
-        />
-        {/* Subtle loading indicator */}
-        <div className="flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-[#E8837C] animate-bounce" style={{ animationDelay: '0ms' }} />
-          <div className="w-1.5 h-1.5 rounded-full bg-[#E8837C] animate-bounce" style={{ animationDelay: '150ms' }} />
-          <div className="w-1.5 h-1.5 rounded-full bg-[#E8837C] animate-bounce" style={{ animationDelay: '300ms' }} />
-        </div>
-        {/* Tagline */}
-        <p className="text-xs text-stone-400 tracking-widest uppercase">
-          Otel ve restoranlar için
-        </p>
+        <AnimatedLogo size={80} message={UI.loading[toUiLang(lang)]} />
       </div>
     );
   }

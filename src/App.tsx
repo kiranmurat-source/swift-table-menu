@@ -17,16 +17,11 @@ const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 
 const queryClient = new QueryClient();
 
+import AnimatedLogo from "./components/AnimatedLogo.tsx";
+
 const PageLoading = () => (
-  <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#FAFAF7" }}>
-    <div className="flex flex-col items-center gap-4">
-      <img src="/tabbled-logo.png" alt="Tabbled" className="w-32 animate-pulse" />
-      <div className="flex gap-1.5">
-        <div className="w-1.5 h-1.5 rounded-full bg-[#E8837C] animate-bounce" style={{ animationDelay: "0ms" }} />
-        <div className="w-1.5 h-1.5 rounded-full bg-[#E8837C] animate-bounce" style={{ animationDelay: "150ms" }} />
-        <div className="w-1.5 h-1.5 rounded-full bg-[#E8837C] animate-bounce" style={{ animationDelay: "300ms" }} />
-      </div>
-    </div>
+  <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#fff" }}>
+    <AnimatedLogo size={80} message="Yükleniyor..." />
   </div>
 );
 

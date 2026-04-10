@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, Fragment, lazy, Suspense, ReactNode, CSSProperties } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
-import { CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiApple, CiStar, CiGlobe, CiPen, CiGrid2H, CiUser, CiImageOn, CiTrash, CiLink, CiBoxes, CiCircleChevDown, CiCircleChevUp, CiCirclePlus, CiClock1, CiWheat, CiTimer } from 'react-icons/ci';
+import { CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiApple, CiStar, CiGlobe, CiPen, CiGrid2H, CiUser, CiImageOn, CiTrash, CiLink, CiBoxes, CiCircleChevDown, CiCircleChevUp, CiCirclePlus, CiClock1, CiWheat, CiTimer, CiCircleInfo } from 'react-icons/ci';
 import {
   DndContext,
   closestCenter,
@@ -553,6 +553,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
                 <span style={{ fontSize: 12 }}>{uploadingLogo ? 'Yukleniyor...' : 'Logo Yukle'}</span>
               </button>
             )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#a8a29e', marginTop: 4 }}><CiCircleInfo size={14} /><span>500×500px, kare, şeffaf arka plan, max 2MB</span></div>
           </div>
           <div>
             <label style={{ ...S.label, marginBottom: 10 }}>Kapak Gorseli</label>
@@ -571,6 +572,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
                 <span style={{ fontSize: 12 }}>{uploadingCover ? 'Yukleniyor...' : 'Kapak Yukle'}</span>
               </button>
             )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#a8a29e', marginTop: 4 }}><CiCircleInfo size={14} /><span>1200×400px, yatay geniş, max 5MB</span></div>
           </div>
         </div>
       </div>
@@ -1459,6 +1461,7 @@ export default function RestaurantDashboard() {
                     <CiCamera size={14} /> {uploadingCatImage === 'new' ? 'Yükleniyor...' : 'Görsel Yükle'}
                   </button>
                 )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#a8a29e', marginTop: 4 }}><CiCircleInfo size={14} /><span>800×600px, yatay, max 3MB</span></div>
               </div>
               <button type="submit" disabled={saving} style={{ ...S.btn, alignSelf: 'flex-start' }}>{saving ? '...' : 'Ekle'}</button>
             </form>
@@ -1590,6 +1593,7 @@ export default function RestaurantDashboard() {
                         {uploading ? 'Yükleniyor...' : <><CiCamera size={14} /> Görsel Seç</>}
                       </button>
                     )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#a8a29e', marginTop: 4 }}><CiCircleInfo size={14} /><span>1200×800px, yatay, max 5MB</span></div>
                   </div>
                 </div>
               ) : (
@@ -1712,6 +1716,7 @@ export default function RestaurantDashboard() {
                         {uploading ? 'Yükleniyor...' : <><CiCamera size={14} /> Görsel Seç</>}
                       </button>
                     )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#a8a29e', marginTop: 4 }}><CiCircleInfo size={14} /><span>1200×800px, yatay, max 5MB</span></div>
                   </div>
                 </div>
               )}
@@ -2617,6 +2622,7 @@ function PromosTab({ restaurant }: { restaurant: Restaurant }) {
                 <CiCamera size={14} /> {uploading ? 'Yükleniyor...' : 'Görsel Yükle'}
               </button>
             )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#a8a29e', marginTop: 4 }}><CiCircleInfo size={14} /><span>1080×1080px, kare, max 5MB</span></div>
           </div>
 
           <div style={S.grid2}>
