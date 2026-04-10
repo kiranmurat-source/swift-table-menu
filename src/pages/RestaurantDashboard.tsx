@@ -1,9 +1,10 @@
 import { useEffect, useState, useRef, Fragment, lazy, Suspense, ReactNode, CSSProperties } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
-import { Camera, PencilSimple, CheckCircle, XCircle, AppleLogo, Star, Globe, Pen, Rows, User, Image, Trash, Link, Package, CaretCircleDown, CaretCircleUp, PlusCircle, Clock, Grains, Timer, Info, Bell, List, SquaresFour, Tag, Palette, ChatCircle, Percent } from "@phosphor-icons/react";
+import { Camera, PencilSimple, CheckCircle, XCircle, AppleLogo, Star, Globe, Pen, Rows, User, Image, Trash, Link, Package, CaretCircleDown, CaretCircleUp, PlusCircle, Clock, Grains, Timer, Info, Bell, List, SquaresFour, Tag, Palette, ChatCircle, Percent, Heart } from "@phosphor-icons/react";
 import FeedbackPanel from '../components/FeedbackPanel';
 import DiscountCodesPanel from '../components/DiscountCodesPanel';
+import LikesPanel from '../components/LikesPanel';
 import {
   DndContext,
   closestCenter,
@@ -121,6 +122,7 @@ type Restaurant = {
   feature_whatsapp_order: boolean;
   feature_feedback: boolean;
   feature_discount_codes: boolean;
+  feature_likes: boolean;
   google_place_id: string | null;
 };
 
@@ -443,6 +445,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
     feature_whatsapp_order: restaurant.feature_whatsapp_order ?? true,
     feature_feedback: restaurant.feature_feedback ?? true,
     feature_discount_codes: restaurant.feature_discount_codes ?? true,
+    feature_likes: restaurant.feature_likes ?? true,
     google_place_id: restaurant.google_place_id || '',
   });
   const [workingHours, setWorkingHours] = useState<Record<string, { open: string; close: string; closed: boolean }>>(() => {
@@ -480,6 +483,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
       feature_whatsapp_order: form.feature_whatsapp_order,
       feature_feedback: form.feature_feedback,
       feature_discount_codes: form.feature_discount_codes,
+      feature_likes: form.feature_likes,
       google_place_id: form.google_place_id || null,
     }).eq('id', restaurant.id);
 
@@ -732,6 +736,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
             { key: 'feature_whatsapp_order' as const, label: 'WhatsApp Sipariş', desc: 'Sepetten WhatsApp ile sipariş gönderme' },
             { key: 'feature_feedback' as const, label: 'Geri Bildirim', desc: 'Müşterilerden yıldız puanı ve yorum toplayın' },
             { key: 'feature_discount_codes' as const, label: 'İndirim Kodları', desc: 'Müşteriler sepette indirim kodu kullanabilir' },
+            { key: 'feature_likes' as const, label: 'Ürün Beğeni', desc: 'Müşteriler ürünleri beğenebilir (kalp butonu)' },
           ]).map(feat => (
             <label key={feat.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 8, border: '1px solid #f3f4f6', backgroundColor: form[feat.key] ? '#f0fdf4' : '#fafafa', cursor: 'pointer' }}>
               <div>
@@ -832,7 +837,7 @@ export default function RestaurantDashboard() {
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [editCatForm, setEditCatForm] = useState({ name_tr: '' });
   const [uploading, setUploading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'menu' | 'translations' | 'qr' | 'profile' | 'promos' | 'calls' | 'feedback' | 'discounts'>('menu');
+  const [activeTab, setActiveTab] = useState<'menu' | 'translations' | 'qr' | 'profile' | 'promos' | 'calls' | 'feedback' | 'discounts' | 'likes'>('menu');
   const [pendingCallCount, setPendingCallCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
@@ -1479,6 +1484,7 @@ export default function RestaurantDashboard() {
       items: [
         { key: 'calls' as const, label: 'Çağrılar', icon: Bell, badge: pendingCallCount },
         { key: 'feedback' as const, label: 'Geri Bildirim', icon: ChatCircle },
+        { key: 'likes' as const, label: 'Beğeniler', icon: Heart },
         { key: 'promos' as const, label: 'Promosyonlar', icon: Tag },
       ],
     },
@@ -1614,6 +1620,7 @@ export default function RestaurantDashboard() {
       {activeTab === 'calls' && <WaiterCallsPanel restaurantId={restaurant.id} />}
       {activeTab === 'feedback' && <FeedbackPanel restaurantId={restaurant.id} />}
       {activeTab === 'discounts' && <DiscountCodesPanel restaurantId={restaurant.id} />}
+      {activeTab === 'likes' && <LikesPanel restaurantId={restaurant.id} />}
       {activeTab === 'translations' && (
         <TranslationCenter
           restaurantId={restaurant.id}

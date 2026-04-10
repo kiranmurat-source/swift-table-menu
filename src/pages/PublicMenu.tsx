@@ -4,7 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import { supabase } from '../lib/supabase';
 import { getOptimizedImageUrl, handleImageError } from '../lib/imageUtils';
 import {
-  Star, AppleLogo, Thermometer, MapPin, Phone, Globe,
+  Star, AppleLogo, Thermometer, MapPin, Phone, Globe, CaretDown,
   ForkKnife, XCircle, Funnel, Timer, SquaresFour, ListBullets, Tag, Heart, Clock,
 } from "@phosphor-icons/react";
 import { AllergenBadgeList } from '../components/AllergenIcon';
@@ -19,6 +19,7 @@ import { useCart } from '../lib/useCart';
 import QuantitySelector from '../components/QuantitySelector';
 import CartBottomBar from '../components/CartBottomBar';
 import CartDrawer from '../components/CartDrawer';
+import { useLikes } from '../hooks/useLikes';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -54,6 +55,7 @@ interface Restaurant {
   feature_whatsapp_order: boolean;
   feature_feedback: boolean;
   feature_discount_codes: boolean;
+  feature_likes: boolean;
   google_place_id: string | null;
 }
 
@@ -309,6 +311,9 @@ const UI: Record<string, Record<UiLangCode, string>> = {
   selectVariant:    { tr: 'Seçenek seçin', en: 'Select option', ar: 'اختر خيارًا', zh: '选择规格' },
   sendWhatsApp:     { tr: 'WhatsApp ile Gönder', en: 'Send via WhatsApp', ar: 'أرسل عبر واتساب', zh: '通过WhatsApp发送' },
   whatsappNA:       { tr: 'Bu restoran henüz WhatsApp siparişi kabul etmiyor', en: 'This restaurant does not accept WhatsApp orders yet', ar: 'هذا المطعم لا يقبل طلبات واتساب بعد', zh: '该餐厅暂不接受WhatsApp订单' },
+  // Profile accordion
+  showInfo:          { tr: 'İletişim bilgileri', en: 'Contact info', ar: 'معلومات الاتصال', zh: '联系信息' },
+  hideInfo:          { tr: 'Bilgileri gizle', en: 'Hide info', ar: 'إخفاء المعلومات', zh: '隐藏信息' },
   // Like & Review
   like:              { tr: 'Beğen', en: 'Like', ar: 'إعجاب', zh: '点赞' },
   liked:             { tr: 'Beğendiniz', en: 'Liked', ar: 'أعجبك', zh: '已点赞' },
@@ -390,21 +395,15 @@ export default function PublicMenu() {
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
   const cart = useCart();
 
-  // Like & Google Review
-  const likeStorageKey = `liked_${restaurant?.id}`;
-  const [liked, setLiked] = useState(() => {
-    try { return sessionStorage.getItem(`liked_${slug}`) === 'true'; } catch { return false; }
-  });
+  // Google Review prompt (triggered by product likes)
   const [showReviewPrompt, setShowReviewPrompt] = useState(false);
 
-  const handleLike = () => {
-    if (liked) return;
-    setLiked(true);
-    try { sessionStorage.setItem(`liked_${slug}`, 'true'); } catch {}
-    if (restaurant?.google_place_id) {
-      setTimeout(() => setShowReviewPrompt(true), 600);
-    }
-  };
+  // Profile info accordion
+  const [infoOpen, setInfoOpen] = useState(false);
+
+  // Product likes
+  const { likeCounts, likedItems, toggleLike } = useLikes(restaurant?.id);
+  const likesEnabled = restaurant?.feature_likes !== false;
 
   const theme = useMemo<MenuTheme>(() => getTheme(restaurant?.theme_color), [restaurant?.theme_color]);
 
@@ -756,7 +755,7 @@ export default function PublicMenu() {
         <div className="absolute bottom-6 left-0 right-0 flex flex-col items-center gap-1.5">
           <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.5)' }}>Powered by</span>
           <a href="https://tabbled.com" aria-label="Tabbled" className="hover:opacity-80 transition-opacity">
-            <img src="/tabbled-logo-horizontal.png" alt="Tabbled" className="h-5 w-auto block" />
+            <img src="/tabbled-logo-horizontal.png" alt="Tabbled" className="h-5 w-auto block brightness-0 invert opacity-60" />
           </a>
         </div>
       </div>
@@ -978,69 +977,70 @@ export default function PublicMenu() {
                   {t(restaurant.translations, 'tagline', restaurant.tagline, lang)}
                 </p>
               )}
-              <div className="flex flex-col gap-2 mt-2 text-sm" style={{ color: theme.mutedText }}>
-                {restaurant.address && (
-                  <div className="flex items-start gap-2">
-                    <MapPin size={16} className="flex-shrink-0 mt-0.5" style={{ color: theme.mutedText }} />
-                    <span className="text-xs">{restaurant.address}</span>
-                  </div>
-                )}
-                {restaurant.phone && (
-                  <a
-                    href={`tel:${restaurant.phone}`}
-                    className="flex items-center gap-2 hover:text-[#FF4F7A] transition-colors"
-                    style={{ color: theme.mutedText }}
-                  >
-                    <Phone size={16} className="flex-shrink-0" />
-                    <span className="text-xs">{restaurant.phone}</span>
-                  </a>
-                )}
-                {restaurant.working_hours && (() => {
-                  const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-                  const today = dayKeys[new Date().getDay()];
-                  const todayHours = restaurant.working_hours[today];
-                  if (!todayHours) return null;
-                  return (
-                    <div className="flex items-center gap-2">
-                      <Clock size={16} className="flex-shrink-0" style={{ color: theme.mutedText }} />
-                      <span className="text-xs flex items-center gap-1.5">
-                        <span className={`w-2 h-2 rounded-full ${todayHours.closed ? 'bg-red-500' : 'bg-green-500'}`} />
-                        {todayHours.closed ? (lang === 'tr' ? 'Bugün kapalı' : 'Closed today') : `${todayHours.open} - ${todayHours.close}`}
-                      </span>
+              {/* Info accordion toggle */}
+              <button
+                onClick={() => setInfoOpen(!infoOpen)}
+                className="flex items-center gap-1 mt-2 text-xs transition-colors"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: theme.mutedText }}
+              >
+                <span>{infoOpen ? (UI.hideInfo[toUiLang(lang)]) : (UI.showInfo[toUiLang(lang)])}</span>
+                <CaretDown
+                  size={12}
+                  style={{ transition: 'transform 0.2s', transform: infoOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                />
+              </button>
+              {/* Accordion content */}
+              {infoOpen && (
+                <div className="flex flex-col gap-2 mt-2 text-sm animate-fadeIn" style={{ color: theme.mutedText }}>
+                  {restaurant.address && (
+                    <div className="flex items-start gap-2">
+                      <MapPin size={16} className="flex-shrink-0 mt-0.5" style={{ color: theme.mutedText }} />
+                      <span className="text-xs">{restaurant.address}</span>
                     </div>
-                  );
-                })()}
-              </div>
-              {socials.length > 0 && (
-                <div className="flex items-center gap-2 mt-2">
-                  {socials.map(({ type, url }) => (
+                  )}
+                  {restaurant.phone && (
                     <a
-                      key={type}
-                      href={url!}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:opacity-80 transition-opacity"
+                      href={`tel:${restaurant.phone}`}
+                      className="flex items-center gap-2 hover:text-[#FF4F7A] transition-colors"
                       style={{ color: theme.mutedText }}
                     >
-                      <SocialIcon type={type} size={14} />
+                      <Phone size={16} className="flex-shrink-0" />
+                      <span className="text-xs">{restaurant.phone}</span>
                     </a>
-                  ))}
+                  )}
+                  {restaurant.working_hours && (() => {
+                    const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+                    const today = dayKeys[new Date().getDay()];
+                    const todayHours = restaurant.working_hours[today];
+                    if (!todayHours) return null;
+                    return (
+                      <div className="flex items-center gap-2">
+                        <Clock size={16} className="flex-shrink-0" style={{ color: theme.mutedText }} />
+                        <span className="text-xs flex items-center gap-1.5">
+                          <span className={`w-2 h-2 rounded-full ${todayHours.closed ? 'bg-red-500' : 'bg-green-500'}`} />
+                          {todayHours.closed ? (lang === 'tr' ? 'Bugün kapalı' : 'Closed today') : `${todayHours.open} - ${todayHours.close}`}
+                        </span>
+                      </div>
+                    );
+                  })()}
+                  {socials.length > 0 && (
+                    <div className="flex items-center gap-2 mt-1">
+                      {socials.map(({ type, url }) => (
+                        <a
+                          key={type}
+                          href={url!}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:opacity-80 transition-opacity"
+                          style={{ color: theme.mutedText }}
+                        >
+                          <SocialIcon type={type} size={14} />
+                        </a>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
-              {/* Like button */}
-              <button
-                type="button"
-                onClick={handleLike}
-                disabled={liked}
-                className="flex items-center gap-1.5 mt-2 transition-colors"
-                style={{
-                  background: 'none', border: 'none', cursor: liked ? 'default' : 'pointer',
-                  color: liked ? '#FF4F7A' : theme.mutedText, fontSize: 12, fontWeight: 500, padding: 0,
-                }}
-              >
-                <Heart size={18} weight={liked ? 'fill' : 'regular'} />
-                {liked ? UI.liked[toUiLang(lang)] : UI.like[toUiLang(lang)]}
-              </button>
             </div>
             {table && (
               <span
@@ -1252,7 +1252,7 @@ export default function PublicMenu() {
               return (
                 <div className={viewMode === 'grid' ? 'grid grid-cols-2' : 'flex flex-col'} style={{ gap: 8 }}>
                   {filteredItems.map((item) => (
-                    <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} />
+                    <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} likeCount={likeCounts[item.id]} isLiked={likedItems.has(item.id)} onLike={likesEnabled ? async (id) => { const ok = await toggleLike(id, restaurant!.id); if (ok && restaurant?.google_place_id) setTimeout(() => setShowReviewPrompt(true), 800); } : undefined} />
                   ))}
                   {filteredItems.length === 0 && (
                     <p className="text-center text-sm py-8 col-span-2" style={{ color: theme.mutedText }}>{UI.noItemsInCat[toUiLang(lang)]}</p>
@@ -1267,7 +1267,7 @@ export default function PublicMenu() {
                 {directItems.length > 0 && (
                   <div className={viewMode === 'grid' ? 'grid grid-cols-2' : 'flex flex-col'} style={{ gap: 8, marginBottom: 32 }}>
                     {directItems.map((item) => (
-                      <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} />
+                      <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} likeCount={likeCounts[item.id]} isLiked={likedItems.has(item.id)} onLike={likesEnabled ? async (id) => { const ok = await toggleLike(id, restaurant!.id); if (ok && restaurant?.google_place_id) setTimeout(() => setShowReviewPrompt(true), 800); } : undefined} />
                     ))}
                   </div>
                 )}
@@ -1291,7 +1291,7 @@ export default function PublicMenu() {
                         </div>
                         <div className={viewMode === 'grid' ? 'grid grid-cols-2' : 'flex flex-col'} style={{ gap: 8 }}>
                           {childItems.map((item) => (
-                            <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} />
+                            <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} likeCount={likeCounts[item.id]} isLiked={likedItems.has(item.id)} onLike={likesEnabled ? async (id) => { const ok = await toggleLike(id, restaurant!.id); if (ok && restaurant?.google_place_id) setTimeout(() => setShowReviewPrompt(true), 800); } : undefined} />
                           ))}
                         </div>
                       </div>
@@ -1326,7 +1326,7 @@ export default function PublicMenu() {
               </div>
               <div className={viewMode === 'grid' ? 'grid grid-cols-2' : 'flex flex-col'} style={{ gap: 8 }}>
                 {catItems.map((item) => (
-                  <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} />
+                  <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} likeCount={likeCounts[item.id]} isLiked={likedItems.has(item.id)} onLike={likesEnabled ? async (id) => { const ok = await toggleLike(id, restaurant!.id); if (ok && restaurant?.google_place_id) setTimeout(() => setShowReviewPrompt(true), 800); } : undefined} />
                 ))}
               </div>
               {subgroups.map((sg) => (
@@ -1341,7 +1341,7 @@ export default function PublicMenu() {
                   </div>
                   <div className={viewMode === 'grid' ? 'grid grid-cols-2' : 'flex flex-col'} style={{ gap: 8 }}>
                     {sg.items.map((item) => (
-                      <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} />
+                      <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} likeCount={likeCounts[item.id]} isLiked={likedItems.has(item.id)} onLike={likesEnabled ? async (id) => { const ok = await toggleLike(id, restaurant!.id); if (ok && restaurant?.google_place_id) setTimeout(() => setShowReviewPrompt(true), 800); } : undefined} />
                     ))}
                   </div>
                 </div>
@@ -1438,7 +1438,7 @@ export default function PublicMenu() {
 
       {/* Item Detail Modal */}
       {selectedItem && (
-        <ItemDetailModal item={selectedItem} lang={lang} theme={theme} onClose={() => setSelectedItem(null)} onAddToCart={cartEnabled ? handleAddToCart : undefined} />
+        <ItemDetailModal item={selectedItem} lang={lang} theme={theme} onClose={() => setSelectedItem(null)} onAddToCart={cartEnabled ? handleAddToCart : undefined} likeCount={likeCounts[selectedItem.id]} isLiked={likedItems.has(selectedItem.id)} onLike={likesEnabled ? async (id) => { const ok = await toggleLike(id, restaurant!.id); if (ok && restaurant?.google_place_id) setTimeout(() => setShowReviewPrompt(true), 800); } : undefined} />
       )}
 
       {/* Promo Popup */}
@@ -1684,7 +1684,7 @@ const SOLD_OUT_LABELS: Record<UiLangCode, string> = {
   tr: 'Tükendi', en: 'Sold Out', ar: 'نفد', zh: '售罄',
 };
 
-function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToCart, cartQty }: { item: MenuItem; lang: LangCode; theme: MenuTheme; onSelect: (item: MenuItem) => void; viewMode?: 'grid' | 'list'; onAddToCart?: (item: MenuItem) => void; cartQty?: number }) {
+function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToCart, cartQty, likeCount, isLiked, onLike }: { item: MenuItem; lang: LangCode; theme: MenuTheme; onSelect: (item: MenuItem) => void; viewMode?: 'grid' | 'list'; onAddToCart?: (item: MenuItem) => void; cartQty?: number; likeCount?: number; isLiked?: boolean; onLike?: (itemId: string) => void }) {
   const name = t(item.translations, 'name', item.name_tr, lang);
   const description = t(item.translations, 'description', item.description_tr, lang);
   const hasBadges = item.is_popular || item.is_new || item.is_vegetarian;
@@ -1731,6 +1731,18 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToC
   const canAddToCart = !isSoldOut && onAddToCart;
   const isVariant = hasVariants(item);
   const cartAccent = theme.key === 'red' ? '#fff' : '#FF4F7A';
+
+  const LikeButton = onLike ? (
+    <button
+      type="button"
+      onClick={(e) => { e.stopPropagation(); onLike(item.id); }}
+      className="flex items-center gap-1 transition-colors"
+      style={{ background: 'none', border: 'none', cursor: isLiked ? 'default' : 'pointer', padding: 0, color: isLiked ? '#FF4F7A' : theme.mutedText, fontSize: 12 }}
+    >
+      <Heart size={16} weight={isLiked ? 'fill' : 'regular'} />
+      {(likeCount ?? 0) > 0 && <span>{likeCount}</span>}
+    </button>
+  ) : null;
 
   const AddButton = canAddToCart ? (
     (cartQty ?? 0) > 0 && !isVariant ? (
@@ -1843,7 +1855,10 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToC
               )}
             </div>
           )}
-          {AddButton && <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>{AddButton}</div>}
+          <div className="flex items-center justify-between" style={{ marginTop: 8 }}>
+            {LikeButton || <span />}
+            {AddButton}
+          </div>
         </div>
       </div>
     );
@@ -1901,7 +1916,10 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToC
               </span>
             </div>
           )}
-          {AddButton && <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>{AddButton}</div>}
+          <div className="flex items-center justify-between" style={{ marginTop: 8 }}>
+            {LikeButton || <span />}
+            {AddButton}
+          </div>
         </div>
       </div>
     );
@@ -2018,7 +2036,10 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToC
             )}
           </div>
         )}
-        {AddButton && <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'auto', paddingTop: 4 }}>{AddButton}</div>}
+        <div className="flex items-center justify-between" style={{ marginTop: 'auto', paddingTop: 4 }}>
+          {LikeButton || <span />}
+          {AddButton}
+        </div>
       </div>
     </div>
   );
@@ -2028,7 +2049,7 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToC
 /*  Item Detail Modal                                                  */
 /* ------------------------------------------------------------------ */
 
-function ItemDetailModal({ item, lang, theme, onClose, onAddToCart }: { item: MenuItem; lang: LangCode; theme: MenuTheme; onClose: () => void; onAddToCart?: (item: MenuItem, variant?: string, price?: number) => void }) {
+function ItemDetailModal({ item, lang, theme, onClose, onAddToCart, likeCount, isLiked, onLike }: { item: MenuItem; lang: LangCode; theme: MenuTheme; onClose: () => void; onAddToCart?: (item: MenuItem, variant?: string, price?: number) => void; likeCount?: number; isLiked?: boolean; onLike?: (itemId: string) => void }) {
   const [selectedVariant, setSelectedVariant] = useState<number | null>(hasVariants(item) ? null : 0);
   const [modalQty, setModalQty] = useState(1);
   const name = t(item.translations, 'name', item.name_tr, lang);
@@ -2137,6 +2158,22 @@ function ItemDetailModal({ item, lang, theme, onClose, onAddToCart }: { item: Me
               )
             )}
           </div>
+
+          {/* Like button in detail modal */}
+          {onLike && (
+            <button
+              type="button"
+              onClick={() => onLike(item.id)}
+              className="flex items-center gap-1.5 mb-3 transition-colors"
+              style={{ background: 'none', border: 'none', cursor: isLiked ? 'default' : 'pointer', padding: 0, color: isLiked ? '#FF4F7A' : theme.mutedText, fontSize: 13, fontWeight: 500 }}
+            >
+              <Heart size={20} weight={isLiked ? 'fill' : 'regular'} />
+              <span>
+                {isLiked ? UI.liked[toUiLang(lang)] : UI.like[toUiLang(lang)]}
+                {(likeCount ?? 0) > 0 && ` (${likeCount})`}
+              </span>
+            </button>
+          )}
 
           {/* Happy Hour info box */}
           {happyHour && item.happy_hour_start_time && item.happy_hour_end_time && (
