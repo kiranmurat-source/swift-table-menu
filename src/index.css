@@ -110,6 +110,11 @@
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
+@keyframes cartBarSlideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
 /* Rich text rendered output (public menu detail modal) */
 .rich-text p { margin: 0 0 8px; }
 .rich-text p:last-child { margin-bottom: 0; }

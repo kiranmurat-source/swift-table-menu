@@ -15,6 +15,10 @@ import { getLanguage, isRTL } from '../lib/languages';
 import { stripHtml } from '../lib/html';
 import AnimatedLogo from '../components/AnimatedLogo';
 import WaiterCallBar from '../components/WaiterCallBar';
+import { useCart } from '../lib/useCart';
+import QuantitySelector from '../components/QuantitySelector';
+import CartBottomBar from '../components/CartBottomBar';
+import CartDrawer from '../components/CartDrawer';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -282,6 +286,22 @@ const UI: Record<string, Record<UiLangCode, string>> = {
   },
   prepTime:         { tr: 'Hazırlanma Süresi', en: 'Prep Time', ar: 'وقت التحضير', zh: '准备时间' },
   minutes:          { tr: 'dk', en: 'min', ar: 'دقيقة', zh: '分钟' },
+  // Cart
+  viewCart:          { tr: 'Sepeti Gör', en: 'View Cart', ar: 'عرض السلة', zh: '查看购物车' },
+  yourCart:          { tr: 'Sepetiniz', en: 'Your Cart', ar: 'سلتك', zh: '你的购物车' },
+  addToCart:         { tr: 'Sepete Ekle', en: 'Add to Cart', ar: 'أضف إلى السلة', zh: '加入购物车' },
+  updateCart:        { tr: 'Sepeti Güncelle', en: 'Update Cart', ar: 'تحديث السلة', zh: '更新购物车' },
+  emptyCart:         { tr: 'Boşalt', en: 'Clear', ar: 'إفراغ', zh: '清空' },
+  emptyCartConfirm: { tr: 'Sepeti boşaltmak istediğinize emin misiniz?', en: 'Are you sure you want to clear the cart?', ar: 'هل أنت متأكد من إفراغ السلة؟', zh: '确定要清空购物车吗？' },
+  cartEmpty:        { tr: 'Sepetiniz boş', en: 'Your cart is empty', ar: 'سلتك فارغة', zh: '购物车为空' },
+  addNote:          { tr: 'Not ekleyin...', en: 'Add a note...', ar: 'أضف ملاحظة...', zh: '添加备注...' },
+  notePlaceholder:  { tr: 'ör: Alerjim var, sosları ayrı', en: 'e.g. allergies, sauce on side', ar: 'مثال: حساسية، الصلصة جانبية', zh: '例如：过敏，酱料分开' },
+  cartTotal:        { tr: 'Toplam', en: 'Total', ar: 'المجموع', zh: '合计' },
+  cartItems:        { tr: 'ürün', en: 'items', ar: 'عنصر', zh: '项' },
+  addedToCart:      { tr: 'Sepete eklendi', en: 'Added to cart', ar: 'تمت الإضافة', zh: '已加入购物车' },
+  selectVariant:    { tr: 'Seçenek seçin', en: 'Select option', ar: 'اختر خيارًا', zh: '选择规格' },
+  sendWhatsApp:     { tr: 'WhatsApp ile Gönder', en: 'Send via WhatsApp', ar: 'أرسل عبر واتساب', zh: '通过WhatsApp发送' },
+  whatsappNA:       { tr: 'Bu restoran henüz WhatsApp siparişi kabul etmiyor', en: 'This restaurant does not accept WhatsApp orders yet', ar: 'هذا المطعم لا يقبل طلبات واتساب بعد', zh: '该餐厅暂不接受WhatsApp订单' },
 };
 
 /* ------------------------------------------------------------------ */
@@ -342,6 +362,8 @@ export default function PublicMenu() {
   const tabBarRef = useRef<HTMLDivElement>(null);
   const [promos, setPromos] = useState<Promo[]>([]);
   const [activePromo, setActivePromo] = useState<Promo | null>(null);
+  const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
+  const cart = useCart();
 
   const theme = useMemo<MenuTheme>(() => getTheme(restaurant?.theme_color), [restaurant?.theme_color]);
 
@@ -814,6 +836,25 @@ export default function PublicMenu() {
     'https://tabbled.com/tabbled-logo-horizontal.png';
   const metaDescription = `${restaurant.name} dijital menüsü. ${restaurant.tagline || ''} ${restaurant.address || ''}`.trim();
 
+  const handleAddToCart = (menuItem: MenuItem, variant?: string, price?: number) => {
+    const itemName = t(menuItem.translations, 'name', menuItem.name_tr, lang);
+    cart.addItem({
+      id: menuItem.id,
+      name: itemName,
+      price: price ?? Number(menuItem.price),
+      variant,
+      image_url: menuItem.image_url ?? undefined,
+    });
+  };
+
+  const handleCardAdd = (menuItem: MenuItem) => {
+    if (hasVariants(menuItem)) {
+      setSelectedItem(menuItem);
+      return;
+    }
+    handleAddToCart(menuItem);
+  };
+
   return (
     <div
       className="min-h-screen"
@@ -1149,7 +1190,7 @@ export default function PublicMenu() {
               return (
                 <div className={viewMode === 'grid' ? 'grid grid-cols-2' : 'flex flex-col'} style={{ gap: 8 }}>
                   {filteredItems.map((item) => (
-                    <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} />
+                    <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} />
                   ))}
                   {filteredItems.length === 0 && (
                     <p className="text-center text-sm py-8 col-span-2" style={{ color: theme.mutedText }}>{UI.noItemsInCat[toUiLang(lang)]}</p>
@@ -1164,7 +1205,7 @@ export default function PublicMenu() {
                 {directItems.length > 0 && (
                   <div className={viewMode === 'grid' ? 'grid grid-cols-2' : 'flex flex-col'} style={{ gap: 8, marginBottom: 32 }}>
                     {directItems.map((item) => (
-                      <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} />
+                      <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} />
                     ))}
                   </div>
                 )}
@@ -1188,7 +1229,7 @@ export default function PublicMenu() {
                         </div>
                         <div className={viewMode === 'grid' ? 'grid grid-cols-2' : 'flex flex-col'} style={{ gap: 8 }}>
                           {childItems.map((item) => (
-                            <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} />
+                            <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} />
                           ))}
                         </div>
                       </div>
@@ -1223,7 +1264,7 @@ export default function PublicMenu() {
               </div>
               <div className={viewMode === 'grid' ? 'grid grid-cols-2' : 'flex flex-col'} style={{ gap: 8 }}>
                 {catItems.map((item) => (
-                  <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} />
+                  <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} />
                 ))}
               </div>
               {subgroups.map((sg) => (
@@ -1238,7 +1279,7 @@ export default function PublicMenu() {
                   </div>
                   <div className={viewMode === 'grid' ? 'grid grid-cols-2' : 'flex flex-col'} style={{ gap: 8 }}>
                     {sg.items.map((item) => (
-                      <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} />
+                      <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} />
                     ))}
                   </div>
                 </div>
@@ -1249,26 +1290,72 @@ export default function PublicMenu() {
         )}
       </main>
 
-      {/* Footer / Waiter Call Bar */}
-      {table ? (
-        <WaiterCallBar restaurantId={restaurant.id} tableNumber={table} theme={theme} language={lang} />
-      ) : (
-        <footer
-          className="fixed bottom-0 left-0 right-0 backdrop-blur-sm py-3 z-10"
-          style={{ backgroundColor: theme.bg, borderTop: `1px solid ${theme.divider}` }}
-        >
-          <div className="flex items-center justify-center gap-2">
-            <span className="text-[10px]" style={{ color: theme.mutedText }}>Powered by</span>
-            <a href="https://tabbled.com" aria-label="Tabbled" className="hover:opacity-80 transition-opacity inline-flex">
-              <img src="/tabbled-logo-horizontal.png" alt="Tabbled" className="h-4 w-auto block" />
-            </a>
+      {/* Bottom bars container */}
+      <div className="fixed bottom-0 left-0 right-0 z-40" style={{ maxWidth: 480, margin: '0 auto' }}>
+        {/* Cart bottom bar */}
+        <CartBottomBar
+          totalItems={cart.totalItems}
+          totalAmount={cart.totalAmount}
+          onOpen={() => setCartDrawerOpen(true)}
+          theme={theme}
+          label={UI.viewCart[toUiLang(lang)]}
+          itemsLabel={UI.cartItems[toUiLang(lang)]}
+        />
+        {/* Waiter call bar */}
+        {table && (
+          <WaiterCallBar restaurantId={restaurant.id} tableNumber={table} theme={theme} language={lang} />
+        )}
+        {/* Powered by (no table, no cart) */}
+        {!table && cart.totalItems === 0 && (
+          <div
+            className="backdrop-blur-sm py-3"
+            style={{ backgroundColor: theme.bg, borderTop: `1px solid ${theme.divider}` }}
+          >
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-[10px]" style={{ color: theme.mutedText }}>Powered by</span>
+              <a href="https://tabbled.com" aria-label="Tabbled" className="hover:opacity-80 transition-opacity inline-flex">
+                <img src="/tabbled-logo-horizontal.png" alt="Tabbled" className="h-4 w-auto block" />
+              </a>
+            </div>
           </div>
-        </footer>
+        )}
+      </div>
+
+      {/* Cart Drawer */}
+      {cartDrawerOpen && (
+        <CartDrawer
+          items={cart.items}
+          note={cart.note}
+          totalAmount={cart.totalAmount}
+          totalItems={cart.totalItems}
+          onUpdateQuantity={cart.updateQuantity}
+          onDeleteItem={cart.deleteItem}
+          onSetNote={cart.setNote}
+          onClearCart={cart.clearCart}
+          onClose={() => setCartDrawerOpen(false)}
+          theme={theme}
+          lang={lang}
+          ui={{
+            yourCart: UI.yourCart[toUiLang(lang)],
+            emptyCart: UI.emptyCart[toUiLang(lang)],
+            emptyCartConfirm: UI.emptyCartConfirm[toUiLang(lang)],
+            cartEmpty: UI.cartEmpty[toUiLang(lang)],
+            addNote: UI.addNote[toUiLang(lang)],
+            notePlaceholder: UI.notePlaceholder[toUiLang(lang)],
+            total: UI.cartTotal[toUiLang(lang)],
+            items: UI.cartItems[toUiLang(lang)],
+            sendViaWhatsApp: UI.sendWhatsApp[toUiLang(lang)],
+            whatsappNotAvailable: UI.whatsappNA[toUiLang(lang)],
+          }}
+          restaurantName={restaurant.name}
+          whatsappNumber={restaurant.social_whatsapp}
+          tableNumber={table}
+        />
       )}
 
       {/* Item Detail Modal */}
       {selectedItem && (
-        <ItemDetailModal item={selectedItem} lang={lang} theme={theme} onClose={() => setSelectedItem(null)} />
+        <ItemDetailModal item={selectedItem} lang={lang} theme={theme} onClose={() => setSelectedItem(null)} onAddToCart={handleAddToCart} />
       )}
 
       {/* Promo Popup */}
@@ -1483,7 +1570,7 @@ const SOLD_OUT_LABELS: Record<UiLangCode, string> = {
   tr: 'Tükendi', en: 'Sold Out', ar: 'نفد', zh: '售罄',
 };
 
-function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list' }: { item: MenuItem; lang: LangCode; theme: MenuTheme; onSelect: (item: MenuItem) => void; viewMode?: 'grid' | 'list' }) {
+function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToCart, cartQty }: { item: MenuItem; lang: LangCode; theme: MenuTheme; onSelect: (item: MenuItem) => void; viewMode?: 'grid' | 'list'; onAddToCart?: (item: MenuItem) => void; cartQty?: number }) {
   const name = t(item.translations, 'name', item.name_tr, lang);
   const description = t(item.translations, 'description', item.description_tr, lang);
   const hasBadges = item.is_popular || item.is_new || item.is_vegetarian;
@@ -1525,6 +1612,37 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list' }: { item
     >
       {soldOutLabel}
     </span>
+  ) : null;
+
+  const canAddToCart = !isSoldOut && onAddToCart;
+  const isVariant = hasVariants(item);
+  const cartAccent = theme.key === 'red' ? '#fff' : '#FF4F7A';
+
+  const AddButton = canAddToCart ? (
+    (cartQty ?? 0) > 0 && !isVariant ? (
+      <QuantitySelector
+        quantity={cartQty!}
+        onIncrement={() => onAddToCart!(item)}
+        onDecrement={() => {/* handled via cart.removeItem in parent */}}
+        size="sm"
+        theme={theme}
+      />
+    ) : (
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); isVariant ? onSelect(item) : onAddToCart!(item); }}
+        style={{
+          width: 32, height: 32, borderRadius: 16,
+          border: 'none', backgroundColor: cartAccent, color: '#fff',
+          fontSize: 18, fontWeight: 700, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          transition: 'transform 0.15s',
+          flexShrink: 0,
+        }}
+      >
+        +
+      </button>
+    )
   ) : null;
 
   if (isFeatured) {
@@ -1611,6 +1729,7 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list' }: { item
               )}
             </div>
           )}
+          {AddButton && <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>{AddButton}</div>}
         </div>
       </div>
     );
@@ -1668,6 +1787,7 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list' }: { item
               </span>
             </div>
           )}
+          {AddButton && <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>{AddButton}</div>}
         </div>
       </div>
     );
@@ -1784,6 +1904,7 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list' }: { item
             )}
           </div>
         )}
+        {AddButton && <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'auto', paddingTop: 4 }}>{AddButton}</div>}
       </div>
     </div>
   );
@@ -1793,13 +1914,17 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list' }: { item
 /*  Item Detail Modal                                                  */
 /* ------------------------------------------------------------------ */
 
-function ItemDetailModal({ item, lang, theme, onClose }: { item: MenuItem; lang: LangCode; theme: MenuTheme; onClose: () => void }) {
+function ItemDetailModal({ item, lang, theme, onClose, onAddToCart }: { item: MenuItem; lang: LangCode; theme: MenuTheme; onClose: () => void; onAddToCart?: (item: MenuItem, variant?: string, price?: number) => void }) {
+  const [selectedVariant, setSelectedVariant] = useState<number | null>(hasVariants(item) ? null : 0);
+  const [modalQty, setModalQty] = useState(1);
   const name = t(item.translations, 'name', item.name_tr, lang);
   const description = t(item.translations, 'description', item.description_tr, lang);
   const hasAllergens = item.allergens && item.allergens.length > 0;
   const headingFont = "'Playfair Display', serif";
   const bodyFont = "'Inter', sans-serif";
   const happyHour = !item.is_sold_out && isHappyHourActive(item);
+  const isVariant = hasVariants(item);
+  const cartAccent = theme.key === 'red' ? '#fff' : '#FF4F7A';
   const hhPrice = happyHour ? (item.happy_hour_price ?? null) : null;
   const hhLabel = item.happy_hour_label || 'Happy Hour';
   const discountWord = HH_DISCOUNT_LABEL[toUiLang(lang)] || 'off';
@@ -2030,6 +2155,74 @@ function ItemDetailModal({ item, lang, theme, onClose }: { item: MenuItem; lang:
 
           {item.nutrition && item.nutrition.show_on_menu !== false && (
             <NutritionFactsTable nutrition={item.nutrition} lang={lang} theme={theme} />
+          )}
+
+          {/* Add to Cart */}
+          {onAddToCart && !item.is_sold_out && (
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${theme.divider}` }}>
+              {isVariant && (
+                <div style={{ marginBottom: 12 }}>
+                  {item.price_variants.map((v, idx) => {
+                    const sel = selectedVariant === idx;
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setSelectedVariant(idx)}
+                        style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          width: '100%', padding: '10px 12px', marginBottom: 4,
+                          borderRadius: 8, cursor: 'pointer',
+                          border: `2px solid ${sel ? cartAccent : theme.cardBorder}`,
+                          backgroundColor: sel ? `${cartAccent}10` : 'transparent',
+                          color: theme.text, fontSize: 14, fontFamily: bodyFont,
+                        }}
+                      >
+                        <span style={{ fontWeight: sel ? 600 : 400 }}>{variantDisplayName(v, lang)}</span>
+                        <span style={{ fontWeight: 600, color: sel ? cartAccent : theme.price }}>{Number(v.price).toFixed(2)} ₺</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <QuantitySelector
+                  quantity={modalQty}
+                  onIncrement={() => setModalQty(q => q + 1)}
+                  onDecrement={() => setModalQty(q => Math.max(1, q - 1))}
+                  size="md"
+                  theme={theme}
+                />
+                <button
+                  type="button"
+                  disabled={isVariant && selectedVariant === null}
+                  onClick={() => {
+                    if (isVariant && selectedVariant === null) return;
+                    const v = isVariant ? item.price_variants[selectedVariant!] : null;
+                    const price = v ? Number(v.price) : Number(item.price);
+                    const variantName = v ? variantDisplayName(v, lang) : undefined;
+                    for (let i = 0; i < modalQty; i++) {
+                      onAddToCart(item, variantName, price);
+                    }
+                    onClose();
+                  }}
+                  style={{
+                    flex: 1, height: 48, borderRadius: 12, border: 'none',
+                    backgroundColor: (isVariant && selectedVariant === null) ? theme.mutedText : cartAccent,
+                    color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer',
+                    fontFamily: bodyFont,
+                    opacity: (isVariant && selectedVariant === null) ? 0.5 : 1,
+                  }}
+                >
+                  {UI.addToCart[toUiLang(lang)]} — {(
+                    (isVariant && selectedVariant !== null
+                      ? Number(item.price_variants[selectedVariant].price)
+                      : Number(item.price)
+                    ) * modalQty
+                  ).toFixed(2)} ₺
+                </button>
+              </div>
+            </div>
           )}
         </div>
       </div>

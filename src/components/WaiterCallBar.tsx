@@ -72,7 +72,7 @@ export default function WaiterCallBar({ restaurantId, tableNumber, theme, langua
 
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 z-50 backdrop-blur-sm"
+      className="backdrop-blur-sm"
       style={{
         backgroundColor: `${theme.bg}ee`,
         borderTop: `1px solid ${theme.divider}`,
