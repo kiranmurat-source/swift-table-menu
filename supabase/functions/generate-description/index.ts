@@ -22,7 +22,7 @@ serve(async (req) => {
   }
 
   try {
-    const { restaurant_id, item_id, name_tr, category_name, price, allergens, is_vegetarian, calories } = await req.json();
+    const { restaurant_id, item_id, name_tr, category_name, price, allergens, is_vegetarian, calories, tone, currentDesc } = await req.json();
 
     if (!restaurant_id || !item_id || !name_tr) {
       return new Response(JSON.stringify({ error: "Missing params" }), {
@@ -75,21 +75,45 @@ serve(async (req) => {
       });
     }
 
+    // Ton rehberi
+    const toneGuide: Record<string, string> = {
+      elegant: "Şık, rafine, lüks restoran tarzında. Kısa ve etkileyici.",
+      casual: "Samimi, sıcak, kafe/bistro tarzında. Arkadaşça ve davetkar.",
+      descriptive: "Detaylı, bilgilendirici, malzemeleri ve pişirme tekniğini anlatan.",
+    };
+    const selectedTone = toneGuide[tone] || toneGuide["descriptive"];
+
     // Claude API çağrısı
     const allergenText = allergens && allergens.length > 0 ? `Alerjenler: ${allergens.join(", ")}. ` : "";
     const vegText = is_vegetarian ? "Bu vejetaryen bir üründür. " : "";
     const calText = calories ? `${calories} kcal. ` : "";
+    const currentDescText = currentDesc && currentDesc.trim().length > 0
+      ? `\nMevcut açıklama (bunu iyileştir): ${currentDesc}`
+      : "";
 
-    const prompt = `Sen bir restoran menüsü için kısa ve iştah açıcı Türkçe açıklamalar yazan profesyonel bir yazarsın.
+    const prompt = `Sen profesyonel bir restoran menü yazarısın. Türkiye'deki restoranlar için iştah açıcı, profesyonel menü açıklamaları yazıyorsun.
 
-Aşağıdaki menü ürünü için 1-2 cümlelik çekici, iştah açıcı bir Türkçe açıklama yaz.
-Açıklama samimi ama profesyonel olmalı. Abartılı veya yapay dil kullanma.
-Sadece açıklama metnini yaz, başka bir şey ekleme.
+Kurallar:
+- SADECE Türkçe yaz
+- 1-3 cümle (40-120 karakter arası ideal, max 200 karakter)
+- İştah açıcı, duygusal, görsel imgeler kullan
+- Malzemeleri, pişirme tekniğini veya sunumu vurgula
+- Abartma, klişe ifadelerden kaçın ("eşsiz", "muhteşem", "benzersiz" gibi)
+- Emoji KULLANMA
+- Fiyat veya kalori bilgisi YAZMA (bunlar zaten ayrı gösteriliyor)
+- HTML tag'i KULLANMA, düz metin yaz
+- Allerjen bilgisi YAZMA (bunlar zaten ayrı gösteriliyor)
+- Restoran adı YAZMA
+- Sadece açıklama metnini döndür, başka hiçbir şey yazma
 
 Ürün: ${name_tr}
 Kategori: ${category_name || "Belirtilmemiş"}
 Fiyat: ₺${price}
-${allergenText}${vegText}${calText}`;
+${allergenText}${vegText}${calText}${currentDescText}
+
+Ton: ${selectedTone}
+
+Bu ürün için kısa, iştah açıcı bir menü açıklaması yaz.`;
 
     const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",

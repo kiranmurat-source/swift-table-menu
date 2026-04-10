@@ -108,6 +108,8 @@
   100% { background-position: -200% 0; }
 }
 
+@keyframes spin { to { transform: rotate(360deg); } }
+
 /* Rich text rendered output (public menu detail modal) */
 .rich-text p { margin: 0 0 8px; }
 .rich-text p:last-child { margin-bottom: 0; }

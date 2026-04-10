@@ -759,6 +759,8 @@ export default function RestaurantDashboard() {
   const [saving, setSaving] = useState(false);
   const [translating, setTranslating] = useState<string | null>(null);
   const [generatingAI, setGeneratingAI] = useState(false);
+  const [aiTone, setAiTone] = useState<'elegant' | 'casual' | 'descriptive'>('descriptive');
+  const [aiPreview, setAiPreview] = useState<string | null>(null);
   const [msg, setMsg] = useState('');
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [editingCat, setEditingCat] = useState<string | null>(null);
@@ -936,6 +938,7 @@ export default function RestaurantDashboard() {
   async function generateAIDescription() {
     if (!restaurant || !itemForm.name_tr) return;
     setGeneratingAI(true);
+    setAiPreview(null);
     try {
       const catNameVal = selectedCat ? categories.find(c => c.id === selectedCat)?.name_tr || '' : '';
       const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-description`, {
@@ -950,11 +953,13 @@ export default function RestaurantDashboard() {
           allergens: itemForm.allergens,
           is_vegetarian: itemForm.is_vegetarian,
           calories: itemForm.nutrition.calories ? parseInt(itemForm.nutrition.calories) : null,
+          tone: aiTone,
+          currentDesc: itemForm.description_tr || '',
         }),
       });
       const data = await res.json();
       if (data.success && data.description) {
-        setItemForm(prev => ({ ...prev, description_tr: data.description }));
+        setAiPreview(data.description);
         if (data.usage && data.limit !== 'unlimited') {
           setMsg(`AI açıklama oluşturuldu (${data.usage}/${data.limit} kullanım)`);
           setTimeout(() => setMsg(''), 4000);
@@ -966,6 +971,13 @@ export default function RestaurantDashboard() {
       setMsg('AI servisi bağlantı hatası');
     }
     setGeneratingAI(false);
+  }
+
+  function acceptAiDescription() {
+    if (aiPreview) {
+      setItemForm(prev => ({ ...prev, description_tr: aiPreview }));
+      setAiPreview(null);
+    }
   }
 
   async function addCategory(e: React.FormEvent) {
@@ -1637,7 +1649,60 @@ export default function RestaurantDashboard() {
                 <input style={S.input} value={itemForm.name_tr} onChange={e => setItemForm({ ...itemForm, name_tr: e.target.value })} required placeholder="Örn: Mercimek Çorbası" />
               </div>
               <div>
-                <label style={S.label}>Açıklama</label>
+                {/* AI Açıklama Yazıcı header */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <label style={S.label}>Açıklama (TR)</label>
+                  {hasAI && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <select
+                        value={aiTone}
+                        onChange={e => setAiTone(e.target.value as 'elegant' | 'casual' | 'descriptive')}
+                        style={{ fontSize: 11, padding: '4px 8px', borderRadius: 6, border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', color: '#6b7280', cursor: 'pointer' }}
+                      >
+                        <option value="descriptive">Detaylı</option>
+                        <option value="elegant">Şık</option>
+                        <option value="casual">Samimi</option>
+                      </select>
+                      <button
+                        type="button"
+                        onClick={generateAIDescription}
+                        disabled={generatingAI || !itemForm.name_tr}
+                        style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', fontSize: 11, fontWeight: 600, borderRadius: 6, border: 'none', backgroundColor: generatingAI ? '#e5e7eb' : '#FF4F7A', color: generatingAI ? '#999' : '#fff', cursor: generatingAI ? 'not-allowed' : 'pointer', transition: 'all 0.15s', opacity: !itemForm.name_tr ? 0.5 : 1, fontFamily: "'Inter', sans-serif" }}
+                        title="AI ile açıklama oluştur"
+                      >
+                        {generatingAI ? (
+                          <><div style={{ width: 12, height: 12, border: '2px solid rgba(255,255,255,0.3)', borderTop: '2px solid #fff', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} /> Yazılıyor...</>
+                        ) : (
+                          <><CiPen size={14} /> AI ile Yaz</>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* AI Önizleme */}
+                {aiPreview && (
+                  <div style={{ padding: 12, marginBottom: 8, borderRadius: 8, border: '1px solid #FF4F7A40', backgroundColor: '#FFF5F7' }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#FF4F7A', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <CiPen size={12} /> AI Önizleme
+                    </div>
+                    <div style={{ fontSize: 13, color: '#1C1C1E', lineHeight: 1.5, marginBottom: 8 }}>
+                      {aiPreview}
+                    </div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button type="button" onClick={acceptAiDescription} style={{ padding: '4px 12px', fontSize: 11, fontWeight: 600, borderRadius: 6, border: 'none', backgroundColor: '#22c55e', color: '#fff', cursor: 'pointer' }}>
+                        Kullan
+                      </button>
+                      <button type="button" onClick={generateAIDescription} style={{ padding: '4px 12px', fontSize: 11, fontWeight: 600, borderRadius: 6, border: '1px solid #e5e7eb', backgroundColor: '#fff', color: '#666', cursor: 'pointer' }}>
+                        Tekrar Üret
+                      </button>
+                      <button type="button" onClick={() => setAiPreview(null)} style={{ padding: '4px 12px', fontSize: 11, fontWeight: 600, borderRadius: 6, border: 'none', backgroundColor: 'transparent', color: '#999', cursor: 'pointer' }}>
+                        İptal
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <Suspense fallback={
                   <div style={{ ...S.input, minHeight: 112, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a8a29e', fontSize: 12 }}>
                     Editör yükleniyor...
@@ -1648,17 +1713,6 @@ export default function RestaurantDashboard() {
                     onChange={(html) => setItemForm({ ...itemForm, description_tr: html })}
                     placeholder="Kısa bir açıklama yazın veya AI ile oluşturun"
                     minHeight={80}
-                    rightSlot={hasAI ? (
-                      <button
-                        type="button"
-                        onClick={generateAIDescription}
-                        disabled={generatingAI || !itemForm.name_tr}
-                        style={{ padding: '4px 10px', fontSize: 11, fontWeight: 600, borderRadius: 6, cursor: 'pointer', border: 'none', background: generatingAI ? '#E9D5FF' : '#9333EA', color: '#fff', display: 'flex', alignItems: 'center', gap: 4, transition: 'all 0.15s', opacity: !itemForm.name_tr ? 0.5 : 1 }}
-                        title="AI ile açıklama oluştur"
-                      >
-                        <CiPen size={12} /> {generatingAI ? 'Yazılıyor...' : 'AI Yaz'}
-                      </button>
-                    ) : undefined}
                   />
                 </Suspense>
               </div>
