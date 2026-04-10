@@ -1446,9 +1446,6 @@ export default function RestaurantDashboard() {
   const sidebarContent = (
     <>
       <div className="p-4 border-b border-gray-200">
-        <a href="https://tabbled.com" aria-label="Tabbled" className="block mb-3">
-          <img src="/tabbled-logo-horizontal.png" alt="Tabbled" className="h-5 w-auto block" />
-        </a>
         <div className="flex items-center gap-2">
           {restaurant.logo_url && (
             <img onError={handleImageError} src={getOptimizedImageUrl(restaurant.logo_url, 'thumbnail')} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
@@ -1490,25 +1487,8 @@ export default function RestaurantDashboard() {
           </div>
         ))}
       </nav>
-      <div className="border-t border-gray-200">
-        {user?.email && (
-          <div className="px-4 pt-3 pb-1 flex items-center gap-2">
-            <CiUser size={14} className="text-gray-400 shrink-0" />
-            <span className="text-[11px] text-gray-500 truncate">{user.email}</span>
-          </div>
-        )}
-        <div className="px-4 pb-2 flex items-center justify-between">
-          <span className="text-[11px] text-gray-400 flex items-center gap-1 truncate">
-            <CiLink size={12} /> tabbled.com/menu/{restaurant.slug}
-          </span>
-          <button
-            onClick={signOut}
-            className="text-[11px] text-gray-400 hover:text-red-500 transition-colors shrink-0 ml-2"
-            style={{ cursor: 'pointer', background: 'none', border: 'none', fontWeight: 500 }}
-          >
-            Çıkış
-          </button>
-        </div>
+      <div className="p-4 border-t border-gray-200 text-[11px] text-gray-400 flex items-center gap-1">
+        <CiLink size={12} /> tabbled.com/menu/{restaurant.slug}
       </div>
     </>
   );
