@@ -5,11 +5,11 @@ import { supabase } from '../lib/supabase';
 import { getOptimizedImageUrl, handleImageError } from '../lib/imageUtils';
 import {
   Star, AppleLogo, Thermometer, MapPin, Phone, Globe,
-  ForkKnife, XCircle, Funnel, Timer, SquaresFour, ListBullets, Tag, ChatCircle,
+  ForkKnife, XCircle, Funnel, Timer, SquaresFour, ListBullets, Tag, Heart, Clock,
 } from "@phosphor-icons/react";
-import { AllergenBadgeList, AllergenIcon } from '../components/AllergenIcon';
+import { AllergenBadgeList } from '../components/AllergenIcon';
 import { getTheme, type MenuTheme } from '../lib/themes';
-import { getAllergenInfo } from '../lib/allergens';
+import { getAllergenInfo, ALLERGEN_LIST, DIET_LIST } from '../lib/allergens';
 import PromoPopup, { isPromoVisible, type Promo } from '../components/PromoPopup';
 import { getLanguage, isRTL } from '../lib/languages';
 import { stripHtml } from '../lib/html';
@@ -19,7 +19,6 @@ import { useCart } from '../lib/useCart';
 import QuantitySelector from '../components/QuantitySelector';
 import CartBottomBar from '../components/CartBottomBar';
 import CartDrawer from '../components/CartDrawer';
-import FeedbackModal from '../components/FeedbackModal';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -310,20 +309,13 @@ const UI: Record<string, Record<UiLangCode, string>> = {
   selectVariant:    { tr: 'Seçenek seçin', en: 'Select option', ar: 'اختر خيارًا', zh: '选择规格' },
   sendWhatsApp:     { tr: 'WhatsApp ile Gönder', en: 'Send via WhatsApp', ar: 'أرسل عبر واتساب', zh: '通过WhatsApp发送' },
   whatsappNA:       { tr: 'Bu restoran henüz WhatsApp siparişi kabul etmiyor', en: 'This restaurant does not accept WhatsApp orders yet', ar: 'هذا المطعم لا يقبل طلبات واتساب بعد', zh: '该餐厅暂不接受WhatsApp订单' },
-  // Feedback
-  howWasIt:         { tr: 'Nasıl Buldunuz?', en: 'How Was It?', ar: 'كيف كانت تجربتك؟', zh: '感觉如何？' },
-  rateExperience:   { tr: 'Deneyiminizi Değerlendirin', en: 'Rate Your Experience', ar: 'قيّم تجربتك', zh: '评价您的体验' },
-  shareExperience:  { tr: 'Deneyiminizi paylaşın... (isteğe bağlı)', en: 'Share your experience... (optional)', ar: '...شاركنا تجربتك (اختياري)', zh: '分享您的体验...（可选）' },
-  fbYourName:       { tr: 'Adınız (isteğe bağlı)', en: 'Your name (optional)', ar: '(اسمك (اختياري', zh: '您的姓名（可选）' },
-  fbSubmit:         { tr: 'Gönder', en: 'Submit', ar: 'إرسال', zh: '提交' },
-  fbThankYou:       { tr: 'Teşekkür Ederiz!', en: 'Thank You!', ar: '!شكراً لك', zh: '谢谢！' },
-  fbReceived:       { tr: 'Geri bildiriminiz restoran için çok değerli.', en: 'Your feedback is very valuable to the restaurant.', ar: '.تقييمك قيّم جداً للمطعم', zh: '您的反馈对餐厅非常有价值。' },
-  fbReceivedLow:    { tr: 'Geri bildiriminiz bize ulaştı. Deneyiminizi iyileştirmek için çalışacağız.', en: 'Your feedback has been received. We will work to improve your experience.', ar: '.تم استلام تقييمك. سنعمل على تحسين تجربتك', zh: '我们已收到您的反馈，将努力改善您的体验。' },
-  rateOnGoogle:     { tr: "Google'da da değerlendirir misiniz?", en: 'Would you also rate us on Google?', ar: 'هل يمكنك تقييمنا على جوجل أيضاً؟', zh: '您也可以在Google上评价我们吗？' },
-  googleHelps:      { tr: 'Restoranımıza çok yardımcı olursunuz.', en: 'It would really help our restaurant.', ar: '.سيساعد مطعمنا كثيراً', zh: '这对我们的餐厅非常有帮助。' },
-  rateGoogleBtn:    { tr: "Google'da Değerlendir", en: 'Rate on Google', ar: 'قيّم على جوجل', zh: '在Google上评价' },
-  noThanks:         { tr: 'Hayır, teşekkürler', en: 'No, thanks', ar: 'لا، شكراً', zh: '不了，谢谢' },
-  fbOk:             { tr: 'Tamam', en: 'OK', ar: 'حسناً', zh: '好的' },
+  // Like & Review
+  like:              { tr: 'Beğen', en: 'Like', ar: 'إعجاب', zh: '点赞' },
+  liked:             { tr: 'Beğendiniz', en: 'Liked', ar: 'أعجبك', zh: '已点赞' },
+  reviewPromptTitle: { tr: 'Teşekkürler!', en: 'Thank you!', ar: '!شكراً', zh: '谢谢！' },
+  reviewPromptText:  { tr: "Google Maps'te de yorum bırakmak ister misiniz?", en: 'Would you like to leave a review on Google Maps?', ar: 'هل ترغب في ترك تعليق على خرائط جوجل؟', zh: '您想在Google地图上留下评论吗？' },
+  reviewButton:      { tr: "Google'da Yorum Yap", en: 'Review on Google', ar: 'تقييم على جوجل', zh: '在Google上评价' },
+  notNow:            { tr: 'Şimdi değil', en: 'Not now', ar: 'ليس الآن', zh: '以后再说' },
   // Discount
   enterDiscountCode:  { tr: 'İndirim kodu girin...', en: 'Enter discount code...', ar: '...أدخل رمز الخصم', zh: '请输入折扣码...' },
   applyCode:          { tr: 'Uygula', en: 'Apply', ar: 'تطبيق', zh: '应用' },
@@ -396,8 +388,23 @@ export default function PublicMenu() {
   const [promos, setPromos] = useState<Promo[]>([]);
   const [activePromo, setActivePromo] = useState<Promo | null>(null);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const cart = useCart();
+
+  // Like & Google Review
+  const likeStorageKey = `liked_${restaurant?.id}`;
+  const [liked, setLiked] = useState(() => {
+    try { return sessionStorage.getItem(`liked_${slug}`) === 'true'; } catch { return false; }
+  });
+  const [showReviewPrompt, setShowReviewPrompt] = useState(false);
+
+  const handleLike = () => {
+    if (liked) return;
+    setLiked(true);
+    try { sessionStorage.setItem(`liked_${slug}`, 'true'); } catch {}
+    if (restaurant?.google_place_id) {
+      setTimeout(() => setShowReviewPrompt(true), 600);
+    }
+  };
 
   const theme = useMemo<MenuTheme>(() => getTheme(restaurant?.theme_color), [restaurant?.theme_color]);
 
@@ -971,21 +978,21 @@ export default function PublicMenu() {
                   {t(restaurant.translations, 'tagline', restaurant.tagline, lang)}
                 </p>
               )}
-              <div className="flex flex-col gap-0.5 mt-2">
+              <div className="flex flex-col gap-2 mt-2 text-sm" style={{ color: theme.mutedText }}>
                 {restaurant.address && (
-                  <p className="text-xs flex items-center gap-1.5" style={{ color: theme.mutedText }}>
-                    <MapPin size={13} className="flex-shrink-0" />
-                    <span className="truncate">{restaurant.address}</span>
-                  </p>
+                  <div className="flex items-start gap-2">
+                    <MapPin size={16} className="flex-shrink-0 mt-0.5" style={{ color: theme.mutedText }} />
+                    <span className="text-xs">{restaurant.address}</span>
+                  </div>
                 )}
                 {restaurant.phone && (
                   <a
                     href={`tel:${restaurant.phone}`}
-                    className="text-xs flex items-center gap-1.5 hover:underline"
+                    className="flex items-center gap-2 hover:text-[#FF4F7A] transition-colors"
                     style={{ color: theme.mutedText }}
                   >
-                    <Phone size={13} className="flex-shrink-0" />
-                    {restaurant.phone}
+                    <Phone size={16} className="flex-shrink-0" />
+                    <span className="text-xs">{restaurant.phone}</span>
                   </a>
                 )}
                 {restaurant.working_hours && (() => {
@@ -994,10 +1001,13 @@ export default function PublicMenu() {
                   const todayHours = restaurant.working_hours[today];
                   if (!todayHours) return null;
                   return (
-                    <p className="text-xs flex items-center gap-1.5" style={{ color: todayHours.closed ? '#dc2626' : theme.mutedText }}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${todayHours.closed ? 'bg-red-500' : 'bg-green-500'}`} />
-                      {todayHours.closed ? (lang === 'tr' ? 'Bugün kapalı' : 'Closed today') : `${todayHours.open} - ${todayHours.close}`}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <Clock size={16} className="flex-shrink-0" style={{ color: theme.mutedText }} />
+                      <span className="text-xs flex items-center gap-1.5">
+                        <span className={`w-2 h-2 rounded-full ${todayHours.closed ? 'bg-red-500' : 'bg-green-500'}`} />
+                        {todayHours.closed ? (lang === 'tr' ? 'Bugün kapalı' : 'Closed today') : `${todayHours.open} - ${todayHours.close}`}
+                      </span>
+                    </div>
                   );
                 })()}
               </div>
@@ -1017,16 +1027,20 @@ export default function PublicMenu() {
                   ))}
                 </div>
               )}
-              {restaurant.feature_feedback !== false && (
-                <button
-                  type="button"
-                  onClick={() => setFeedbackOpen(true)}
-                  className="flex items-center gap-1 mt-2 hover:opacity-80 transition-opacity"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: theme.mutedText, fontSize: 11, fontWeight: 500, padding: 0 }}
-                >
-                  <ChatCircle size={12} /> {UI.howWasIt[toUiLang(lang)]}
-                </button>
-              )}
+              {/* Like button */}
+              <button
+                type="button"
+                onClick={handleLike}
+                disabled={liked}
+                className="flex items-center gap-1.5 mt-2 transition-colors"
+                style={{
+                  background: 'none', border: 'none', cursor: liked ? 'default' : 'pointer',
+                  color: liked ? '#FF4F7A' : theme.mutedText, fontSize: 12, fontWeight: 500, padding: 0,
+                }}
+              >
+                <Heart size={18} weight={liked ? 'fill' : 'regular'} />
+                {liked ? UI.liked[toUiLang(lang)] : UI.like[toUiLang(lang)]}
+              </button>
             </div>
             {table && (
               <span
@@ -1466,30 +1480,42 @@ export default function PublicMenu() {
         />
       )}
 
-      {/* Feedback Modal */}
-      {feedbackOpen && (
-        <FeedbackModal
-          restaurantId={restaurant.id}
-          googlePlaceId={restaurant.google_place_id}
-          tableNumber={table}
-          lang={lang}
-          theme={theme}
-          ui={{
-            rateExperience: UI.rateExperience[toUiLang(lang)],
-            shareExperience: UI.shareExperience[toUiLang(lang)],
-            yourName: UI.fbYourName[toUiLang(lang)],
-            submit: UI.fbSubmit[toUiLang(lang)],
-            thankYou: UI.fbThankYou[toUiLang(lang)],
-            feedbackReceived: UI.fbReceived[toUiLang(lang)],
-            feedbackReceivedLow: UI.fbReceivedLow[toUiLang(lang)],
-            rateOnGoogle: UI.rateOnGoogle[toUiLang(lang)],
-            googleHelps: UI.googleHelps[toUiLang(lang)],
-            rateOnGoogleBtn: UI.rateGoogleBtn[toUiLang(lang)],
-            noThanks: UI.noThanks[toUiLang(lang)],
-            ok: UI.fbOk[toUiLang(lang)],
-          }}
-          onClose={() => setFeedbackOpen(false)}
-        />
+      {/* Google Review Prompt */}
+      {showReviewPrompt && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 backdrop-blur-sm"
+          onClick={() => setShowReviewPrompt(false)}
+        >
+          <style>{`@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }`}</style>
+          <div
+            className="bg-white rounded-t-2xl w-full max-w-lg p-6 pb-8"
+            style={{ animation: 'slideUp 0.3s ease-out' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-center mb-4">
+              <Heart size={32} weight="fill" className="text-[#FF4F7A] mx-auto mb-2" />
+              <h3 className="text-lg font-semibold">{UI.reviewPromptTitle[toUiLang(lang)]}</h3>
+              <p className="text-sm text-gray-500 mt-1">{UI.reviewPromptText[toUiLang(lang)]}</p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <a
+                href={`https://search.google.com/local/writereview?placeid=${restaurant.google_place_id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 bg-[#FF4F7A] text-white rounded-xl text-center font-medium hover:bg-[#e8456e] transition-colors"
+                onClick={() => setShowReviewPrompt(false)}
+              >
+                {UI.reviewButton[toUiLang(lang)]}
+              </a>
+              <button
+                onClick={() => setShowReviewPrompt(false)}
+                className="w-full py-3 text-gray-500 text-sm"
+              >
+                {UI.notNow[toUiLang(lang)]}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -1563,7 +1589,7 @@ function FilterPanel({
         </div>
 
         <div className="p-5 space-y-6">
-          {/* Free From */}
+          {/* Free From (14 EU Allergens) */}
           <div>
             <h3
               className="text-xs uppercase tracking-wider mb-3"
@@ -1572,37 +1598,30 @@ function FilterPanel({
               {fl.freeFrom}
             </h3>
             <div className="flex flex-wrap gap-2">
-              {FILTER_ALLERGEN_KEYS.map((key) => {
-                const info = getAllergenInfo(key);
-                if (!info) return null;
-                const label = iconLang === 'tr' ? info.name_tr : info.name_en;
-                const selected = excludeAllergens.includes(key);
+              {ALLERGEN_LIST.map((allergen) => {
+                const label = iconLang === 'tr' ? allergen.name_tr : allergen.name_en;
+                const selected = excludeAllergens.includes(allergen.key);
                 return (
                   <button
-                    key={key}
-                    onClick={() => onToggleAllergen(key)}
-                    className="inline-flex items-center gap-1.5 px-3 rounded-full text-xs transition-all"
+                    key={allergen.key}
+                    onClick={() => onToggleAllergen(allergen.key)}
+                    className="inline-flex items-center px-3 rounded-full text-xs transition-all"
                     style={{
                       minHeight: 36,
-                      backgroundColor: selected ? theme.categoryActiveBg : theme.categoryBg,
-                      color: selected ? theme.categoryActiveText : theme.text,
-                      border: `1px solid ${selected ? theme.accent : theme.cardBorder}`,
+                      backgroundColor: selected ? '#fdf2f8' : theme.categoryBg,
+                      color: selected ? '#FF4F7A' : theme.text,
+                      border: `1px solid ${selected ? '#FF4F7A' : theme.cardBorder}`,
                       fontWeight: 500,
                     }}
                   >
-                    <AllergenIcon
-                      allergenKey={key}
-                      size={16}
-                      invert={selected ? theme.key !== 'white' : theme.invertIcons}
-                    />
-                    <span>{label}</span>
+                    {label}
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Preferences */}
+          {/* Preferences (Diet + Popular/New) */}
           <div>
             <h3
               className="text-xs uppercase tracking-wider mb-3"
@@ -1617,18 +1636,16 @@ function FilterPanel({
                   <button
                     key={key}
                     onClick={() => onTogglePreference(key)}
-                    className="inline-flex items-center gap-1.5 px-4 rounded-full text-xs transition-all"
+                    className="inline-flex items-center px-4 rounded-full text-xs transition-all"
                     style={{
                       minHeight: 36,
-                      backgroundColor: selected ? theme.categoryActiveBg : theme.categoryBg,
-                      color: selected ? theme.categoryActiveText : theme.text,
-                      border: `1px solid ${selected ? theme.accent : theme.cardBorder}`,
+                      backgroundColor: selected ? '#fdf2f8' : theme.categoryBg,
+                      color: selected ? '#FF4F7A' : theme.text,
+                      border: `1px solid ${selected ? '#FF4F7A' : theme.cardBorder}`,
                       fontWeight: 500,
                     }}
                   >
-                    {key === 'popular' && <Star size={14} />}
-                    {key === 'vegetarian' && <AppleLogo size={14} />}
-                    <span>{label}</span>
+                    {label}
                   </button>
                 );
               })}

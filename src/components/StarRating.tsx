@@ -9,7 +9,7 @@ interface Props {
   emptyColor?: string;
 }
 
-export default function StarRating({ rating, onRate, size = 40, color = '#F59E0B', emptyColor = '#D1D5DB' }: Props) {
+export default function StarRating({ rating, onRate, size = 40, color = '#FF4F7A', emptyColor = '#D1D5DB' }: Props) {
   const [hover, setHover] = useState(0);
   const interactive = !!onRate;
 

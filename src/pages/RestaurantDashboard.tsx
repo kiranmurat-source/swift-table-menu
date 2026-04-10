@@ -2009,9 +2009,9 @@ export default function RestaurantDashboard() {
                           borderRadius: 20,
                           cursor: 'pointer',
                           transition: 'all 0.15s',
-                          border: selected ? '2px solid #16a34a' : '1px solid #d6d3d1',
-                          background: selected ? '#dcfce7' : '#fff',
-                          color: selected ? '#16a34a' : '#44403c',
+                          border: selected ? '2px solid #FF4F7A' : '1px solid #d6d3d1',
+                          background: selected ? '#fdf2f8' : '#fff',
+                          color: selected ? '#FF4F7A' : '#44403c',
                           fontWeight: selected ? 700 : 400,
                           display: 'inline-flex',
                           alignItems: 'center',
@@ -2040,9 +2040,9 @@ export default function RestaurantDashboard() {
                           borderRadius: 20,
                           cursor: 'pointer',
                           transition: 'all 0.15s',
-                          border: selected ? '2px solid #16a34a' : '1px solid #d6d3d1',
-                          background: selected ? '#dcfce7' : '#fff',
-                          color: selected ? '#16a34a' : '#44403c',
+                          border: selected ? '2px solid #FF4F7A' : '1px solid #d6d3d1',
+                          background: selected ? '#fdf2f8' : '#fff',
+                          color: selected ? '#FF4F7A' : '#44403c',
                           fontWeight: selected ? 700 : 400,
                           display: 'inline-flex',
                           alignItems: 'center',
@@ -2062,7 +2062,7 @@ export default function RestaurantDashboard() {
                 </label>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#44403c' }}>
                   <input type="checkbox" checked={itemForm.is_featured} onChange={e => setItemForm({ ...itemForm, is_featured: e.target.checked })} />
-                  <Star size={14} style={{ color: '#f59e0b' }} /> Öne Çıkar
+                  <Star size={14} style={{ color: '#FF4F7A' }} /> Öne Çıkar
                 </label>
               </div>
               {/* Sold-out toggle */}
