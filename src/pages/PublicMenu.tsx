@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { getOptimizedImageUrl, handleImageError } from '../lib/imageUtils';
 import {
   CiStar, CiApple, CiTempHigh, CiMapPin, CiPhone, CiGlobe,
-  CiForkAndKnife, CiCircleRemove, CiFilter, CiTimer, CiGrid41, CiViewList,
+  CiForkAndKnife, CiCircleRemove, CiFilter, CiTimer, CiGrid41, CiViewList, CiDiscount1,
 } from 'react-icons/ci';
 import { AllergenBadgeList, AllergenIcon } from '../components/AllergenIcon';
 import { getTheme, type MenuTheme } from '../lib/themes';
@@ -100,6 +100,12 @@ interface MenuItem {
   prep_time: number | null;
   allergens: string[] | null; calories: number | null;
   sort_order: number; translations: Translations;
+  happy_hour_active: boolean;
+  happy_hour_price: number | null;
+  happy_hour_label: string | null;
+  happy_hour_days: string[] | null;
+  happy_hour_start_time: string | null;
+  happy_hour_end_time: string | null;
 }
 
 function hasVariants(item: MenuItem): boolean {
@@ -148,6 +154,38 @@ function isItemVisibleBySchedule(item: MenuItem, now: Date = new Date()): boolea
   }
   return true;
 }
+
+function isHappyHourActive(item: MenuItem): boolean {
+  if (!item.happy_hour_active) return false;
+  if (!item.happy_hour_start_time || !item.happy_hour_end_time) return false;
+
+  const now = new Date();
+
+  // Day check
+  if (item.happy_hour_days && item.happy_hour_days.length > 0) {
+    const dayMap = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+    const today = dayMap[now.getDay()];
+    if (!item.happy_hour_days.includes(today)) return false;
+  }
+
+  // Time check
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const [startH, startM] = item.happy_hour_start_time.split(':').map(Number);
+  const [endH, endM] = item.happy_hour_end_time.split(':').map(Number);
+  const startMinutes = startH * 60 + startM;
+  const endMinutes = endH * 60 + endM;
+
+  // Midnight-crossing range (e.g. 22:00-02:00)
+  if (endMinutes < startMinutes) {
+    return currentMinutes >= startMinutes || currentMinutes < endMinutes;
+  }
+
+  return currentMinutes >= startMinutes && currentMinutes < endMinutes;
+}
+
+const HH_DISCOUNT_LABEL: Record<UiLangCode, string> = {
+  tr: 'indirim', en: 'off', ar: 'خصم', zh: '折扣',
+};
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -1460,6 +1498,26 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list' }: { item
   const soldOutLabel = SOLD_OUT_LABELS[toUiLang(lang)];
   const soldOutWrapperStyle: React.CSSProperties = isSoldOut ? { opacity: 0.6 } : {};
   const soldOutPriceStyle: React.CSSProperties = isSoldOut ? { textDecoration: 'line-through', opacity: 0.5 } : {};
+  const happyHour = !isSoldOut && isHappyHourActive(item);
+  const hhPrice = happyHour ? (item.happy_hour_price ?? null) : null;
+  const hhDiscount = hhPrice != null ? Math.round((1 - hhPrice / Number(item.price)) * 100) : 0;
+  const hhLabel = item.happy_hour_label || 'Happy Hour';
+  const discountWord = HH_DISCOUNT_LABEL[toUiLang(lang)] || 'off';
+
+  const HappyHourBadge = happyHour ? (
+    <span style={{ position: 'absolute', top: 8, left: 8, fontSize: 10, fontWeight: 700, color: '#fff', backgroundColor: '#f59e0b', padding: '2px 8px', borderRadius: 4, zIndex: 2, display: 'flex', alignItems: 'center', gap: 3 }}>
+      <CiDiscount1 size={10} /> {hhLabel}
+    </span>
+  ) : null;
+
+  const renderHHPrice = (originalPrice: number, hhp: number) => (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+      <span style={{ fontSize: 11, textDecoration: 'line-through', color: theme.mutedText }}>{originalPrice.toFixed(2)} ₺</span>
+      <span className="tabular-nums" style={{ fontFamily: bodyFont, fontWeight: 700, fontSize: 16, color: '#FF4F7A' }}>{hhp.toFixed(2)} ₺</span>
+      <span style={{ fontSize: 10, color: '#22c55e', fontWeight: 600 }}>%{Math.round((1 - hhp / originalPrice) * 100)} {discountWord}</span>
+    </div>
+  );
+
   const SoldOutBadge = isSoldOut ? (
     <span
       className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
@@ -1489,6 +1547,7 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list' }: { item
               </span>
             </div>
           )}
+          {HappyHourBadge}
           {isSoldOut && (
             <div
               className="absolute inset-0 flex items-center justify-center"
@@ -1505,9 +1564,11 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list' }: { item
             <h3 style={{ fontFamily: bodyFont, fontWeight: 600, fontSize: 14, lineHeight: 1.3, color: theme.text }}>
               {name || <span className="italic" style={{ color: theme.mutedText }}>—</span>}
             </h3>
-            <span className="flex-shrink-0 tabular-nums" style={{ fontFamily: bodyFont, fontWeight: 700, fontSize: 16, color: theme.price, ...soldOutPriceStyle }}>
-              {formatPriceDisplay(item, toUiLang(lang))}
-            </span>
+            {hhPrice != null ? renderHHPrice(Number(item.price), hhPrice) : (
+              <span className="flex-shrink-0 tabular-nums" style={{ fontFamily: bodyFont, fontWeight: 700, fontSize: 16, color: theme.price, ...soldOutPriceStyle }}>
+                {formatPriceDisplay(item, toUiLang(lang))}
+              </span>
+            )}
           </div>
           {SoldOutBadge && <div style={{ marginBottom: 4 }}>{SoldOutBadge}</div>}
           {description && (
@@ -1576,6 +1637,7 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list' }: { item
               </span>
             </div>
           )}
+          {HappyHourBadge}
           {isSoldOut && (
             <div
               className="absolute inset-0 flex items-center justify-center"
@@ -1592,9 +1654,11 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list' }: { item
             {name || <span className="italic" style={{ color: theme.mutedText }}>—</span>}
           </h3>
           {SoldOutBadge && <div style={{ marginBottom: 4 }}>{SoldOutBadge}</div>}
-          <span className="tabular-nums" style={{ fontFamily: bodyFont, fontWeight: 700, fontSize: 15, color: theme.price, ...soldOutPriceStyle }}>
-            {formatPriceDisplay(item, toUiLang(lang))}
-          </span>
+          {hhPrice != null ? renderHHPrice(Number(item.price), hhPrice) : (
+            <span className="tabular-nums" style={{ fontFamily: bodyFont, fontWeight: 700, fontSize: 15, color: theme.price, ...soldOutPriceStyle }}>
+              {formatPriceDisplay(item, toUiLang(lang))}
+            </span>
+          )}
           {(displayCalories != null || prepTime != null) && (
             <div className="flex items-center" style={{ gap: 4, marginTop: 4 }}>
               <span className="text-[10px]" style={{ color: theme.mutedText }}>
@@ -1636,6 +1700,7 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list' }: { item
             </span>
           </div>
         )}
+        {happyHour && <span style={{ position: 'absolute', top: 4, left: 4, fontSize: 9, fontWeight: 700, color: '#fff', backgroundColor: '#f59e0b', padding: '1px 5px', borderRadius: 3, zIndex: 2 }}>{hhLabel}</span>}
         {isSoldOut && (
           <div
             className="absolute inset-0 rounded-lg flex items-center justify-center"
@@ -1655,12 +1720,14 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list' }: { item
           >
             {name || <span className="italic" style={{ color: theme.mutedText }}>—</span>}
           </h3>
-          <span
-            className="flex-shrink-0 tabular-nums"
-            style={{ fontFamily: bodyFont, fontWeight: 700, fontSize: 16, color: theme.price, ...soldOutPriceStyle }}
-          >
-            {formatPriceDisplay(item, toUiLang(lang))}
-          </span>
+          {hhPrice != null ? renderHHPrice(Number(item.price), hhPrice) : (
+            <span
+              className="flex-shrink-0 tabular-nums"
+              style={{ fontFamily: bodyFont, fontWeight: 700, fontSize: 16, color: theme.price, ...soldOutPriceStyle }}
+            >
+              {formatPriceDisplay(item, toUiLang(lang))}
+            </span>
+          )}
         </div>
         {SoldOutBadge && <div style={{ marginTop: 4 }}>{SoldOutBadge}</div>}
         {description && (
@@ -1732,6 +1799,11 @@ function ItemDetailModal({ item, lang, theme, onClose }: { item: MenuItem; lang:
   const hasAllergens = item.allergens && item.allergens.length > 0;
   const headingFont = "'Playfair Display', serif";
   const bodyFont = "'Inter', sans-serif";
+  const happyHour = !item.is_sold_out && isHappyHourActive(item);
+  const hhPrice = happyHour ? (item.happy_hour_price ?? null) : null;
+  const hhLabel = item.happy_hour_label || 'Happy Hour';
+  const discountWord = HH_DISCOUNT_LABEL[toUiLang(lang)] || 'off';
+  const DAY_LABELS: Record<string, string> = { mon: 'Pzt', tue: 'Sal', wed: 'Çar', thu: 'Per', fri: 'Cum', sat: 'Cmt', sun: 'Paz' };
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={onClose}>
@@ -1805,19 +1877,43 @@ function ItemDetailModal({ item, lang, theme, onClose }: { item: MenuItem; lang:
               {name}
             </h2>
             {!hasVariants(item) && (
-              <span
-                className="text-xl flex-shrink-0 tabular-nums"
-                style={{
-                  fontFamily: bodyFont,
-                  color: theme.price,
-                  fontWeight: 700,
-                  textDecoration: item.is_sold_out ? 'line-through' : 'none',
-                }}
-              >
-                {Number(item.price).toFixed(2)} ₺
-              </span>
+              hhPrice != null ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                  <span style={{ fontSize: 13, textDecoration: 'line-through', color: theme.mutedText }}>{Number(item.price).toFixed(2)} ₺</span>
+                  <span className="tabular-nums" style={{ fontFamily: bodyFont, fontWeight: 700, fontSize: 20, color: '#FF4F7A' }}>{hhPrice.toFixed(2)} ₺</span>
+                  <span style={{ fontSize: 11, color: '#22c55e', fontWeight: 600 }}>%{Math.round((1 - hhPrice / Number(item.price)) * 100)} {discountWord}</span>
+                </div>
+              ) : (
+                <span
+                  className="text-xl flex-shrink-0 tabular-nums"
+                  style={{
+                    fontFamily: bodyFont,
+                    color: theme.price,
+                    fontWeight: 700,
+                    textDecoration: item.is_sold_out ? 'line-through' : 'none',
+                  }}
+                >
+                  {Number(item.price).toFixed(2)} ₺
+                </span>
+              )
             )}
           </div>
+
+          {/* Happy Hour info box */}
+          {happyHour && item.happy_hour_start_time && item.happy_hour_end_time && (
+            <div style={{ padding: '8px 12px', borderRadius: 8, backgroundColor: '#fffbeb', border: '1px solid #fde68a', fontSize: 12, color: '#92400e', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <CiDiscount1 size={14} />
+              <div>
+                <div style={{ fontWeight: 600 }}>{hhLabel}</div>
+                <div style={{ fontSize: 11, opacity: 0.8 }}>
+                  {item.happy_hour_start_time.slice(0, 5)} - {item.happy_hour_end_time.slice(0, 5)}
+                  {item.happy_hour_days && item.happy_hour_days.length > 0 && (
+                    <> · {item.happy_hour_days.map(d => DAY_LABELS[d] || d).join(', ')}</>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {item.is_sold_out && (
             <div className="mb-3">
@@ -1875,16 +1971,23 @@ function ItemDetailModal({ item, lang, theme, onClose }: { item: MenuItem; lang:
                       </div>
                     )}
                   </div>
-                  <span
-                    className="text-sm flex-shrink-0 tabular-nums"
-                    style={{
-                      color: theme.price,
-                      fontWeight: 600,
-                      textDecoration: item.is_sold_out ? 'line-through' : 'none',
-                    }}
-                  >
-                    {Number(v.price).toFixed(2)} ₺
-                  </span>
+                  {happyHour && (v as any).happy_hour_price ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                      <span style={{ fontSize: 11, textDecoration: 'line-through', color: theme.mutedText }}>{Number(v.price).toFixed(2)} ₺</span>
+                      <span className="tabular-nums" style={{ fontSize: 14, fontWeight: 700, color: '#FF4F7A' }}>{Number((v as any).happy_hour_price).toFixed(2)} ₺</span>
+                    </div>
+                  ) : (
+                    <span
+                      className="text-sm flex-shrink-0 tabular-nums"
+                      style={{
+                        color: theme.price,
+                        fontWeight: 600,
+                        textDecoration: item.is_sold_out ? 'line-through' : 'none',
+                      }}
+                    >
+                      {Number(v.price).toFixed(2)} ₺
+                    </span>
+                  )}
                 </div>
               ))}
             </div>

@@ -388,6 +388,13 @@ const emptyItemForm = {
   nutrition: emptyNutritionDraft(),
   nutritionOpen: false,
   prep_time: '',
+  happy_hour_active: false,
+  happy_hour_price: '' as string | number,
+  happy_hour_label: '',
+  happy_hour_days: null as string[] | null,
+  happy_hour_start_time: '',
+  happy_hour_end_time: '',
+  happyHourOpen: false,
 };
 
 async function triggerTranslation(table: string, recordId: string, languages: string[]) {
@@ -1153,6 +1160,12 @@ export default function RestaurantDashboard() {
       schedule_end: itemForm.schedule_type === 'date_range' && itemForm.schedule_end ? itemForm.schedule_end : null,
       schedule_periodic: itemForm.schedule_type === 'periodic' ? itemForm.schedule_periodic : {},
       sort_order: newSortOrder,
+      happy_hour_active: itemForm.happy_hour_active || false,
+      happy_hour_price: itemForm.happy_hour_active && itemForm.happy_hour_price ? parseFloat(String(itemForm.happy_hour_price)) : null,
+      happy_hour_label: itemForm.happy_hour_active && itemForm.happy_hour_label ? itemForm.happy_hour_label : null,
+      happy_hour_days: itemForm.happy_hour_active && itemForm.happy_hour_days && itemForm.happy_hour_days.length > 0 ? itemForm.happy_hour_days : null,
+      happy_hour_start_time: itemForm.happy_hour_active && itemForm.happy_hour_start_time ? itemForm.happy_hour_start_time : null,
+      happy_hour_end_time: itemForm.happy_hour_active && itemForm.happy_hour_end_time ? itemForm.happy_hour_end_time : null,
     };
 
     let savedId = editingItem;
@@ -1292,6 +1305,13 @@ export default function RestaurantDashboard() {
       nutrition: nutrDraft,
       nutritionOpen,
       prep_time: item.prep_time != null ? item.prep_time.toString() : '',
+      happy_hour_active: (item as any).happy_hour_active || false,
+      happy_hour_price: (item as any).happy_hour_price != null ? String((item as any).happy_hour_price) : '',
+      happy_hour_label: (item as any).happy_hour_label || '',
+      happy_hour_days: (item as any).happy_hour_days || null,
+      happy_hour_start_time: (item as any).happy_hour_start_time ? String((item as any).happy_hour_start_time).slice(0, 5) : '',
+      happy_hour_end_time: (item as any).happy_hour_end_time ? String((item as any).happy_hour_end_time).slice(0, 5) : '',
+      happyHourOpen: !!(item as any).happy_hour_active,
     };
     setItemForm(nextForm);
     snapshotForm(nextForm);
@@ -2073,6 +2093,107 @@ export default function RestaurantDashboard() {
                 )}
               </div>
 
+              {/* Happy Hour (collapsible) */}
+              <div style={{ borderTop: '1px solid #e7e5e4', paddingTop: 12, marginTop: 4 }}>
+                <div
+                  onClick={() => setItemForm({ ...itemForm, happyHourOpen: !itemForm.happyHourOpen })}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#1C1C1E' }}
+                >
+                  <CiDiscount1 size={16} style={{ color: '#FF4F7A' }} />
+                  Happy Hour
+                  {itemForm.happy_hour_active && <span style={{ fontSize: 11, color: '#22c55e', fontWeight: 400 }}>(Aktif)</span>}
+                  <span style={{ marginLeft: 'auto', fontSize: 12, color: '#999' }}>{itemForm.happyHourOpen ? '▲' : '▼'}</span>
+                </div>
+
+                {itemForm.happyHourOpen && (
+                  <div style={{ padding: 12, borderRadius: 8, border: '1px solid #f3f4f6', backgroundColor: '#fafafa', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {/* Toggle */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <label style={{ fontSize: 12, color: '#666' }}>Happy Hour Aktif</label>
+                      <input type="checkbox" checked={itemForm.happy_hour_active || false} onChange={e => setItemForm({ ...itemForm, happy_hour_active: e.target.checked })} />
+                    </div>
+
+                    {itemForm.happy_hour_active && (
+                      <>
+                        {/* Label */}
+                        <div>
+                          <label style={{ fontSize: 12, color: '#666', marginBottom: 4, display: 'block' }}>Etiket (opsiyonel)</label>
+                          <input type="text" value={itemForm.happy_hour_label || ''} onChange={e => setItemForm({ ...itemForm, happy_hour_label: e.target.value })} placeholder="Happy Hour" style={{ ...S.input, fontSize: 13 }} />
+                          <div style={{ fontSize: 10, color: '#999', marginTop: 2 }}>Boş bırakırsan "Happy Hour" yazılır</div>
+                        </div>
+
+                        {/* Price — single price mode */}
+                        {itemForm.variants.length === 0 && (
+                          <div>
+                            <label style={{ fontSize: 12, color: '#666', marginBottom: 4, display: 'block' }}>İndirimli Fiyat (₺)</label>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span style={{ fontSize: 12, color: '#999', textDecoration: 'line-through' }}>{itemForm.price} ₺</span>
+                              <span style={{ fontSize: 12, color: '#999' }}>→</span>
+                              <input type="number" step="0.01" min="0" value={itemForm.happy_hour_price || ''} onChange={e => setItemForm({ ...itemForm, happy_hour_price: e.target.value })} placeholder="0.00" style={{ ...S.input, width: 100, fontSize: 13 }} />
+                              <span style={{ fontSize: 12, color: '#22c55e', fontWeight: 600 }}>
+                                {itemForm.price && itemForm.happy_hour_price ? `%${Math.round((1 - parseFloat(String(itemForm.happy_hour_price)) / parseFloat(String(itemForm.price))) * 100)} indirim` : ''}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Price — variant mode */}
+                        {itemForm.variants.length > 0 && (
+                          <div>
+                            <label style={{ fontSize: 12, color: '#666', marginBottom: 4, display: 'block' }}>Varyant İndirimli Fiyatları</label>
+                            {itemForm.variants.map((v, idx) => (
+                              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                                <span style={{ fontSize: 12, color: '#666', minWidth: 80 }}>{v.name_tr}</span>
+                                <span style={{ fontSize: 12, color: '#999', textDecoration: 'line-through' }}>{v.price} ₺</span>
+                                <span style={{ fontSize: 12, color: '#999' }}>→</span>
+                                <input type="number" step="0.01" min="0" value={(v as any).happy_hour_price || ''} onChange={e => {
+                                  const updated = [...itemForm.variants];
+                                  updated[idx] = { ...updated[idx], happy_hour_price: e.target.value } as any;
+                                  setItemForm({ ...itemForm, variants: updated });
+                                }} placeholder="0.00" style={{ ...S.input, width: 80, fontSize: 13, padding: '4px 8px' }} />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Days */}
+                        <div>
+                          <label style={{ fontSize: 12, color: '#666', marginBottom: 4, display: 'block' }}>Günler (boş = her gün)</label>
+                          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                            {[{ key: 'mon', label: 'Pzt' }, { key: 'tue', label: 'Sal' }, { key: 'wed', label: 'Çar' }, { key: 'thu', label: 'Per' }, { key: 'fri', label: 'Cum' }, { key: 'sat', label: 'Cmt' }, { key: 'sun', label: 'Paz' }].map(day => {
+                              const selected = (itemForm.happy_hour_days || []).includes(day.key);
+                              return (
+                                <button key={day.key} type="button" onClick={() => {
+                                  const current = itemForm.happy_hour_days || [];
+                                  const updated = selected ? current.filter(d => d !== day.key) : [...current, day.key];
+                                  setItemForm({ ...itemForm, happy_hour_days: updated.length > 0 ? updated : null });
+                                }} style={{ padding: '4px 8px', fontSize: 11, borderRadius: 6, border: `1px solid ${selected ? '#FF4F7A' : '#e5e7eb'}`, backgroundColor: selected ? '#FF4F7A' : '#fff', color: selected ? '#fff' : '#666', cursor: 'pointer', fontWeight: selected ? 600 : 400 }}>
+                                  {day.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Time range */}
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                          <div>
+                            <label style={{ fontSize: 12, color: '#666', marginBottom: 4, display: 'block' }}>Başlangıç</label>
+                            <input type="time" value={itemForm.happy_hour_start_time || ''} onChange={e => setItemForm({ ...itemForm, happy_hour_start_time: e.target.value })} style={{ ...S.input, fontSize: 13 }} />
+                          </div>
+                          <span style={{ marginTop: 20, color: '#999' }}>—</span>
+                          <div>
+                            <label style={{ fontSize: 12, color: '#666', marginBottom: 4, display: 'block' }}>Bitiş</label>
+                            <input type="time" value={itemForm.happy_hour_end_time || ''} onChange={e => setItemForm({ ...itemForm, happy_hour_end_time: e.target.value })} style={{ ...S.input, fontSize: 13 }} />
+                          </div>
+                        </div>
+                        <div style={{ fontSize: 10, color: '#999' }}>Gece yarısını geçebilir (örn: 22:00-02:00)</div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {/* Nutrition Facts (collapsible) */}
               <div style={{ borderTop: '1px solid #e7e5e4', paddingTop: 12, marginTop: 4 }}>
                 <button
@@ -2252,6 +2373,7 @@ export default function RestaurantDashboard() {
                       {item.is_new && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309', marginRight: 0 }}>Yeni</span>}
                       {item.is_featured && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309', marginRight: 0 }}>Öne Çıkan</span>}
                       {item.schedule_type !== 'always' && <span style={{ ...S.badge, background: '#dbeafe', color: '#1d4ed8', marginRight: 0, display: 'inline-flex', alignItems: 'center', gap: 2 }}><CiClock1 size={10} />Zamanlı</span>}
+                      {(item as any).happy_hour_active && <span style={{ ...S.badge, background: '#fffbeb', color: '#f59e0b', marginRight: 0, display: 'inline-flex', alignItems: 'center', gap: 2 }}><CiDiscount1 size={10} />HH</span>}
                       {allergenKeys.length > 0 && (
                         <span style={{ display: 'inline-flex', gap: 2, alignItems: 'center' }} title={allergenKeys.join(', ')}>
                           {allergenKeys.slice(0, 3).map(a => <AllergenIcon key={a} allergenKey={a} size={12} />)}
