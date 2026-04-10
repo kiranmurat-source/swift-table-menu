@@ -6,10 +6,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { HelmetProvider } from "react-helmet-async";
 import Index from "./pages/Index.tsx";
-import PublicMenu from "./pages/PublicMenu.tsx";
 import CookieBanner from "./components/CookieBanner.tsx";
 import ErrorBoundary from "./components/ErrorBoundary.tsx";
 
+const PublicMenu = lazy(() => import("./pages/PublicMenu.tsx"));
 const Login = lazy(() => import("./pages/Login.tsx"));
 const Dashboard = lazy(() => import("./pages/Dashboard.tsx"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy.tsx"));
