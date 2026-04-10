@@ -3,6 +3,7 @@ const footerLinks = [
   { label: "Özellikler", href: "#ozellikler" },
   { label: "Fiyatlar", href: "#fiyatlar" },
   { label: "Demo Menü", href: "/menu/abc-restaurant" },
+  { label: "Blog", href: "/blog" },
   { label: "Gizlilik Politikası", href: "/privacy" },
   { label: "İletişim", href: "mailto:info@tabbled.com" },
 ];

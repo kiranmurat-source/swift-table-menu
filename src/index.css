@@ -145,3 +145,112 @@
   pointer-events: none;
   height: 0;
 }
+
+/* Blog content styles */
+.blog-content h2 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 600;
+  font-size: 24px;
+  margin-top: 40px;
+  margin-bottom: 16px;
+  color: #1C1C1E;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+.blog-content h3 {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 20px;
+  margin-top: 32px;
+  margin-bottom: 12px;
+  color: #1C1C1E;
+}
+.blog-content p {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.75;
+  margin-bottom: 16px;
+  color: #374151;
+}
+.blog-content ul, .blog-content ol {
+  padding-left: 24px;
+  margin-bottom: 16px;
+}
+.blog-content li {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  line-height: 1.75;
+  margin-bottom: 8px;
+  color: #374151;
+}
+.blog-content ul { list-style: disc; }
+.blog-content ol { list-style: decimal; }
+.blog-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 24px 0;
+  font-size: 14px;
+}
+.blog-content th, .blog-content td {
+  border: 1px solid #E5E7EB;
+  padding: 12px 16px;
+  text-align: left;
+}
+.blog-content th {
+  background: #F9FAFB;
+  font-weight: 600;
+}
+.blog-content tr:nth-child(even) {
+  background: #F9FAFB;
+}
+.blog-content blockquote {
+  border-left: 4px solid #FF4F7A;
+  background: #FFF0F3;
+  padding: 16px 24px;
+  margin: 24px 0;
+  border-radius: 0 8px 8px 0;
+  font-style: italic;
+  color: #6B7280;
+}
+.blog-content a {
+  color: #FF4F7A;
+  text-decoration: none;
+}
+.blog-content a:hover {
+  text-decoration: underline;
+}
+.blog-content img {
+  max-width: 100%;
+  border-radius: 8px;
+  margin: 24px 0;
+}
+.blog-cta-inline {
+  background: #FFF0F3;
+  border: 1px solid #FECDD3;
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin: 32px 0;
+  text-align: center;
+}
+.blog-cta-inline a {
+  display: inline-block;
+  background: #FF4F7A;
+  color: white;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: 500;
+  margin-top: 8px;
+  text-decoration: none;
+}
+.blog-cta-inline a:hover {
+  background: #E63E68;
+  text-decoration: none;
+}
+
+/* Blog TOC sidebar — show on desktop */
+@media (min-width: 1024px) {
+  .blog-toc-sidebar {
+    display: block !important;
+  }
+}
