@@ -114,6 +114,9 @@ type Restaurant = {
   social_x: string | null; social_tiktok: string | null; social_website: string | null;
   social_whatsapp: string | null; social_google_maps: string | null;
   working_hours: Record<string, { open: string; close: string; closed: boolean }> | null;
+  feature_waiter_calls: boolean;
+  feature_cart: boolean;
+  feature_whatsapp_order: boolean;
 };
 
 const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
@@ -429,6 +432,9 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
     social_website: restaurant.social_website || '',
     social_whatsapp: restaurant.social_whatsapp || '',
     social_google_maps: restaurant.social_google_maps || '',
+    feature_waiter_calls: restaurant.feature_waiter_calls ?? true,
+    feature_cart: restaurant.feature_cart ?? true,
+    feature_whatsapp_order: restaurant.feature_whatsapp_order ?? true,
   });
   const [workingHours, setWorkingHours] = useState<Record<string, { open: string; close: string; closed: boolean }>>(() => {
     const wh = restaurant.working_hours || {};
@@ -460,6 +466,9 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
       social_whatsapp: form.social_whatsapp || null,
       social_google_maps: form.social_google_maps || null,
       working_hours: workingHours,
+      feature_waiter_calls: form.feature_waiter_calls,
+      feature_cart: form.feature_cart,
+      feature_whatsapp_order: form.feature_whatsapp_order,
     }).eq('id', restaurant.id);
 
     if (error) {
@@ -481,6 +490,9 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
         social_whatsapp: form.social_whatsapp || null,
         social_google_maps: form.social_google_maps || null,
         working_hours: workingHours,
+        feature_waiter_calls: form.feature_waiter_calls,
+        feature_cart: form.feature_cart,
+        feature_whatsapp_order: form.feature_whatsapp_order,
       });
     }
     setSaving(false);
@@ -687,6 +699,31 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
               </div>
             );
           })}
+        </div>
+
+        {/* Feature Toggles */}
+        <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1c1917', marginTop: 8, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <CiGrid41 size={16} /> Menü Özellikleri
+        </h4>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+          {([
+            { key: 'feature_waiter_calls' as const, label: 'Garson Çağırma', desc: 'QR menüde garson çağırma butonları' },
+            { key: 'feature_cart' as const, label: 'Sepet', desc: 'Müşteriler sepete ürün ekleyebilir' },
+            { key: 'feature_whatsapp_order' as const, label: 'WhatsApp Sipariş', desc: 'Sepetten WhatsApp ile sipariş gönderme' },
+          ]).map(feat => (
+            <label key={feat.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 8, border: '1px solid #f3f4f6', backgroundColor: form[feat.key] ? '#f0fdf4' : '#fafafa', cursor: 'pointer' }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#1c1917' }}>{feat.label}</div>
+                <div style={{ fontSize: 11, color: '#6b7280' }}>{feat.desc}</div>
+              </div>
+              <input
+                type="checkbox"
+                checked={form[feat.key]}
+                onChange={e => setForm({ ...form, [feat.key]: e.target.checked })}
+                style={{ width: 18, height: 18, cursor: 'pointer' }}
+              />
+            </label>
+          ))}
         </div>
 
         {/* Theme Selector */}

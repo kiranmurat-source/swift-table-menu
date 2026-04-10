@@ -49,6 +49,9 @@ interface Restaurant {
   social_x: string | null; social_tiktok: string | null; social_website: string | null;
   social_whatsapp: string | null; social_google_maps: string | null;
   working_hours: Record<string, { open: string; close: string; closed: boolean }> | null;
+  feature_waiter_calls: boolean;
+  feature_cart: boolean;
+  feature_whatsapp_order: boolean;
 }
 
 interface MenuCategory {
@@ -847,13 +850,15 @@ export default function PublicMenu() {
     });
   };
 
-  const handleCardAdd = (menuItem: MenuItem) => {
+  const cartEnabled = restaurant.feature_cart !== false;
+
+  const handleCardAdd = cartEnabled ? (menuItem: MenuItem) => {
     if (hasVariants(menuItem)) {
       setSelectedItem(menuItem);
       return;
     }
     handleAddToCart(menuItem);
-  };
+  } : undefined;
 
   return (
     <div
@@ -1292,17 +1297,19 @@ export default function PublicMenu() {
 
       {/* Bottom bars container */}
       <div className="fixed bottom-0 left-0 right-0 z-40" style={{ maxWidth: 480, margin: '0 auto' }}>
-        {/* Cart bottom bar */}
-        <CartBottomBar
-          totalItems={cart.totalItems}
-          totalAmount={cart.totalAmount}
-          onOpen={() => setCartDrawerOpen(true)}
-          theme={theme}
-          label={UI.viewCart[toUiLang(lang)]}
-          itemsLabel={UI.cartItems[toUiLang(lang)]}
-        />
-        {/* Waiter call bar */}
-        {table && (
+        {/* Cart bottom bar — only if cart feature enabled */}
+        {restaurant.feature_cart !== false && (
+          <CartBottomBar
+            totalItems={cart.totalItems}
+            totalAmount={cart.totalAmount}
+            onOpen={() => setCartDrawerOpen(true)}
+            theme={theme}
+            label={UI.viewCart[toUiLang(lang)]}
+            itemsLabel={UI.cartItems[toUiLang(lang)]}
+          />
+        )}
+        {/* Waiter call bar — only if feature enabled */}
+        {table && restaurant.feature_waiter_calls !== false && (
           <WaiterCallBar restaurantId={restaurant.id} tableNumber={table} theme={theme} language={lang} />
         )}
         {/* Powered by (no table, no cart) */}
@@ -1348,14 +1355,14 @@ export default function PublicMenu() {
             whatsappNotAvailable: UI.whatsappNA[toUiLang(lang)],
           }}
           restaurantName={restaurant.name}
-          whatsappNumber={restaurant.social_whatsapp}
+          whatsappNumber={restaurant.feature_whatsapp_order !== false ? restaurant.social_whatsapp : null}
           tableNumber={table}
         />
       )}
 
       {/* Item Detail Modal */}
       {selectedItem && (
-        <ItemDetailModal item={selectedItem} lang={lang} theme={theme} onClose={() => setSelectedItem(null)} onAddToCart={handleAddToCart} />
+        <ItemDetailModal item={selectedItem} lang={lang} theme={theme} onClose={() => setSelectedItem(null)} onAddToCart={cartEnabled ? handleAddToCart : undefined} />
       )}
 
       {/* Promo Popup */}
