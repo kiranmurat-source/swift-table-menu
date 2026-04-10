@@ -426,7 +426,7 @@ export default function PublicMenu() {
         </div>
         <p className="text-lg" style={{ fontFamily: headingFont, fontWeight: 700 }}>{UI.notFound[toUiLang(lang)]}</p>
         <a href="https://tabbled.com" aria-label="Tabbled" className="hover:opacity-80 transition-opacity">
-          <img src="/tabbled-logo.png" alt="Tabbled" className="h-5 w-auto block" />
+          <img src="/tabbled-logo-icon.png" alt="Tabbled" className="h-8 w-auto block" />
         </a>
       </div>
     );
@@ -576,7 +576,7 @@ export default function PublicMenu() {
         <div className="absolute bottom-6 left-0 right-0 flex flex-col items-center gap-1.5">
           <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.5)' }}>Powered by</span>
           <a href="https://tabbled.com" aria-label="Tabbled" className="hover:opacity-80 transition-opacity">
-            <img src="/tabbled-logo.png" alt="Tabbled" className="h-5 w-auto block" />
+            <img src="/tabbled-logo-horizontal.png" alt="Tabbled" className="h-5 w-auto block" />
           </a>
         </div>
       </div>
@@ -694,7 +694,7 @@ export default function PublicMenu() {
   const ogImage =
     getOptimizedImageUrl(coverImageRaw, 'cover') ||
     getOptimizedImageUrl(restaurant.logo_url, 'cover') ||
-    'https://tabbled.com/tabbled-logo.png';
+    'https://tabbled.com/tabbled-logo-horizontal.png';
   const metaDescription = `${restaurant.name} dijital menüsü. ${restaurant.tagline || ''} ${restaurant.address || ''}`.trim();
 
   return (
@@ -1098,7 +1098,7 @@ export default function PublicMenu() {
         <div className="flex items-center justify-center gap-2">
           <span className="text-[10px]" style={{ color: theme.mutedText }}>Powered by</span>
           <a href="https://tabbled.com" aria-label="Tabbled" className="hover:opacity-80 transition-opacity inline-flex">
-            <img src="/tabbled-logo.png" alt="Tabbled" className="h-4 w-auto block" />
+            <img src="/tabbled-logo-horizontal.png" alt="Tabbled" className="h-4 w-auto block" />
           </a>
         </div>
       </footer>

@@ -24,7 +24,7 @@ export default function Login() {
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fafaf9', fontFamily: "'Inter', -apple-system, sans-serif" }}>
       <div style={{ width: '100%', maxWidth: 400, padding: 32 }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <TabbledLogo sizeClass="h-14" />
+          <TabbledLogo logoType="vertical" sizeClass="h-20" />
           <p style={{ color: '#78716c', fontSize: 14, marginTop: 12 }}>Hesabınıza giriş yapın</p>
         </div>
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

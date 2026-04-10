@@ -1,21 +1,27 @@
 interface TabbledLogoProps {
   /** Tailwind height class, e.g. 'h-8', 'h-14'. Default: 'h-8' */
   sizeClass?: string;
-  /** 'main' = grid ikonlu logo (navbar), 'text' = pembe text logo (default) */
-  logoType?: 'main' | 'text';
+  /** 'horizontal' = ikon + yazı yan yana, 'vertical' = ikon üst yazı alt, 'icon' = sadece ikon */
+  logoType?: 'horizontal' | 'vertical' | 'icon';
   /** Optional link target. Defaults to '/'. Pass null to render without a link. */
   href?: string | null;
   /** Extra classes applied to the outer element. */
   className?: string;
 }
 
+const logoSrcMap = {
+  horizontal: '/tabbled-logo-horizontal.png',
+  vertical: '/tabbled-logo-vertical.png',
+  icon: '/tabbled-logo-icon.png',
+} as const;
+
 const TabbledLogo = ({
   sizeClass = 'h-8',
-  logoType = 'text',
+  logoType = 'horizontal',
   href = '/',
   className = '',
 }: TabbledLogoProps) => {
-  const logoSrc = logoType === 'main' ? '/tabbled-logo-main.png' : '/tabbled-logo.png';
+  const logoSrc = logoSrcMap[logoType];
 
   const img = (
     <img

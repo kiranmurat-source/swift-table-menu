@@ -33,7 +33,7 @@ const Index = () => {
           property="og:description"
           content="Restoranınız için profesyonel dijital menü. Aylık 300₺'den başlayan fiyatlarla."
         />
-        <meta property="og:image" content="https://tabbled.com/tabbled-logo.png" />
+        <meta property="og:image" content="https://tabbled.com/tabbled-logo-horizontal.png" />
         <meta property="og:url" content="https://tabbled.com" />
         <meta property="og:site_name" content="Tabbled" />
         <meta property="og:locale" content="tr_TR" />
@@ -43,7 +43,7 @@ const Index = () => {
           name="twitter:description"
           content="Restoranınız için profesyonel dijital menü. Aylık 300₺'den başlayan fiyatlarla."
         />
-        <meta name="twitter:image" content="https://tabbled.com/tabbled-logo.png" />
+        <meta name="twitter:image" content="https://tabbled.com/tabbled-logo-horizontal.png" />
         <link rel="canonical" href="https://tabbled.com" />
       </Helmet>
       <Navbar />

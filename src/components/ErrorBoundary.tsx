@@ -42,7 +42,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
             background: '#fafafa',
           }}
         >
-          <img src="/tabbled-logo.png" alt="Tabbled" style={{ height: 40, marginBottom: 24 }} />
+          <img src="/tabbled-logo-vertical.png" alt="Tabbled" style={{ height: 80, marginBottom: 24 }} />
           <h1
             style={{
               fontFamily: 'Playfair Display, serif',
