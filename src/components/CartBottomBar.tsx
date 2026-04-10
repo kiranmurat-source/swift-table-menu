@@ -1,4 +1,4 @@
-import { CiShoppingCart } from 'react-icons/ci';
+import { ShoppingCart } from "@phosphor-icons/react";
 import type { MenuTheme } from '../lib/themes';
 
 interface Props {
@@ -36,7 +36,7 @@ export default function CartBottomBar({ totalItems, totalAmount, onOpen, theme, 
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <CiShoppingCart size={20} />
+        <ShoppingCart size={20} />
         <span style={{ fontSize: 14, fontWeight: 600 }}>{label}</span>
         <span
           style={{

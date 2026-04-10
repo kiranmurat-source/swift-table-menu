@@ -8,13 +8,7 @@ import {
   isRTL,
   type Language,
 } from '../lib/languages';
-import {
-  CiGlobe,
-  CiCircleCheck,
-  CiCircleRemove,
-  CiFilter,
-  CiCirclePlus,
-} from 'react-icons/ci';
+import { Globe, CheckCircle, XCircle, Funnel, PlusCircle } from "@phosphor-icons/react";
 
 type Translations = Record<string, Record<string, string>>;
 
@@ -590,7 +584,7 @@ export default function TranslationCenter({
     <div style={S.wrap}>
       <div style={S.card}>
         <div style={{ ...S.title, marginBottom: 12 }}>
-          <CiGlobe size={22} /> Çeviri Merkezi
+          <Globe size={22} /> Çeviri Merkezi
         </div>
         <div style={S.langTabs}>
           {tabLanguages.map((code) => {
@@ -615,7 +609,7 @@ export default function TranslationCenter({
                     }}
                     aria-label="Dili kaldır"
                   >
-                    <CiCircleRemove size={16} />
+                    <XCircle size={16} />
                   </button>
                 )}
               </div>
@@ -623,7 +617,7 @@ export default function TranslationCenter({
           })}
           <div style={{ position: 'relative' }}>
             <button style={S.addBtn} onClick={() => setShowAddLang((v) => !v)}>
-              <CiCirclePlus size={16} /> Dil Ekle
+              <PlusCircle size={16} /> Dil Ekle
             </button>
             {showAddLang && (
               <div
@@ -690,7 +684,7 @@ export default function TranslationCenter({
       </div>
 
       <div style={S.filterRow}>
-        <CiFilter size={16} />
+        <Funnel size={16} />
         <label style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <input
             type="checkbox"
@@ -727,7 +721,7 @@ export default function TranslationCenter({
                     <span style={S.dot(catDone)} />
                     <span>{cat.name_tr}</span>
                   </span>
-                  {catDone && <CiCircleCheck size={14} color="#16a34a" />}
+                  {catDone && <CheckCircle size={14} color="#16a34a" />}
                 </div>
                 {children.map((it) => {
                   const itDone = isRecordDone(it, targetLang);
@@ -789,7 +783,7 @@ export default function TranslationCenter({
                         disabled={busy !== null}
                         onClick={autoTranslateCurrent}
                       >
-                        <CiGlobe size={12} /> Otomatik çevir
+                        <Globe size={12} /> Otomatik çevir
                       </button>
                     )}
                   </div>
@@ -844,7 +838,7 @@ export default function TranslationCenter({
           onClick={translateAll}
           disabled={busy !== null || targetLang === 'tr'}
         >
-          <CiGlobe size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+          <Globe size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />
           {bulkProgress
             ? `Çevriliyor... (${bulkProgress.current}/${bulkProgress.total})`
             : 'Tümünü Otomatik Çevir'}

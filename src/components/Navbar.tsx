@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import TabbledLogo from "@/components/TabbledLogo";
-import { CiMenuBurger, CiCircleRemove } from "react-icons/ci";
+import { List, XCircle } from "@phosphor-icons/react";
 
 const navLinks = [
   { label: "Özellikler", href: "#ozellikler" },
@@ -62,7 +62,7 @@ const Navbar = () => {
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label="Menü"
         >
-          {mobileOpen ? <CiCircleRemove className="w-6 h-6" /> : <CiMenuBurger className="w-6 h-6" />}
+          {mobileOpen ? <XCircle className="w-6 h-6" /> : <List className="w-6 h-6" />}
         </button>
       </div>
 

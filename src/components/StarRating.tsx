@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CiStar } from 'react-icons/ci';
+import { Star } from "@phosphor-icons/react";
 
 interface Props {
   rating: number;
@@ -37,7 +37,7 @@ export default function StarRating({ rating, onRate, size = 40, color = '#F59E0B
             }}
             aria-label={`${n} star`}
           >
-            <CiStar size={size} style={{ fill: filled ? color : 'none', strokeWidth: filled ? 0 : 1 }} />
+            <Star size={size} style={{ fill: filled ? color : 'none', strokeWidth: filled ? 0 : 1 }} />
           </button>
         );
       })}

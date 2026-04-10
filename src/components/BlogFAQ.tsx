@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CiCircleChevDown } from 'react-icons/ci';
+import { CaretCircleDown } from "@phosphor-icons/react";
 
 interface FAQItem {
   question: string;
@@ -56,7 +56,7 @@ export default function BlogFAQ({ items }: { items: FAQItem[] }) {
                 }}
               >
                 {item.question}
-                <CiCircleChevDown
+                <CaretCircleDown
                   size={18}
                   style={{
                     flexShrink: 0,

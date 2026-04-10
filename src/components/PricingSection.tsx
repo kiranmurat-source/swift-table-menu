@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { CiCircleCheck, CiCircleRemove } from "react-icons/ci";
+import { CheckCircle, XCircle } from "@phosphor-icons/react";
 import { useScrollReveal } from "@/hooks/use-scroll-reveal";
 
 const plans = [
@@ -107,9 +107,9 @@ const PricingSection = () => {
                 {p.features.map((f) => (
                   <li key={f.text} className="flex items-start gap-2 text-sm">
                     {f.included ? (
-                      <CiCircleCheck className={`w-4 h-4 mt-0.5 flex-shrink-0 ${p.popular ? "text-card" : "text-sage"}`} />
+                      <CheckCircle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${p.popular ? "text-card" : "text-sage"}`} />
                     ) : (
-                      <CiCircleRemove className={`w-4 h-4 mt-0.5 flex-shrink-0 ${p.popular ? "text-card/40" : "text-muted-foreground/40"}`} />
+                      <XCircle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${p.popular ? "text-card/40" : "text-muted-foreground/40"}`} />
                     )}
                     <span className={`${!f.included ? (p.popular ? "text-card/50" : "text-muted-foreground/50") : (p.popular ? "" : "text-foreground")}`}>
                       {f.text}

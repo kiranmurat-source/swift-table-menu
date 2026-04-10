@@ -1,13 +1,13 @@
-import { CiBarcode, CiShoppingCart, CiBellOn, CiViewBoard, CiGlobe, CiWavePulse1 } from "react-icons/ci";
+import { Barcode, ShoppingCart, Bell, Kanban, Globe, Pulse } from "@phosphor-icons/react";
 import { useScrollReveal } from "@/hooks/use-scroll-reveal";
 
 const features = [
-  { icon: CiBarcode, title: "QR Menü", desc: "Misafir QR kodu tarar, menü anında açılır. Uygulama indirmeye gerek yok. Tüm planlarda.", color: "bg-grapefruit/10 text-grapefruit" },
-  { icon: CiShoppingCart, title: "Online Sipariş", desc: "Masadan sipariş, WhatsApp sipariş ve kendi teslimat altyapınız. Pro ve Premium.", color: "bg-sage/15 text-sage" },
-  { icon: CiBellOn, title: "Garson Çağır", desc: "Tek tuşla garson çağırma. Pro ve Premium planlarda.", color: "bg-salmon/15 text-salmon" },
-  { icon: CiWavePulse1, title: "Alerjen & Kalori", desc: "Her üründe alerjen ikonları ve kalori bilgisi. Misafir güvenle sipariş verir. Tüm planlarda.", color: "bg-gold/20 text-foreground" },
-  { icon: CiGlobe, title: "Çok Dilli Menü", desc: "Pro'da 2 dil, Premium'da 4 dil desteği. Yabancı misafirlerinize hitap edin.", color: "bg-sage-light/20 text-sage" },
-  { icon: CiViewBoard, title: "Analytics & Raporlama", desc: "Hangi ürün çok görüntüleniyor? Kategori performansı ve trendler. Premium.", color: "bg-grapefruit/10 text-grapefruit" },
+  { icon: Barcode, title: "QR Menü", desc: "Misafir QR kodu tarar, menü anında açılır. Uygulama indirmeye gerek yok. Tüm planlarda.", color: "bg-grapefruit/10 text-grapefruit" },
+  { icon: ShoppingCart, title: "Online Sipariş", desc: "Masadan sipariş, WhatsApp sipariş ve kendi teslimat altyapınız. Pro ve Premium.", color: "bg-sage/15 text-sage" },
+  { icon: Bell, title: "Garson Çağır", desc: "Tek tuşla garson çağırma. Pro ve Premium planlarda.", color: "bg-salmon/15 text-salmon" },
+  { icon: Pulse, title: "Alerjen & Kalori", desc: "Her üründe alerjen ikonları ve kalori bilgisi. Misafir güvenle sipariş verir. Tüm planlarda.", color: "bg-gold/20 text-foreground" },
+  { icon: Globe, title: "Çok Dilli Menü", desc: "Pro'da 2 dil, Premium'da 4 dil desteği. Yabancı misafirlerinize hitap edin.", color: "bg-sage-light/20 text-sage" },
+  { icon: Kanban, title: "Analytics & Raporlama", desc: "Hangi ürün çok görüntüleniyor? Kategori performansı ve trendler. Premium.", color: "bg-grapefruit/10 text-grapefruit" },
 ];
 
 const FeaturesSection = () => {

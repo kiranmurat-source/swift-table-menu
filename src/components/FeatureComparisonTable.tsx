@@ -1,4 +1,4 @@
-import { CiCircleCheck, CiCircleRemove } from "react-icons/ci";
+import { CheckCircle, XCircle } from "@phosphor-icons/react";
 import { useScrollReveal } from "@/hooks/use-scroll-reveal";
 
 type FeatureValue = boolean | string;
@@ -79,9 +79,9 @@ const matrix: Category[] = [
 
 function CellValue({ value, highlight }: { value: FeatureValue; highlight?: boolean }) {
   if (value === true)
-    return <CiCircleCheck className="w-5 h-5 mx-auto text-emerald-600" strokeWidth={1.5} />;
+    return <CheckCircle className="w-5 h-5 mx-auto text-emerald-600" strokeWidth={1.5} />;
   if (value === false)
-    return <CiCircleRemove className="w-5 h-5 mx-auto text-slate-400" strokeWidth={1.5} />;
+    return <XCircle className="w-5 h-5 mx-auto text-slate-400" strokeWidth={1.5} />;
   return (
     <span className={`text-xs font-semibold ${highlight ? "text-emerald-700" : "text-slate-800"}`}>
       {value}

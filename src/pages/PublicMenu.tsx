@@ -4,9 +4,9 @@ import { Helmet } from 'react-helmet-async';
 import { supabase } from '../lib/supabase';
 import { getOptimizedImageUrl, handleImageError } from '../lib/imageUtils';
 import {
-  CiStar, CiApple, CiTempHigh, CiMapPin, CiPhone, CiGlobe,
-  CiForkAndKnife, CiCircleRemove, CiFilter, CiTimer, CiGrid41, CiViewList, CiDiscount1, CiChat1,
-} from 'react-icons/ci';
+  Star, AppleLogo, Thermometer, MapPin, Phone, Globe,
+  ForkKnife, XCircle, Funnel, Timer, SquaresFour, ListBullets, Tag, ChatCircle,
+} from "@phosphor-icons/react";
 import { AllergenBadgeList, AllergenIcon } from '../components/AllergenIcon';
 import { getTheme, type MenuTheme } from '../lib/themes';
 import { getAllergenInfo } from '../lib/allergens';
@@ -219,35 +219,36 @@ function t(
 }
 
 const FILTER_ALLERGEN_KEYS = [
-  'gluten', 'wheat', 'milk', 'eggs', 'fish', 'shrimp', 'nuts', 'soya', 'sesame', 'sulfur-dioxide-sulphites',
+  'cereal', 'milk', 'eggs', 'fish', 'crustaceans', 'peanuts', 'soybeans', 'nuts',
+  'celery', 'mustard', 'sesame', 'sulphites', 'lupin', 'molluscs',
 ];
 
 const FILTER_LABELS: Record<UiLangCode, {
   filters: string; clearAll: string; apply: string; freeFrom: string; preferences: string;
-  popular: string; new: string; vegetarian: string; vegan: string; showing: string; noResults: string;
+  popular: string; new: string; vegetarian: string; vegan: string; halal: string; kosher: string; showing: string; noResults: string;
 }> = {
   tr: {
     filters: 'Filtreler', clearAll: 'Temizle', apply: 'Uygula',
     freeFrom: 'Alerjen İçermeyen', preferences: 'Tercihler',
-    popular: 'Popüler', new: 'Yeni', vegetarian: 'Vejetaryen', vegan: 'Vegan',
+    popular: 'Popüler', new: 'Yeni', vegetarian: 'Vejetaryen', vegan: 'Vegan', halal: 'Helal', kosher: 'Koşer',
     showing: 'ürün gösteriliyor', noResults: 'Filtreye uygun ürün bulunamadı',
   },
   en: {
     filters: 'Filters', clearAll: 'Clear All', apply: 'Apply',
     freeFrom: 'Free From', preferences: 'Preferences',
-    popular: 'Popular', new: 'New', vegetarian: 'Vegetarian', vegan: 'Vegan',
+    popular: 'Popular', new: 'New', vegetarian: 'Vegetarian', vegan: 'Vegan', halal: 'Halal', kosher: 'Kosher',
     showing: 'items showing', noResults: 'No items match your filters',
   },
   ar: {
     filters: 'تصفية', clearAll: 'مسح الكل', apply: 'تطبيق',
     freeFrom: 'خالي من', preferences: 'التفضيلات',
-    popular: 'شائع', new: 'جديد', vegetarian: 'نباتي', vegan: 'نباتي صرف',
+    popular: 'شائع', new: 'جديد', vegetarian: 'نباتي', vegan: 'نباتي صرف', halal: 'حلال', kosher: 'كوشير',
     showing: 'عنصر معروض', noResults: 'لا توجد عناصر مطابقة',
   },
   zh: {
     filters: '筛选', clearAll: '清除全部', apply: '应用',
     freeFrom: '不含', preferences: '偏好',
-    popular: '热门', new: '新品', vegetarian: '素食', vegan: '纯素',
+    popular: '热门', new: '新品', vegetarian: '素食', vegan: '纯素', halal: '清真', kosher: '洁食',
     showing: '个项目', noResults: '没有符合条件的项目',
   },
 };
@@ -594,7 +595,7 @@ export default function PublicMenu() {
           className="w-16 h-16 rounded-2xl flex items-center justify-center"
           style={{ backgroundColor: theme.cardBg }}
         >
-          <CiForkAndKnife size={32} style={{ color: theme.mutedText }} />
+          <ForkKnife size={32} style={{ color: theme.mutedText }} />
         </div>
         <p className="text-lg" style={{ fontFamily: headingFont, fontWeight: 700 }}>{UI.notFound[toUiLang(lang)]}</p>
         <a href="https://tabbled.com" aria-label="Tabbled" className="hover:opacity-80 transition-opacity">
@@ -723,7 +724,7 @@ export default function PublicMenu() {
           {/* Language switcher */}
           {availableLanguages.length > 1 && (
             <div className="flex items-center gap-2 mt-6">
-              <CiGlobe size={14} style={{ color: 'rgba(255,255,255,0.6)' }} />
+              <Globe size={14} style={{ color: 'rgba(255,255,255,0.6)' }} />
               <div className="flex gap-1">
                 {availableLanguages.map((l) => (
                   <button
@@ -782,6 +783,8 @@ export default function PublicMenu() {
           if (pref === 'new') return item.is_new;
           if (pref === 'vegetarian') return itemAllergens.includes('vegetarian') || item.is_vegetarian;
           if (pref === 'vegan') return itemAllergens.includes('vegan');
+          if (pref === 'halal') return itemAllergens.includes('halal');
+          if (pref === 'kosher') return itemAllergens.includes('kosher');
           return false;
         });
       });
@@ -971,7 +974,7 @@ export default function PublicMenu() {
               <div className="flex flex-col gap-0.5 mt-2">
                 {restaurant.address && (
                   <p className="text-xs flex items-center gap-1.5" style={{ color: theme.mutedText }}>
-                    <CiMapPin size={13} className="flex-shrink-0" />
+                    <MapPin size={13} className="flex-shrink-0" />
                     <span className="truncate">{restaurant.address}</span>
                   </p>
                 )}
@@ -981,7 +984,7 @@ export default function PublicMenu() {
                     className="text-xs flex items-center gap-1.5 hover:underline"
                     style={{ color: theme.mutedText }}
                   >
-                    <CiPhone size={13} className="flex-shrink-0" />
+                    <Phone size={13} className="flex-shrink-0" />
                     {restaurant.phone}
                   </a>
                 )}
@@ -1021,7 +1024,7 @@ export default function PublicMenu() {
                   className="flex items-center gap-1 mt-2 hover:opacity-80 transition-opacity"
                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: theme.mutedText, fontSize: 11, fontWeight: 500, padding: 0 }}
                 >
-                  <CiChat1 size={12} /> {UI.howWasIt[toUiLang(lang)]}
+                  <ChatCircle size={12} /> {UI.howWasIt[toUiLang(lang)]}
                 </button>
               )}
             </div>
@@ -1042,7 +1045,7 @@ export default function PublicMenu() {
           <div className="flex items-center justify-between gap-2 mt-4">
             {availableLanguages.length > 1 ? (
               <div className="flex items-center gap-2">
-                <CiGlobe size={14} style={{ color: theme.mutedText }} />
+                <Globe size={14} style={{ color: theme.mutedText }} />
                 <div className="flex gap-1">
                   {availableLanguages.map((l) => (
                     <button
@@ -1073,7 +1076,7 @@ export default function PublicMenu() {
                 minHeight: 32,
               }}
             >
-              <CiFilter size={16} />
+              <Funnel size={16} />
               <span>{fl.filters}</span>
               {activeFilterCount > 0 && (
                 <span
@@ -1168,7 +1171,7 @@ export default function PublicMenu() {
               }}
               aria-label="Liste görünüm"
             >
-              <CiViewList size={18} />
+              <ListBullets size={18} />
             </button>
             <button
               onClick={() => setViewMode('grid')}
@@ -1181,7 +1184,7 @@ export default function PublicMenu() {
               }}
               aria-label="Grid görünüm"
             >
-              <CiGrid41 size={18} />
+              <SquaresFour size={18} />
             </button>
           </div>
         </div>
@@ -1203,7 +1206,7 @@ export default function PublicMenu() {
               className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3"
               style={{ backgroundColor: theme.cardBg }}
             >
-              <CiFilter size={28} style={{ color: theme.mutedText }} />
+              <Funnel size={28} style={{ color: theme.mutedText }} />
             </div>
             <p className="text-sm mb-3" style={{ color: theme.mutedText }}>{fl.noResults}</p>
             <button
@@ -1224,7 +1227,7 @@ export default function PublicMenu() {
               className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3"
               style={{ backgroundColor: theme.cardBg }}
             >
-              <CiForkAndKnife size={28} style={{ color: theme.mutedText }} />
+              <ForkKnife size={28} style={{ color: theme.mutedText }} />
             </div>
             <p className="text-sm" style={{ color: theme.mutedText }}>{UI.noItems[toUiLang(lang)]}</p>
           </div>
@@ -1519,6 +1522,8 @@ function FilterPanel({
     { key: 'new', label: fl.new },
     { key: 'vegetarian', label: fl.vegetarian },
     { key: 'vegan', label: fl.vegan },
+    { key: 'halal', label: fl.halal },
+    { key: 'kosher', label: fl.kosher },
   ];
 
   return (
@@ -1552,7 +1557,7 @@ function FilterPanel({
               className="w-8 h-8 rounded-full flex items-center justify-center"
               style={{ backgroundColor: theme.badgeBg, color: theme.text }}
             >
-              <CiCircleRemove size={20} />
+              <XCircle size={20} />
             </button>
           </div>
         </div>
@@ -1570,7 +1575,7 @@ function FilterPanel({
               {FILTER_ALLERGEN_KEYS.map((key) => {
                 const info = getAllergenInfo(key);
                 if (!info) return null;
-                const label = iconLang === 'tr' ? info.label_tr : info.label_en;
+                const label = iconLang === 'tr' ? info.name_tr : info.name_en;
                 const selected = excludeAllergens.includes(key);
                 return (
                   <button
@@ -1621,8 +1626,8 @@ function FilterPanel({
                       fontWeight: 500,
                     }}
                   >
-                    {key === 'popular' && <CiStar size={14} />}
-                    {key === 'vegetarian' && <CiApple size={14} />}
+                    {key === 'popular' && <Star size={14} />}
+                    {key === 'vegetarian' && <AppleLogo size={14} />}
                     <span>{label}</span>
                   </button>
                 );
@@ -1685,7 +1690,7 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToC
 
   const HappyHourBadge = happyHour ? (
     <span style={{ position: 'absolute', top: 8, left: 8, fontSize: 10, fontWeight: 700, color: '#fff', backgroundColor: '#f59e0b', padding: '2px 8px', borderRadius: 4, zIndex: 2, display: 'flex', alignItems: 'center', gap: 3 }}>
-      <CiDiscount1 size={10} /> {hhLabel}
+      <Tag size={10} /> {hhLabel}
     </span>
   ) : null;
 
@@ -1790,7 +1795,7 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToC
             <div className="flex flex-wrap items-center" style={{ gap: 6, marginTop: 8 }}>
               {item.is_popular && (
                 <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, fontWeight: 600 }}>
-                  <CiStar size={10} /> {UI.popular[toUiLang(lang)]}
+                  <Star size={10} /> {UI.popular[toUiLang(lang)]}
                 </span>
               )}
               {item.is_new && (
@@ -1800,7 +1805,7 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToC
               )}
               {item.is_vegetarian && (
                 <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full" style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, fontWeight: 600 }}>
-                  <CiApple size={10} /> {UI.vegetarian[toUiLang(lang)]}
+                  <AppleLogo size={10} /> {UI.vegetarian[toUiLang(lang)]}
                 </span>
               )}
             </div>
@@ -1812,7 +1817,7 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToC
                 {displayCalories != null && prepTime != null && <span aria-hidden>·</span>}
                 {prepTime != null && (
                   <span className="inline-flex items-center gap-0.5">
-                    <CiTimer size={11} /> {prepTime} {minutesLabel}
+                    <Timer size={11} /> {prepTime} {minutesLabel}
                   </span>
                 )}
               </span>
@@ -1954,7 +1959,7 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToC
                 className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
                 style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, fontWeight: 600 }}
               >
-                <CiStar size={10} /> {UI.popular[toUiLang(lang)]}
+                <Star size={10} /> {UI.popular[toUiLang(lang)]}
               </span>
             )}
             {item.is_new && (
@@ -1970,7 +1975,7 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToC
                 className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
                 style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, fontWeight: 600 }}
               >
-                <CiApple size={10} /> {UI.vegetarian[toUiLang(lang)]}
+                <AppleLogo size={10} /> {UI.vegetarian[toUiLang(lang)]}
               </span>
             )}
           </div>
@@ -1982,7 +1987,7 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToC
               {displayCalories != null && prepTime != null && <span aria-hidden>·</span>}
               {prepTime != null && (
                 <span className="inline-flex items-center gap-0.5">
-                  <CiTimer size={11} /> {prepTime} {minutesLabel}
+                  <Timer size={11} /> {prepTime} {minutesLabel}
                 </span>
               )}
             </span>
@@ -2040,7 +2045,7 @@ function ItemDetailModal({ item, lang, theme, onClose, onAddToCart }: { item: Me
           className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full flex items-center justify-center transition-colors"
           style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: '#FFFFFF' }}
         >
-          <CiCircleRemove size={20} />
+          <XCircle size={20} />
         </button>
 
         {item.image_url ? (
@@ -2064,7 +2069,7 @@ function ItemDetailModal({ item, lang, theme, onClose, onAddToCart }: { item: Me
                   className="inline-flex items-center gap-1 text-xs px-3 py-1 rounded-full"
                   style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, fontWeight: 600 }}
                 >
-                  <CiStar size={14} /> {UI.popular[toUiLang(lang)]}
+                  <Star size={14} /> {UI.popular[toUiLang(lang)]}
                 </span>
               )}
               {item.is_new && (
@@ -2080,7 +2085,7 @@ function ItemDetailModal({ item, lang, theme, onClose, onAddToCart }: { item: Me
                   className="inline-flex items-center gap-1 text-xs px-3 py-1 rounded-full"
                   style={{ backgroundColor: theme.badgeBg, color: theme.badgeText, fontWeight: 600 }}
                 >
-                  <CiApple size={14} /> {UI.vegetarian[toUiLang(lang)]}
+                  <AppleLogo size={14} /> {UI.vegetarian[toUiLang(lang)]}
                 </span>
               )}
             </div>
@@ -2119,7 +2124,7 @@ function ItemDetailModal({ item, lang, theme, onClose, onAddToCart }: { item: Me
           {/* Happy Hour info box */}
           {happyHour && item.happy_hour_start_time && item.happy_hour_end_time && (
             <div style={{ padding: '8px 12px', borderRadius: 8, backgroundColor: '#fffbeb', border: '1px solid #fde68a', fontSize: 12, color: '#92400e', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <CiDiscount1 size={14} />
+              <Tag size={14} />
               <div>
                 <div style={{ fontWeight: 600 }}>{hhLabel}</div>
                 <div style={{ fontSize: 11, opacity: 0.8 }}>
@@ -2212,14 +2217,14 @@ function ItemDetailModal({ item, lang, theme, onClose, onAddToCart }: { item: Me
 
           {!hasVariants(item) && !(item.nutrition && item.nutrition.show_on_menu !== false) && (item.nutrition?.calories ?? item.calories) != null && (
             <div className="flex items-center gap-2 text-sm mb-4" style={{ color: theme.mutedText }}>
-              <CiTempHigh size={16} />
+              <Thermometer size={16} />
               <span>{item.nutrition?.calories ?? item.calories} kcal</span>
             </div>
           )}
 
           {item.prep_time != null && (
             <div className="flex items-center gap-2 text-sm mb-4" style={{ color: theme.mutedText }}>
-              <CiTimer size={16} />
+              <Timer size={16} />
               <span>
                 {UI.prepTime[toUiLang(lang)]}: {item.prep_time} {UI.minutes[toUiLang(lang)]}
               </span>

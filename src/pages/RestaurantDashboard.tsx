@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, Fragment, lazy, Suspense, ReactNode, CSSProperties } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
-import { CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiApple, CiStar, CiGlobe, CiPen, CiGrid2H, CiUser, CiImageOn, CiTrash, CiLink, CiBoxes, CiCircleChevDown, CiCircleChevUp, CiCirclePlus, CiClock1, CiWheat, CiTimer, CiCircleInfo, CiBellOn, CiClock2, CiMenuBurger, CiGrid41, CiDiscount1, CiPalette, CiChat1, CiPercent } from 'react-icons/ci';
+import { Camera, PencilSimple, CheckCircle, XCircle, AppleLogo, Star, Globe, Pen, Rows, User, Image, Trash, Link, Package, CaretCircleDown, CaretCircleUp, PlusCircle, Clock, Grains, Timer, Info, Bell, List, SquaresFour, Tag, Palette, ChatCircle, Percent } from "@phosphor-icons/react";
 import FeedbackPanel from '../components/FeedbackPanel';
 import DiscountCodesPanel from '../components/DiscountCodesPanel';
 import {
@@ -47,7 +47,7 @@ import WaiterCallsPanel from '../components/WaiterCallsPanel';
 const RichTextEditor = lazy(() => import('../components/RichTextEditor'));
 import { CategoryTabSkeleton, ListSkeleton } from '../components/Skeleton';
 import { getOptimizedImageUrl, handleImageError } from '../lib/imageUtils';
-import { ALLERGEN_LIST, getAllergenInfo } from '../lib/allergens';
+import { ALLERGEN_LIST, DIET_LIST, getAllergenInfo } from '../lib/allergens';
 import { AllergenIcon } from '../components/AllergenIcon';
 import { THEMES } from '../lib/themes';
 import type { Promo } from '../components/PromoPopup';
@@ -136,7 +136,8 @@ const defaultWorkingHours = (): Record<string, { open: string; close: string; cl
   return out;
 };
 
-const ALLERGEN_OPTIONS = ALLERGEN_LIST.map(a => ({ value: a.key, label: a.label_tr }));
+const ALLERGEN_OPTIONS = ALLERGEN_LIST.map(a => ({ value: a.key, label: a.name_tr }));
+const DIET_OPTIONS = DIET_LIST.map(a => ({ value: a.key, label: a.name_tr }));
 
 const SUPABASE_URL = 'https://qmnrawqvkwehufebbkxp.supabase.co';
 
@@ -567,7 +568,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
       {/* Images Section */}
       <div style={S.card}>
         <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1c1917', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
-          <CiImageOn size={16} /> Gorseller
+          <Image size={16} /> Gorseller
         </h4>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
           <div>
@@ -578,16 +579,16 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
                 <img onError={handleImageError} src={getOptimizedImageUrl(restaurant.logo_url, 'card')} alt="Logo" style={{ width: 80, height: 80, borderRadius: 12, objectFit: 'cover', border: '1px solid #e7e5e4' }} />
                 <div style={{ display: 'flex', gap: 6 }}>
                   <button type="button" onClick={() => logoRef.current?.click()} disabled={uploadingLogo} style={{ ...S.btnSm, fontSize: 11, padding: '4px 10px' }}>{uploadingLogo ? '...' : 'Degistir'}</button>
-                  <button type="button" onClick={() => removeImage('logo')} style={{ ...S.btnDanger, fontSize: 11, padding: '4px 10px' }}><CiTrash size={12} /></button>
+                  <button type="button" onClick={() => removeImage('logo')} style={{ ...S.btnDanger, fontSize: 11, padding: '4px 10px' }}><Trash size={12} /></button>
                 </div>
               </div>
             ) : (
               <button type="button" onClick={() => logoRef.current?.click()} disabled={uploadingLogo} style={{ ...S.btnSm, width: '100%', padding: '20px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: '#a8a29e' }}>
-                <CiCamera size={24} />
+                <Camera size={24} />
                 <span style={{ fontSize: 12 }}>{uploadingLogo ? 'Yukleniyor...' : 'Logo Yukle'}</span>
               </button>
             )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#a8a29e', marginTop: 4 }}><CiCircleInfo size={14} /><span>500×500px, kare, şeffaf arka plan, max 2MB</span></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#a8a29e', marginTop: 4 }}><Info size={14} /><span>500×500px, kare, şeffaf arka plan, max 2MB</span></div>
           </div>
           <div>
             <label style={{ ...S.label, marginBottom: 10 }}>Kapak Gorseli</label>
@@ -597,16 +598,16 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
                 <img onError={handleImageError} src={getOptimizedImageUrl(coverImage, 'detail')} alt="Cover" style={{ width: '100%', height: 80, borderRadius: 8, objectFit: 'cover', border: '1px solid #e7e5e4' }} />
                 <div style={{ display: 'flex', gap: 6 }}>
                   <button type="button" onClick={() => coverRef.current?.click()} disabled={uploadingCover} style={{ ...S.btnSm, fontSize: 11, padding: '4px 10px' }}>{uploadingCover ? '...' : 'Degistir'}</button>
-                  <button type="button" onClick={() => removeImage('cover')} style={{ ...S.btnDanger, fontSize: 11, padding: '4px 10px' }}><CiTrash size={12} /></button>
+                  <button type="button" onClick={() => removeImage('cover')} style={{ ...S.btnDanger, fontSize: 11, padding: '4px 10px' }}><Trash size={12} /></button>
                 </div>
               </div>
             ) : (
               <button type="button" onClick={() => coverRef.current?.click()} disabled={uploadingCover} style={{ ...S.btnSm, width: '100%', padding: '20px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: '#a8a29e' }}>
-                <CiCamera size={24} />
+                <Camera size={24} />
                 <span style={{ fontSize: 12 }}>{uploadingCover ? 'Yukleniyor...' : 'Kapak Yukle'}</span>
               </button>
             )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#a8a29e', marginTop: 4 }}><CiCircleInfo size={14} /><span>1200×400px, yatay geniş, max 5MB</span></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#a8a29e', marginTop: 4 }}><Info size={14} /><span>1200×400px, yatay geniş, max 5MB</span></div>
           </div>
         </div>
       </div>
@@ -614,7 +615,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
       {/* Info Form */}
       <form onSubmit={handleSave} style={{ ...S.card, display: 'flex', flexDirection: 'column', gap: 14 }}>
         <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1c1917', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-          <CiUser size={16} /> Isletme Bilgileri
+          <User size={16} /> Isletme Bilgileri
         </h4>
         <div>
           <label style={S.label}>Restoran Adi *</label>
@@ -641,7 +642,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
 
         {/* Social Media */}
         <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1c1917', marginTop: 8, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-          <CiLink size={16} /> Sosyal Medya
+          <Link size={16} /> Sosyal Medya
         </h4>
         <div style={S.grid2}>
           <div>
@@ -685,7 +686,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
 
         {/* Working Hours */}
         <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1c1917', marginTop: 8, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-          <CiGlobe size={16} /> Çalışma Saatleri
+          <Globe size={16} /> Çalışma Saatleri
         </h4>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {DAY_KEYS.map(day => {
@@ -722,7 +723,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
 
         {/* Feature Toggles */}
         <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1c1917', marginTop: 8, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-          <CiGrid41 size={16} /> Menü Özellikleri
+          <SquaresFour size={16} /> Menü Özellikleri
         </h4>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
           {([
@@ -749,7 +750,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
 
         {/* Theme Selector */}
         <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1c1917', marginTop: 8, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-          <CiBoxes size={16} /> Menü Teması
+          <Package size={16} /> Menü Teması
         </h4>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           {Object.values(THEMES).map((t) => {
@@ -1016,7 +1017,7 @@ export default function RestaurantDashboard() {
           category_name: catNameVal,
           price: itemForm.price,
           allergens: itemForm.allergens,
-          is_vegetarian: itemForm.is_vegetarian,
+          is_vegetarian: itemForm.allergens.includes('vegetarian'),
           calories: itemForm.nutrition.calories ? parseInt(itemForm.nutrition.calories) : null,
           tone: aiTone,
           currentDesc: itemForm.description_tr || '',
@@ -1209,7 +1210,7 @@ export default function RestaurantDashboard() {
       image_url: itemForm.image_url || null,
       calories: caloriesForDb,
       allergens: itemForm.allergens.length > 0 ? itemForm.allergens : null,
-      is_vegetarian: itemForm.is_vegetarian,
+      is_vegetarian: itemForm.allergens.includes('vegetarian'),
       is_new: itemForm.is_new,
       is_featured: itemForm.is_featured,
       is_sold_out: itemForm.is_sold_out,
@@ -1468,29 +1469,29 @@ export default function RestaurantDashboard() {
     {
       title: 'Menü Yönetimi',
       items: [
-        { key: 'menu' as const, label: 'Menü', icon: CiGrid41 },
-        { key: 'translations' as const, label: 'Çeviri Merkezi', icon: CiGlobe },
-        { key: 'qr' as const, label: 'QR Kodları', icon: CiGrid2H },
+        { key: 'menu' as const, label: 'Menü', icon: SquaresFour },
+        { key: 'translations' as const, label: 'Çeviri Merkezi', icon: Globe },
+        { key: 'qr' as const, label: 'QR Kodları', icon: Rows },
       ],
     },
     {
       title: 'Müşteri İlişkileri',
       items: [
-        { key: 'calls' as const, label: 'Çağrılar', icon: CiBellOn, badge: pendingCallCount },
-        { key: 'feedback' as const, label: 'Geri Bildirim', icon: CiChat1 },
-        { key: 'promos' as const, label: 'Promosyonlar', icon: CiDiscount1 },
+        { key: 'calls' as const, label: 'Çağrılar', icon: Bell, badge: pendingCallCount },
+        { key: 'feedback' as const, label: 'Geri Bildirim', icon: ChatCircle },
+        { key: 'promos' as const, label: 'Promosyonlar', icon: Tag },
       ],
     },
     {
       title: 'Pazarlama',
       items: [
-        { key: 'discounts' as const, label: 'İndirim Kodları', icon: CiPercent },
+        { key: 'discounts' as const, label: 'İndirim Kodları', icon: Percent },
       ],
     },
     {
       title: 'Görünüm',
       items: [
-        { key: 'profile' as const, label: 'Tema & Profil', icon: CiPalette },
+        { key: 'profile' as const, label: 'Tema & Profil', icon: Palette },
       ],
     },
   ];
@@ -1553,7 +1554,7 @@ export default function RestaurantDashboard() {
         ))}
       </nav>
       <div className="p-4 border-t border-gray-200 text-[11px] text-gray-400 flex items-center gap-1">
-        <CiLink size={12} /> tabbled.com/menu/{restaurant.slug}
+        <Link size={12} /> tabbled.com/menu/{restaurant.slug}
       </div>
     </>
   );
@@ -1581,12 +1582,12 @@ export default function RestaurantDashboard() {
         {isMobile && (
           <div className="sticky top-0 z-40 flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-200">
             <button onClick={() => setSidebarOpen(true)} className="p-1" aria-label="Menü">
-              <CiMenuBurger size={22} />
+              <List size={22} />
             </button>
             <span className="text-sm font-semibold text-stone-900">{activeLabel}</span>
             {pendingCallCount > 0 && activeTab !== 'calls' && (
               <button onClick={() => setActiveTab('calls')} className="ml-auto relative p-1">
-                <CiBellOn size={20} className="text-stone-500" />
+                <Bell size={20} className="text-stone-500" />
                 <span className="absolute -top-0.5 -right-0.5 text-[8px] font-bold text-white bg-red-500 rounded-full w-4 h-4 flex items-center justify-center">{pendingCallCount}</span>
               </button>
             )}
@@ -1597,12 +1598,12 @@ export default function RestaurantDashboard() {
           <div className="hidden md:flex" style={{ alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
             {enabledLangs.length > 0 && (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#4338CA', background: '#EEF2FF', padding: '2px 8px', borderRadius: 12 }}>
-                <CiGlobe size={12} /> {enabledLangs.map(l => l.toUpperCase()).join(', ')}
+                <Globe size={12} /> {enabledLangs.map(l => l.toUpperCase()).join(', ')}
               </span>
             )}
             {hasAI && (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#9333EA', background: '#F3E8FF', padding: '2px 8px', borderRadius: 12 }}>
-                <CiPen size={12} /> AI Açıklama
+                <Pen size={12} /> AI Açıklama
               </span>
             )}
           </div>
@@ -1627,7 +1628,7 @@ export default function RestaurantDashboard() {
         <>
           {translating && (
             <div style={{ padding: '8px 14px', background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: 8, color: '#4338CA', fontSize: 12, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <CiGlobe size={14} /> Çeviriler oluşturuluyor...
+              <Globe size={14} /> Çeviriler oluşturuluyor...
             </div>
           )}
 
@@ -1664,14 +1665,14 @@ export default function RestaurantDashboard() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <img onError={handleImageError} src={getOptimizedImageUrl(catForm.image_url, 'thumbnail')} alt="" style={{ width: 64, height: 64, borderRadius: 8, objectFit: 'cover', border: '1px solid #e7e5e4' }} />
                     <button type="button" onClick={() => catFileRef.current?.click()} disabled={uploadingCatImage === 'new'} style={{ ...S.btnSm, fontSize: 11 }}>{uploadingCatImage === 'new' ? '...' : 'Değiştir'}</button>
-                    <button type="button" onClick={() => setCatForm({ ...catForm, image_url: '' })} style={{ ...S.btnDanger, fontSize: 11 }}><CiTrash size={12} /></button>
+                    <button type="button" onClick={() => setCatForm({ ...catForm, image_url: '' })} style={{ ...S.btnDanger, fontSize: 11 }}><Trash size={12} /></button>
                   </div>
                 ) : (
                   <button type="button" onClick={() => catFileRef.current?.click()} disabled={uploadingCatImage === 'new'} style={{ ...S.btnSm, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                    <CiCamera size={14} /> {uploadingCatImage === 'new' ? 'Yükleniyor...' : 'Görsel Yükle'}
+                    <Camera size={14} /> {uploadingCatImage === 'new' ? 'Yükleniyor...' : 'Görsel Yükle'}
                   </button>
                 )}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#a8a29e', marginTop: 4 }}><CiCircleInfo size={14} /><span>800×600px, yatay, max 3MB</span></div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#a8a29e', marginTop: 4 }}><Info size={14} /><span>800×600px, yatay, max 3MB</span></div>
               </div>
               <button type="submit" disabled={saving} style={{ ...S.btn, alignSelf: 'flex-start' }}>{saving ? '...' : 'Ekle'}</button>
             </form>
@@ -1759,7 +1760,7 @@ export default function RestaurantDashboard() {
                         {generatingAI ? (
                           <><div style={{ width: 12, height: 12, border: '2px solid rgba(255,255,255,0.3)', borderTop: '2px solid #fff', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} /> Yazılıyor...</>
                         ) : (
-                          <><CiPen size={14} /> AI ile Yaz</>
+                          <><Pen size={14} /> AI ile Yaz</>
                         )}
                       </button>
                     </div>
@@ -1770,7 +1771,7 @@ export default function RestaurantDashboard() {
                 {aiPreview && (
                   <div style={{ padding: 12, marginBottom: 8, borderRadius: 8, border: '1px solid #FF4F7A40', backgroundColor: '#FFF5F7' }}>
                     <div style={{ fontSize: 12, fontWeight: 600, color: '#FF4F7A', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <CiPen size={12} /> AI Önizleme
+                      <Pen size={12} /> AI Önizleme
                     </div>
                     <div style={{ fontSize: 13, color: '#1C1C1E', lineHeight: 1.5, marginBottom: 8 }}>
                       {aiPreview}
@@ -1829,7 +1830,7 @@ export default function RestaurantDashboard() {
                       }
                       style={{ ...S.btnSm, marginTop: 6, display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11 }}
                     >
-                      <CiCirclePlus size={14} /> Varyant Ekle (Boyut)
+                      <PlusCircle size={14} /> Varyant Ekle (Boyut)
                     </button>
                   </div>
                   <div>
@@ -1842,17 +1843,17 @@ export default function RestaurantDashboard() {
                       </div>
                     ) : (
                       <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} style={{ ...S.btnSm, width: '100%' }}>
-                        {uploading ? 'Yükleniyor...' : <><CiCamera size={14} /> Görsel Seç</>}
+                        {uploading ? 'Yükleniyor...' : <><Camera size={14} /> Görsel Seç</>}
                       </button>
                     )}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#a8a29e', marginTop: 4 }}><CiCircleInfo size={14} /><span>1200×800px, yatay, max 5MB</span></div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#a8a29e', marginTop: 4 }}><Info size={14} /><span>1200×800px, yatay, max 5MB</span></div>
                   </div>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <label style={{ ...S.label, margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <CiCirclePlus size={14} /> Fiyat Varyantları
+                      <PlusCircle size={14} /> Fiyat Varyantları
                     </label>
                     <button
                       type="button"
@@ -1880,7 +1881,7 @@ export default function RestaurantDashboard() {
                           title="Varyantı sil"
                           disabled={itemForm.variants.length <= 2}
                         >
-                          <CiTrash size={14} />
+                          <Trash size={14} />
                         </button>
                       </div>
                       <div style={S.grid2}>
@@ -1951,7 +1952,7 @@ export default function RestaurantDashboard() {
                       onClick={() => setItemForm({ ...itemForm, variants: [...itemForm.variants, { name_tr: '', name_en: '', price: '', calories: '' }] })}
                       style={{ ...S.btnSm, alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11 }}
                     >
-                      <CiCirclePlus size={14} /> Varyant Ekle
+                      <PlusCircle size={14} /> Varyant Ekle
                     </button>
                   )}
                   {/* Görsel yine gerekli */}
@@ -1965,17 +1966,17 @@ export default function RestaurantDashboard() {
                       </div>
                     ) : (
                       <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} style={{ ...S.btnSm }}>
-                        {uploading ? 'Yükleniyor...' : <><CiCamera size={14} /> Görsel Seç</>}
+                        {uploading ? 'Yükleniyor...' : <><Camera size={14} /> Görsel Seç</>}
                       </button>
                     )}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#a8a29e', marginTop: 4 }}><CiCircleInfo size={14} /><span>1200×800px, yatay, max 5MB</span></div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#a8a29e', marginTop: 4 }}><Info size={14} /><span>1200×800px, yatay, max 5MB</span></div>
                   </div>
                 </div>
               )}
               <div>
                 <label style={S.label}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                    <CiTimer size={16} /> Hazırlanma Süresi
+                    <Timer size={16} /> Hazırlanma Süresi
                   </span>
                 </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -2017,7 +2018,37 @@ export default function RestaurantDashboard() {
                           gap: 6,
                         }}
                       >
-                        <AllergenIcon allergenKey={a.value} size={16} />
+                        {a.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div>
+                <label style={S.label}>Diyet Tercihleri</label>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {DIET_OPTIONS.map(a => {
+                    const selected = itemForm.allergens.includes(a.value);
+                    return (
+                      <button
+                        key={a.value}
+                        type="button"
+                        onClick={() => toggleAllergen(a.value)}
+                        style={{
+                          padding: '6px 10px',
+                          fontSize: 12,
+                          borderRadius: 20,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s',
+                          border: selected ? '2px solid #16a34a' : '1px solid #d6d3d1',
+                          background: selected ? '#dcfce7' : '#fff',
+                          color: selected ? '#16a34a' : '#44403c',
+                          fontWeight: selected ? 700 : 400,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                        }}
+                      >
                         {a.label}
                       </button>
                     );
@@ -2026,28 +2057,24 @@ export default function RestaurantDashboard() {
               </div>
               <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#44403c' }}>
-                  <input type="checkbox" checked={itemForm.is_vegetarian} onChange={e => setItemForm({ ...itemForm, is_vegetarian: e.target.checked })} />
-                  <CiApple size={14} /> Vejetaryen
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#44403c' }}>
                   <input type="checkbox" checked={itemForm.is_new} onChange={e => setItemForm({ ...itemForm, is_new: e.target.checked })} />
-                  <CiStar size={14} /> Yeni Ürün
+                  <Star size={14} /> Yeni Ürün
                 </label>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#44403c' }}>
                   <input type="checkbox" checked={itemForm.is_featured} onChange={e => setItemForm({ ...itemForm, is_featured: e.target.checked })} />
-                  <CiStar size={14} style={{ color: '#f59e0b' }} /> Öne Çıkar
+                  <Star size={14} style={{ color: '#f59e0b' }} /> Öne Çıkar
                 </label>
               </div>
               {/* Sold-out toggle */}
               <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#44403c' }}>
                 <input type="checkbox" checked={itemForm.is_sold_out} onChange={e => setItemForm({ ...itemForm, is_sold_out: e.target.checked })} />
-                <CiCircleRemove size={14} /> Tükendi olarak işaretle
+                <XCircle size={14} /> Tükendi olarak işaretle
               </label>
 
               {/* Scheduling */}
               <div style={{ borderTop: '1px solid #e7e5e4', paddingTop: 12, marginTop: 4 }}>
                 <label style={{ ...S.label, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <CiClock1 size={14} /> Zamanlama
+                  <Clock size={14} /> Zamanlama
                 </label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
                   {[
@@ -2165,7 +2192,7 @@ export default function RestaurantDashboard() {
                   onClick={() => setItemForm({ ...itemForm, happyHourOpen: !itemForm.happyHourOpen })}
                   style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#1C1C1E' }}
                 >
-                  <CiDiscount1 size={16} style={{ color: '#FF4F7A' }} />
+                  <Tag size={16} style={{ color: '#FF4F7A' }} />
                   Happy Hour
                   {itemForm.happy_hour_active && <span style={{ fontSize: 11, color: '#22c55e', fontWeight: 400 }}>(Aktif)</span>}
                   <span style={{ marginLeft: 'auto', fontSize: 12, color: '#999' }}>{itemForm.happyHourOpen ? '▲' : '▼'}</span>
@@ -2278,14 +2305,14 @@ export default function RestaurantDashboard() {
                   }}
                 >
                   <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600 }}>
-                    <CiWheat size={16} /> Besin Değerleri
+                    <Grains size={16} /> Besin Değerleri
                     {!itemForm.nutritionOpen && itemForm.nutrition.calories && (
                       <span style={{ ...S.badge, background: '#EEF2FF', color: '#4338CA', marginLeft: 6 }}>
                         {itemForm.nutrition.calories} kcal
                       </span>
                     )}
                   </span>
-                  {itemForm.nutritionOpen ? <CiCircleChevUp size={18} /> : <CiCircleChevDown size={18} />}
+                  {itemForm.nutritionOpen ? <CaretCircleUp size={18} /> : <CaretCircleDown size={18} />}
                 </button>
                 {itemForm.nutritionOpen && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
@@ -2376,7 +2403,7 @@ export default function RestaurantDashboard() {
                       }}
                       style={{ ...S.btnDanger, alignSelf: 'flex-start', fontSize: 11 }}
                     >
-                      <CiTrash size={12} /> Besin Değerlerini Temizle
+                      <Trash size={12} /> Besin Değerlerini Temizle
                     </button>
                   </div>
                 )}
@@ -2415,7 +2442,7 @@ export default function RestaurantDashboard() {
                       style={{ cursor: 'grab', color: '#a8a29e', display: 'inline-flex', alignItems: 'center', touchAction: 'none', flexShrink: 0 }}
                       title="Sürükleyerek sırala"
                     >
-                      <CiBoxes size={16} />
+                      <Package size={16} />
                     </span>
                   )}
                   {dragListeners && isActiveForm && (
@@ -2425,7 +2452,7 @@ export default function RestaurantDashboard() {
                     <img onError={handleImageError} src={getOptimizedImageUrl(item.image_url, 'card')} alt="" style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} loading="lazy" decoding="async" />
                   ) : (
                     <div style={{ width: 48, height: 48, borderRadius: 8, background: '#f5f5f4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d6d3d1', flexShrink: 0 }}>
-                      <CiCamera size={20} />
+                      <Camera size={20} />
                     </div>
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -2434,18 +2461,18 @@ export default function RestaurantDashboard() {
                       {item.translations && Object.keys(item.translations).length > 0 && (
                         <span style={S.translationBadge}>EN</span>
                       )}
-                      {item.is_sold_out && <span style={S.soldOutBadge}><CiCircleRemove size={10} /> Tükendi</span>}
-                      {item.is_vegetarian && <span style={{ ...S.badge, background: '#dcfce7', color: '#16a34a', marginRight: 0 }}><CiApple size={10} /></span>}
+                      {item.is_sold_out && <span style={S.soldOutBadge}><XCircle size={10} /> Tükendi</span>}
+                      {item.is_vegetarian && <span style={{ ...S.badge, background: '#dcfce7', color: '#16a34a', marginRight: 0 }}><AppleLogo size={10} /></span>}
                       {item.is_new && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309', marginRight: 0 }}>Yeni</span>}
                       {item.is_featured && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309', marginRight: 0 }}>Öne Çıkan</span>}
-                      {item.schedule_type !== 'always' && <span style={{ ...S.badge, background: '#dbeafe', color: '#1d4ed8', marginRight: 0, display: 'inline-flex', alignItems: 'center', gap: 2 }}><CiClock1 size={10} />Zamanlı</span>}
-                      {(item as any).happy_hour_active && <span style={{ ...S.badge, background: '#fffbeb', color: '#f59e0b', marginRight: 0, display: 'inline-flex', alignItems: 'center', gap: 2 }}><CiDiscount1 size={10} />HH</span>}
+                      {item.schedule_type !== 'always' && <span style={{ ...S.badge, background: '#dbeafe', color: '#1d4ed8', marginRight: 0, display: 'inline-flex', alignItems: 'center', gap: 2 }}><Clock size={10} />Zamanlı</span>}
+                      {(item as any).happy_hour_active && <span style={{ ...S.badge, background: '#fffbeb', color: '#f59e0b', marginRight: 0, display: 'inline-flex', alignItems: 'center', gap: 2 }}><Tag size={10} />HH</span>}
                       {allergenKeys.length > 0 && (
                         <span style={{ display: 'inline-flex', gap: 2, alignItems: 'center' }} title={allergenKeys.join(', ')}>
                           {allergenKeys.slice(0, 3).map(a => <AllergenIcon key={a} allergenKey={a} size={12} />)}
                         </span>
                       )}
-                      {isTranslating && <span style={{ fontSize: 9, color: '#4338CA' }}><CiGlobe size={10} /> Çevriliyor...</span>}
+                      {isTranslating && <span style={{ fontSize: 9, color: '#4338CA' }}><Globe size={10} /> Çevriliyor...</span>}
                     </div>
                     {item.description_tr && (
                       <div style={{ fontSize: 12, color: '#a8a29e', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -2479,7 +2506,7 @@ export default function RestaurantDashboard() {
                               cursor: 'pointer',
                             }}
                           >
-                            <CiBoxes size={13} />
+                            <Package size={13} />
                             {min.toFixed(0)} ₺ – {max.toFixed(0)} ₺
                           </button>
                         );
@@ -2516,7 +2543,7 @@ export default function RestaurantDashboard() {
                     }}
                     title="Sil"
                   >
-                    <CiTrash size={16} />
+                    <Trash size={16} />
                   </button>
                 </div>
               );
@@ -2602,22 +2629,22 @@ export default function RestaurantDashboard() {
                       style={{ cursor: 'grab', color: '#a8a29e', display: 'inline-flex', alignItems: 'center', touchAction: 'none', flexShrink: 0 }}
                       title="Sürükleyerek sırala"
                     >
-                      <CiBoxes size={16} />
+                      <Package size={16} />
                     </span>
                   )}
                   {c.image_url ? (
                     <img onError={handleImageError} src={getOptimizedImageUrl(c.image_url, 'thumbnail')} alt="" style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
                   ) : (
                     <div style={{ width: 40, height: 40, borderRadius: 8, background: '#f5f5f4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d6d3d1', flexShrink: 0 }}>
-                      <CiCamera size={18} />
+                      <Camera size={18} />
                     </div>
                   )}
                   <div style={{ flex: 1, minWidth: 0, cursor: 'pointer' }} onClick={() => !isEditing && toggleExpand(c.id)}>
                     {isEditing ? (
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center' }} onClick={(e) => e.stopPropagation()}>
                         <input style={{ ...S.input, width: 220, padding: '6px 10px', fontSize: 13 }} value={editCatForm.name_tr} onChange={e => setEditCatForm({ name_tr: e.target.value })} autoFocus />
-                        <button onClick={() => updateCategory(c.id)} style={{ ...S.btnSm, padding: '4px 8px' }}><CiCircleCheck size={14} /></button>
-                        <button onClick={() => setEditingCat(null)} style={{ ...S.btnSm, padding: '4px 8px' }}><CiCircleRemove size={14} /></button>
+                        <button onClick={() => updateCategory(c.id)} style={{ ...S.btnSm, padding: '4px 8px' }}><CheckCircle size={14} /></button>
+                        <button onClick={() => setEditingCat(null)} style={{ ...S.btnSm, padding: '4px 8px' }}><XCircle size={14} /></button>
                       </div>
                     ) : (
                       <>
@@ -2636,20 +2663,20 @@ export default function RestaurantDashboard() {
                     <div style={S.accordionActions} onClick={(e) => e.stopPropagation()}>
                       <label style={{ color: '#a8a29e', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', padding: 4 }} title="Kategori görseli">
                         <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploadingCatImage === c.id} onChange={e => { if (e.target.files?.[0]) uploadCategoryImage(e.target.files[0], c.id); }} />
-                        {uploadingCatImage === c.id ? <span style={{ fontSize: 10 }}>...</span> : <CiCamera size={16} />}
+                        {uploadingCatImage === c.id ? <span style={{ fontSize: 10 }}>...</span> : <Camera size={16} />}
                       </label>
                       {c.image_url && (
-                        <button onClick={() => removeCategoryImage(c.id)} style={{ background: 'none', border: 'none', color: '#a8a29e', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }} title="Görseli kaldır"><CiTrash size={14} /></button>
+                        <button onClick={() => removeCategoryImage(c.id)} style={{ background: 'none', border: 'none', color: '#a8a29e', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }} title="Görseli kaldır"><Trash size={14} /></button>
                       )}
-                      <button onClick={() => { setEditingCat(c.id); setEditCatForm({ name_tr: c.name_tr }); }} style={{ background: 'none', border: 'none', color: '#a8a29e', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }} title="Düzenle"><CiEdit size={16} /></button>
-                      <button onClick={() => deleteCategory(c.id)} style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }} title="Sil"><CiTrash size={16} /></button>
+                      <button onClick={() => { setEditingCat(c.id); setEditCatForm({ name_tr: c.name_tr }); }} style={{ background: 'none', border: 'none', color: '#a8a29e', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }} title="Düzenle"><PencilSimple size={16} /></button>
+                      <button onClick={() => deleteCategory(c.id)} style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }} title="Sil"><Trash size={16} /></button>
                       <button
                         type="button"
                         onClick={() => toggleExpand(c.id)}
                         style={{ background: 'none', border: 'none', color: '#78716c', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }}
                         title={isOpen ? 'Kapat' : 'Aç'}
                       >
-                        {isOpen ? <CiCircleChevUp size={20} /> : <CiCircleChevDown size={20} />}
+                        {isOpen ? <CaretCircleUp size={20} /> : <CaretCircleDown size={20} />}
                       </button>
                     </div>
                   )}
@@ -2717,7 +2744,7 @@ export default function RestaurantDashboard() {
                                                         onClick={() => openNewItemForm(child.id)}
                                                         style={{ ...S.btnSm, marginLeft: 0, marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
                                                       >
-                                                        <CiCirclePlus size={14} /> Ürün Ekle
+                                                        <PlusCircle size={14} /> Ürün Ekle
                                                       </button>
                                                     </>
                                                   )}
@@ -2738,7 +2765,7 @@ export default function RestaurantDashboard() {
                                       onClick={() => openNewItemForm(c.id)}
                                       style={{ ...S.btnSm, marginLeft: 36, marginBottom: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
                                     >
-                                      <CiCirclePlus size={14} /> Ürün Ekle
+                                      <PlusCircle size={14} /> Ürün Ekle
                                     </button>
                                   </>
                                 )}
@@ -2951,14 +2978,14 @@ function PromosTab({ restaurant }: { restaurant: Restaurant }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <img onError={handleImageError} src={getOptimizedImageUrl(form.image_url, 'card')} alt="" style={{ width: 120, height: 72, borderRadius: 8, objectFit: 'cover', border: '1px solid #e7e5e4' }} />
                 <button type="button" onClick={() => promoFileRef.current?.click()} disabled={uploading} style={S.btnSm}>{uploading ? '...' : 'Değiştir'}</button>
-                <button type="button" onClick={() => setForm({ ...form, image_url: '' })} style={S.btnDanger}><CiTrash size={12} /></button>
+                <button type="button" onClick={() => setForm({ ...form, image_url: '' })} style={S.btnDanger}><Trash size={12} /></button>
               </div>
             ) : (
               <button type="button" onClick={() => promoFileRef.current?.click()} disabled={uploading} style={{ ...S.btnSm, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <CiCamera size={14} /> {uploading ? 'Yükleniyor...' : 'Görsel Yükle'}
+                <Camera size={14} /> {uploading ? 'Yükleniyor...' : 'Görsel Yükle'}
               </button>
             )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#a8a29e', marginTop: 4 }}><CiCircleInfo size={14} /><span>1080×1080px, kare, max 5MB</span></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#a8a29e', marginTop: 4 }}><Info size={14} /><span>1080×1080px, kare, max 5MB</span></div>
           </div>
 
           <div style={S.grid2}>
@@ -3087,7 +3114,7 @@ function PromosTab({ restaurant }: { restaurant: Restaurant }) {
               <img onError={handleImageError} src={getOptimizedImageUrl(p.image_url, 'card')} alt="" style={{ width: 84, height: 56, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
             ) : (
               <div style={{ width: 84, height: 56, borderRadius: 8, background: '#f5f5f4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <CiImageOn size={24} style={{ color: '#a8a29e' }} />
+                <Image size={24} style={{ color: '#a8a29e' }} />
               </div>
             )}
             <div style={{ flex: 1, minWidth: 0 }}>

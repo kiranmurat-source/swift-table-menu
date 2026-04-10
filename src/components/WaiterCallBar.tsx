@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CiBellOn, CiReceipt } from 'react-icons/ci';
+import { Bell, Receipt } from "@phosphor-icons/react";
 import { supabase } from '../lib/supabase';
 import type { MenuTheme } from '../lib/themes';
 
@@ -113,7 +113,7 @@ export default function WaiterCallBar({ restaurantId, tableNumber, theme, langua
             >
               {calling ? <Spinner /> : (
                 <>
-                  <CiBellOn size={14} />
+                  <Bell size={14} />
                   {cooldown ? t.called : t.callWaiter}
                 </>
               )}
@@ -143,7 +143,7 @@ export default function WaiterCallBar({ restaurantId, tableNumber, theme, langua
             >
               {calling ? <Spinner /> : (
                 <>
-                  <CiReceipt size={14} />
+                  <Receipt size={14} />
                   {cooldown ? t.requested : t.askBill}
                 </>
               )}

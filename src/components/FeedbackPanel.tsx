@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CiChat1, CiTrash } from 'react-icons/ci';
+import { ChatCircle, Trash } from "@phosphor-icons/react";
 import { supabase } from '../lib/supabase';
 import StarRating from './StarRating';
 
@@ -71,7 +71,7 @@ export default function FeedbackPanel({ restaurantId }: { restaurantId: string }
   return (
     <div>
       <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1c1917', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <CiChat1 size={20} /> Geri Bildirimler
+        <ChatCircle size={20} /> Geri Bildirimler
       </h2>
 
       {/* Summary cards */}
@@ -120,7 +120,7 @@ export default function FeedbackPanel({ restaurantId }: { restaurantId: string }
         <p style={{ textAlign: 'center', color: '#a8a29e', fontSize: 13, padding: 32 }}>Yükleniyor...</p>
       ) : items.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 48 }}>
-          <CiChat1 size={48} style={{ color: '#d1d5db', marginBottom: 12 }} />
+          <ChatCircle size={48} style={{ color: '#d1d5db', marginBottom: 12 }} />
           <p style={{ fontSize: 14, color: '#6b7280' }}>Henüz geri bildirim yok.</p>
           <p style={{ fontSize: 12, color: '#a8a29e' }}>Müşterileriniz menüden geri bildirim bırakabilir.</p>
         </div>
@@ -149,7 +149,7 @@ export default function FeedbackPanel({ restaurantId }: { restaurantId: string }
                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', padding: 2 }}
                     title="Sil"
                   >
-                    <CiTrash size={16} />
+                    <Trash size={16} />
                   </button>
                 </div>
               </div>

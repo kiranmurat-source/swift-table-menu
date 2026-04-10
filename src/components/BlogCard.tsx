@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { CiCalendarDate, CiClock2 } from 'react-icons/ci';
+import { CalendarBlank, Clock } from "@phosphor-icons/react";
 import { CATEGORY_COLORS, type BlogPost } from '../lib/blogData';
 import { formatDate } from '../lib/blogUtils';
 
@@ -93,10 +93,10 @@ export default function BlogCard({ post }: { post: BlogPost }) {
         }}
       >
         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <CiCalendarDate size={14} /> {formatDate(post.publishedAt)}
+          <CalendarBlank size={14} /> {formatDate(post.publishedAt)}
         </span>
         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <CiClock2 size={14} /> {post.readingTime} dk
+          <Clock size={14} /> {post.readingTime} dk
         </span>
       </div>
     </Link>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CiCircleRemove } from 'react-icons/ci';
+import { XCircle } from "@phosphor-icons/react";
 import type { MenuTheme } from '../lib/themes';
 
 export interface Promo {
@@ -132,7 +132,7 @@ export default function PromoPopup({ promo, theme, lang, onClose, onNavigateCate
           className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full flex items-center justify-center"
           style={{ backgroundColor: 'rgba(0,0,0,0.45)', color: '#FFFFFF' }}
         >
-          <CiCircleRemove size={20} />
+          <XCircle size={20} />
         </button>
 
         {promo.image_url && (

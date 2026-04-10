@@ -1,4 +1,4 @@
-import { CiCircleRemove } from 'react-icons/ci';
+import { XCircle } from "@phosphor-icons/react";
 import { getOptimizedImageUrl, handleImageError } from '../lib/imageUtils';
 import type { MenuTheme } from '../lib/themes';
 import type { CartItem, AppliedDiscount } from '../lib/useCart';
@@ -174,7 +174,7 @@ export default function CartDrawer({
               onClick={onClose}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: theme.mutedText }}
             >
-              <CiCircleRemove size={24} />
+              <XCircle size={24} />
             </button>
           </div>
         </div>
@@ -240,7 +240,7 @@ export default function CartDrawer({
                       onClick={() => onDeleteItem(item.id, item.variant)}
                       style={{ position: 'absolute', top: 4, right: 4, background: 'none', border: 'none', cursor: 'pointer', color: theme.mutedText, padding: 4 }}
                     >
-                      <CiCircleRemove size={16} />
+                      <XCircle size={16} />
                     </button>
                   </div>
                 );

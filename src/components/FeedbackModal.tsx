@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CiCircleRemove } from 'react-icons/ci';
+import { XCircle } from "@phosphor-icons/react";
 import { supabase } from '../lib/supabase';
 import type { MenuTheme } from '../lib/themes';
 import StarRating from './StarRating';
@@ -79,7 +79,7 @@ export default function FeedbackModal({ restaurantId, googlePlaceId, tableNumber
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
               <h2 style={{ fontFamily: headingFont, fontWeight: 700, fontSize: 20, color: theme.text }}>{ui.rateExperience}</h2>
               <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: theme.mutedText }}>
-                <CiCircleRemove size={24} />
+                <XCircle size={24} />
               </button>
             </div>
 

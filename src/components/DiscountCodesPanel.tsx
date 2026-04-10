@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CiCirclePlus, CiCircleRemove, CiEdit, CiTrash, CiPercent } from 'react-icons/ci';
+import { PlusCircle, XCircle, PencilSimple, Trash, Percent } from "@phosphor-icons/react";
 import { supabase } from '../lib/supabase';
 
 interface DiscountCode {
@@ -146,7 +146,7 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1c1917', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <CiPercent size={20} /> İndirim Kodları
+          <Percent size={20} /> İndirim Kodları
         </h2>
         <button
           onClick={openCreate}
@@ -157,7 +157,7 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
             fontWeight: 600, cursor: 'pointer',
           }}
         >
-          <CiCirclePlus size={16} /> Yeni Kod Oluştur
+          <PlusCircle size={16} /> Yeni Kod Oluştur
         </button>
       </div>
 
@@ -169,7 +169,7 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
               {editingId ? 'Kodu Düzenle' : 'Yeni İndirim Kodu'}
             </h3>
             <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}>
-              <CiCircleRemove size={20} />
+              <XCircle size={20} />
             </button>
           </div>
 
@@ -325,7 +325,7 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
         <p style={{ textAlign: 'center', color: '#a8a29e', fontSize: 13, padding: 32 }}>Yükleniyor...</p>
       ) : codes.length === 0 && !showForm ? (
         <div style={{ textAlign: 'center', padding: 48 }}>
-          <CiPercent size={48} style={{ color: '#d1d5db', marginBottom: 12 }} />
+          <Percent size={48} style={{ color: '#d1d5db', marginBottom: 12 }} />
           <p style={{ fontSize: 14, color: '#6b7280' }}>Henüz indirim kodu oluşturmadınız.</p>
           <button
             onClick={openCreate}
@@ -383,13 +383,13 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
                   onClick={() => openEdit(c)}
                   style={{ display: 'flex', alignItems: 'center', gap: 2, fontSize: 11, color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer' }}
                 >
-                  <CiEdit size={14} /> Düzenle
+                  <PencilSimple size={14} /> Düzenle
                 </button>
                 <button
                   onClick={() => handleDelete(c.id)}
                   style={{ display: 'flex', alignItems: 'center', gap: 2, fontSize: 11, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer' }}
                 >
-                  <CiTrash size={14} /> Sil
+                  <Trash size={14} /> Sil
                 </button>
               </div>
             </div>

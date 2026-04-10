@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { CiCircleChevRight } from "react-icons/ci";
+import { CaretCircleRight } from "@phosphor-icons/react";
 
 const CTABanner = () => (
   <section className="py-20 lg:py-28 bg-gradient-to-br from-grapefruit to-grapefruit-deep">
@@ -11,7 +11,7 @@ const CTABanner = () => (
       <div className="flex flex-wrap gap-4 justify-center">
         <a href="/menu/abc-restaurant">
           <Button variant="cta-white" size="lg" className="rounded-full px-10 text-base">
-            Demo Menüyü Gör <CiCircleChevRight className="w-4 h-4" />
+            Demo Menüyü Gör <CaretCircleRight className="w-4 h-4" />
           </Button>
         </a>
       </div>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { StatCardSkeleton } from '../components/Skeleton';
 import { supabase } from '../lib/supabase';
-import { CiCircleCheck, CiCircleRemove, CiEdit, CiShop, CiMoneyBill, CiWarning, CiViewList, CiCamera, CiCalendar, CiViewBoard, CiDollar, CiTimer, CiBoxList, CiWavePulse1, CiGrid2H } from 'react-icons/ci';
+import { CheckCircle, XCircle, PencilSimple, Storefront, Money, Warning, ListBullets, Camera, Calendar, Kanban, CurrencyDollar, Timer, ListChecks, Pulse, Rows } from "@phosphor-icons/react";
 
 type Restaurant = { id: string; name: string; slug: string; is_active: boolean; subscription_status: string; current_plan: string; created_at: string; address: string | null; phone: string | null; };
 type Profile = { id: string; email: string; full_name: string | null; role: string; restaurant_id: string | null; };
@@ -401,19 +401,19 @@ export default function SuperAdminDashboard() {
       {/* Dashboard Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
         <div style={{ ...S.card, marginBottom: 0, padding: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CiShop size={20} style={{ color: '#4f46e5' }} /></div>
+          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Storefront size={20} style={{ color: '#4f46e5' }} /></div>
           <div><div style={{ fontSize: 24, fontWeight: 800, color: '#1c1917' }}>{restaurants.length}</div><div style={{ fontSize: 12, color: '#a8a29e' }}>Toplam Restoran</div></div>
         </div>
         <div style={{ ...S.card, marginBottom: 0, padding: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CiCircleCheck size={20} style={{ color: '#16a34a' }} /></div>
+          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CheckCircle size={20} style={{ color: '#16a34a' }} /></div>
           <div><div style={{ fontSize: 24, fontWeight: 800, color: '#1c1917' }}>{activeSubs.length}</div><div style={{ fontSize: 12, color: '#a8a29e' }}>Aktif Uyelik</div></div>
         </div>
         <div style={{ ...S.card, marginBottom: 0, padding: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CiMoneyBill size={20} style={{ color: '#4f46e5' }} /></div>
+          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Money size={20} style={{ color: '#4f46e5' }} /></div>
           <div><div style={{ fontSize: 24, fontWeight: 800, color: '#1c1917' }}>{monthlyRevenue.toLocaleString('tr-TR')}</div><div style={{ fontSize: 12, color: '#a8a29e' }}>Aylik Gelir (TL)</div></div>
         </div>
         <div style={{ ...S.card, marginBottom: 0, padding: 16, display: 'flex', alignItems: 'center', gap: 12, border: expiringSubs.length > 0 ? '1px solid #fed7aa' : undefined, background: expiringSubs.length > 0 ? '#fff7ed' : '#fff' }}>
-          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#ffedd5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CiWarning size={20} style={{ color: '#ea580c' }} /></div>
+          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#ffedd5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Warning size={20} style={{ color: '#ea580c' }} /></div>
           <div><div style={{ fontSize: 24, fontWeight: 800, color: expiringSubs.length > 0 ? '#ea580c' : '#1c1917' }}>{expiringSubs.length}</div><div style={{ fontSize: 12, color: '#a8a29e' }}>Suresi Dolan</div></div>
         </div>
       </div>
@@ -471,8 +471,8 @@ export default function SuperAdminDashboard() {
                   <div><label style={S.label}>Telefon</label><input style={S.input} value={editRestForm.phone} onChange={e => setEditRestForm({ ...editRestForm, phone: e.target.value })} /></div>
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
-                  <button onClick={() => updateRestaurant(r.id)} style={S.btnSm}><CiCircleCheck size={14} /> Kaydet</button>
-                  <button onClick={() => setEditingRest(null)} style={S.btnSm}><CiCircleRemove size={14} /> Iptal</button>
+                  <button onClick={() => updateRestaurant(r.id)} style={S.btnSm}><CheckCircle size={14} /> Kaydet</button>
+                  <button onClick={() => setEditingRest(null)} style={S.btnSm}><XCircle size={14} /> Iptal</button>
                 </div>
               </div>
             ) : (
@@ -485,7 +485,7 @@ export default function SuperAdminDashboard() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ ...S.badge, ...statusColor(r.subscription_status) }}>{r.subscription_status}</span>
                   <button onClick={() => toggleActive(r.id, r.is_active)} style={{ ...S.btnSm, color: r.is_active ? '#16a34a' : '#dc2626' }}>{r.is_active ? 'Aktif' : 'Pasif'}</button>
-                  <button onClick={() => { setEditingRest(r.id); setEditRestForm({ name: r.name, slug: r.slug, address: r.address || '', phone: r.phone || '' }); }} style={S.btnSm}><CiEdit size={14} /></button>
+                  <button onClick={() => { setEditingRest(r.id); setEditRestForm({ name: r.name, slug: r.slug, address: r.address || '', phone: r.phone || '' }); }} style={S.btnSm}><PencilSimple size={14} /></button>
                   <button onClick={() => deleteRestaurant(r.id)} style={S.btnDanger}>Sil</button>
                 </div>
               </div>
@@ -531,8 +531,8 @@ export default function SuperAdminDashboard() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
-                  <button onClick={() => updateUser(u.id)} style={S.btnSm}><CiCircleCheck size={14} /> Kaydet</button>
-                  <button onClick={() => setEditingUser(null)} style={S.btnSm}><CiCircleRemove size={14} /> Iptal</button>
+                  <button onClick={() => updateUser(u.id)} style={S.btnSm}><CheckCircle size={14} /> Kaydet</button>
+                  <button onClick={() => setEditingUser(null)} style={S.btnSm}><XCircle size={14} /> Iptal</button>
                 </div>
               </div>
             ) : (
@@ -543,7 +543,7 @@ export default function SuperAdminDashboard() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ ...S.badge, background: u.role === 'super_admin' ? '#fee2e2' : '#e0e7ff', color: u.role === 'super_admin' ? '#dc2626' : '#4f46e5' }}>{u.role}</span>
-                  <button onClick={() => { setEditingUser(u.id); setEditUserForm({ full_name: u.full_name || '', restaurant_id: u.restaurant_id || '' }); }} style={S.btnSm}><CiEdit size={14} /></button>
+                  <button onClick={() => { setEditingUser(u.id); setEditUserForm({ full_name: u.full_name || '', restaurant_id: u.restaurant_id || '' }); }} style={S.btnSm}><PencilSimple size={14} /></button>
                   {u.role !== 'super_admin' && <button onClick={() => deleteUser(u.id)} style={S.btnDanger}>Sil</button>}
                 </div>
               </div>
@@ -637,8 +637,8 @@ export default function SuperAdminDashboard() {
                           <option value="">Plan sec</option>
                           {plans.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                         </select>
-                        <button onClick={() => changePlan(s.id, s.restaurant_id)} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11 }}><CiCircleCheck size={14} /></button>
-                        <button onClick={() => { setChangingPlan(null); setNewPlanId(''); }} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11 }}><CiCircleRemove size={14} /></button>
+                        <button onClick={() => changePlan(s.id, s.restaurant_id)} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11 }}><CheckCircle size={14} /></button>
+                        <button onClick={() => { setChangingPlan(null); setNewPlanId(''); }} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11 }}><XCircle size={14} /></button>
                       </div>
                     ) : (
                       <button onClick={() => { setChangingPlan(s.id); setNewPlanId(''); }} style={S.btnSm}>Plan Degistir</button>
@@ -724,7 +724,7 @@ export default function SuperAdminDashboard() {
                                   }}
                                   autoFocus
                                 />
-                                <button onClick={() => savePlanFeatureValue(p.id, feat.id, editPFValue)} style={{ ...S.btnSm, padding: '3px 6px', fontSize: 11 }}><CiCircleCheck size={14} /></button>
+                                <button onClick={() => savePlanFeatureValue(p.id, feat.id, editPFValue)} style={{ ...S.btnSm, padding: '3px 6px', fontSize: 11 }}><CheckCircle size={14} /></button>
                               </div>
                             ) : (
                               <span
@@ -737,14 +737,14 @@ export default function SuperAdminDashboard() {
                                 }}
                                 title="Tikla: deger degistir"
                               >
-                                {val === 'true' ? <CiCircleCheck size={14} style={{ display: 'inline' }} /> : val === 'false' ? '—' : val}
+                                {val === 'true' ? <CheckCircle size={14} style={{ display: 'inline' }} /> : val === 'false' ? '—' : val}
                               </span>
                             )}
                           </td>
                         );
                       })}
                       <td style={{ textAlign: 'center' }}>
-                        <button onClick={() => deleteFeature(feat.id)} style={{ background: 'none', border: 'none', color: '#d6d3d1', cursor: 'pointer', fontSize: 14, padding: 4 }} title="Sil"><CiCircleRemove size={14} /></button>
+                        <button onClick={() => deleteFeature(feat.id)} style={{ background: 'none', border: 'none', color: '#d6d3d1', cursor: 'pointer', fontSize: 14, padding: 4 }} title="Sil"><XCircle size={14} /></button>
                       </td>
                     </tr>
                   ))
@@ -815,26 +815,26 @@ function KPISections({ data }: { data: KPIData }) {
         <div style={KPI_STYLES.sectionHeader}>SISTEM SAGLIGI</div>
         <div style={KPI_STYLES.grid4}>
           <KPICard
-            icon={<CiViewList {...iconProps} />}
+            icon={<ListBullets {...iconProps} />}
             title="Toplam Menu Urunu"
             value={data.totalItems}
             sub={`${data.activeItems} aktif, ${data.passiveItems} pasif`}
           />
           <KPICard
-            icon={<CiCamera {...iconProps} />}
+            icon={<Camera {...iconProps} />}
             title="Fotografli Urun Orani"
             value={`%${data.photoPercentage}`}
             valueColor={photoColor}
             sub="Gorseli olan urunler"
           />
           <KPICard
-            icon={<CiShop {...iconProps} />}
+            icon={<Storefront {...iconProps} />}
             title="Aktif / Pasif Restoran"
             value={`${data.activeRestaurants} / ${data.passiveRestaurants}`}
             sub={`Toplam ${data.totalRestaurants} restoran`}
           />
           <KPICard
-            icon={<CiCalendar {...iconProps} />}
+            icon={<Calendar {...iconProps} />}
             title="Bu Hafta Eklenen Urun"
             value={data.weeklyNewItems}
             sub="Son 7 gun"
@@ -847,7 +847,7 @@ function KPISections({ data }: { data: KPIData }) {
         <div style={KPI_STYLES.sectionHeader}>IS METRIKLERI</div>
         <div style={KPI_STYLES.grid4}>
           <KPICard
-            icon={<CiViewBoard {...iconProps} />}
+            icon={<Kanban {...iconProps} />}
             title="Plan Dagilimi"
             value={
               <span style={{ fontSize: 18 }}>
@@ -859,13 +859,13 @@ function KPISections({ data }: { data: KPIData }) {
             sub="Aktif uyelikler"
           />
           <KPICard
-            icon={<CiDollar {...iconProps} />}
+            icon={<CurrencyDollar {...iconProps} />}
             title="Aylik Gelir"
             value={`₺${Math.round(data.monthlyRevenue).toLocaleString('tr-TR')}`}
             sub="/ ay (yillik/12)"
           />
           <KPICard
-            icon={<CiTimer {...iconProps} />}
+            icon={<Timer {...iconProps} />}
             title="30 Gun Icinde Dolacak"
             value={data.expiringSoon}
             valueColor={expiringColor}
@@ -873,7 +873,7 @@ function KPISections({ data }: { data: KPIData }) {
             titleAttr={data.expiringNames.join('\n')}
           />
           <KPICard
-            icon={<CiBoxList {...iconProps} />}
+            icon={<ListChecks {...iconProps} />}
             title="Ortalama Menu Boyutu"
             value={data.avgMenuSize.toFixed(1)}
             sub="urun/restoran"
@@ -886,13 +886,13 @@ function KPISections({ data }: { data: KPIData }) {
         <div style={KPI_STYLES.sectionHeader}>KULLANIM</div>
         <div style={KPI_STYLES.grid3}>
           <KPICard
-            icon={<CiWavePulse1 {...iconProps} />}
+            icon={<Pulse {...iconProps} />}
             title="Son 7 Gunde Aktif"
             value={data.recentlyActiveRestaurants}
             sub="Menusunu guncelleyenler"
           />
           <KPICard
-            icon={<CiCircleRemove {...iconProps} />}
+            icon={<XCircle {...iconProps} />}
             title="Bos Menulu Restoran"
             value={data.emptyMenuRestaurants}
             valueColor={emptyColor}
@@ -900,7 +900,7 @@ function KPISections({ data }: { data: KPIData }) {
             titleAttr={data.emptyMenuNames.join('\n')}
           />
           <KPICard
-            icon={<CiGrid2H {...iconProps} />}
+            icon={<Rows {...iconProps} />}
             title="QR Kodlu Restoran"
             value={`${data.qrCreatedRestaurants} / ${data.totalRestaurants}`}
             sub="QR olusturulmus"

@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '../lib/supabase';
-import { CiCircleRemove, CiSaveDown1 } from 'react-icons/ci';
+import { XCircle, DownloadSimple } from "@phosphor-icons/react";
 
 type QRCode = {
   id: string;
@@ -169,7 +169,7 @@ export default function QRManager({ restaurant }: QRManagerProps) {
         <div style={{ display: 'flex', gap: 6 }}>
           {qrCodes.length > 0 && (
             <button onClick={downloadAll} style={{ ...S.btnSm, color: '#A8B977' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><CiSaveDown1 size={14} /> Hepsini İndir</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><DownloadSimple size={14} /> Hepsini İndir</span>
             </button>
           )}
           <button onClick={() => setShowForm(!showForm)} style={S.btnSm}>{showForm ? 'İptal' : '+ QR Kod'}</button>
@@ -271,13 +271,13 @@ export default function QRManager({ restaurant }: QRManagerProps) {
               <p style={{ fontSize: 11, color: '#a8a29e', margin: 0 }}>Masa {qr.table_number}</p>
               <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginTop: 10 }}>
                 <button onClick={() => downloadQR(qr)} style={{ ...S.btnSm, padding: '4px 8px', fontSize: 11 }}>
-                  <CiSaveDown1 size={12} />
+                  <DownloadSimple size={12} />
                 </button>
                 <button onClick={() => toggleActive(qr.id, qr.is_active)} style={{ ...S.btnSm, padding: '4px 8px', fontSize: 11, color: qr.is_active ? '#16a34a' : '#dc2626' }}>
                   {qr.is_active ? 'Aktif' : 'Pasif'}
                 </button>
                 <button onClick={() => deleteQR(qr.id)} style={{ ...S.btnSm, padding: '4px 8px', fontSize: 11, color: '#dc2626', borderColor: '#fecaca' }}>
-                  <CiCircleRemove size={12} />
+                  <XCircle size={12} />
                 </button>
               </div>
             </div>

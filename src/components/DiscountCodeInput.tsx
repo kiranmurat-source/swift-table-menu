@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CiCircleCheck, CiCircleRemove } from 'react-icons/ci';
+import { CheckCircle, XCircle } from "@phosphor-icons/react";
 import { supabase } from '../lib/supabase';
 import type { MenuTheme } from '../lib/themes';
 import type { AppliedDiscount } from '../lib/useCart';
@@ -110,7 +110,7 @@ export default function DiscountCodeInput({
         border: '1px solid #86efac', marginBottom: 12,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <CiCircleCheck size={16} style={{ color: '#22c55e' }} />
+          <CheckCircle size={16} style={{ color: '#22c55e' }} />
           <span style={{ fontSize: 12, fontWeight: 600, color: theme.key === 'black' ? '#86efac' : '#15803d' }}>
             {appliedDiscount.code}
           </span>
@@ -123,7 +123,7 @@ export default function DiscountCodeInput({
           onClick={onRemove}
           style={{ background: 'none', border: 'none', cursor: 'pointer', color: theme.key === 'black' ? '#86efac' : '#15803d', padding: 2 }}
         >
-          <CiCircleRemove size={16} />
+          <XCircle size={16} />
         </button>
       </div>
     );

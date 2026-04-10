@@ -1,4 +1,4 @@
-import { getAllergenInfo } from '@/lib/allergens';
+import { getAllergenInfo, normalizeAllergenKey } from '@/lib/allergens';
 
 interface AllergenIconProps {
   allergenKey: string;
@@ -19,15 +19,16 @@ export function AllergenIcon({
   invert = false,
   labelColor,
 }: AllergenIconProps) {
-  const info = getAllergenInfo(allergenKey);
+  const normalized = normalizeAllergenKey(allergenKey);
+  const info = getAllergenInfo(normalized);
   if (!info) return null;
 
-  const label = lang === 'en' ? info.label_en : info.label_tr;
+  const label = lang === 'en' ? info.name_en : info.name_tr;
 
   return (
     <div className={`inline-flex items-center gap-1 ${className}`} title={label}>
       <img
-        src={`/allergens/${info.icon}`}
+        src={`/allergens-erudus/${info.icon}.svg`}
         alt={label}
         width={size}
         height={size}

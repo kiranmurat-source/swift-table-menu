@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { CiCalendarDate, CiClock2, CiUser } from 'react-icons/ci';
+import { CalendarBlank, Clock, User } from "@phosphor-icons/react";
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import BlogBreadcrumb from '../components/BlogBreadcrumb';
@@ -142,13 +142,13 @@ export default function BlogPost() {
             }}
           >
             <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <CiCalendarDate size={15} /> {formatDate(post.publishedAt)}
+              <CalendarBlank size={15} /> {formatDate(post.publishedAt)}
             </span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <CiClock2 size={15} /> {post.readingTime} dk okuma
+              <Clock size={15} /> {post.readingTime} dk okuma
             </span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <CiUser size={15} /> {post.author}
+              <User size={15} /> {post.author}
             </span>
           </div>
         </div>

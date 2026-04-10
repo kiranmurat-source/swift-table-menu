@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { CiBellOn, CiCircleCheck, CiClock2 } from 'react-icons/ci';
+import { Bell, CheckCircle, Clock } from "@phosphor-icons/react";
 
 interface WaiterCall {
   id: string;
@@ -141,7 +141,7 @@ export default function WaiterCallsPanel({ restaurantId }: { restaurantId: strin
         <div style={{ textAlign: 'center', padding: 40, color: '#999' }}>Yükleniyor...</div>
       ) : calls.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 40, color: '#999' }}>
-          <CiBellOn size={48} style={{ opacity: 0.3, marginBottom: 8 }} />
+          <Bell size={48} style={{ opacity: 0.3, marginBottom: 8 }} />
           <div>Henüz çağrı yok</div>
         </div>
       ) : (
@@ -170,7 +170,7 @@ export default function WaiterCallsPanel({ restaurantId }: { restaurantId: strin
                     </span>
                   </div>
                   <div style={{ fontSize: 12, color: '#999', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <CiClock2 size={12} />
+                    <Clock size={12} />
                     {formatTime(call.created_at)}
                   </div>
                 </div>
@@ -189,7 +189,7 @@ export default function WaiterCallsPanel({ restaurantId }: { restaurantId: strin
                       onClick={() => updateStatus(call.id, 'completed')}
                       style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: 'none', backgroundColor: '#22c55e', color: '#fff', cursor: 'pointer', fontWeight: 600 }}
                     >
-                      <CiCircleCheck size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                      <CheckCircle size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />
                       Tamamla
                     </button>
                   )}
