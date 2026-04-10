@@ -1,11 +1,11 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { supabase } from '../lib/supabase';
 import { getOptimizedImageUrl, handleImageError } from '../lib/imageUtils';
 import {
   CiStar, CiApple, CiTempHigh, CiMapPin, CiPhone, CiGlobe,
-  CiForkAndKnife, CiCircleRemove, CiFilter, CiTimer,
+  CiForkAndKnife, CiCircleRemove, CiFilter, CiTimer, CiGrid41, CiViewList,
 } from 'react-icons/ci';
 import { AllergenBadgeList, AllergenIcon } from '../components/AllergenIcon';
 import { getTheme, type MenuTheme } from '../lib/themes';
@@ -297,6 +297,10 @@ export default function PublicMenu() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [excludeAllergens, setExcludeAllergens] = useState<string[]>([]);
   const [preferences, setPreferences] = useState<string[]>([]);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [scrollActiveCategory, setScrollActiveCategory] = useState<string | null>(null);
+  const isScrollingToCategory = useRef(false);
+  const tabBarRef = useRef<HTMLDivElement>(null);
   const [promos, setPromos] = useState<Promo[]>([]);
   const [activePromo, setActivePromo] = useState<Promo | null>(null);
 
@@ -395,6 +399,80 @@ export default function PublicMenu() {
 
     fetchData();
   }, [slug]);
+
+  /* ---- Scroll-aware category tracking ---- */
+  useEffect(() => {
+    const handleScroll = () => {
+      if (isScrollingToCategory.current) return;
+      // Only track when viewing "All" (no specific category selected)
+      if (activeCategory) return;
+
+      const sections = document.querySelectorAll('[data-category-id]');
+      if (sections.length === 0) return;
+
+      const tabBarHeight = 120;
+      let currentCategory: string | null = null;
+
+      sections.forEach((section) => {
+        const rect = section.getBoundingClientRect();
+        if (rect.top <= tabBarHeight + 20 && rect.bottom > tabBarHeight) {
+          currentCategory = section.getAttribute('data-category-id');
+        }
+      });
+
+      if (currentCategory) {
+        setScrollActiveCategory((prev) => {
+          if (prev === currentCategory) return prev;
+          // Scroll the active tab into view
+          requestAnimationFrame(() => {
+            const tabEl = tabBarRef.current?.querySelector(`[data-tab-id="${currentCategory}"]`);
+            if (tabEl) tabEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+          });
+          return currentCategory;
+        });
+      }
+    };
+
+    let ticking = false;
+    const throttledScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', throttledScroll, { passive: true });
+    return () => window.removeEventListener('scroll', throttledScroll);
+  }, [activeCategory]);
+
+  const handleTabClick = useCallback((categoryId: string | null) => {
+    if (categoryId === null) {
+      setActiveCategory(null);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // If "All" view, scroll to section instead of filtering
+    if (!activeCategory) {
+      const section = document.querySelector(`[data-category-id="${categoryId}"]`);
+      if (section) {
+        isScrollingToCategory.current = true;
+        setScrollActiveCategory(categoryId);
+        const tabBarHeight = 120;
+        const top = section.getBoundingClientRect().top + window.scrollY - tabBarHeight;
+        window.scrollTo({ top, behavior: 'smooth' });
+        const tabEl = tabBarRef.current?.querySelector(`[data-tab-id="${categoryId}"]`);
+        if (tabEl) tabEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        setTimeout(() => { isScrollingToCategory.current = false; }, 800);
+        return;
+      }
+    }
+
+    setActiveCategory(categoryId);
+  }, [activeCategory]);
 
   const headingFont = "'Playfair Display', serif";
   const bodyFont = "'Inter', sans-serif";
@@ -895,53 +973,88 @@ export default function PublicMenu() {
         className="sticky top-0 z-20 backdrop-blur-sm"
         style={{ backgroundColor: theme.bg, borderBottom: `1px solid ${theme.divider}` }}
       >
-        <div className="max-w-[480px] mx-auto">
+        <div className="max-w-[480px] mx-auto flex items-center">
           <div
-            className="flex gap-2 px-4 py-3 overflow-x-auto"
+            ref={tabBarRef}
+            className="flex gap-2 px-4 py-3 overflow-x-auto flex-1 min-w-0"
             style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
           >
             <button
-              onClick={() => setActiveCategory(null)}
+              onClick={() => handleTabClick(null)}
               className="flex-shrink-0 px-4 py-1.5 rounded-full text-sm transition-all"
               style={{
-                backgroundColor: effectiveActiveCategory === null ? theme.categoryActiveBg : theme.categoryBg,
-                color: effectiveActiveCategory === null ? theme.categoryActiveText : theme.mutedText,
+                backgroundColor: effectiveActiveCategory === null && !scrollActiveCategory ? theme.categoryActiveBg : theme.categoryBg,
+                color: effectiveActiveCategory === null && !scrollActiveCategory ? theme.categoryActiveText : theme.mutedText,
                 fontWeight: 500,
                 scrollSnapAlign: 'start',
               }}
             >
               {UI.all[toUiLang(lang)]}
             </button>
-            {visibleCategories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setActiveCategory(cat.id)}
-                className="flex-shrink-0 inline-flex items-center gap-1.5 pr-4 rounded-full text-sm transition-all"
-                style={{
-                  backgroundColor: effectiveActiveCategory === cat.id ? theme.categoryActiveBg : theme.categoryBg,
-                  color: effectiveActiveCategory === cat.id ? theme.categoryActiveText : theme.mutedText,
-                  fontWeight: 500,
-                  scrollSnapAlign: 'start',
-                  paddingLeft: cat.image_url ? 4 : 16,
-                  paddingTop: 6,
-                  paddingBottom: 6,
-                }}
-              >
-                {cat.image_url && (
-                  <img
-                    src={getOptimizedImageUrl(cat.image_url, 'thumbnail')}
-                    alt=""
-                    className="w-6 h-6 rounded-full object-cover flex-shrink-0"
-                  />
-                )}
-                <span>{t(cat.translations, 'name', cat.name_tr, lang)}</span>
-                {filterApplied && (
-                  <span className="opacity-70 tabular-nums">
-                    ({categoryCountMap.get(cat.id) ?? 0})
-                  </span>
-                )}
-              </button>
-            ))}
+            {visibleCategories.map((cat) => {
+              const isActive = effectiveActiveCategory === cat.id ||
+                (!effectiveActiveCategory && scrollActiveCategory === cat.id);
+              return (
+                <button
+                  key={cat.id}
+                  data-tab-id={cat.id}
+                  onClick={() => handleTabClick(cat.id)}
+                  className="flex-shrink-0 inline-flex items-center gap-1.5 pr-4 rounded-full text-sm transition-all"
+                  style={{
+                    backgroundColor: isActive ? theme.categoryActiveBg : theme.categoryBg,
+                    color: isActive ? theme.categoryActiveText : theme.mutedText,
+                    fontWeight: 500,
+                    scrollSnapAlign: 'start',
+                    paddingLeft: cat.image_url ? 4 : 16,
+                    paddingTop: 6,
+                    paddingBottom: 6,
+                  }}
+                >
+                  {cat.image_url && (
+                    <img
+                      src={getOptimizedImageUrl(cat.image_url, 'thumbnail')}
+                      alt=""
+                      className="w-6 h-6 rounded-full object-cover flex-shrink-0"
+                    />
+                  )}
+                  <span>{t(cat.translations, 'name', cat.name_tr, lang)}</span>
+                  {filterApplied && (
+                    <span className="opacity-70 tabular-nums">
+                      ({categoryCountMap.get(cat.id) ?? 0})
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          {/* Grid/List Toggle */}
+          <div className="flex-shrink-0 flex gap-1 pr-4">
+            <button
+              onClick={() => setViewMode('list')}
+              className="flex items-center justify-center"
+              style={{
+                width: 32, height: 32, borderRadius: 8, border: 'none',
+                backgroundColor: viewMode === 'list' ? theme.categoryActiveBg : 'transparent',
+                color: viewMode === 'list' ? theme.categoryActiveText : theme.mutedText,
+                cursor: 'pointer',
+              }}
+              aria-label="Liste görünüm"
+            >
+              <CiViewList size={18} />
+            </button>
+            <button
+              onClick={() => setViewMode('grid')}
+              className="flex items-center justify-center"
+              style={{
+                width: 32, height: 32, borderRadius: 8, border: 'none',
+                backgroundColor: viewMode === 'grid' ? theme.categoryActiveBg : 'transparent',
+                color: viewMode === 'grid' ? theme.categoryActiveText : theme.mutedText,
+                cursor: 'pointer',
+              }}
+              aria-label="Grid görünüm"
+            >
+              <CiGrid41 size={18} />
+            </button>
           </div>
         </div>
       </div>
@@ -992,12 +1105,12 @@ export default function PublicMenu() {
             const activeChildren = childrenOf(effectiveActiveCategory);
             if (activeChildren.length === 0) {
               return (
-                <div className="flex flex-col gap-3">
+                <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-3' : 'flex flex-col gap-3'}>
                   {filteredItems.map((item) => (
-                    <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} />
+                    <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} />
                   ))}
                   {filteredItems.length === 0 && (
-                    <p className="text-center text-sm py-8" style={{ color: theme.mutedText }}>{UI.noItemsInCat[toUiLang(lang)]}</p>
+                    <p className="text-center text-sm py-8 col-span-2" style={{ color: theme.mutedText }}>{UI.noItemsInCat[toUiLang(lang)]}</p>
                   )}
                 </div>
               );
@@ -1007,9 +1120,9 @@ export default function PublicMenu() {
             return (
               <div>
                 {directItems.length > 0 && (
-                  <div className="flex flex-col gap-3 mb-6">
+                  <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-3 mb-6' : 'flex flex-col gap-3 mb-6'}>
                     {directItems.map((item) => (
-                      <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} />
+                      <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} />
                     ))}
                   </div>
                 )}
@@ -1029,9 +1142,9 @@ export default function PublicMenu() {
                             {childItems.length}
                           </span>
                         </div>
-                        <div className="flex flex-col gap-3">
+                        <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-3' : 'flex flex-col gap-3'}>
                           {childItems.map((item) => (
-                            <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} />
+                            <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} />
                           ))}
                         </div>
                       </div>
@@ -1045,6 +1158,7 @@ export default function PublicMenu() {
             <div
               key={category?.id ?? 'other'}
               id={category ? `category-${category.id}` : undefined}
+              data-category-id={category?.id}
               className="mb-6 scroll-mt-20"
             >
               <div className="flex items-center gap-3 mb-3 pt-2">
@@ -1062,9 +1176,9 @@ export default function PublicMenu() {
                   {catItems.length + subgroups.reduce((a, s) => a + s.items.length, 0)}
                 </span>
               </div>
-              <div className="flex flex-col gap-3">
+              <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-3' : 'flex flex-col gap-3'}>
                 {catItems.map((item) => (
-                  <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} />
+                  <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} />
                 ))}
               </div>
               {subgroups.map((sg) => (
@@ -1078,9 +1192,9 @@ export default function PublicMenu() {
                       {sg.items.length}
                     </span>
                   </div>
-                  <div className="flex flex-col gap-3">
+                  <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-3' : 'flex flex-col gap-3'}>
                     {sg.items.map((item) => (
-                      <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} />
+                      <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} />
                     ))}
                   </div>
                 </div>
@@ -1320,7 +1434,7 @@ const SOLD_OUT_LABELS: Record<UiLangCode, string> = {
   tr: 'Tükendi', en: 'Sold Out', ar: 'نفد', zh: '售罄',
 };
 
-function MenuItemCard({ item, lang, theme, onSelect }: { item: MenuItem; lang: LangCode; theme: MenuTheme; onSelect: (item: MenuItem) => void }) {
+function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list' }: { item: MenuItem; lang: LangCode; theme: MenuTheme; onSelect: (item: MenuItem) => void; viewMode?: 'grid' | 'list' }) {
   const name = t(item.translations, 'name', item.name_tr, lang);
   const description = t(item.translations, 'description', item.description_tr, lang);
   const hasBadges = item.is_popular || item.is_new || item.is_vegetarian;
@@ -1412,6 +1526,44 @@ function MenuItemCard({ item, lang, theme, onSelect }: { item: MenuItem; lang: L
     );
   }
 
+  /* ---- Grid card ---- */
+  if (viewMode === 'grid') {
+    return (
+      <div
+        className="rounded-2xl overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer active:scale-[0.99]"
+        style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}`, ...soldOutWrapperStyle }}
+        onClick={() => onSelect(item)}
+      >
+        {item.image_url ? (
+          <img onError={handleImageError} src={getOptimizedImageUrl(item.image_url, 'card')} alt={name} className="w-full h-32 object-cover" loading="lazy" decoding="async" />
+        ) : (
+          <div className="w-full h-24 flex items-center justify-center" style={{ backgroundColor: theme.badgeBg }}>
+            <CiForkAndKnife size={28} style={{ color: theme.mutedText }} />
+          </div>
+        )}
+        <div className="p-3">
+          <h3 className="text-[13px] leading-snug line-clamp-2 mb-1" style={{ fontFamily: headingFont, fontWeight: 700, color: theme.text }}>
+            {name || <span className="italic" style={{ color: theme.mutedText }}>—</span>}
+          </h3>
+          {SoldOutBadge && <div className="mb-1">{SoldOutBadge}</div>}
+          <span className="text-[13px] tabular-nums" style={{ color: theme.price, fontWeight: 500, ...soldOutPriceStyle }}>
+            {formatPriceDisplay(item, toUiLang(lang))}
+          </span>
+          {(displayCalories != null || prepTime != null) && (
+            <div className="flex items-center gap-1.5 mt-1">
+              <span className="text-[10px]" style={{ color: theme.mutedText }}>
+                {displayCalories != null && <span>{displayCalories} kcal</span>}
+                {displayCalories != null && prepTime != null && <span> · </span>}
+                {prepTime != null && <span>{prepTime} {minutesLabel}</span>}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  /* ---- List card (default) ---- */
   return (
     <div
       className="rounded-2xl p-3 flex gap-3 hover:shadow-md transition-all duration-200 cursor-pointer active:scale-[0.99]"
