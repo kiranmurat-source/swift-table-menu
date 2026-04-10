@@ -323,7 +323,7 @@ export default function PublicMenu() {
   useEffect(() => {
     if (!slug) return;
     const startTime = performance.now();
-    const LOADING_MIN_MS = 1000;
+    const LOADING_MIN_MS = 500;
 
     const fetchData = async () => {
       setLoading(true);
