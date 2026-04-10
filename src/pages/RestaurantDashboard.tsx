@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, Fragment, lazy, Suspense, ReactNode, CSSProperties } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
-import { CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiApple, CiStar, CiGlobe, CiPen, CiGrid2H, CiUser, CiImageOn, CiTrash, CiLink, CiBoxes, CiCircleChevDown, CiCircleChevUp, CiCirclePlus, CiClock1, CiWheat, CiTimer, CiCircleInfo, CiBellOn, CiClock2 } from 'react-icons/ci';
+import { CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiApple, CiStar, CiGlobe, CiPen, CiGrid2H, CiUser, CiImageOn, CiTrash, CiLink, CiBoxes, CiCircleChevDown, CiCircleChevUp, CiCirclePlus, CiClock1, CiWheat, CiTimer, CiCircleInfo, CiBellOn, CiClock2, CiMenuBurger, CiGrid41, CiDiscount1, CiPalette } from 'react-icons/ci';
 import {
   DndContext,
   closestCenter,
@@ -766,6 +766,8 @@ export default function RestaurantDashboard() {
   const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState<'menu' | 'translations' | 'qr' | 'profile' | 'promos' | 'calls'>('menu');
   const [pendingCallCount, setPendingCallCount] = useState(0);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
   const [loadingData, setLoadingData] = useState(true);
   const fileRef = useRef<HTMLInputElement>(null);
   const initialFormJsonRef = useRef<string>('');
@@ -843,6 +845,17 @@ export default function RestaurantDashboard() {
 
     return () => { supabase.removeChannel(channel); };
   }, [restaurant?.id]);
+
+  // Responsive: track mobile breakpoint
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (!mobile) setSidebarOpen(false);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   async function loadCategories(rid: string) {
     const { data } = await supabase.from('menu_categories').select('*').eq('restaurant_id', rid).order('sort_order');
@@ -1361,69 +1374,131 @@ export default function RestaurantDashboard() {
   const totalMissingPhotos = items.filter(i => !i.image_url).length;
   const catName = (id: string) => categories.find(c => c.id === id)?.name_tr || '';
 
-  const sidebarItems = [
-    { key: 'menu', label: 'Menü', icon: CiEdit },
-    { key: 'translations', label: 'Çeviri Merkezi', icon: CiGlobe },
-    { key: 'qr', label: 'QR Kodları', icon: CiGrid2H },
-    { key: 'calls', label: 'Çağrılar', icon: CiBellOn },
-    { key: 'promos', label: 'Promosyonlar', icon: CiStar },
-    { key: 'profile', label: 'Profil', icon: CiUser },
-  ] as const;
+  const sidebarGroups = [
+    {
+      title: 'Menü Yönetimi',
+      items: [
+        { key: 'menu' as const, label: 'Menü', icon: CiGrid41 },
+        { key: 'translations' as const, label: 'Çeviri Merkezi', icon: CiGlobe },
+        { key: 'qr' as const, label: 'QR Kodları', icon: CiGrid2H },
+      ],
+    },
+    {
+      title: 'Müşteri İlişkileri',
+      items: [
+        { key: 'calls' as const, label: 'Çağrılar', icon: CiBellOn, badge: pendingCallCount },
+        { key: 'promos' as const, label: 'Promosyonlar', icon: CiDiscount1 },
+      ],
+    },
+    {
+      title: 'Görünüm',
+      items: [
+        { key: 'profile' as const, label: 'Tema & Profil', icon: CiPalette },
+      ],
+    },
+  ];
+
+  const allSidebarItems = sidebarGroups.flatMap(g => g.items);
+  const activeLabel = allSidebarItems.find(i => i.key === activeTab)?.label ?? 'Menü';
 
   // Inline item form renderer. Assigned during render by the IIFE below so we
   // can keep the large JSX tree in-place while calling it from inside the
   // category accordion.
   let renderItemForm: () => ReactNode = () => null;
 
+  const handleSidebarNav = (key: typeof activeTab) => {
+    setActiveTab(key);
+    setSidebarOpen(false);
+  };
+
+  const sidebarContent = (
+    <>
+      <div className="p-4 border-b border-gray-200">
+        <img src="/tabbled-logo-horizontal.png" alt="Tabbled" className="h-7 w-auto mb-2" />
+        <div className="flex items-center gap-2">
+          {restaurant.logo_url && (
+            <img onError={handleImageError} src={getOptimizedImageUrl(restaurant.logo_url, 'thumbnail')} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
+          )}
+          <p className="font-semibold text-[13px] text-stone-900 truncate">{restaurant.name}</p>
+        </div>
+      </div>
+      <nav className="flex-1 overflow-auto py-2">
+        {sidebarGroups.map((group) => (
+          <div key={group.title} className="mb-4">
+            <div className="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+              {group.title}
+            </div>
+            {group.items.map((item) => {
+              const Icon = item.icon;
+              const active = activeTab === item.key;
+              return (
+                <button
+                  key={item.key}
+                  onClick={() => handleSidebarNav(item.key)}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-[13px] transition-colors border-l-[3px]"
+                  style={{
+                    background: active ? '#fff' : 'transparent',
+                    borderLeftColor: active ? '#FF4F7A' : 'transparent',
+                    color: active ? '#1C1C1E' : '#6b7280',
+                    fontWeight: active ? 600 : 400,
+                  }}
+                >
+                  <Icon size={16} />
+                  <span className="flex-1 text-left">{item.label}</span>
+                  {'badge' in item && (item as any).badge > 0 && (
+                    <span className="text-[10px] font-bold text-white bg-red-500 rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+                      {(item as any).badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        ))}
+      </nav>
+      <div className="p-4 border-t border-gray-200 text-[11px] text-gray-400 flex items-center gap-1">
+        <CiLink size={12} /> tabbled.com/menu/{restaurant.slug}
+      </div>
+    </>
+  );
+
   return (
     <div className="flex min-h-screen bg-white">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-[220px] shrink-0 border-r border-gray-200 bg-[#fafafa] sticky top-0 self-start min-h-screen">
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center gap-3">
-            {restaurant.logo_url && (
-              <img onError={handleImageError} src={getOptimizedImageUrl(restaurant.logo_url, 'thumbnail')} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" />
-            )}
-            <div className="min-w-0">
-              <p className="font-semibold text-sm text-stone-900 truncate">{restaurant.name}</p>
-              <p className="text-xs text-stone-500">Restoran Yönetimi</p>
-            </div>
-          </div>
-        </div>
-        <nav className="flex-1 py-2">
-          {sidebarItems.map((item) => {
-            const Icon = item.icon;
-            const active = activeTab === item.key;
-            return (
-              <button
-                key={item.key}
-                onClick={() => setActiveTab(item.key)}
-                className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors border-l-[3px] ${
-                  active
-                    ? 'bg-gray-100 text-stone-900 font-semibold border-rose-600'
-                    : 'text-stone-500 hover:bg-gray-50 hover:text-stone-700 border-transparent'
-                }`}
-              >
-                <Icon size={20} />
-                <span>{item.label}</span>
-                {item.key === 'calls' && pendingCallCount > 0 && (
-                  <span className="ml-auto text-[10px] font-bold text-white bg-red-500 rounded-full px-1.5 py-0.5 min-w-[18px] text-center">{pendingCallCount}</span>
-                )}
-              </button>
-            );
-          })}
-        </nav>
-        <div className="p-4 border-t border-gray-200">
-          <p className="text-xs text-stone-400">Powered by Tabbled</p>
-        </div>
+      <aside className="hidden md:flex flex-col w-[240px] shrink-0 border-r border-gray-200 bg-[#fafafa] sticky top-0 self-start min-h-screen">
+        {sidebarContent}
       </aside>
 
+      {/* Mobile Sidebar Overlay */}
+      {isMobile && sidebarOpen && (
+        <div className="fixed inset-0 z-50 flex">
+          <div className="fixed inset-0 bg-black/30" onClick={() => setSidebarOpen(false)} />
+          <aside className="relative z-10 flex flex-col w-[260px] bg-[#fafafa] min-h-screen shadow-xl animate-slide-in">
+            {sidebarContent}
+          </aside>
+        </div>
+      )}
+
       {/* Main content */}
-      <main className="flex-1 min-w-0 pb-24 md:pb-0">
+      <main className="flex-1 min-w-0">
+        {/* Mobile header */}
+        {isMobile && (
+          <div className="sticky top-0 z-40 flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-200">
+            <button onClick={() => setSidebarOpen(true)} className="p-1" aria-label="Menü">
+              <CiMenuBurger size={22} />
+            </button>
+            <span className="text-sm font-semibold text-stone-900">{activeLabel}</span>
+            {pendingCallCount > 0 && activeTab !== 'calls' && (
+              <button onClick={() => setActiveTab('calls')} className="ml-auto relative p-1">
+                <CiBellOn size={20} className="text-stone-500" />
+                <span className="absolute -top-0.5 -right-0.5 text-[8px] font-bold text-white bg-red-500 rounded-full w-4 h-4 flex items-center justify-center">{pendingCallCount}</span>
+              </button>
+            )}
+          </div>
+        )}
+
         <div style={S.wrap}>
-          <h2 className="md:hidden" style={{ fontSize: 22, fontWeight: 700, color: '#1c1917', marginBottom: 4 }}>{restaurant.name}</h2>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-            <p className="md:hidden" style={{ fontSize: 13, color: '#a8a29e', margin: 0 }}>Restoran Yönetimi</p>
+          <div className="hidden md:flex" style={{ alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
             {enabledLangs.length > 0 && (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#4338CA', background: '#EEF2FF', padding: '2px 8px', borderRadius: 12 }}>
                 <CiGlobe size={12} /> {enabledLangs.map(l => l.toUpperCase()).join(', ')}
@@ -2441,30 +2516,7 @@ export default function RestaurantDashboard() {
         </div>
       </main>
 
-      {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 flex justify-around py-2">
-        {sidebarItems.map((item) => {
-          const Icon = item.icon;
-          const active = activeTab === item.key;
-          return (
-            <button
-              key={item.key}
-              onClick={() => setActiveTab(item.key)}
-              className={`flex flex-col items-center gap-1 px-2 py-1 text-[10px] transition-colors ${
-                active ? 'text-rose-600' : 'text-stone-400 hover:text-stone-600'
-              }`}
-            >
-              <span className="relative">
-                <Icon size={20} />
-                {item.key === 'calls' && pendingCallCount > 0 && (
-                  <span className="absolute -top-1 -right-2 text-[8px] font-bold text-white bg-red-500 rounded-full w-4 h-4 flex items-center justify-center">{pendingCallCount}</span>
-                )}
-              </span>
-              <span className="truncate max-w-[64px]">{item.label}</span>
-            </button>
-          );
-        })}
-      </nav>
+      {/* Mobile bottom nav removed — replaced by hamburger sidebar drawer */}
     </div>
   );
 }
