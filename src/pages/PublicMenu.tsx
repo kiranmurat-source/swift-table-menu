@@ -14,6 +14,7 @@ import PromoPopup, { isPromoVisible, type Promo } from '../components/PromoPopup
 import { getLanguage, isRTL } from '../lib/languages';
 import { stripHtml } from '../lib/html';
 import AnimatedLogo from '../components/AnimatedLogo';
+import WaiterCallBar from '../components/WaiterCallBar';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -1204,18 +1205,22 @@ export default function PublicMenu() {
         )}
       </main>
 
-      {/* Footer */}
-      <footer
-        className="fixed bottom-0 left-0 right-0 backdrop-blur-sm py-3 z-10"
-        style={{ backgroundColor: theme.bg, borderTop: `1px solid ${theme.divider}` }}
-      >
-        <div className="flex items-center justify-center gap-2">
-          <span className="text-[10px]" style={{ color: theme.mutedText }}>Powered by</span>
-          <a href="https://tabbled.com" aria-label="Tabbled" className="hover:opacity-80 transition-opacity inline-flex">
-            <img src="/tabbled-logo-horizontal.png" alt="Tabbled" className="h-4 w-auto block" />
-          </a>
-        </div>
-      </footer>
+      {/* Footer / Waiter Call Bar */}
+      {table ? (
+        <WaiterCallBar restaurantId={restaurant.id} tableNumber={table} theme={theme} language={lang} />
+      ) : (
+        <footer
+          className="fixed bottom-0 left-0 right-0 backdrop-blur-sm py-3 z-10"
+          style={{ backgroundColor: theme.bg, borderTop: `1px solid ${theme.divider}` }}
+        >
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-[10px]" style={{ color: theme.mutedText }}>Powered by</span>
+            <a href="https://tabbled.com" aria-label="Tabbled" className="hover:opacity-80 transition-opacity inline-flex">
+              <img src="/tabbled-logo-horizontal.png" alt="Tabbled" className="h-4 w-auto block" />
+            </a>
+          </div>
+        </footer>
+      )}
 
       {/* Item Detail Modal */}
       {selectedItem && (

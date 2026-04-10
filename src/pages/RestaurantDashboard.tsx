@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, Fragment, lazy, Suspense, ReactNode, CSSProperties } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
-import { CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiApple, CiStar, CiGlobe, CiPen, CiGrid2H, CiUser, CiImageOn, CiTrash, CiLink, CiBoxes, CiCircleChevDown, CiCircleChevUp, CiCirclePlus, CiClock1, CiWheat, CiTimer, CiCircleInfo } from 'react-icons/ci';
+import { CiCamera, CiEdit, CiCircleCheck, CiCircleRemove, CiApple, CiStar, CiGlobe, CiPen, CiGrid2H, CiUser, CiImageOn, CiTrash, CiLink, CiBoxes, CiCircleChevDown, CiCircleChevUp, CiCirclePlus, CiClock1, CiWheat, CiTimer, CiCircleInfo, CiBellOn, CiClock2 } from 'react-icons/ci';
 import {
   DndContext,
   closestCenter,
@@ -41,6 +41,7 @@ function Sortable({ id, children }: { id: string; children: (p: SortableRenderPr
 }
 import QRManager from '../components/QRManager';
 import TranslationCenter from '../components/TranslationCenter';
+import WaiterCallsPanel from '../components/WaiterCallsPanel';
 const RichTextEditor = lazy(() => import('../components/RichTextEditor'));
 import { CategoryTabSkeleton, ListSkeleton } from '../components/Skeleton';
 import { getOptimizedImageUrl, handleImageError } from '../lib/imageUtils';
@@ -763,7 +764,8 @@ export default function RestaurantDashboard() {
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [editCatForm, setEditCatForm] = useState({ name_tr: '' });
   const [uploading, setUploading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'menu' | 'translations' | 'qr' | 'profile' | 'promos'>('menu');
+  const [activeTab, setActiveTab] = useState<'menu' | 'translations' | 'qr' | 'profile' | 'promos' | 'calls'>('menu');
+  const [pendingCallCount, setPendingCallCount] = useState(0);
   const [loadingData, setLoadingData] = useState(true);
   const fileRef = useRef<HTMLInputElement>(null);
   const initialFormJsonRef = useRef<string>('');
@@ -811,6 +813,36 @@ export default function RestaurantDashboard() {
         });
     }
   }, [user]);
+
+  // Waiter calls: pending count + realtime
+  useEffect(() => {
+    if (!restaurant) return;
+    const rid = restaurant.id;
+
+    // Initial count
+    supabase
+      .from('waiter_calls')
+      .select('id', { count: 'exact', head: true })
+      .eq('restaurant_id', rid)
+      .in('status', ['pending', 'acknowledged'])
+      .then(({ count }) => { if (count != null) setPendingCallCount(count); });
+
+    // Realtime
+    const channel = supabase
+      .channel('waiter-calls-badge')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'waiter_calls', filter: `restaurant_id=eq.${rid}` }, () => {
+        // Re-fetch count on any change
+        supabase
+          .from('waiter_calls')
+          .select('id', { count: 'exact', head: true })
+          .eq('restaurant_id', rid)
+          .in('status', ['pending', 'acknowledged'])
+          .then(({ count }) => { if (count != null) setPendingCallCount(count); });
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [restaurant?.id]);
 
   async function loadCategories(rid: string) {
     const { data } = await supabase.from('menu_categories').select('*').eq('restaurant_id', rid).order('sort_order');
@@ -1333,6 +1365,7 @@ export default function RestaurantDashboard() {
     { key: 'menu', label: 'Menü', icon: CiEdit },
     { key: 'translations', label: 'Çeviri Merkezi', icon: CiGlobe },
     { key: 'qr', label: 'QR Kodları', icon: CiGrid2H },
+    { key: 'calls', label: 'Çağrılar', icon: CiBellOn },
     { key: 'promos', label: 'Promosyonlar', icon: CiStar },
     { key: 'profile', label: 'Profil', icon: CiUser },
   ] as const;
@@ -1373,6 +1406,9 @@ export default function RestaurantDashboard() {
               >
                 <Icon size={20} />
                 <span>{item.label}</span>
+                {item.key === 'calls' && pendingCallCount > 0 && (
+                  <span className="ml-auto text-[10px] font-bold text-white bg-red-500 rounded-full px-1.5 py-0.5 min-w-[18px] text-center">{pendingCallCount}</span>
+                )}
               </button>
             );
           })}
@@ -1403,6 +1439,7 @@ export default function RestaurantDashboard() {
           {activeTab === 'profile' && <ProfileTab restaurant={restaurant} onUpdate={(r) => setRestaurant(r)} />}
       {activeTab === 'qr' && <QRManager restaurant={restaurant} />}
       {activeTab === 'promos' && <PromosTab restaurant={restaurant} />}
+      {activeTab === 'calls' && <WaiterCallsPanel restaurantId={restaurant.id} />}
       {activeTab === 'translations' && (
         <TranslationCenter
           restaurantId={restaurant.id}
@@ -2417,7 +2454,12 @@ export default function RestaurantDashboard() {
                 active ? 'text-rose-600' : 'text-stone-400 hover:text-stone-600'
               }`}
             >
-              <Icon size={20} />
+              <span className="relative">
+                <Icon size={20} />
+                {item.key === 'calls' && pendingCallCount > 0 && (
+                  <span className="absolute -top-1 -right-2 text-[8px] font-bold text-white bg-red-500 rounded-full w-4 h-4 flex items-center justify-center">{pendingCallCount}</span>
+                )}
+              </span>
               <span className="truncate max-w-[64px]">{item.label}</span>
             </button>
           );
