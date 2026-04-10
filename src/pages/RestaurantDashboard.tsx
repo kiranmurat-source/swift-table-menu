@@ -1446,7 +1446,6 @@ export default function RestaurantDashboard() {
   const sidebarContent = (
     <>
       <div className="p-4 border-b border-gray-200">
-        <img src="/tabbled-logo-horizontal.png" alt="Tabbled" className="h-7 w-auto mb-2" />
         <div className="flex items-center gap-2">
           {restaurant.logo_url && (
             <img onError={handleImageError} src={getOptimizedImageUrl(restaurant.logo_url, 'thumbnail')} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
@@ -1495,39 +1494,46 @@ export default function RestaurantDashboard() {
   );
 
   return (
-    <div className="flex min-h-screen bg-white">
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-[240px] shrink-0 border-r border-gray-200 bg-[#fafafa] sticky top-0 self-start min-h-screen">
-        {sidebarContent}
-      </aside>
-
-      {/* Mobile Sidebar Overlay */}
-      {isMobile && sidebarOpen && (
-        <div className="fixed inset-0 z-50 flex">
-          <div className="fixed inset-0 bg-black/30" onClick={() => setSidebarOpen(false)} />
-          <aside className="relative z-10 flex flex-col w-[260px] bg-[#fafafa] min-h-screen shadow-xl animate-slide-in">
-            {sidebarContent}
-          </aside>
-        </div>
-      )}
-
-      {/* Main content */}
-      <main className="flex-1 min-w-0">
-        {/* Mobile header */}
-        {isMobile && (
-          <div className="sticky top-0 z-40 flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-200">
+    <div className="min-h-screen bg-white">
+      {/* Top navbar — sticky */}
+      <nav className="sticky top-0 z-50 flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200" style={{ height: 48 }}>
+        <div className="flex items-center gap-3">
+          {isMobile && (
             <button onClick={() => setSidebarOpen(true)} className="p-1" aria-label="Menü">
               <CiMenuBurger size={22} />
             </button>
-            <span className="text-sm font-semibold text-stone-900">{activeLabel}</span>
-            {pendingCallCount > 0 && activeTab !== 'calls' && (
-              <button onClick={() => setActiveTab('calls')} className="ml-auto relative p-1">
-                <CiBellOn size={20} className="text-stone-500" />
-                <span className="absolute -top-0.5 -right-0.5 text-[8px] font-bold text-white bg-red-500 rounded-full w-4 h-4 flex items-center justify-center">{pendingCallCount}</span>
-              </button>
-            )}
+          )}
+          <a href="https://tabbled.com" aria-label="Tabbled">
+            <img src="/tabbled-logo-horizontal.png" alt="Tabbled" className="h-6 w-auto block" />
+          </a>
+          {isMobile && <span className="text-sm font-semibold text-stone-900">{activeLabel}</span>}
+        </div>
+        {pendingCallCount > 0 && activeTab !== 'calls' && (
+          <button onClick={() => setActiveTab('calls')} className="relative p-1">
+            <CiBellOn size={20} className="text-stone-500" />
+            <span className="absolute -top-0.5 -right-0.5 text-[8px] font-bold text-white bg-red-500 rounded-full w-4 h-4 flex items-center justify-center">{pendingCallCount}</span>
+          </button>
+        )}
+      </nav>
+
+      <div className="flex" style={{ minHeight: 'calc(100vh - 48px)' }}>
+        {/* Desktop Sidebar */}
+        <aside className="hidden md:flex flex-col w-[240px] shrink-0 border-r border-gray-200 bg-[#fafafa] sticky self-start" style={{ top: 48, height: 'calc(100vh - 48px)' }}>
+          {sidebarContent}
+        </aside>
+
+        {/* Mobile Sidebar Overlay */}
+        {isMobile && sidebarOpen && (
+          <div className="fixed inset-0 z-50 flex" style={{ top: 48 }}>
+            <div className="fixed inset-0 bg-black/30" style={{ top: 48 }} onClick={() => setSidebarOpen(false)} />
+            <aside className="relative z-10 flex flex-col w-[260px] bg-[#fafafa] shadow-xl animate-slide-in" style={{ height: 'calc(100vh - 48px)' }}>
+              {sidebarContent}
+            </aside>
           </div>
         )}
+
+        {/* Main content */}
+        <main className="flex-1 min-w-0">
 
         <div style={S.wrap}>
           <div className="hidden md:flex" style={{ alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
@@ -2691,6 +2697,7 @@ export default function RestaurantDashboard() {
       )}
         </div>
       </main>
+      </div>
 
       {/* Mobile bottom nav removed — replaced by hamburger sidebar drawer */}
     </div>
