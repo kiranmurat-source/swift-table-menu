@@ -155,8 +155,8 @@ export default function WaiterCallsPanel({ restaurantId }: { restaurantId: strin
                 style={{
                   display: 'flex', alignItems: 'center', gap: 12,
                   padding: '12px 16px', borderRadius: 10,
-                  border: `1px solid ${call.status === 'pending' ? '#fecaca' : '#e5e7eb'}`,
-                  backgroundColor: call.status === 'pending' ? '#fef2f2' : '#fff',
+                  border: `1px solid ${call.status === 'pending' ? '#FECACA' : '#E5E5E3'}`,
+                  backgroundColor: call.status === 'pending' ? '#FEE2E2' : '#fff',
                 }}
               >
                 <div style={{ flex: 1 }}>

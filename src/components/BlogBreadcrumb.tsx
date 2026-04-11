@@ -11,7 +11,7 @@ export default function BlogBreadcrumb({ categoryLabel, category }: Props) {
       style={{
         fontFamily: "'Inter', sans-serif",
         fontSize: 13,
-        color: '#9CA3AF',
+        color: '#A0A0A0',
         marginBottom: 24,
         display: 'flex',
         alignItems: 'center',
@@ -19,17 +19,17 @@ export default function BlogBreadcrumb({ categoryLabel, category }: Props) {
         flexWrap: 'wrap',
       }}
     >
-      <Link to="/" style={{ color: '#9CA3AF', textDecoration: 'none' }}>
+      <Link to="/" style={{ color: '#A0A0A0', textDecoration: 'none' }}>
         Ana Sayfa
       </Link>
       <span>&gt;</span>
-      <Link to="/blog" style={{ color: '#9CA3AF', textDecoration: 'none' }}>
+      <Link to="/blog" style={{ color: '#A0A0A0', textDecoration: 'none' }}>
         Blog
       </Link>
       <span>&gt;</span>
       <Link
         to={`/blog?category=${category}`}
-        style={{ color: '#6B7280', fontWeight: 600, textDecoration: 'none' }}
+        style={{ color: '#6B6B6F', fontWeight: 600, textDecoration: 'none' }}
       >
         {categoryLabel}
       </Link>

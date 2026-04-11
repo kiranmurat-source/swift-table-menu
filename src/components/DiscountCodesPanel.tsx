@@ -138,8 +138,8 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
 
   const getStatus = (c: DiscountCode): { label: string; color: string; dotColor: string } => {
     if (!c.is_active) return { label: 'Pasif', color: '#6B6B6F', dotColor: '#9ca3af' };
-    if (c.expires_at && new Date(c.expires_at) < new Date()) return { label: 'Süresi Dolmuş', color: '#dc2626', dotColor: '#dc2626' };
-    return { label: 'Aktif', color: '#16a34a', dotColor: '#22c55e' };
+    if (c.expires_at && new Date(c.expires_at) < new Date()) return { label: 'Süresi Dolmuş', color: '#EF4444', dotColor: '#EF4444' };
+    return { label: 'Aktif', color: '#22C55E', dotColor: '#22c55e' };
   };
 
   return (
@@ -303,7 +303,7 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
               Aktif
             </label>
 
-            {error && <p style={{ fontSize: 12, color: '#dc2626' }}>{error}</p>}
+            {error && <p style={{ fontSize: 12, color: '#EF4444' }}>{error}</p>}
 
             <button
               onClick={handleSave}
@@ -370,7 +370,7 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
                 <span>
                   Son: {c.expires_at
                     ? (new Date(c.expires_at) < new Date()
-                      ? <span style={{ color: '#dc2626' }}>Süresi dolmuş</span>
+                      ? <span style={{ color: '#EF4444' }}>Süresi dolmuş</span>
                       : new Date(c.expires_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' }))
                     : 'Süresiz'}
                 </span>
@@ -387,7 +387,7 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
                 </button>
                 <button
                   onClick={() => handleDelete(c.id)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 2, fontSize: 11, color: '#dc2626', background: 'none', border: 'none', cursor: 'pointer' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 2, fontSize: 11, color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer' }}
                 >
                   <Trash size={14} /> Sil
                 </button>

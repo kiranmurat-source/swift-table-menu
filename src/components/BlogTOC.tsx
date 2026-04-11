@@ -32,7 +32,7 @@ export default function BlogTOC({ items }: { items: TOCItem[] }) {
       {/* TOC */}
       <div
         style={{
-          border: '1px solid #E5E7EB',
+          border: '1px solid #E5E5E3',
           borderRadius: 12,
           padding: 20,
           marginBottom: 16,
@@ -43,7 +43,7 @@ export default function BlogTOC({ items }: { items: TOCItem[] }) {
             fontFamily: "'Inter', sans-serif",
             fontWeight: 600,
             fontSize: 11,
-            color: '#9CA3AF',
+            color: '#A0A0A0',
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
             marginBottom: 12,
@@ -65,7 +65,7 @@ export default function BlogTOC({ items }: { items: TOCItem[] }) {
                 style={{
                   fontFamily: "'Inter', sans-serif",
                   fontSize: 13,
-                  color: activeId === item.id ? '#FF4F7A' : '#6B7280',
+                  color: activeId === item.id ? '#FF4F7A' : '#6B6B6F',
                   fontWeight: activeId === item.id ? 600 : 400,
                   textDecoration: 'none',
                   lineHeight: 1.5,
@@ -81,7 +81,7 @@ export default function BlogTOC({ items }: { items: TOCItem[] }) {
       {/* Sidebar CTA */}
       <div
         style={{
-          border: '1px solid #E5E7EB',
+          border: '1px solid #E5E5E3',
           borderRadius: 12,
           padding: 24,
           textAlign: 'center',
@@ -93,7 +93,7 @@ export default function BlogTOC({ items }: { items: TOCItem[] }) {
         <p
           style={{
             fontSize: 13,
-            color: '#6B7280',
+            color: '#6B6B6F',
             marginBottom: 16,
             fontFamily: "'Inter', sans-serif",
             lineHeight: 1.5,

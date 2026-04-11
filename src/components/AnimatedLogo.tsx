@@ -33,7 +33,7 @@ const AnimatedLogo = ({ size = 80, message, showText = true }: AnimatedLogoProps
 
       {showText && (
         <div style={{
-          fontFamily: "'Playfair Display', serif",
+          fontFamily: "'Inter', sans-serif",
           fontSize: `${Math.max(18, size * 0.3)}px`,
           fontWeight: 700,
           color: '#1C1C1E',

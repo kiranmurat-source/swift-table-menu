@@ -206,8 +206,8 @@ const S: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: 3,
     padding: '2px 8px',
-    background: '#fee2e2',
-    color: '#dc2626',
+    background: '#FEE2E2',
+    color: '#EF4444',
     borderRadius: 12,
     fontSize: 10,
     fontWeight: 600,
@@ -223,7 +223,7 @@ const S: Record<string, React.CSSProperties> = {
   },
   missingPhotoWarning: {
     fontSize: 11,
-    color: '#dc2626',
+    color: '#EF4444',
     fontWeight: 500,
   },
   accordionActions: {
@@ -241,7 +241,7 @@ const toggleSwitchStyle = (on: boolean): React.CSSProperties => ({
   width: 36,
   height: 20,
   borderRadius: 999,
-  background: on ? '#16a34a' : '#E5E5E3',
+  background: on ? '#22C55E' : '#E5E5E3',
   border: 'none',
   cursor: 'pointer',
   padding: 0,
@@ -564,7 +564,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
   return (
     <div>
       {msg && (
-        <div style={{ padding: '10px 14px', background: msg.includes('Hata') ? '#fef2f2' : '#f0fdf4', border: `1px solid ${msg.includes('Hata') ? '#fecaca' : '#bbf7d0'}`, borderRadius: 8, color: msg.includes('Hata') ? '#dc2626' : '#16a34a', fontSize: 13, marginBottom: 16, cursor: 'pointer' }} onClick={() => setMsg('')}>
+        <div style={{ padding: '10px 14px', background: msg.includes('Hata') ? '#FEE2E2' : '#DCFCE7', border: `1px solid ${msg.includes('Hata') ? '#FECACA' : '#DCFCE7'}`, borderRadius: 8, color: msg.includes('Hata') ? '#EF4444' : '#22C55E', fontSize: 13, marginBottom: 16, cursor: 'pointer' }} onClick={() => setMsg('')}>
           {msg} <span style={{ float: 'right' }}>✕</span>
         </div>
       )}
@@ -738,7 +738,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
             { key: 'feature_discount_codes' as const, label: 'İndirim Kodları', desc: 'Müşteriler sepette indirim kodu kullanabilir' },
             { key: 'feature_likes' as const, label: 'Ürün Beğeni', desc: 'Müşteriler ürünleri beğenebilir (kalp butonu)' },
           ]).map(feat => (
-            <label key={feat.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 8, border: '1px solid #E5E5E3', backgroundColor: form[feat.key] ? '#f0fdf4' : '#F7F7F5', cursor: 'pointer' }}>
+            <label key={feat.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 8, border: '1px solid #E5E5E3', backgroundColor: form[feat.key] ? '#DCFCE7' : '#F7F7F5', cursor: 'pointer' }}>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: '#1C1C1E' }}>{feat.label}</div>
                 <div style={{ fontSize: 11, color: '#6B6B6F' }}>{feat.desc}</div>
@@ -1532,27 +1532,24 @@ export default function RestaurantDashboard() {
               {group.title}
             </div>
             {group.items.map((item) => {
-              const Icon = item.icon;
               const active = activeTab === item.key;
               return (
                 <button
                   key={item.key}
                   onClick={() => handleSidebarNav(item.key)}
-                  className="w-full flex items-center gap-2 px-4 py-2 text-[13px] transition-colors border-l-[3px]"
+                  className="w-full flex items-center px-4 py-2 text-[13px] transition-colors border-l-[3px]"
                   style={{
                     background: active ? '#2A2A2E' : 'transparent',
                     borderLeftColor: active ? '#FF4F7A' : 'transparent',
                     color: active ? '#FFFFFF' : '#A0A0A0',
                     fontWeight: active ? 500 : 400,
-                    borderRadius: active ? 0 : 8,
                   }}
                   onMouseEnter={e => { if (!active) { e.currentTarget.style.background = '#2A2A2E'; e.currentTarget.style.color = '#F0F0EC'; }}}
                   onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#A0A0A0'; }}}
                 >
-                  <Icon size={16} />
                   <span className="flex-1 text-left">{item.label}</span>
                   {'badge' in item && (item as any).badge > 0 && (
-                    <span className="text-[10px] font-bold text-white bg-red-500 rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+                    <span className="text-[10px] font-bold text-white rounded-full px-1.5 py-0.5 min-w-[18px] text-center" style={{ background: '#FF4F7A' }}>
                       {(item as any).badge}
                     </span>
                   )}
@@ -1597,7 +1594,7 @@ export default function RestaurantDashboard() {
             {pendingCallCount > 0 && activeTab !== 'calls' && (
               <button onClick={() => setActiveTab('calls')} className="ml-auto relative p-1">
                 <Bell size={20} className="text-[#6B6B6F]" />
-                <span className="absolute -top-0.5 -right-0.5 text-[8px] font-bold text-white bg-red-500 rounded-full w-4 h-4 flex items-center justify-center">{pendingCallCount}</span>
+                <span className="absolute -top-0.5 -right-0.5 text-[8px] font-bold text-white rounded-full w-4 h-4 flex items-center justify-center" style={{ background: '#FF4F7A' }}>{pendingCallCount}</span>
               </button>
             )}
           </div>
@@ -1642,7 +1639,7 @@ export default function RestaurantDashboard() {
             </div>
           )}
 
-          {msg && <div style={{ padding: '10px 14px', background: msg.includes('oluşturuldu') ? '#f0fdf4' : '#fef2f2', border: `1px solid ${msg.includes('oluşturuldu') ? '#bbf7d0' : '#fecaca'}`, borderRadius: 8, color: msg.includes('oluşturuldu') ? '#16a34a' : '#dc2626', fontSize: 13, marginBottom: 16 }} onClick={() => setMsg('')}>{msg} <span style={{ float: 'right', cursor: 'pointer' }}>✕</span></div>}
+          {msg && <div style={{ padding: '10px 14px', background: msg.includes('oluşturuldu') ? '#DCFCE7' : '#FEE2E2', border: `1px solid ${msg.includes('oluşturuldu') ? '#DCFCE7' : '#FECACA'}`, borderRadius: 8, color: msg.includes('oluşturuldu') ? '#22C55E' : '#EF4444', fontSize: 13, marginBottom: 16 }} onClick={() => setMsg('')}>{msg} <span style={{ float: 'right', cursor: 'pointer' }}>✕</span></div>}
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1C1C1E' }}>Kategoriler</h3>
@@ -1764,7 +1761,7 @@ export default function RestaurantDashboard() {
                         type="button"
                         onClick={generateAIDescription}
                         disabled={generatingAI || !itemForm.name_tr}
-                        style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', fontSize: 11, fontWeight: 600, borderRadius: 6, border: 'none', backgroundColor: generatingAI ? '#e5e7eb' : '#FF4F7A', color: generatingAI ? '#999' : '#fff', cursor: generatingAI ? 'not-allowed' : 'pointer', transition: 'all 0.15s', opacity: !itemForm.name_tr ? 0.5 : 1, fontFamily: "'Inter', sans-serif" }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', fontSize: 11, fontWeight: 600, borderRadius: 6, border: 'none', backgroundColor: generatingAI ? '#E5E5E3' : '#FF4F7A', color: generatingAI ? '#999' : '#fff', cursor: generatingAI ? 'not-allowed' : 'pointer', transition: 'all 0.15s', opacity: !itemForm.name_tr ? 0.5 : 1, fontFamily: "'Inter', sans-serif" }}
                         title="AI ile açıklama oluştur"
                       >
                         {generatingAI ? (
@@ -1790,7 +1787,7 @@ export default function RestaurantDashboard() {
                       <button type="button" onClick={acceptAiDescription} style={{ padding: '4px 12px', fontSize: 11, fontWeight: 600, borderRadius: 6, border: 'none', backgroundColor: '#22c55e', color: '#fff', cursor: 'pointer' }}>
                         Kullan
                       </button>
-                      <button type="button" onClick={generateAIDescription} style={{ padding: '4px 12px', fontSize: 11, fontWeight: 600, borderRadius: 6, border: '1px solid #e5e7eb', backgroundColor: '#fff', color: '#666', cursor: 'pointer' }}>
+                      <button type="button" onClick={generateAIDescription} style={{ padding: '4px 12px', fontSize: 11, fontWeight: 600, borderRadius: 6, border: '1px solid #E5E5E3', backgroundColor: '#fff', color: '#666', cursor: 'pointer' }}>
                         Tekrar Üret
                       </button>
                       <button type="button" onClick={() => setAiPreview(null)} style={{ padding: '4px 12px', fontSize: 11, fontWeight: 600, borderRadius: 6, border: 'none', backgroundColor: 'transparent', color: '#999', cursor: 'pointer' }}>
@@ -1849,7 +1846,7 @@ export default function RestaurantDashboard() {
                     {itemForm.image_url ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <img onError={handleImageError} src={getOptimizedImageUrl(itemForm.image_url, 'thumbnail')} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover' }} />
-                        <button type="button" onClick={() => setItemForm({ ...itemForm, image_url: '' })} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11, color: '#dc2626' }}>Kaldır</button>
+                        <button type="button" onClick={() => setItemForm({ ...itemForm, image_url: '' })} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11, color: '#EF4444' }}>Kaldır</button>
                       </div>
                     ) : (
                       <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} style={{ ...S.btnSm, width: '100%' }}>
@@ -1872,7 +1869,7 @@ export default function RestaurantDashboard() {
                         const fallback = itemForm.variants[0]?.price || itemForm.price || '';
                         setItemForm({ ...itemForm, variants: [], price: fallback });
                       }}
-                      style={{ background: 'none', border: 'none', color: '#dc2626', fontSize: 11, cursor: 'pointer', textDecoration: 'underline' }}
+                      style={{ background: 'none', border: 'none', color: '#EF4444', fontSize: 11, cursor: 'pointer', textDecoration: 'underline' }}
                     >
                       Tek fiyata dön
                     </button>
@@ -1887,7 +1884,7 @@ export default function RestaurantDashboard() {
                             const next = itemForm.variants.filter((_, i) => i !== idx);
                             setItemForm({ ...itemForm, variants: next });
                           }}
-                          style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', padding: 2, display: 'inline-flex', alignItems: 'center' }}
+                          style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: 2, display: 'inline-flex', alignItems: 'center' }}
                           title="Varyantı sil"
                           disabled={itemForm.variants.length <= 2}
                         >
@@ -1972,7 +1969,7 @@ export default function RestaurantDashboard() {
                     {itemForm.image_url ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <img onError={handleImageError} src={getOptimizedImageUrl(itemForm.image_url, 'thumbnail')} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover' }} />
-                        <button type="button" onClick={() => setItemForm({ ...itemForm, image_url: '' })} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11, color: '#dc2626' }}>Kaldır</button>
+                        <button type="button" onClick={() => setItemForm({ ...itemForm, image_url: '' })} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11, color: '#EF4444' }}>Kaldır</button>
                       </div>
                     ) : (
                       <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} style={{ ...S.btnSm }}>
@@ -2270,7 +2267,7 @@ export default function RestaurantDashboard() {
                                   const current = itemForm.happy_hour_days || [];
                                   const updated = selected ? current.filter(d => d !== day.key) : [...current, day.key];
                                   setItemForm({ ...itemForm, happy_hour_days: updated.length > 0 ? updated : null });
-                                }} style={{ padding: '4px 8px', fontSize: 11, borderRadius: 6, border: `1px solid ${selected ? '#FF4F7A' : '#e5e7eb'}`, backgroundColor: selected ? '#FF4F7A' : '#fff', color: selected ? '#fff' : '#666', cursor: 'pointer', fontWeight: selected ? 600 : 400 }}>
+                                }} style={{ padding: '4px 8px', fontSize: 11, borderRadius: 6, border: `1px solid ${selected ? '#FF4F7A' : '#E5E5E3'}`, backgroundColor: selected ? '#FF4F7A' : '#fff', color: selected ? '#fff' : '#666', cursor: 'pointer', fontWeight: selected ? 600 : 400 }}>
                                   {day.label}
                                 </button>
                               );
@@ -2472,7 +2469,7 @@ export default function RestaurantDashboard() {
                         <span style={S.translationBadge}>EN</span>
                       )}
                       {item.is_sold_out && <span style={S.soldOutBadge}><XCircle size={10} /> Tükendi</span>}
-                      {item.is_vegetarian && <span style={{ ...S.badge, background: '#dcfce7', color: '#16a34a', marginRight: 0 }}><AppleLogo size={10} /></span>}
+                      {item.is_vegetarian && <span style={{ ...S.badge, background: '#DCFCE7', color: '#22C55E', marginRight: 0 }}><AppleLogo size={10} /></span>}
                       {item.is_new && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309', marginRight: 0 }}>Yeni</span>}
                       {item.is_featured && <span style={{ ...S.badge, background: '#fef3c7', color: '#b45309', marginRight: 0 }}>Öne Çıkan</span>}
                       {item.schedule_type !== 'always' && <span style={{ ...S.badge, background: '#dbeafe', color: '#1d4ed8', marginRight: 0, display: 'inline-flex', alignItems: 'center', gap: 2 }}><Clock size={10} />Zamanlı</span>}
@@ -2543,7 +2540,7 @@ export default function RestaurantDashboard() {
                     style={{
                       background: 'none',
                       border: 'none',
-                      color: hoveredItem === item.id ? '#dc2626' : 'transparent',
+                      color: hoveredItem === item.id ? '#EF4444' : 'transparent',
                       cursor: 'pointer',
                       padding: 4,
                       display: 'inline-flex',
@@ -2679,7 +2676,7 @@ export default function RestaurantDashboard() {
                         <button onClick={() => removeCategoryImage(c.id)} style={{ background: 'none', border: 'none', color: '#A0A0A0', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }} title="Görseli kaldır"><Trash size={14} /></button>
                       )}
                       <button onClick={() => { setEditingCat(c.id); setEditCatForm({ name_tr: c.name_tr }); }} style={{ background: 'none', border: 'none', color: '#A0A0A0', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }} title="Düzenle"><PencilSimple size={16} /></button>
-                      <button onClick={() => deleteCategory(c.id)} style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }} title="Sil"><Trash size={16} /></button>
+                      <button onClick={() => deleteCategory(c.id)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }} title="Sil"><Trash size={16} /></button>
                       <button
                         type="button"
                         onClick={() => toggleExpand(c.id)}
@@ -2966,7 +2963,7 @@ function PromosTab({ restaurant }: { restaurant: Restaurant }) {
   return (
     <div>
       {msg && (
-        <div style={{ padding: '10px 14px', background: msg.includes('Hata') ? '#fef2f2' : '#f0fdf4', border: `1px solid ${msg.includes('Hata') ? '#fecaca' : '#bbf7d0'}`, borderRadius: 8, color: msg.includes('Hata') ? '#dc2626' : '#16a34a', fontSize: 13, marginBottom: 16, cursor: 'pointer' }} onClick={() => setMsg('')}>
+        <div style={{ padding: '10px 14px', background: msg.includes('Hata') ? '#FEE2E2' : '#DCFCE7', border: `1px solid ${msg.includes('Hata') ? '#FECACA' : '#DCFCE7'}`, borderRadius: 8, color: msg.includes('Hata') ? '#EF4444' : '#22C55E', fontSize: 13, marginBottom: 16, cursor: 'pointer' }} onClick={() => setMsg('')}>
           {msg} <span style={{ float: 'right' }}>✕</span>
         </div>
       )}
@@ -3077,9 +3074,9 @@ function PromosTab({ restaurant }: { restaurant: Restaurant }) {
                             fontSize: 12,
                             borderRadius: 20,
                             cursor: 'pointer',
-                            border: selected ? '2px solid #16a34a' : '1px solid #E5E5E3',
-                            background: selected ? '#dcfce7' : '#fff',
-                            color: selected ? '#16a34a' : '#2D2D2F',
+                            border: selected ? '2px solid #22C55E' : '1px solid #E5E5E3',
+                            background: selected ? '#DCFCE7' : '#fff',
+                            color: selected ? '#22C55E' : '#2D2D2F',
                             fontWeight: selected ? 700 : 400,
                           }}
                         >
@@ -3131,7 +3128,7 @@ function PromosTab({ restaurant }: { restaurant: Restaurant }) {
               <div style={{ fontSize: 15, fontWeight: 600, color: '#1C1C1E' }}>{p.title_tr}</div>
               {p.description_tr && <div style={{ fontSize: 13, color: '#6B6B6F', marginTop: 2 }}>{p.description_tr}</div>}
               <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-                <span style={{ ...S.badge, background: p.is_active ? '#dcfce7' : '#fee2e2', color: p.is_active ? '#16a34a' : '#dc2626' }}>
+                <span style={{ ...S.badge, background: p.is_active ? '#DCFCE7' : '#FEE2E2', color: p.is_active ? '#22C55E' : '#EF4444' }}>
                   {p.is_active ? 'Aktif' : 'Pasif'}
                 </span>
                 {p.schedule_enabled && (
@@ -3143,7 +3140,7 @@ function PromosTab({ restaurant }: { restaurant: Restaurant }) {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 6, marginTop: 10, borderTop: '1px solid #F7F7F5', paddingTop: 10 }}>
-            <button onClick={() => toggleActive(p)} style={{ ...S.btnSm, color: p.is_active ? '#16a34a' : '#dc2626' }}>
+            <button onClick={() => toggleActive(p)} style={{ ...S.btnSm, color: p.is_active ? '#22C55E' : '#EF4444' }}>
               {p.is_active ? 'Aktif' : 'Pasif'}
             </button>
             <button onClick={() => startEdit(p)} style={S.btnSm}>Düzenle</button>

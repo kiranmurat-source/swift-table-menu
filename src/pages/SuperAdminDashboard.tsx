@@ -32,7 +32,7 @@ const S: Record<string, React.CSSProperties> = {
   input: { width: '100%', padding: '10px 14px', fontSize: 14, border: '1px solid #E5E5E3', borderRadius: 8, outline: 'none', background: '#FFFFFF', color: '#1C1C1E', boxSizing: 'border-box' as const, transition: 'border-color 0.15s ease, box-shadow 0.15s ease' },
   btn: { padding: '10px 24px', fontSize: 13, fontWeight: 500, color: '#FFFFFF', background: '#FF4F7A', border: 'none', borderRadius: 8, cursor: 'pointer', transition: 'background 0.15s ease' },
   btnSm: { padding: '6px 14px', fontSize: 12, fontWeight: 500, border: '1px solid #E5E5E3', borderRadius: 6, cursor: 'pointer', background: '#FFFFFF', color: '#2D2D2F', transition: 'all 0.15s ease' },
-  btnDanger: { padding: '6px 14px', fontSize: 12, fontWeight: 500, border: '1px solid #FECACA', borderRadius: 6, cursor: 'pointer', background: '#FFFFFF', color: '#EF4444', transition: 'all 0.15s ease' },
+  btnDanger: { padding: '6px 14px', fontSize: 12, fontWeight: 500, border: '1px solid #FEE2E2', borderRadius: 6, cursor: 'pointer', background: '#FFFFFF', color: '#EF4444', transition: 'all 0.15s ease' },
   label: { display: 'block', fontSize: 13, fontWeight: 500, color: '#2D2D2F', marginBottom: 6 },
   badge: { fontSize: 11, fontWeight: 500, padding: '4px 12px', borderRadius: 9999, display: 'inline-block' },
   tabs: { display: 'flex', gap: 4, marginBottom: 24, background: '#F7F7F5', border: '1px solid #E5E5E3', borderRadius: 8, padding: 3, width: 'fit-content', flexWrap: 'wrap' as const },
@@ -363,10 +363,10 @@ export default function SuperAdminDashboard() {
 
   // --- Helpers ---
   const statusColor = (s: string) => {
-    if (s === 'active') return { background: '#dcfce7', color: '#16a34a' };
-    if (s === 'trial') return { background: '#fef9c3', color: '#ca8a04' };
-    if (s === 'expiring') return { background: '#ffedd5', color: '#ea580c' };
-    return { background: '#fee2e2', color: '#dc2626' };
+    if (s === 'active') return { background: '#DCFCE7', color: '#166534' };
+    if (s === 'trial') return { background: '#FFF0F3', color: '#FF4F7A' };
+    if (s === 'expiring') return { background: '#F7F7F5', color: '#6B6B6F' };
+    return { background: '#FEE2E2', color: '#991B1B' };
   };
   function daysLeft(endDate: string) {
     return Math.ceil((new Date(endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
@@ -400,32 +400,32 @@ export default function SuperAdminDashboard() {
     <div style={S.wrap}>
       {/* Dashboard Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
-        <div style={{ ...S.card, marginBottom: 0, padding: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Storefront size={20} style={{ color: '#4f46e5' }} /></div>
-          <div><div style={{ fontSize: 24, fontWeight: 800, color: '#1C1C1E' }}>{restaurants.length}</div><div style={{ fontSize: 12, color: '#A0A0A0' }}>Toplam Restoran</div></div>
+        <div style={{ ...S.card, marginBottom: 0, padding: 20 }}>
+          <div style={{ fontSize: 28, fontWeight: 700, color: '#1C1C1E', lineHeight: 1.1 }}>{restaurants.length}</div>
+          <div style={{ fontSize: 13, color: '#6B6B6F', marginTop: 4 }}>Toplam Restoran</div>
         </div>
-        <div style={{ ...S.card, marginBottom: 0, padding: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CheckCircle size={20} style={{ color: '#16a34a' }} /></div>
-          <div><div style={{ fontSize: 24, fontWeight: 800, color: '#1C1C1E' }}>{activeSubs.length}</div><div style={{ fontSize: 12, color: '#A0A0A0' }}>Aktif Uyelik</div></div>
+        <div style={{ ...S.card, marginBottom: 0, padding: 20 }}>
+          <div style={{ fontSize: 28, fontWeight: 700, color: '#1C1C1E', lineHeight: 1.1 }}>{activeSubs.length}</div>
+          <div style={{ fontSize: 13, color: '#6B6B6F', marginTop: 4 }}>Aktif Üyelik</div>
         </div>
-        <div style={{ ...S.card, marginBottom: 0, padding: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Money size={20} style={{ color: '#4f46e5' }} /></div>
-          <div><div style={{ fontSize: 24, fontWeight: 800, color: '#1C1C1E' }}>{monthlyRevenue.toLocaleString('tr-TR')}</div><div style={{ fontSize: 12, color: '#A0A0A0' }}>Aylik Gelir (TL)</div></div>
+        <div style={{ ...S.card, marginBottom: 0, padding: 20 }}>
+          <div style={{ fontSize: 28, fontWeight: 700, color: '#1C1C1E', lineHeight: 1.1 }}>{monthlyRevenue.toLocaleString('tr-TR')}</div>
+          <div style={{ fontSize: 13, color: '#6B6B6F', marginTop: 4 }}>Aylık Gelir (TL)</div>
         </div>
-        <div style={{ ...S.card, marginBottom: 0, padding: 16, display: 'flex', alignItems: 'center', gap: 12, border: expiringSubs.length > 0 ? '1px solid #fed7aa' : undefined, background: expiringSubs.length > 0 ? '#fff7ed' : '#fff' }}>
-          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#ffedd5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Warning size={20} style={{ color: '#ea580c' }} /></div>
-          <div><div style={{ fontSize: 24, fontWeight: 800, color: expiringSubs.length > 0 ? '#ea580c' : '#1C1C1E' }}>{expiringSubs.length}</div><div style={{ fontSize: 12, color: '#A0A0A0' }}>Suresi Dolan</div></div>
+        <div style={{ ...S.card, marginBottom: 0, padding: 20 }}>
+          <div style={{ fontSize: 28, fontWeight: 700, color: '#1C1C1E', lineHeight: 1.1 }}>{expiringSubs.length}</div>
+          <div style={{ fontSize: 13, color: '#6B6B6F', marginTop: 4 }}>Süresi Dolan</div>
         </div>
       </div>
 
       <div style={S.tabs}>
         {(['restaurants', 'users', 'subscriptions', 'features'] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)} style={{ ...S.tab, background: tab === t ? '#fff' : 'transparent', color: tab === t ? '#1C1C1E' : '#6B6B6F', boxShadow: tab === t ? '0 1px 3px rgba(0,0,0,0.08)' : 'none' }}>
+          <button key={t} onClick={() => setTab(t)} style={{ ...S.tab, background: tab === t ? '#FF4F7A' : 'transparent', color: tab === t ? '#FFFFFF' : '#6B6B6F' }}>
             {tabLabels[t]}
           </button>
         ))}
       </div>
-      {msg && <div style={{ padding: '10px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, color: '#dc2626', fontSize: 13, marginBottom: 16 }}>{msg}</div>}
+      {msg && <div style={{ padding: '10px 14px', background: '#FEE2E2', border: '1px solid #FECACA', borderRadius: 8, color: '#991B1B', fontSize: 13, marginBottom: 16 }}>{msg}</div>}
 
       {/* ============ RESTORANLAR ============ */}
       {tab === 'restaurants' && (<>
@@ -484,7 +484,7 @@ export default function SuperAdminDashboard() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ ...S.badge, ...statusColor(r.subscription_status) }}>{r.subscription_status}</span>
-                  <button onClick={() => toggleActive(r.id, r.is_active)} style={{ ...S.btnSm, color: r.is_active ? '#16a34a' : '#dc2626' }}>{r.is_active ? 'Aktif' : 'Pasif'}</button>
+                  <button onClick={() => toggleActive(r.id, r.is_active)} style={{ ...S.btnSm, color: r.is_active ? '#166534' : '#991B1B' }}>{r.is_active ? 'Aktif' : 'Pasif'}</button>
                   <button onClick={() => { setEditingRest(r.id); setEditRestForm({ name: r.name, slug: r.slug, address: r.address || '', phone: r.phone || '' }); }} style={S.btnSm}><PencilSimple size={14} /></button>
                   <button onClick={() => deleteRestaurant(r.id)} style={S.btnDanger}>Sil</button>
                 </div>
@@ -542,7 +542,7 @@ export default function SuperAdminDashboard() {
                   <div style={{ fontSize: 13, color: '#A0A0A0' }}>{u.email}{u.restaurant_id ? ' · ' + restName(u.restaurant_id) : ''}</div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ ...S.badge, background: u.role === 'super_admin' ? '#fee2e2' : '#e0e7ff', color: u.role === 'super_admin' ? '#dc2626' : '#4f46e5' }}>{u.role}</span>
+                  <span style={{ ...S.badge, background: u.role === 'super_admin' ? '#FFF0F3' : '#F7F7F5', color: u.role === 'super_admin' ? '#FF4F7A' : '#6B6B6F' }}>{u.role}</span>
                   <button onClick={() => { setEditingUser(u.id); setEditUserForm({ full_name: u.full_name || '', restaurant_id: u.restaurant_id || '' }); }} style={S.btnSm}><PencilSimple size={14} /></button>
                   {u.role !== 'super_admin' && <button onClick={() => deleteUser(u.id)} style={S.btnDanger}>Sil</button>}
                 </div>
@@ -622,8 +622,8 @@ export default function SuperAdminDashboard() {
                 <div style={{ fontSize: 13, color: '#6B6B6F', marginTop: 2 }}>
                   {planName(s.plan_id)} &middot; {s.start_date} - {s.end_date}
                 </div>
-                {expiring && <div style={{ fontSize: 12, color: '#ea580c', fontWeight: 600, marginTop: 4 }}>Son {days} gun!</div>}
-                {expired && <div style={{ fontSize: 12, color: '#dc2626', fontWeight: 600, marginTop: 4 }}>Suresi doldu ({Math.abs(days)} gun once)</div>}
+                {expiring && <div style={{ fontSize: 12, color: '#FF4F7A', fontWeight: 600, marginTop: 4 }}>Son {days} gun!</div>}
+                {expired && <div style={{ fontSize: 12, color: '#EF4444', fontWeight: 600, marginTop: 4 }}>Suresi doldu ({Math.abs(days)} gun once)</div>}
                 {s.notes && <div style={{ fontSize: 12, color: '#A0A0A0', marginTop: 2 }}>{s.notes}</div>}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -731,8 +731,8 @@ export default function SuperAdminDashboard() {
                                 onClick={() => { setEditingPF(key); setEditPFValue(val); }}
                                 style={{
                                   cursor: 'pointer', padding: '3px 10px', borderRadius: 4, fontSize: 12, fontWeight: 600,
-                                  background: val === 'false' ? '#F7F7F5' : '#dcfce7',
-                                  color: val === 'false' ? '#A0A0A0' : '#16a34a',
+                                  background: val === 'false' ? '#F7F7F5' : '#DCFCE7',
+                                  color: val === 'false' ? '#A0A0A0' : '#166534',
                                   display: 'inline-block', minWidth: 36,
                                 }}
                                 title="Tikla: deger degistir"
@@ -780,7 +780,7 @@ const KPI_STYLES: Record<string, React.CSSProperties> = {
   cardHeader: { display: 'flex', alignItems: 'center', gap: 8, color: '#6B6B6F' },
   cardTitle: { fontSize: 13, fontWeight: 600, color: '#2D2D2F' },
   cardMetric: {
-    fontFamily: "'Playfair Display', serif",
+    fontFamily: "'Inter', sans-serif",
     fontSize: 30, fontWeight: 700, color: '#1C1C1E', lineHeight: 1.1, marginTop: 4,
   },
   cardSub: { fontSize: 12, color: '#A0A0A0', fontWeight: 300 },
@@ -803,9 +803,9 @@ function KPICard({ icon, title, value, sub, valueColor, titleAttr }: {
 }
 
 function KPISections({ data }: { data: KPIData }) {
-  const photoColor = data.photoPercentage >= 80 ? '#16a34a' : data.photoPercentage >= 50 ? '#d97706' : '#dc2626';
-  const expiringColor = data.expiringSoon > 0 ? '#d97706' : '#1C1C1E';
-  const emptyColor = data.emptyMenuRestaurants > 0 ? '#dc2626' : '#16a34a';
+  const photoColor = data.photoPercentage >= 80 ? '#166534' : data.photoPercentage >= 50 ? '#FF4F7A' : '#EF4444';
+  const expiringColor = data.expiringSoon > 0 ? '#FF4F7A' : '#1C1C1E';
+  const emptyColor = data.emptyMenuRestaurants > 0 ? '#EF4444' : '#166534';
   const iconProps = { size: 18, style: { color: '#6B6B6F' } };
 
   return (

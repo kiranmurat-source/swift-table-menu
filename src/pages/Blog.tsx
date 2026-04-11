@@ -61,7 +61,7 @@ export default function Blog() {
         <div style={{ marginBottom: 32 }}>
           <h1
             style={{
-              fontFamily: "'Playfair Display', serif",
+              fontFamily: "'Inter', sans-serif",
               fontWeight: 700,
               fontSize: 36,
               color: '#1C1C1E',
@@ -70,7 +70,7 @@ export default function Blog() {
           >
             Blog
           </h1>
-          <p style={{ fontSize: 15, color: '#6B7280', lineHeight: 1.6, maxWidth: 560 }}>
+          <p style={{ fontSize: 15, color: '#6B6B6F', lineHeight: 1.6, maxWidth: 560 }}>
             Restoran dijital menu dunyasından rehberler, ipuclari ve guncel yasal duzenlemeler.
           </p>
         </div>
@@ -93,7 +93,7 @@ export default function Blog() {
                 borderRadius: 20,
                 border: `1px solid ${!activeCategory ? '#FF4F7A' : '#E5E7EB'}`,
                 backgroundColor: !activeCategory ? '#FF4F7A' : '#fff',
-                color: !activeCategory ? '#fff' : '#6B7280',
+                color: !activeCategory ? '#fff' : '#6B6B6F',
                 fontSize: 13,
                 fontWeight: !activeCategory ? 600 : 400,
                 cursor: 'pointer',
@@ -112,7 +112,7 @@ export default function Blog() {
                   borderRadius: 20,
                   border: `1px solid ${activeCategory === cat.id ? '#FF4F7A' : '#E5E7EB'}`,
                   backgroundColor: activeCategory === cat.id ? '#FF4F7A' : '#fff',
-                  color: activeCategory === cat.id ? '#fff' : '#6B7280',
+                  color: activeCategory === cat.id ? '#fff' : '#6B6B6F',
                   fontSize: 13,
                   fontWeight: activeCategory === cat.id ? 600 : 400,
                   cursor: 'pointer',

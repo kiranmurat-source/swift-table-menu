@@ -15,7 +15,7 @@ export default function BlogFAQ({ items }: { items: FAQItem[] }) {
     <div style={{ marginTop: 40 }}>
       <h2
         style={{
-          fontFamily: "'Playfair Display', serif",
+          fontFamily: "'Inter', sans-serif",
           fontWeight: 600,
           fontSize: 24,
           color: '#1C1C1E',
@@ -46,7 +46,7 @@ export default function BlogFAQ({ items }: { items: FAQItem[] }) {
                   justifyContent: 'space-between',
                   padding: '14px 16px',
                   border: 'none',
-                  backgroundColor: isOpen ? '#FAFAFA' : '#fff',
+                  backgroundColor: isOpen ? '#F7F7F5' : '#fff',
                   cursor: 'pointer',
                   fontFamily: "'Inter', sans-serif",
                   fontWeight: 600,
@@ -62,7 +62,7 @@ export default function BlogFAQ({ items }: { items: FAQItem[] }) {
                     flexShrink: 0,
                     transition: 'transform 0.2s',
                     transform: isOpen ? 'rotate(180deg)' : 'rotate(0)',
-                    color: '#6B7280',
+                    color: '#6B6B6F',
                   }}
                 />
               </button>
@@ -72,9 +72,9 @@ export default function BlogFAQ({ items }: { items: FAQItem[] }) {
                     padding: '0 16px 14px',
                     fontFamily: "'Inter', sans-serif",
                     fontSize: 14,
-                    color: '#6B7280',
+                    color: '#6B6B6F',
                     lineHeight: 1.7,
-                    backgroundColor: '#FAFAFA',
+                    backgroundColor: '#F7F7F5',
                   }}
                 >
                   {item.answer}

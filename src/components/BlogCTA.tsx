@@ -13,7 +13,7 @@ export default function BlogCTA() {
     >
       <h3
         style={{
-          fontFamily: "'Playfair Display', serif",
+          fontFamily: "'Inter', sans-serif",
           fontWeight: 700,
           fontSize: 24,
           color: '#1C1C1E',
@@ -26,7 +26,7 @@ export default function BlogCTA() {
         style={{
           fontFamily: "'Inter', sans-serif",
           fontSize: 14,
-          color: '#6B7280',
+          color: '#6B6B6F',
           marginBottom: 24,
           maxWidth: 480,
           marginLeft: 'auto',

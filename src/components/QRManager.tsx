@@ -27,7 +27,7 @@ const S: Record<string, React.CSSProperties> = {
   input: { width: '100%', padding: '10px 14px', fontSize: 14, border: '1px solid #E5E5E3', borderRadius: 8, outline: 'none', background: '#fff', boxSizing: 'border-box' as const },
   btn: { padding: '10px 20px', fontSize: 13, fontWeight: 700, color: '#fff', background: '#1C1C1E', border: 'none', borderRadius: 8, cursor: 'pointer' },
   btnSm: { padding: '6px 14px', fontSize: 12, fontWeight: 600, border: '1px solid #E5E5E3', borderRadius: 6, cursor: 'pointer', background: '#fff', color: '#2D2D2F' },
-  btnDanger: { padding: '6px 14px', fontSize: 12, fontWeight: 600, border: '1px solid #fecaca', borderRadius: 6, cursor: 'pointer', background: '#fff', color: '#dc2626' },
+  btnDanger: { padding: '6px 14px', fontSize: 12, fontWeight: 600, border: '1px solid #FECACA', borderRadius: 6, cursor: 'pointer', background: '#fff', color: '#EF4444' },
   label: { display: 'block', fontSize: 13, fontWeight: 600, color: '#2D2D2F', marginBottom: 6 },
   card: { background: '#fff', border: '1px solid #E5E5E3', borderRadius: 12, padding: 20, marginBottom: 12 },
 };
@@ -142,7 +142,7 @@ export default function QRManager({ restaurant }: QRManagerProps) {
 
       // Label at bottom
       ctx.fillStyle = '#1C1C1E';
-      ctx.font = "bold 32px 'Playfair Display', serif";
+      ctx.font = "bold 32px 'Inter', sans-serif";
       ctx.textAlign = 'center';
       ctx.fillText(qr.label, size / 2, size + 48);
 
@@ -273,10 +273,10 @@ export default function QRManager({ restaurant }: QRManagerProps) {
                 <button onClick={() => downloadQR(qr)} style={{ ...S.btnSm, padding: '4px 8px', fontSize: 11 }}>
                   <DownloadSimple size={12} />
                 </button>
-                <button onClick={() => toggleActive(qr.id, qr.is_active)} style={{ ...S.btnSm, padding: '4px 8px', fontSize: 11, color: qr.is_active ? '#16a34a' : '#dc2626' }}>
+                <button onClick={() => toggleActive(qr.id, qr.is_active)} style={{ ...S.btnSm, padding: '4px 8px', fontSize: 11, color: qr.is_active ? '#22C55E' : '#EF4444' }}>
                   {qr.is_active ? 'Aktif' : 'Pasif'}
                 </button>
-                <button onClick={() => deleteQR(qr.id)} style={{ ...S.btnSm, padding: '4px 8px', fontSize: 11, color: '#dc2626', borderColor: '#fecaca' }}>
+                <button onClick={() => deleteQR(qr.id)} style={{ ...S.btnSm, padding: '4px 8px', fontSize: 11, color: '#EF4444', borderColor: '#FECACA' }}>
                   <XCircle size={12} />
                 </button>
               </div>

@@ -138,7 +138,7 @@ export default function LikesPanel({ restaurantId }: { restaurantId: string }) {
                 </span>
                 <button
                   onClick={() => handleReject(row.menu_item_id)}
-                  className="text-[#A0A0A0] hover:text-red-500 transition-colors"
+                  className="text-[#A0A0A0] hover:text-[#FF4F7A] transition-colors"
                   title="Beğenileri reddet"
                 >
                   <Trash size={14} />

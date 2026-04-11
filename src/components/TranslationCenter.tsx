@@ -61,7 +61,7 @@ Object.assign(S, {
     padding: 16,
   },
   title: {
-    fontFamily: "'Playfair Display', serif",
+    fontFamily: "'Inter', sans-serif",
     fontSize: 22,
     fontWeight: 700,
     color: '#1C1C1E',
@@ -88,8 +88,8 @@ Object.assign(S, {
     fontWeight: 700,
     padding: '2px 7px',
     borderRadius: 10,
-    background: pct === 100 ? '#dcfce7' : pct >= 50 ? '#fef9c3' : '#fee2e2',
-    color: pct === 100 ? '#15803d' : pct >= 50 ? '#a16207' : '#b91c1c',
+    background: pct === 100 ? '#DCFCE7' : pct >= 50 ? '#FFF0F3' : '#FEE2E2',
+    color: pct === 100 ? '#166534' : pct >= 50 ? '#FF4F7A' : '#991B1B',
   }),
   addBtn: {
     padding: '8px 14px',
@@ -155,7 +155,7 @@ Object.assign(S, {
     width: 8,
     height: 8,
     borderRadius: 4,
-    background: done ? '#16a34a' : '#dc2626',
+    background: done ? '#22C55E' : '#EF4444',
     display: 'inline-block',
     flexShrink: 0,
   }),
@@ -673,9 +673,9 @@ export default function TranslationCenter({
               padding: '8px 12px',
               borderRadius: 8,
               fontSize: 12,
-              background: msg.kind === 'ok' ? '#f0fdf4' : '#fef2f2',
-              color: msg.kind === 'ok' ? '#166534' : '#b91c1c',
-              border: `1px solid ${msg.kind === 'ok' ? '#bbf7d0' : '#fecaca'}`,
+              background: msg.kind === 'ok' ? '#DCFCE7' : '#FEE2E2',
+              color: msg.kind === 'ok' ? '#166534' : '#991B1B',
+              border: `1px solid ${msg.kind === 'ok' ? '#DCFCE7' : '#FECACA'}`,
             }}
           >
             {msg.text}
@@ -721,7 +721,7 @@ export default function TranslationCenter({
                     <span style={S.dot(catDone)} />
                     <span>{cat.name_tr}</span>
                   </span>
-                  {catDone && <CheckCircle size={14} color="#16a34a" />}
+                  {catDone && <CheckCircle size={14} color="#22C55E" />}
                 </div>
                 {children.map((it) => {
                   const itDone = isRecordDone(it, targetLang);

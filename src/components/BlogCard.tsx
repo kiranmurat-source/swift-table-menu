@@ -4,7 +4,7 @@ import { CATEGORY_COLORS, type BlogPost } from '../lib/blogData';
 import { formatDate } from '../lib/blogUtils';
 
 export default function BlogCard({ post }: { post: BlogPost }) {
-  const catColor = CATEGORY_COLORS[post.category] || '#6B7280';
+  const catColor = CATEGORY_COLORS[post.category] || '#6B6B6F';
 
   return (
     <Link
@@ -48,7 +48,7 @@ export default function BlogCard({ post }: { post: BlogPost }) {
       {/* Title */}
       <h3
         style={{
-          fontFamily: "'Playfair Display', serif",
+          fontFamily: "'Inter', sans-serif",
           fontWeight: 600,
           fontSize: 18,
           color: '#1C1C1E',
@@ -69,7 +69,7 @@ export default function BlogCard({ post }: { post: BlogPost }) {
           fontFamily: "'Inter', sans-serif",
           fontWeight: 400,
           fontSize: 14,
-          color: '#6B7280',
+          color: '#6B6B6F',
           lineHeight: 1.6,
           marginBottom: 16,
           display: '-webkit-box',
@@ -89,7 +89,7 @@ export default function BlogCard({ post }: { post: BlogPost }) {
           gap: 12,
           fontFamily: "'Inter', sans-serif",
           fontSize: 12,
-          color: '#9CA3AF',
+          color: '#A0A0A0',
         }}
       >
         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>

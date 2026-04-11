@@ -97,9 +97,8 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-heading;
-    font-family: 'Playfair Display', serif;
-    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
   }
 
   .text-muted-foreground {
@@ -180,14 +179,14 @@
 .rich-text-editor-content .ProseMirror p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
-  color: #a8a29e;
+  color: #A0A0A0;
   pointer-events: none;
   height: 0;
 }
 
 /* Blog content styles */
 .blog-content h2 {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Inter', sans-serif;
   font-weight: 600;
   font-size: 24px;
   margin-top: 40px;
@@ -250,7 +249,7 @@
   margin: 24px 0;
   border-radius: 0 8px 8px 0;
   font-style: italic;
-  color: #6B7280;
+  color: #6B6B6F;
 }
 .blog-content a {
   color: #FF4F7A;

@@ -98,7 +98,7 @@ export default function FeedbackPanel({ restaurantId }: { restaurantId: string }
             onClick={() => setFilterRating(r)}
             style={{
               padding: '4px 12px', fontSize: 12, borderRadius: 16,
-              border: `1px solid ${filterRating === r ? '#FF4F7A' : '#e5e7eb'}`,
+              border: `1px solid ${filterRating === r ? '#FF4F7A' : '#E5E5E3'}`,
               backgroundColor: filterRating === r ? '#FF4F7A' : '#fff',
               color: filterRating === r ? '#fff' : '#666',
               cursor: 'pointer', fontWeight: filterRating === r ? 600 : 400,
@@ -109,7 +109,7 @@ export default function FeedbackPanel({ restaurantId }: { restaurantId: string }
         ))}
         <button
           onClick={() => setSortAsc(!sortAsc)}
-          style={{ marginLeft: 'auto', padding: '4px 12px', fontSize: 12, borderRadius: 16, border: '1px solid #e5e7eb', backgroundColor: '#fff', color: '#666', cursor: 'pointer' }}
+          style={{ marginLeft: 'auto', padding: '4px 12px', fontSize: 12, borderRadius: 16, border: '1px solid #E5E5E3', backgroundColor: '#fff', color: '#666', cursor: 'pointer' }}
         >
           {sortAsc ? 'En Eski' : 'En Yeni'}
         </button>
@@ -146,7 +146,7 @@ export default function FeedbackPanel({ restaurantId }: { restaurantId: string }
                   </span>
                   <button
                     onClick={() => handleDelete(fb.id)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', padding: 2 }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#EF4444', padding: 2 }}
                     title="Sil"
                   >
                     <Trash size={16} />

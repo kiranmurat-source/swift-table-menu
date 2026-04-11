@@ -22,7 +22,7 @@ export default function BlogPost() {
 
   if (!post) return <Navigate to="/404" replace />;
 
-  const catColor = CATEGORY_COLORS[post.category] || '#6B7280';
+  const catColor = CATEGORY_COLORS[post.category] || '#6B6B6F';
 
   const articleSchema = {
     '@context': 'https://schema.org',
@@ -119,7 +119,7 @@ export default function BlogPost() {
 
           <h1
             style={{
-              fontFamily: "'Playfair Display', serif",
+              fontFamily: "'Inter', sans-serif",
               fontWeight: 700,
               fontSize: 'clamp(26px, 4vw, 36px)',
               color: '#1C1C1E',
@@ -187,7 +187,7 @@ export default function BlogPost() {
           <div style={{ marginTop: 48 }}>
             <h2
               style={{
-                fontFamily: "'Playfair Display', serif",
+                fontFamily: "'Inter', sans-serif",
                 fontWeight: 600,
                 fontSize: 24,
                 color: '#1C1C1E',
