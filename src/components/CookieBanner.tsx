@@ -31,11 +31,13 @@ export default function CookieBanner() {
     localStorage.setItem('cookie_consent', 'accepted');
     setVisible(false);
     loadGA();
+    window.dispatchEvent(new CustomEvent('cookie-consent-changed'));
   }
 
   function reject() {
     localStorage.setItem('cookie_consent', 'rejected');
     setVisible(false);
+    window.dispatchEvent(new CustomEvent('cookie-consent-changed'));
   }
 
   if (!visible) return null;

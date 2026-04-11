@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ChatCircle, Trash } from "@phosphor-icons/react";
+import { ChatCircle, Trash, Star } from "@phosphor-icons/react";
 import { supabase } from '../lib/supabase';
 import StarRating from './StarRating';
 
@@ -77,7 +77,7 @@ export default function FeedbackPanel({ restaurantId }: { restaurantId: string }
       {/* Summary cards */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
         <div style={S.summaryCard}>
-          <div style={{ fontSize: 24, fontWeight: 700, color: '#F59E0B' }}>{avgRating.toFixed(1)}/5</div>
+          <div style={{ fontSize: 24, fontWeight: 700, color: '#FF4F7A' }}>{avgRating.toFixed(1)}/5</div>
           <div style={{ fontSize: 11, color: '#6B6B6F' }}>Ortalama</div>
         </div>
         <div style={S.summaryCard}>
@@ -85,28 +85,37 @@ export default function FeedbackPanel({ restaurantId }: { restaurantId: string }
           <div style={{ fontSize: 11, color: '#6B6B6F' }}>Toplam</div>
         </div>
         <div style={S.summaryCard}>
-          <div style={{ fontSize: 24, fontWeight: 700, color: '#22c55e' }}>+{thisWeek}</div>
+          <div style={{ fontSize: 24, fontWeight: 700, color: '#1C1C1E' }}>+{thisWeek}</div>
           <div style={{ fontSize: 11, color: '#6B6B6F' }}>Bu Hafta</div>
         </div>
       </div>
 
       {/* Filters */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-        {[null, 5, 4, 3, 2, 1].map(r => (
-          <button
-            key={String(r)}
-            onClick={() => setFilterRating(r)}
-            style={{
-              padding: '4px 12px', fontSize: 12, borderRadius: 16,
-              border: `1px solid ${filterRating === r ? '#FF4F7A' : '#E5E5E3'}`,
-              backgroundColor: filterRating === r ? '#FF4F7A' : '#fff',
-              color: filterRating === r ? '#fff' : '#666',
-              cursor: 'pointer', fontWeight: filterRating === r ? 600 : 400,
-            }}
-          >
-            {r === null ? 'Tümü' : `⭐${r}`}
-          </button>
-        ))}
+        {[null, 5, 4, 3, 2, 1].map(r => {
+          const active = filterRating === r;
+          return (
+            <button
+              key={String(r)}
+              onClick={() => setFilterRating(r)}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                padding: '4px 12px', fontSize: 12, borderRadius: 16,
+                border: `1px solid ${active ? '#FF4F7A' : '#E5E5E3'}`,
+                backgroundColor: active ? '#FF4F7A' : '#fff',
+                color: active ? '#fff' : '#666',
+                cursor: 'pointer', fontWeight: active ? 600 : 400,
+              }}
+            >
+              {r === null ? 'Tümü' : (
+                <>
+                  <Star size={12} weight="fill" />
+                  {r}
+                </>
+              )}
+            </button>
+          );
+        })}
         <button
           onClick={() => setSortAsc(!sortAsc)}
           style={{ marginLeft: 'auto', padding: '4px 12px', fontSize: 12, borderRadius: 16, border: '1px solid #E5E5E3', backgroundColor: '#fff', color: '#666', cursor: 'pointer' }}
