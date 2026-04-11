@@ -15,7 +15,7 @@ interface Feedback {
 
 const S = {
   card: { padding: '12px 16px', borderRadius: 8, border: '1px solid #f3f4f6', backgroundColor: '#fff', marginBottom: 8 } as React.CSSProperties,
-  summaryCard: { flex: 1, padding: 16, borderRadius: 8, border: '1px solid #f3f4f6', backgroundColor: '#fafafa', textAlign: 'center' as const },
+  summaryCard: { flex: 1, padding: 16, borderRadius: 8, border: '1px solid #E5E5E3', backgroundColor: '#F7F7F5', textAlign: 'center' as const },
 };
 
 export default function FeedbackPanel({ restaurantId }: { restaurantId: string }) {

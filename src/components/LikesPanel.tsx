@@ -101,7 +101,7 @@ export default function LikesPanel({ restaurantId }: { restaurantId: string }) {
           <div
             key={s.label}
             className="rounded-xl border border-gray-100 p-4 text-center"
-            style={{ backgroundColor: '#fafafa' }}
+            style={{ backgroundColor: '#F7F7F5' }}
           >
             <div className="text-2xl font-bold text-stone-900">{s.value}</div>
             <div className="text-xs text-gray-500 mt-1">{s.label}</div>
@@ -120,7 +120,7 @@ export default function LikesPanel({ restaurantId }: { restaurantId: string }) {
             <div
               key={row.menu_item_id}
               className="flex items-center justify-between rounded-xl border border-gray-100 px-4 py-3"
-              style={{ backgroundColor: i === 0 ? '#fff1f2' : '#fafafa' }}
+              style={{ backgroundColor: i === 0 ? '#FFF0F3' : '#F7F7F5' }}
             >
               <div className="flex items-center gap-3 min-w-0">
                 <Heart

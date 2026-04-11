@@ -163,7 +163,7 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
 
       {/* Form */}
       {showForm && (
-        <div style={{ ...S.card, backgroundColor: '#fafafa', marginBottom: 16, padding: 16 }}>
+        <div style={{ ...S.card, backgroundColor: '#F7F7F5', marginBottom: 16, padding: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, color: '#1C1C1E' }}>
               {editingId ? 'Kodu Düzenle' : 'Yeni İndirim Kodu'}

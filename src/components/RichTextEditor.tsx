@@ -26,7 +26,7 @@ const S = {
     alignItems: 'center',
     gap: 2,
     padding: 4,
-    background: '#f5f5f4',
+    background: '#F7F7F5',
     borderBottom: '1px solid #e5e7eb',
     flexWrap: 'wrap' as const,
   },

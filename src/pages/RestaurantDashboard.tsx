@@ -182,7 +182,7 @@ const S: Record<string, React.CSSProperties> = {
     transition: 'background 0.1s',
   },
   itemsContainer: {
-    background: '#fafafa',
+    background: '#F7F7F5',
     border: '1px solid #E5E5E3',
     borderRadius: 8,
     margin: '4px 0 12px 36px',
@@ -1517,18 +1517,18 @@ export default function RestaurantDashboard() {
 
   const sidebarContent = (
     <>
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-4 border-b border-[#3A3A3E]">
         <div className="flex items-center gap-2">
           {restaurant.logo_url && (
             <img onError={handleImageError} src={getOptimizedImageUrl(restaurant.logo_url, 'thumbnail')} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
           )}
-          <p className="font-semibold text-[13px] text-stone-900 truncate">{restaurant.name}</p>
+          <p className="font-semibold text-[13px] text-[#F0F0EC] truncate">{restaurant.name}</p>
         </div>
       </div>
       <nav className="flex-1 overflow-auto py-2">
         {sidebarGroups.map((group) => (
           <div key={group.title} className="mb-4">
-            <div className="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+            <div className="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-[#6B6B6F]" style={{ letterSpacing: '0.05em' }}>
               {group.title}
             </div>
             {group.items.map((item) => {
@@ -1540,11 +1540,14 @@ export default function RestaurantDashboard() {
                   onClick={() => handleSidebarNav(item.key)}
                   className="w-full flex items-center gap-2 px-4 py-2 text-[13px] transition-colors border-l-[3px]"
                   style={{
-                    background: active ? '#fff' : 'transparent',
+                    background: active ? '#2A2A2E' : 'transparent',
                     borderLeftColor: active ? '#FF4F7A' : 'transparent',
-                    color: active ? '#1C1C1E' : '#6b7280',
-                    fontWeight: active ? 600 : 400,
+                    color: active ? '#FFFFFF' : '#A0A0A0',
+                    fontWeight: active ? 500 : 400,
+                    borderRadius: active ? 0 : 8,
                   }}
+                  onMouseEnter={e => { if (!active) { e.currentTarget.style.background = '#2A2A2E'; e.currentTarget.style.color = '#F0F0EC'; }}}
+                  onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#A0A0A0'; }}}
                 >
                   <Icon size={16} />
                   <span className="flex-1 text-left">{item.label}</span>
@@ -1559,16 +1562,16 @@ export default function RestaurantDashboard() {
           </div>
         ))}
       </nav>
-      <div className="p-4 border-t border-gray-200 text-[11px] text-gray-400 flex items-center gap-1">
+      <div className="p-4 border-t border-[#3A3A3E] text-[11px] text-[#6B6B6F] flex items-center gap-1">
         <Link size={12} /> tabbled.com/menu/{restaurant.slug}
       </div>
     </>
   );
 
   return (
-    <div className="flex min-h-screen bg-white">
+    <div className="flex min-h-screen bg-[#F7F7F5]">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-[240px] shrink-0 border-r border-gray-200 bg-[#fafafa] sticky top-0 self-start min-h-screen">
+      <aside className="hidden md:flex flex-col w-[240px] shrink-0 border-r border-[#3A3A3E] bg-[#1C1C1E] sticky top-0 self-start min-h-screen">
         {sidebarContent}
       </aside>
 
@@ -1576,7 +1579,7 @@ export default function RestaurantDashboard() {
       {isMobile && sidebarOpen && (
         <div className="fixed inset-0 z-50 flex">
           <div className="fixed inset-0 bg-black/30" onClick={() => setSidebarOpen(false)} />
-          <aside className="relative z-10 flex flex-col w-[260px] bg-[#fafafa] min-h-screen shadow-xl animate-slide-in">
+          <aside className="relative z-10 flex flex-col w-[260px] bg-[#1C1C1E] min-h-screen shadow-xl animate-slide-in">
             {sidebarContent}
           </aside>
         </div>
@@ -1590,10 +1593,10 @@ export default function RestaurantDashboard() {
             <button onClick={() => setSidebarOpen(true)} className="p-1" aria-label="Menü">
               <List size={22} />
             </button>
-            <span className="text-sm font-semibold text-stone-900">{activeLabel}</span>
+            <span className="text-sm font-semibold text-[#1C1C1E]">{activeLabel}</span>
             {pendingCallCount > 0 && activeTab !== 'calls' && (
               <button onClick={() => setActiveTab('calls')} className="ml-auto relative p-1">
-                <Bell size={20} className="text-stone-500" />
+                <Bell size={20} className="text-[#6B6B6F]" />
                 <span className="absolute -top-0.5 -right-0.5 text-[8px] font-bold text-white bg-red-500 rounded-full w-4 h-4 flex items-center justify-center">{pendingCallCount}</span>
               </button>
             )}
