@@ -21,6 +21,7 @@ interface Props {
   featureFeedback: boolean;
   featureLikes: boolean;
   featureDiscountCodes: boolean;
+  featureReviews: boolean;
   onNavigate?: (tab: string) => void;
 }
 
@@ -54,6 +55,14 @@ interface FeedbackRow {
   created_at: string;
 }
 
+interface PendingReviewRow {
+  id: string;
+  rating: number;
+  comment: string;
+  customer_name: string | null;
+  created_at: string;
+}
+
 interface LikeRow {
   id: string;
   menu_item_id: string;
@@ -83,6 +92,7 @@ interface AllData {
   avgRating: number | null;
   totalLikeCount: number;
   weeklyLikeCount: number;
+  pendingReviews: PendingReviewRow[];
 }
 
 /* --------------------------------- styles --------------------------------- */
@@ -440,6 +450,82 @@ function RecentFeedback({ feedback, onSeeAll }: { feedback: FeedbackRow[]; onSee
   );
 }
 
+/* ----------------------------- pending reviews --------------------------- */
+
+function PendingReviews({ reviews, onSeeAll }: { reviews: PendingReviewRow[]; onSeeAll?: () => void }) {
+  return (
+    <div style={card}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+        <Star size={16} color="#FF4F7A" weight="fill" />
+        <span style={sectionTitle}>Bekleyen Yorumlar</span>
+        <span
+          style={{
+            marginLeft: 'auto',
+            fontSize: 11,
+            fontWeight: 700,
+            color: '#92400E',
+            backgroundColor: '#FEF3C7',
+            padding: '3px 10px',
+            borderRadius: 999,
+          }}
+        >
+          {reviews.length}
+        </span>
+      </div>
+      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+        {reviews.map((r, idx) => {
+          const truncated = r.comment.length > 50 ? `${r.comment.slice(0, 50)}…` : r.comment;
+          return (
+            <li
+              key={r.id}
+              style={{
+                padding: '12px 0',
+                borderBottom: idx < reviews.length - 1 ? '1px solid #F0F0EC' : 'none',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <Star
+                    key={n}
+                    size={13}
+                    color={n <= r.rating ? '#FF4F7A' : '#E5E5E3'}
+                    weight={n <= r.rating ? 'fill' : 'regular'}
+                  />
+                ))}
+                <span style={{ marginLeft: 8, fontSize: 13, color: '#1C1C1E', fontStyle: 'italic' }}>
+                  "{truncated}"
+                </span>
+              </div>
+              <div style={{ fontSize: 11, color: '#9CA3AF' }}>
+                {r.customer_name || 'Misafir'} · {timeAgo(r.created_at)}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      {onSeeAll && (
+        <button
+          type="button"
+          onClick={onSeeAll}
+          style={{
+            marginTop: 12,
+            background: 'none',
+            border: 'none',
+            color: '#FF4F7A',
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: 'pointer',
+            padding: 0,
+            fontFamily: "'Inter', sans-serif",
+          }}
+        >
+          Tümünü Gör →
+        </button>
+      )}
+    </div>
+  );
+}
+
 /* --------------------------- discount codes status ------------------------ */
 
 function DiscountCodesStatus({ codes, onSeeAll }: { codes: DiscountCodeRow[]; onSeeAll?: () => void }) {
@@ -609,6 +695,7 @@ export default function RestaurantAnalytics({
   featureFeedback,
   featureLikes,
   featureDiscountCodes,
+  featureReviews,
   onNavigate,
 }: Props) {
   const [data, setData] = useState<AllData | null>(null);
@@ -631,6 +718,7 @@ export default function RestaurantAnalytics({
         ratingsRes,
         weeklyLikesRes,
         totalLikesRes,
+        pendingReviewsRes,
       ] = await Promise.all([
         supabase
           .from('menu_items')
@@ -681,6 +769,15 @@ export default function RestaurantAnalytics({
               .eq('restaurant_id', restaurantId)
               .eq('status', 'approved')
           : Promise.resolve({ count: 0 }),
+        featureReviews
+          ? supabase
+              .from('reviews')
+              .select('id, rating, comment, customer_name, created_at')
+              .eq('restaurant_id', restaurantId)
+              .eq('status', 'pending')
+              .order('created_at', { ascending: false })
+              .limit(5)
+          : Promise.resolve({ data: [] as PendingReviewRow[] }),
       ]);
 
       if (cancelled) return;
@@ -701,6 +798,7 @@ export default function RestaurantAnalytics({
         avgRating,
         totalLikeCount: (totalLikesRes as { count?: number }).count ?? 0,
         weeklyLikeCount: (weeklyLikesRes as { count?: number }).count ?? 0,
+        pendingReviews: (pendingReviewsRes.data ?? []) as PendingReviewRow[],
       });
       setLoading(false);
     };
@@ -708,7 +806,7 @@ export default function RestaurantAnalytics({
     return () => {
       cancelled = true;
     };
-  }, [restaurantId, featureWaiterCalls, featureFeedback, featureLikes, featureDiscountCodes]);
+  }, [restaurantId, featureWaiterCalls, featureFeedback, featureLikes, featureDiscountCodes, featureReviews]);
 
   return (
     <div style={{ padding: '4px 0 32px', fontFamily: "'Inter', sans-serif" }}>
@@ -758,6 +856,13 @@ export default function RestaurantAnalytics({
 
           {featureFeedback && (
             <RecentFeedback feedback={data.feedback} onSeeAll={onNavigate ? () => onNavigate('feedback') : undefined} />
+          )}
+
+          {featureReviews && data.pendingReviews.length > 0 && (
+            <PendingReviews
+              reviews={data.pendingReviews}
+              onSeeAll={onNavigate ? () => onNavigate('reviews') : undefined}
+            />
           )}
 
           <div

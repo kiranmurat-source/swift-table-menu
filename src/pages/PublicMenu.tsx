@@ -22,6 +22,7 @@ import CartBottomBar from '../components/CartBottomBar';
 import CartDrawer from '../components/CartDrawer';
 import { useLikes } from '../hooks/useLikes';
 import { demoRestaurant, demoCategories, demoItems } from '../data/demoMenuData';
+import ReviewsSection from '../components/public/ReviewsSection';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -58,6 +59,7 @@ interface Restaurant {
   feature_feedback: boolean;
   feature_discount_codes: boolean;
   feature_likes: boolean;
+  feature_reviews: boolean;
   google_place_id: string | null;
 }
 
@@ -1440,6 +1442,16 @@ export default function PublicMenu() {
             </div>
             );
           })
+        )}
+
+        {/* Customer reviews — below menu, above footer */}
+        {restaurant.feature_reviews !== false && (
+          <ReviewsSection
+            restaurantId={restaurant.id}
+            language={lang}
+            theme={theme.key as 'white' | 'black' | 'red'}
+            tableNumber={table}
+          />
         )}
       </main>
 
