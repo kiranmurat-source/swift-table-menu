@@ -10,6 +10,13 @@ const BLOG_SLUGS = [
   'qr-menu-zorunlulugu-2026',
   'qr-menu-nedir',
   'qr-menu-fiyatlari-2026',
+  'restoran-dijital-donusum-rehberi-2026',
+  'restoran-menu-tasarimi-stratejileri',
+  'restoran-alerjen-bilgilendirme-rehberi',
+  'restoran-musteri-deneyimi-dijital-yolculuk',
+  'restoran-seo-google-haritalar-rehberi',
+  'cok-dilli-menu-rehberi-turist-restoran',
+  'restoran-acmak-teknoloji-yatirim-rehberi-2026',
 ]
 
 Deno.serve(async (req) => {
