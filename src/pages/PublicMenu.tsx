@@ -920,17 +920,39 @@ export default function PublicMenu() {
         <meta name="twitter:image" content={ogImage} />
         <link rel="canonical" href={canonicalUrl} />
         <script type="application/ld+json">
-          {JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'Restaurant',
-            name: restaurant.name,
-            description: restaurant.tagline || '',
-            address: restaurant.address || '',
-            telephone: restaurant.phone || '',
-            url: canonicalUrl,
-            image: ogImage,
-            hasMenu: { '@type': 'Menu', url: canonicalUrl },
-          })}
+          {JSON.stringify(
+            JSON.parse(
+              JSON.stringify({
+                '@context': 'https://schema.org',
+                '@type': 'Restaurant',
+                '@id': `${canonicalUrl}#restaurant`,
+                name: restaurant.name,
+                url: canonicalUrl,
+                description: restaurant.tagline || `${restaurant.name} dijital menüsü`,
+                address: restaurant.address
+                  ? {
+                      '@type': 'PostalAddress',
+                      streetAddress: restaurant.address,
+                      addressCountry: 'TR',
+                    }
+                  : undefined,
+                telephone: restaurant.phone || undefined,
+                image: ogImage || undefined,
+                menu: canonicalUrl,
+                acceptsReservations: false,
+                priceRange: '₺₺',
+                hasMenu: { '@type': 'Menu', url: canonicalUrl },
+                sameAs: restaurant.google_place_id
+                  ? [`https://www.google.com/maps/place/?q=place_id:${restaurant.google_place_id}`]
+                  : undefined,
+                potentialAction: {
+                  '@type': 'ViewAction',
+                  target: canonicalUrl,
+                  name: 'Menüyü Görüntüle',
+                },
+              })
+            )
+          )}
         </script>
       </Helmet>
       {/* Cover Image */}
