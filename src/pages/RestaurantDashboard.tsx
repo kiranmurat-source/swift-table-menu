@@ -1,7 +1,16 @@
+// TODO: This file is 3000+ lines. Next sprint, split each tab into a lazy-loaded
+// child component to improve maintainability and reduce the Dashboard bundle:
+//   - Menü      → components/menu/MenuManager.tsx
+//   - Çeviri    → components/translation/TranslationCenter.tsx (already a component, inline this)
+//   - QR        → components/qr/QRCodesPanel.tsx (already exists as QRManager)
+//   - Profil    → components/profile/ProfileTab.tsx (currently inline)
+//   - Promosyon → components/promos/PromosTab.tsx (currently inline)
+// Dashboard/Analytics already lives in components/dashboard/RestaurantAnalytics.tsx.
 import { useEffect, useState, useRef, Fragment, lazy, Suspense, ReactNode, CSSProperties } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
-import { Camera, PencilSimple, CheckCircle, XCircle, AppleLogo, Star, Globe, Pen, Rows, User, Image, Trash, Link, Package, CaretCircleDown, CaretCircleUp, PlusCircle, Clock, Grains, Timer, Info, Bell, List, SquaresFour, Tag, Palette, ChatCircle, Percent, Heart } from "@phosphor-icons/react";
+import { Camera, PencilSimple, CheckCircle, XCircle, AppleLogo, Star, Globe, Pen, Rows, User, Image, Trash, Link, Package, CaretCircleDown, CaretCircleUp, PlusCircle, Clock, Grains, Timer, Info, Bell, List, SquaresFour, Tag, Palette, ChatCircle, Percent, Heart, ChartBar } from "@phosphor-icons/react";
+import RestaurantAnalytics from "@/components/dashboard/RestaurantAnalytics";
 import FeedbackPanel from '../components/FeedbackPanel';
 import DiscountCodesPanel from '../components/DiscountCodesPanel';
 import LikesPanel from '../components/LikesPanel';
@@ -837,7 +846,7 @@ export default function RestaurantDashboard() {
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [editCatForm, setEditCatForm] = useState({ name_tr: '' });
   const [uploading, setUploading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'menu' | 'translations' | 'qr' | 'profile' | 'promos' | 'calls' | 'feedback' | 'discounts' | 'likes'>('menu');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'menu' | 'translations' | 'qr' | 'profile' | 'promos' | 'calls' | 'feedback' | 'discounts' | 'likes'>('dashboard');
   const [pendingCallCount, setPendingCallCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
@@ -1472,6 +1481,12 @@ export default function RestaurantDashboard() {
 
   const sidebarGroups = [
     {
+      title: '',
+      items: [
+        { key: 'dashboard' as const, label: 'Dashboard', icon: ChartBar },
+      ],
+    },
+    {
       title: 'Menü Yönetimi',
       items: [
         { key: 'menu' as const, label: 'Menü', icon: SquaresFour },
@@ -1503,7 +1518,7 @@ export default function RestaurantDashboard() {
   ];
 
   const allSidebarItems = sidebarGroups.flatMap(g => g.items);
-  const activeLabel = allSidebarItems.find(i => i.key === activeTab)?.label ?? 'Menü';
+  const activeLabel = allSidebarItems.find(i => i.key === activeTab)?.label ?? 'Dashboard';
 
   // Inline item form renderer. Assigned during render by the IIFE below so we
   // can keep the large JSX tree in-place while calling it from inside the
@@ -1526,18 +1541,20 @@ export default function RestaurantDashboard() {
         </div>
       </div>
       <nav className="flex-1 overflow-auto py-2">
-        {sidebarGroups.map((group) => (
-          <div key={group.title} className="mb-4">
-            <div className="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-[#6B6B6F]" style={{ letterSpacing: '0.05em' }}>
-              {group.title}
-            </div>
+        {sidebarGroups.map((group, gIdx) => (
+          <div key={group.title || `grp-${gIdx}`} className="mb-4">
+            {group.title && (
+              <div className="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-[#6B6B6F]" style={{ letterSpacing: '0.05em' }}>
+                {group.title}
+              </div>
+            )}
             {group.items.map((item) => {
               const active = activeTab === item.key;
               return (
                 <button
                   key={item.key}
                   onClick={() => handleSidebarNav(item.key)}
-                  className="w-full flex items-center px-4 py-2 text-[13px] transition-colors border-l-[3px]"
+                  className="w-full flex items-center px-4 py-2 text-[13px] transition-colors border-l-[2px]"
                   style={{
                     background: active ? '#2A2A2E' : 'transparent',
                     borderLeftColor: active ? '#FF4F7A' : 'transparent',
@@ -1614,6 +1631,16 @@ export default function RestaurantDashboard() {
             )}
           </div>
 
+          {activeTab === 'dashboard' && (
+            <RestaurantAnalytics
+              restaurantId={restaurant.id}
+              featureWaiterCalls={restaurant.feature_waiter_calls !== false}
+              featureFeedback={restaurant.feature_feedback !== false}
+              featureLikes={restaurant.feature_likes !== false}
+              featureDiscountCodes={restaurant.feature_discount_codes !== false}
+              onNavigate={(tab) => setActiveTab(tab as typeof activeTab)}
+            />
+          )}
           {activeTab === 'profile' && <ProfileTab restaurant={restaurant} onUpdate={(r) => setRestaurant(r)} />}
       {activeTab === 'qr' && <QRManager restaurant={restaurant} />}
       {activeTab === 'promos' && <PromosTab restaurant={restaurant} />}
