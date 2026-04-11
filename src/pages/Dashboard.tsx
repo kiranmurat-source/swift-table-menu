@@ -137,7 +137,7 @@ export default function Dashboard() {
                           <div style={{ minWidth: 0, flex: 1 }}>
                             <div style={{ fontSize: 13, fontWeight: n.is_read ? 400 : 600, color: '#1C1C1E' }}>{n.title}</div>
                             {n.message && (
-                              <div style={{ fontSize: 12, color: '#6B6B6F', marginTop: 2, fontFamily: "'Manrope', sans-serif" }}>{n.message}</div>
+                              <div style={{ fontSize: 12, color: '#6B6B6F', marginTop: 2 }}>{n.message}</div>
                             )}
                           </div>
                           {!n.is_read && (

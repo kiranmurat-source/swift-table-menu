@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import DOMPurify from 'dompurify';
 import { CalendarBlank, Clock, User } from "@phosphor-icons/react";
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -161,7 +162,7 @@ export default function BlogPost() {
           <article
             className="blog-content"
             style={{ flex: 1, minWidth: 0, maxWidth: 720 }}
-            dangerouslySetInnerHTML={{ __html: processedContent }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(processedContent || '') }}
           />
 
           {/* TOC sidebar — desktop only */}

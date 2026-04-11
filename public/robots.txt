@@ -4,4 +4,4 @@ Allow: /menu/
 Disallow: /dashboard
 Disallow: /login
 
-Sitemap: https://qmnrawqvkwehufebbkxp.supabase.co/functions/v1/sitemap
+Sitemap: https://tabbled.com/sitemap.xml

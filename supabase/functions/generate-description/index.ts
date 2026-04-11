@@ -14,7 +14,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", {
       headers: {
-        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Origin": "https://tabbled.com",
         "Access-Control-Allow-Methods": "POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey",
       },
@@ -27,7 +27,7 @@ serve(async (req) => {
     if (!restaurant_id || !item_id || !name_tr) {
       return new Response(JSON.stringify({ error: "Missing params" }), {
         status: 400,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "https://tabbled.com" },
       });
     }
 
@@ -43,7 +43,7 @@ serve(async (req) => {
     if (restErr || !rest) {
       return new Response(JSON.stringify({ error: "Restaurant not found" }), {
         status: 404,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "https://tabbled.com" },
       });
     }
 
@@ -53,7 +53,7 @@ serve(async (req) => {
     if (!limit) {
       return new Response(JSON.stringify({ error: "Bu özellik Pro veya Premium planlarda kullanılabilir.", code: "PLAN_REQUIRED" }), {
         status: 403,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "https://tabbled.com" },
       });
     }
 
@@ -71,7 +71,7 @@ serve(async (req) => {
     if (currentCount >= limit) {
       return new Response(JSON.stringify({ error: `Aylık AI kullanım limitinize ulaştınız (${limit}). Premium'a geçerek sınırsız kullanabilirsiniz.`, code: "LIMIT_REACHED", usage: currentCount, limit }), {
         status: 429,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "https://tabbled.com" },
       });
     }
 
@@ -134,7 +134,7 @@ Bu ürün için kısa, iştah açıcı bir menü açıklaması yaz.`;
     if (!claudeRes.ok) {
       return new Response(JSON.stringify({ error: "AI servisi hatası: " + (claudeData.error?.message || "Bilinmeyen hata") }), {
         status: 500,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "https://tabbled.com" },
       });
     }
 
@@ -143,7 +143,7 @@ Bu ürün için kısa, iştah açıcı bir menü açıklaması yaz.`;
     if (!description) {
       return new Response(JSON.stringify({ error: "Açıklama üretilemedi" }), {
         status: 500,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "https://tabbled.com" },
       });
     }
 
@@ -156,12 +156,12 @@ Bu ürün için kısa, iştah açıcı bir menü açıklaması yaz.`;
       usage: currentCount + 1,
       limit: plan === "premium" ? "unlimited" : limit,
     }), {
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "https://tabbled.com" },
     });
   } catch (err) {
     return new Response(JSON.stringify({ error: String(err) }), {
       status: 500,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "https://tabbled.com" },
     });
   }
 });

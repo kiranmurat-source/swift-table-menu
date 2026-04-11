@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import DOMPurify from 'dompurify';
 import { supabase } from '../lib/supabase';
 import { getOptimizedImageUrl, handleImageError } from '../lib/imageUtils';
 import {
@@ -2296,7 +2297,7 @@ function ItemDetailModal({ item, lang, theme, onClose, onAddToCart, likeCount, i
             <div
               className="rich-text text-sm leading-relaxed mb-4"
               style={{ color: theme.mutedText, fontWeight: 300 }}
-              dangerouslySetInnerHTML={{ __html: description }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(description || '') }}
             />
           )}
 

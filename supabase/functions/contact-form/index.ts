@@ -5,11 +5,23 @@ import { Resend } from 'npm:resend@2.0.0'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': 'https://tabbled.com',
   'Access-Control-Allow-Headers':
     'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
+
+const allowedOrigins = [
+  'https://tabbled.com',
+  'https://www.tabbled.com',
+]
+if (Deno.env.get('ENVIRONMENT') !== 'production') {
+  allowedOrigins.push('http://localhost:5173', 'http://localhost:3000')
+}
+
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
+const RATE_LIMIT = 5
+const RATE_WINDOW = 3600000
 
 const escapeHtml = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string))
@@ -24,6 +36,33 @@ Deno.serve(async (req) => {
       status: 405,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
+  }
+
+  const origin = req.headers.get('origin') || ''
+  if (origin !== '' && !allowedOrigins.some((o) => origin.startsWith(o))) {
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized origin' }),
+      { status: 403, headers: { 'Content-Type': 'application/json' } },
+    )
+  }
+
+  const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+  const now = Date.now()
+  const rateEntry = rateLimitMap.get(clientIP)
+  if (rateEntry) {
+    if (now < rateEntry.resetAt) {
+      if (rateEntry.count >= RATE_LIMIT) {
+        return new Response(
+          JSON.stringify({ error: 'Çok fazla istek. Lütfen daha sonra tekrar deneyin.' }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        )
+      }
+      rateEntry.count++
+    } else {
+      rateLimitMap.set(clientIP, { count: 1, resetAt: now + RATE_WINDOW })
+    }
+  } else {
+    rateLimitMap.set(clientIP, { count: 1, resetAt: now + RATE_WINDOW })
   }
 
   try {

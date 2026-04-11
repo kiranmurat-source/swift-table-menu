@@ -63,7 +63,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", {
       headers: {
-        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Origin": "https://tabbled.com",
         "Access-Control-Allow-Methods": "POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey",
       },
@@ -76,7 +76,7 @@ serve(async (req) => {
     if (!table || !record_id || !languages || languages.length === 0) {
       return new Response(JSON.stringify({ error: "Missing params" }), {
         status: 400,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "https://tabbled.com" },
       });
     }
 
@@ -91,7 +91,7 @@ serve(async (req) => {
     if (fetchErr || !record) {
       return new Response(JSON.stringify({ error: "Record not found" }), {
         status: 404,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "https://tabbled.com" },
       });
     }
 
@@ -121,17 +121,17 @@ serve(async (req) => {
     if (updateErr) {
       return new Response(JSON.stringify({ error: updateErr.message }), {
         status: 500,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "https://tabbled.com" },
       });
     }
 
     return new Response(JSON.stringify({ success: true, translations }), {
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "https://tabbled.com" },
     });
   } catch (err) {
     return new Response(JSON.stringify({ error: String(err) }), {
       status: 500,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "https://tabbled.com" },
     });
   }
 });

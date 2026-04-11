@@ -58,9 +58,6 @@ export default function Login() {
             onMouseLeave={e => { if (!loading) e.currentTarget.style.background = '#FF4F7A'; }}>
             {loading ? '...' : 'Giriş Yap'}
           </button>
-          <div style={{ textAlign: 'center', marginTop: 4 }}>
-            <a href="#" style={{ fontSize: 13, color: '#FF4F7A', textDecoration: 'none' }}>Şifremi unuttum</a>
-          </div>
         </form>
       </div>
     </div>

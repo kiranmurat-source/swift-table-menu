@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tabbled · Günlük Rapor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,700;9..144,900&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F7F7F5;
+    --ink:#1C1C1E;
+    --ink-soft:#2D2D2F;
+    --muted:#6B6B6F;
+    --rule:#1C1C1E;
+    --hair:#D8D6CF;
+    --strawberry:#FF4F7A;
+    --danger:#C2384A;
+    --ok:#2E7D4F;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--paper);color:var(--ink);font-family:"IBM Plex Sans",sans-serif;font-weight:400;-webkit-font-smoothing:antialiased}
+  body{padding:40px 48px 80px;max-width:1280px;margin:0 auto}
+  a{color:inherit}
+
+  /* ——— MASTHEAD ——— */
+  .masthead{
+    display:grid;grid-template-columns:1fr auto 1fr;align-items:end;
+    border-top:3px solid var(--ink);border-bottom:1px solid var(--ink);
+    padding:14px 0 10px;margin-bottom:4px;
+  }
+  .masthead .issue{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .masthead .title{
+    font-family:"Fraunces",serif;font-weight:900;font-size:64px;letter-spacing:-.035em;line-height:.85;
+    font-variation-settings:"opsz" 144,"SOFT" 50;
+    text-align:center;
+  }
+  .masthead .title i{font-style:italic;font-weight:500;color:var(--strawberry);font-variation-settings:"opsz" 144,"SOFT" 100}
+  .masthead .date{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:right}
+  .submasthead{
+    display:flex;justify-content:space-between;
+    font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted);border-bottom:1px solid var(--ink);padding:6px 0 8px;
+  }
+
+  /* ——— NAV ——— */
+  nav.sections{
+    display:flex;gap:24px;padding:14px 0 16px;
+    border-bottom:1px solid var(--hair);
+    font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  }
+  nav.sections a{color:var(--muted);text-decoration:none;padding-bottom:2px}
+  nav.sections a.current{color:var(--ink);border-bottom:2px solid var(--strawberry);font-weight:600}
+
+  /* ——— FRONT PAGE GRID ——— */
+  main{display:grid;grid-template-columns:2fr 1px 1fr;gap:36px;margin-top:32px}
+  .divider{background:var(--hair)}
+
+  /* ——— LEAD STORY ——— */
+  .lead .kicker{
+    display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:10px;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--paper);
+    background:var(--danger);padding:3px 8px 2px;margin-bottom:16px;
+  }
+  .lead h1{
+    font-family:"Fraunces",serif;font-weight:700;font-size:56px;line-height:.95;letter-spacing:-.025em;
+    font-variation-settings:"opsz" 144,"SOFT" 30;margin-bottom:18px;
+  }
+  .lead h1 em{font-style:italic;font-weight:500;color:var(--danger)}
+  .deck{
+    font-family:"Fraunces",serif;font-size:19px;line-height:1.45;color:var(--ink-soft);
+    font-weight:300;font-variation-settings:"opsz" 60;max-width:58ch;margin-bottom:28px;
+    padding-bottom:22px;border-bottom:1px solid var(--hair);
+  }
+  .deck::first-letter{
+    font-weight:700;font-size:56px;float:left;line-height:.82;
+    padding:6px 10px 0 0;color:var(--strawberry);font-variation-settings:"opsz" 144;
+  }
+
+  .detail-list{list-style:none;display:flex;flex-direction:column}
+  .detail-list li{
+    display:grid;grid-template-columns:auto 1fr auto auto;gap:18px;align-items:baseline;
+    padding:14px 0;border-bottom:1px solid var(--hair);
+  }
+  .detail-list li .num{font-family:"Fraunces",serif;font-weight:500;font-size:28px;color:var(--muted);width:28px;font-variation-settings:"opsz" 60}
+  .detail-list li .name{font-family:"Fraunces",serif;font-size:20px;font-weight:500;font-variation-settings:"opsz" 40}
+  .detail-list li .meta{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+  .detail-list li .countdown{font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:600;color:var(--danger)}
+  .detail-list li.soon .countdown{color:var(--danger)}
+  .detail-list li button{
+    font-family:"IBM Plex Mono",monospace;font-size:10px;text-transform:uppercase;letter-spacing:.1em;
+    background:transparent;border:1px solid var(--ink);padding:6px 10px;cursor:pointer;
+  }
+  .detail-list li button:hover{background:var(--ink);color:var(--paper)}
+
+  .byline{margin-top:24px;font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+
+  /* ——— SIDE STORIES ——— */
+  .side article{padding-bottom:22px;margin-bottom:22px;border-bottom:1px solid var(--hair)}
+  .side article:last-child{border-bottom:none}
+  .side .kicker{
+    font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--strawberry);font-weight:600;margin-bottom:10px;display:block;
+  }
+  .side h3{
+    font-family:"Fraunces",serif;font-weight:500;font-size:26px;line-height:1.05;
+    letter-spacing:-.015em;margin-bottom:10px;font-variation-settings:"opsz" 72;
+  }
+  .side p{font-size:14px;line-height:1.55;color:var(--ink-soft);margin-bottom:10px}
+  .side .stat{
+    display:flex;align-items:baseline;gap:10px;margin-top:10px;
+    font-family:"Fraunces",serif;
+  }
+  .side .stat .big{font-size:48px;font-weight:700;letter-spacing:-.03em;line-height:.9;font-variation-settings:"opsz" 144}
+  .side .stat .big.ok{color:var(--ok)}
+  .side .stat .big.warn{color:var(--danger)}
+  .side .stat .unit{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+
+  .mini-list{list-style:none;font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink-soft);margin-top:12px}
+  .mini-list li{padding:6px 0;border-top:1px dashed var(--hair);display:flex;justify-content:space-between}
+  .mini-list li:first-child{border-top:none}
+  .mini-list .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--danger);margin-right:8px;transform:translateY(-1px)}
+
+  /* ——— TICKER ——— */
+  footer.ticker{
+    margin-top:40px;border-top:3px double var(--ink);padding-top:14px;
+    display:flex;flex-wrap:wrap;gap:34px;
+    font-family:"IBM Plex Mono",monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);
+  }
+  footer.ticker span strong{
+    color:var(--ink);font-family:"Fraunces",serif;font-weight:700;font-size:22px;
+    margin-left:6px;letter-spacing:-.01em;font-variation-settings:"opsz" 60;
+  }
+  footer.ticker span strong.ok{color:var(--ok)}
+  footer.ticker span strong.warn{color:var(--danger)}
+
+  /* ——— responsive ——— */
+  @media (max-width:900px){
+    body{padding:24px 20px 60px}
+    .masthead .title{font-size:40px}
+    main{grid-template-columns:1fr;gap:24px}
+    .divider{display:none}
+    .lead h1{font-size:36px}
+    .deck{font-size:17px}
+    .detail-list li{grid-template-columns:auto 1fr;gap:8px}
+    .detail-list li .meta,.detail-list li .countdown{grid-column:2}
+    .detail-list li button{display:none}
+  }
+</style>
+</head>
+<body>
+
+  <header class="masthead">
+    <div class="issue">Sayı №341<br>Yıl IV</div>
+    <h1 class="title">Tabbled<i>·</i>Rapor</h1>
+    <div class="date">Cuma<br>11 Nisan 2026</div>
+  </header>
+
+  <div class="submasthead">
+    <span>Süper Yönetici Paneli</span>
+    <span>141 restoran · 1.847 ürün · 48.500 ₺ / ay</span>
+    <span>Son güncelleme 09:42</span>
+  </div>
+
+  <nav class="sections">
+    <a href="#" class="current">Bugün</a>
+    <a href="#">Restoranlar</a>
+    <a href="#">Aboneler</a>
+    <a href="#">Menüler</a>
+    <a href="#">Kullanıcılar</a>
+    <a href="#">Raporlar</a>
+    <a href="#">Ayarlar</a>
+  </nav>
+
+  <main>
+    <article class="lead">
+      <span class="kicker">Bugün · Dikkat</span>
+      <h1>Dört restoran <em>bu hafta</em> aboneliğini kaybedecek.</h1>
+      <p class="deck">
+        Aralarında geçen yıl platformun en büyük yıllık abonesi olan
+        <strong>Meze Sofrası</strong> da bulunuyor. İkisi Pro, biri Enterprise,
+        biri Starter plandan — hiçbirinden otomatik yenileme bayrağı gelmedi.
+        Biri aramazsa önümüzdeki pazartesi 127'den 123'e düşeceğiz.
+      </p>
+
+      <ul class="detail-list">
+        <li class="soon">
+          <span class="num">01</span>
+          <span class="name">Pizzeria Napoli</span>
+          <span class="meta">Pro · Yıllık · ₺2.400</span>
+          <span class="countdown">3 GÜN</span>
+          <button>Ara</button>
+        </li>
+        <li>
+          <span class="num">02</span>
+          <span class="name">Meze Sofrası</span>
+          <span class="meta">Enterprise · Yıllık · ₺5.000</span>
+          <span class="countdown">4 GÜN</span>
+          <button>Ara</button>
+        </li>
+        <li>
+          <span class="num">03</span>
+          <span class="name">Burger House</span>
+          <span class="meta">Starter · Aylık · ₺800</span>
+          <span class="countdown">5 GÜN</span>
+          <button>Ara</button>
+        </li>
+        <li>
+          <span class="num">04</span>
+          <span class="name">Cafe Luna</span>
+          <span class="meta">Pro · Yıllık · ₺2.400</span>
+          <span class="countdown">6 GÜN</span>
+          <button>Ara</button>
+        </li>
+      </ul>
+
+      <p class="byline">Kayıtlar · süper yönetici · 09:42</p>
+    </article>
+
+    <div class="divider"></div>
+
+    <aside class="side">
+      <article>
+        <span class="kicker">Menü Sağlığı</span>
+        <h3>İki restoran hâlâ boş.</h3>
+        <p>Onboarding tamamlandı ama ürün eklenmedi — ikisi de bir haftadan eski.</p>
+        <ul class="mini-list">
+          <li><span><span class="dot"></span>Kahve Köşesi</span><span>0 ürün · 9 gün</span></li>
+          <li><span><span class="dot"></span>Tatlıcı Ahmet</span><span>0 ürün · 12 gün</span></li>
+        </ul>
+      </article>
+
+      <article>
+        <span class="kicker">Görseller</span>
+        <h3>Fotoğrafsız ürün oranı iyi ama %100 değil.</h3>
+        <div class="stat">
+          <span class="big">72<span style="font-size:24px">%</span></span>
+          <span class="unit">1.331 ürün görselli<br>516 eksik</span>
+        </div>
+      </article>
+
+      <article>
+        <span class="kicker">Bu Hafta</span>
+        <h3>89 yeni ürün, 14 yeni restoran davet edildi.</h3>
+        <div class="stat">
+          <span class="big ok">+89</span>
+          <span class="unit">son 7 gün<br>eklenen ürün</span>
+        </div>
+      </article>
+    </aside>
+  </main>
+
+  <footer class="ticker">
+    <span>Toplam Ürün<strong>1.847</strong></span>
+    <span>Aktif Restoran<strong class="ok">127/141</strong></span>
+    <span>Aylık Gelir<strong>₺48.500</strong></span>
+    <span>Ortalama Menü<strong>42.3</strong></span>
+    <span>QR Kurulu<strong>134</strong></span>
+    <span>Aktif (7 gün)<strong>98</strong></span>
+    <span>Boş Menü<strong class="warn">2</strong></span>
+  </footer>
+
+</body>
+</html>

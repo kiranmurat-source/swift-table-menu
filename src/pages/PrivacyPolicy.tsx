@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import TabbledLogo from '@/components/TabbledLogo';
 
 const content = {
@@ -39,6 +40,11 @@ export default function PrivacyPolicy() {
   const c = content[lang];
   return (
     <div style={{ minHeight: '100vh', background: '#F7F7F5', fontFamily: "'Inter', -apple-system, sans-serif", color: '#1C1C1E' }}>
+      <Helmet>
+        <title>Gizlilik Politikası — Tabbled</title>
+        <meta name="description" content="Tabbled KVKK ve gizlilik politikası. Kişisel verilerin korunması hakkında bilgilendirme." />
+        <link rel="canonical" href="https://tabbled.com/privacy" />
+      </Helmet>
       <div style={{ borderBottom: '1px solid #E5E5E3', background: '#fff', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: 720, margin: '0 auto', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <a href="/" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8, color: '#1C1C1E' }}>
