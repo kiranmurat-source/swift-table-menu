@@ -56,7 +56,7 @@ Object.assign(S, {
   wrap: { display: 'flex', flexDirection: 'column', gap: 16 },
   card: {
     background: '#fff',
-    border: '1px solid #e7e5e4',
+    border: '1px solid #E5E5E3',
     borderRadius: 12,
     padding: 16,
   },
@@ -64,7 +64,7 @@ Object.assign(S, {
     fontFamily: "'Playfair Display', serif",
     fontSize: 22,
     fontWeight: 700,
-    color: '#1c1917',
+    color: '#1C1C1E',
     display: 'flex',
     alignItems: 'center',
     gap: 8,
@@ -73,12 +73,12 @@ Object.assign(S, {
   langTab: (active: boolean): CSSProperties => ({
     padding: '8px 14px',
     borderRadius: 20,
-    border: active ? '2px solid #1c1917' : '1px solid #d6d3d1',
-    background: active ? '#fafaf9' : '#fff',
+    border: active ? '2px solid #1C1C1E' : '1px solid #E5E5E3',
+    background: active ? '#F7F7F5' : '#fff',
     cursor: 'pointer',
     fontSize: 13,
     fontWeight: 600,
-    color: active ? '#1c1917' : '#57534e',
+    color: active ? '#1C1C1E' : '#57534e',
     display: 'inline-flex',
     alignItems: 'center',
     gap: 6,
@@ -94,7 +94,7 @@ Object.assign(S, {
   addBtn: {
     padding: '8px 14px',
     borderRadius: 20,
-    border: '1px dashed #a8a29e',
+    border: '1px dashed #A0A0A0',
     background: '#fff',
     cursor: 'pointer',
     fontSize: 13,
@@ -108,7 +108,7 @@ Object.assign(S, {
     background: 'none',
     border: 'none',
     cursor: 'pointer',
-    color: '#a8a29e',
+    color: '#A0A0A0',
     padding: 0,
     marginLeft: 2,
     display: 'inline-flex',
@@ -122,7 +122,7 @@ Object.assign(S, {
   },
   tree: {
     background: '#fff',
-    border: '1px solid #e7e5e4',
+    border: '1px solid #E5E5E3',
     borderRadius: 12,
     padding: 12,
     maxHeight: 560,
@@ -132,7 +132,7 @@ Object.assign(S, {
     padding: '8px 10px',
     fontWeight: 700,
     fontSize: 13,
-    color: '#1c1917',
+    color: '#1C1C1E',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
@@ -142,13 +142,13 @@ Object.assign(S, {
   treeItem: (active: boolean): CSSProperties => ({
     padding: '6px 10px 6px 22px',
     fontSize: 13,
-    color: active ? '#1c1917' : '#57534e',
+    color: active ? '#1C1C1E' : '#57534e',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderRadius: 6,
-    background: active ? '#f5f5f4' : 'transparent',
+    background: active ? '#F7F7F5' : 'transparent',
     fontWeight: active ? 600 : 400,
   }),
   dot: (done: boolean): CSSProperties => ({
@@ -161,7 +161,7 @@ Object.assign(S, {
   }),
   editor: {
     background: '#fff',
-    border: '1px solid #e7e5e4',
+    border: '1px solid #E5E5E3',
     borderRadius: 12,
     padding: 16,
   },
@@ -175,27 +175,27 @@ Object.assign(S, {
     fontWeight: 700,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    color: '#78716c',
+    color: '#6B6B6F',
     marginBottom: 6,
   },
-  fieldLabel: { fontSize: 12, fontWeight: 600, color: '#44403c', marginBottom: 4 },
+  fieldLabel: { fontSize: 12, fontWeight: 600, color: '#2D2D2F', marginBottom: 4 },
   readOnlyBox: {
     padding: 10,
-    background: '#fafaf9',
-    border: '1px solid #e7e5e4',
+    background: '#F7F7F5',
+    border: '1px solid #E5E5E3',
     borderRadius: 8,
     fontSize: 13,
-    color: '#44403c',
+    color: '#2D2D2F',
     whiteSpace: 'pre-wrap',
     minHeight: 40,
   },
   input: {
     width: '100%',
     padding: 10,
-    border: '1px solid #d6d3d1',
+    border: '1px solid #E5E5E3',
     borderRadius: 8,
     fontSize: 13,
-    color: '#1c1917',
+    color: '#1C1C1E',
     background: '#fff',
     boxSizing: 'border-box',
     outline: 'none',
@@ -204,10 +204,10 @@ Object.assign(S, {
   textarea: {
     width: '100%',
     padding: 10,
-    border: '1px solid #d6d3d1',
+    border: '1px solid #E5E5E3',
     borderRadius: 8,
     fontSize: 13,
-    color: '#1c1917',
+    color: '#1C1C1E',
     background: '#fff',
     boxSizing: 'border-box',
     outline: 'none',
@@ -232,7 +232,7 @@ Object.assign(S, {
     padding: '10px 18px',
     fontSize: 13,
     fontWeight: 700,
-    background: '#1c1917',
+    background: '#1C1C1E',
     color: '#fff',
     border: 'none',
     borderRadius: 8,
@@ -243,8 +243,8 @@ Object.assign(S, {
     fontSize: 13,
     fontWeight: 600,
     background: '#fff',
-    color: '#1c1917',
-    border: '1px solid #d6d3d1',
+    color: '#1C1C1E',
+    border: '1px solid #E5E5E3',
     borderRadius: 8,
     cursor: 'pointer',
   },
@@ -260,12 +260,12 @@ Object.assign(S, {
     alignItems: 'center',
     gap: 8,
     fontSize: 13,
-    color: '#44403c',
+    color: '#2D2D2F',
   },
   emptyState: {
     padding: '40px 20px',
     textAlign: 'center',
-    color: '#a8a29e',
+    color: '#A0A0A0',
     fontSize: 13,
   },
 } satisfies Record<string, CSSProperties | ((...args: never[]) => CSSProperties)>);
@@ -627,7 +627,7 @@ export default function TranslationCenter({
                   left: 0,
                   marginTop: 6,
                   background: '#fff',
-                  border: '1px solid #e7e5e4',
+                  border: '1px solid #E5E5E3',
                   borderRadius: 8,
                   boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
                   maxHeight: 320,
@@ -637,7 +637,7 @@ export default function TranslationCenter({
                 }}
               >
                 {addableLanguages.length === 0 && (
-                  <div style={{ padding: 12, fontSize: 12, color: '#a8a29e' }}>
+                  <div style={{ padding: 12, fontSize: 12, color: '#A0A0A0' }}>
                     Tüm diller eklendi.
                   </div>
                 )}
@@ -653,12 +653,12 @@ export default function TranslationCenter({
                       alignItems: 'center',
                       gap: 8,
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = '#fafaf9')}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = '#F7F7F5')}
                     onMouseLeave={(e) => (e.currentTarget.style.background = '#fff')}
                   >
                     <span>{l.flag}</span>
                     <span>{l.nativeName}</span>
-                    <span style={{ color: '#a8a29e', fontSize: 11 }}>{l.code}</span>
+                    <span style={{ color: '#A0A0A0', fontSize: 11 }}>{l.code}</span>
                   </div>
                 ))}
               </div>
@@ -713,7 +713,7 @@ export default function TranslationCenter({
                 <div
                   style={{
                     ...S.treeCat,
-                    background: catActive ? '#f5f5f4' : 'transparent',
+                    background: catActive ? '#F7F7F5' : 'transparent',
                   }}
                   onClick={() => setSelection({ kind: 'category', id: cat.id })}
                 >

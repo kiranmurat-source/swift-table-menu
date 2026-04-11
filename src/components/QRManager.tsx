@@ -24,17 +24,17 @@ type Restaurant = {
 };
 
 const S: Record<string, React.CSSProperties> = {
-  input: { width: '100%', padding: '10px 14px', fontSize: 14, border: '1px solid #d6d3d1', borderRadius: 8, outline: 'none', background: '#fff', boxSizing: 'border-box' as const },
-  btn: { padding: '10px 20px', fontSize: 13, fontWeight: 700, color: '#fff', background: '#1c1917', border: 'none', borderRadius: 8, cursor: 'pointer' },
-  btnSm: { padding: '6px 14px', fontSize: 12, fontWeight: 600, border: '1px solid #d6d3d1', borderRadius: 6, cursor: 'pointer', background: '#fff', color: '#44403c' },
+  input: { width: '100%', padding: '10px 14px', fontSize: 14, border: '1px solid #E5E5E3', borderRadius: 8, outline: 'none', background: '#fff', boxSizing: 'border-box' as const },
+  btn: { padding: '10px 20px', fontSize: 13, fontWeight: 700, color: '#fff', background: '#1C1C1E', border: 'none', borderRadius: 8, cursor: 'pointer' },
+  btnSm: { padding: '6px 14px', fontSize: 12, fontWeight: 600, border: '1px solid #E5E5E3', borderRadius: 6, cursor: 'pointer', background: '#fff', color: '#2D2D2F' },
   btnDanger: { padding: '6px 14px', fontSize: 12, fontWeight: 600, border: '1px solid #fecaca', borderRadius: 6, cursor: 'pointer', background: '#fff', color: '#dc2626' },
-  label: { display: 'block', fontSize: 13, fontWeight: 600, color: '#44403c', marginBottom: 6 },
-  card: { background: '#fff', border: '1px solid #e7e5e4', borderRadius: 12, padding: 20, marginBottom: 12 },
+  label: { display: 'block', fontSize: 13, fontWeight: 600, color: '#2D2D2F', marginBottom: 6 },
+  card: { background: '#fff', border: '1px solid #E5E5E3', borderRadius: 12, padding: 20, marginBottom: 12 },
 };
 
 const COLOR_OPTIONS = [
   { value: '#422B21', label: 'Kahve' },
-  { value: '#1c1917', label: 'Siyah' },
+  { value: '#1C1C1E', label: 'Siyah' },
   { value: '#A8B977', label: 'Sage' },
   { value: '#9333EA', label: 'Mor' },
   { value: '#1D4ED8', label: 'Mavi' },
@@ -141,7 +141,7 @@ export default function QRManager({ restaurant }: QRManagerProps) {
       ctx.drawImage(img, 32, 32, size - 64, size - 64);
 
       // Label at bottom
-      ctx.fillStyle = '#1c1917';
+      ctx.fillStyle = '#1C1C1E';
       ctx.font = "bold 32px 'Playfair Display', serif";
       ctx.textAlign = 'center';
       ctx.fillText(qr.label, size / 2, size + 48);
@@ -165,7 +165,7 @@ export default function QRManager({ restaurant }: QRManagerProps) {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1c1917' }}>QR Kodları</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1C1C1E' }}>QR Kodları</h3>
         <div style={{ display: 'flex', gap: 6 }}>
           {qrCodes.length > 0 && (
             <button onClick={downloadAll} style={{ ...S.btnSm, color: '#A8B977' }}>
@@ -194,7 +194,7 @@ export default function QRManager({ restaurant }: QRManagerProps) {
         >
           Toplu Oluştur
         </button>
-        <span style={{ fontSize: 11, color: '#a8a29e' }}>Mevcut: {qrCodes.length} QR kod</span>
+        <span style={{ fontSize: 11, color: '#A0A0A0' }}>Mevcut: {qrCodes.length} QR kod</span>
       </div>
 
       {/* Single add form */}
@@ -219,7 +219,7 @@ export default function QRManager({ restaurant }: QRManagerProps) {
                   type="button"
                   onClick={() => setForm({ ...form, color: c.value })}
                   style={{
-                    width: 32, height: 32, borderRadius: 8, border: form.color === c.value ? '3px solid #A8B977' : '2px solid #e7e5e4',
+                    width: 32, height: 32, borderRadius: 8, border: form.color === c.value ? '3px solid #A8B977' : '2px solid #E5E5E3',
                     background: c.value, cursor: 'pointer', transition: 'all 0.15s',
                   }}
                   title={c.label}
@@ -227,7 +227,7 @@ export default function QRManager({ restaurant }: QRManagerProps) {
               ))}
             </div>
           </div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#44403c' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#2D2D2F' }}>
             <input type="checkbox" checked={form.include_logo} onChange={e => setForm({ ...form, include_logo: e.target.checked })} />
             QR kodun ortasına logo ekle
           </label>
@@ -237,7 +237,7 @@ export default function QRManager({ restaurant }: QRManagerProps) {
 
       {/* QR Code Grid */}
       {qrCodes.length === 0 ? (
-        <div style={{ textAlign: 'center', color: '#a8a29e', padding: 40, fontSize: 14 }}>
+        <div style={{ textAlign: 'center', color: '#A0A0A0', padding: 40, fontSize: 14 }}>
           Henüz QR kod oluşturulmadı. Yukarıdan masa sayısı girerek toplu oluşturabilirsiniz.
         </div>
       ) : (
@@ -267,8 +267,8 @@ export default function QRManager({ restaurant }: QRManagerProps) {
                   }
                 />
               </div>
-              <p style={{ fontSize: 13, fontWeight: 600, color: '#1c1917', marginTop: 8, marginBottom: 2 }}>{qr.label}</p>
-              <p style={{ fontSize: 11, color: '#a8a29e', margin: 0 }}>Masa {qr.table_number}</p>
+              <p style={{ fontSize: 13, fontWeight: 600, color: '#1C1C1E', marginTop: 8, marginBottom: 2 }}>{qr.label}</p>
+              <p style={{ fontSize: 11, color: '#A0A0A0', margin: 0 }}>Masa {qr.table_number}</p>
               <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginTop: 10 }}>
                 <button onClick={() => downloadQR(qr)} style={{ ...S.btnSm, padding: '4px 8px', fontSize: 11 }}>
                   <DownloadSimple size={12} />

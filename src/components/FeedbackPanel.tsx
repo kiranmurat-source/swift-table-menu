@@ -70,7 +70,7 @@ export default function FeedbackPanel({ restaurantId }: { restaurantId: string }
 
   return (
     <div>
-      <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1c1917', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1C1C1E', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
         <ChatCircle size={20} /> Geri Bildirimler
       </h2>
 
@@ -81,7 +81,7 @@ export default function FeedbackPanel({ restaurantId }: { restaurantId: string }
           <div style={{ fontSize: 11, color: '#6b7280' }}>Ortalama</div>
         </div>
         <div style={S.summaryCard}>
-          <div style={{ fontSize: 24, fontWeight: 700, color: '#1c1917' }}>{items.length}</div>
+          <div style={{ fontSize: 24, fontWeight: 700, color: '#1C1C1E' }}>{items.length}</div>
           <div style={{ fontSize: 11, color: '#6b7280' }}>Toplam</div>
         </div>
         <div style={S.summaryCard}>
@@ -117,12 +117,12 @@ export default function FeedbackPanel({ restaurantId }: { restaurantId: string }
 
       {/* List */}
       {loading ? (
-        <p style={{ textAlign: 'center', color: '#a8a29e', fontSize: 13, padding: 32 }}>Yükleniyor...</p>
+        <p style={{ textAlign: 'center', color: '#A0A0A0', fontSize: 13, padding: 32 }}>Yükleniyor...</p>
       ) : items.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 48 }}>
           <ChatCircle size={48} style={{ color: '#d1d5db', marginBottom: 12 }} />
           <p style={{ fontSize: 14, color: '#6b7280' }}>Henüz geri bildirim yok.</p>
-          <p style={{ fontSize: 12, color: '#a8a29e' }}>Müşterileriniz menüden geri bildirim bırakabilir.</p>
+          <p style={{ fontSize: 12, color: '#A0A0A0' }}>Müşterileriniz menüden geri bildirim bırakabilir.</p>
         </div>
       ) : (
         <>
@@ -131,7 +131,7 @@ export default function FeedbackPanel({ restaurantId }: { restaurantId: string }
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: fb.comment ? 8 : 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <StarRating rating={fb.rating} size={14} />
-                  <span style={{ fontSize: 13, fontWeight: 600, color: '#1c1917' }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#1C1C1E' }}>
                     {fb.customer_name || 'Anonim'}
                   </span>
                   {fb.table_number && (
@@ -141,7 +141,7 @@ export default function FeedbackPanel({ restaurantId }: { restaurantId: string }
                   )}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 11, color: '#a8a29e' }}>
+                  <span style={{ fontSize: 11, color: '#A0A0A0' }}>
                     {new Date(fb.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </span>
                   <button
@@ -154,7 +154,7 @@ export default function FeedbackPanel({ restaurantId }: { restaurantId: string }
                 </div>
               </div>
               {fb.comment && (
-                <p style={{ fontSize: 13, color: '#44403c', lineHeight: 1.5, margin: 0 }}>"{fb.comment}"</p>
+                <p style={{ fontSize: 13, color: '#2D2D2F', lineHeight: 1.5, margin: 0 }}>"{fb.comment}"</p>
               )}
             </div>
           ))}

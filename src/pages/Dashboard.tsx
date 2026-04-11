@@ -27,15 +27,15 @@ export default function Dashboard() {
   if (!user) return null;
 
   return (
-    <div style={{ minHeight: '100vh', background: '#fafaf9', fontFamily: "'Inter', -apple-system, sans-serif" }}>
-      <div style={{ borderBottom: '1px solid #e7e5e4', background: '#fff', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <div style={{ minHeight: '100vh', background: '#F7F7F5', fontFamily: "'Inter', -apple-system, sans-serif" }}>
+      <div style={{ borderBottom: '1px solid #E5E5E3', background: '#FFFFFF', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
           <TabbledLogo sizeClass="h-7" />
-          {role === 'super_admin' && <span style={{ fontSize: 11, fontWeight: 600, color: '#fff', background: '#dc2626', padding: '2px 8px', borderRadius: 4 }}>ADMIN</span>}
+          {role === 'super_admin' && <span style={{ fontSize: 11, fontWeight: 600, color: '#FFFFFF', background: '#FF4F7A', padding: '2px 8px', borderRadius: 4 }}>ADMIN</span>}
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 13, color: '#78716c' }}>{user.email}</span>
-          <button onClick={signOut} style={{ padding: '6px 14px', fontSize: 13, fontWeight: 600, background: '#f5f5f4', border: '1px solid #e7e5e4', borderRadius: 8, cursor: 'pointer', color: '#44403c' }}>Cikis</button>
+          <span style={{ fontSize: 13, color: '#6B6B6F' }}>{user.email}</span>
+          <button onClick={signOut} style={{ padding: '6px 14px', fontSize: 13, fontWeight: 500, background: 'transparent', border: '1px solid #E5E5E3', borderRadius: 8, cursor: 'pointer', color: '#2D2D2F', transition: 'all 0.15s ease' }}>Cikis</button>
         </div>
       </div>
       {role === 'super_admin' ? <SuperAdminDashboard /> : <RestaurantDashboard />}

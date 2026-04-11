@@ -21,7 +21,7 @@ interface DiscountCode {
 const S = {
   card: { padding: '12px 16px', borderRadius: 8, border: '1px solid #f3f4f6', backgroundColor: '#fff', marginBottom: 8 } as React.CSSProperties,
   input: { width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13, outline: 'none', fontFamily: "'Inter', sans-serif" } as React.CSSProperties,
-  label: { fontSize: 12, fontWeight: 600, color: '#1c1917', marginBottom: 4, display: 'block' } as React.CSSProperties,
+  label: { fontSize: 12, fontWeight: 600, color: '#1C1C1E', marginBottom: 4, display: 'block' } as React.CSSProperties,
 };
 
 const EMPTY_FORM = {
@@ -145,7 +145,7 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1c1917', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1C1C1E', display: 'flex', alignItems: 'center', gap: 8 }}>
           <Percent size={20} /> İndirim Kodları
         </h2>
         <button
@@ -165,7 +165,7 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
       {showForm && (
         <div style={{ ...S.card, backgroundColor: '#fafafa', marginBottom: 16, padding: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#1c1917' }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#1C1C1E' }}>
               {editingId ? 'Kodu Düzenle' : 'Yeni İndirim Kodu'}
             </h3>
             <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}>
@@ -200,7 +200,7 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
               <label style={S.label}>İndirim Tipi</label>
               <div style={{ display: 'flex', gap: 12 }}>
                 {(['percentage', 'fixed'] as const).map(t => (
-                  <label key={t} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, cursor: 'pointer', color: '#1c1917' }}>
+                  <label key={t} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, cursor: 'pointer', color: '#1C1C1E' }}>
                     <input
                       type="radio"
                       checked={form.discount_type === t}
@@ -293,7 +293,7 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
             </div>
 
             {/* Active toggle */}
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', color: '#1c1917' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', color: '#1C1C1E' }}>
               <input
                 type="checkbox"
                 checked={form.is_active}
@@ -322,7 +322,7 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
 
       {/* List */}
       {loading ? (
-        <p style={{ textAlign: 'center', color: '#a8a29e', fontSize: 13, padding: 32 }}>Yükleniyor...</p>
+        <p style={{ textAlign: 'center', color: '#A0A0A0', fontSize: 13, padding: 32 }}>Yükleniyor...</p>
       ) : codes.length === 0 && !showForm ? (
         <div style={{ textAlign: 'center', padding: 48 }}>
           <Percent size={48} style={{ color: '#d1d5db', marginBottom: 12 }} />
@@ -345,7 +345,7 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
             <div key={c.id} style={S.card}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 15, fontWeight: 700, fontFamily: 'monospace', color: '#1c1917', letterSpacing: '0.05em' }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, fontFamily: 'monospace', color: '#1C1C1E', letterSpacing: '0.05em' }}>
                     {c.code}
                   </span>
                   <span style={{ fontSize: 12, color: '#6b7280' }}>
@@ -376,7 +376,7 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
                 </span>
               </div>
               {c.description && (
-                <p style={{ fontSize: 11, color: '#a8a29e', margin: '2px 0' }}>{c.description}</p>
+                <p style={{ fontSize: 11, color: '#A0A0A0', margin: '2px 0' }}>{c.description}</p>
               )}
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 4 }}>
                 <button

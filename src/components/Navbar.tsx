@@ -26,7 +26,7 @@ const Navbar = () => {
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled ? "shadow-sm" : ""
       }`}
-      style={{ backgroundColor: "rgba(250,250,247,0.85)", backdropFilter: "blur(12px)" }}
+      style={{ backgroundColor: "rgba(255,255,255,0.95)", backdropFilter: "blur(12px)" }}
     >
       <div className="container mx-auto flex items-center justify-between h-16 px-4 lg:px-8">
         <TabbledLogo logoType="horizontal" sizeClass="h-8" />

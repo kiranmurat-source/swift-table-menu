@@ -73,6 +73,31 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        strawberry: {
+          DEFAULT: "#FF4F7A",
+          hover: "#E8456E",
+          pressed: "#D63D62",
+          light: "#FFF0F3",
+          lighter: "#FFE0E8",
+        },
+        charcoal: {
+          DEFAULT: "#1C1C1E",
+          hover: "#2A2A2E",
+          muted: "#3A3A3E",
+        },
+        offwhite: {
+          DEFAULT: "#F7F7F5",
+          text: "#F0F0EC",
+        },
+        db: {
+          bg: "#F7F7F5",
+          card: "#FFFFFF",
+          border: "#E5E5E3",
+          text: "#1C1C1E",
+          body: "#2D2D2F",
+          subtle: "#6B6B6F",
+          muted: "#A0A0A0",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

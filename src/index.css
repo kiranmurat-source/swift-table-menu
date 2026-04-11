@@ -4,53 +4,84 @@
 
 @layer base {
   :root {
-    --background: 60 10% 97%;
-    --foreground: 0 0% 10%;
+    /* Dashboard Palette — new strawberry + charcoal system */
+    --db-bg: #F7F7F5;
+    --db-card: #FFFFFF;
+    --db-sidebar: #1C1C1E;
+    --db-sidebar-hover: #2A2A2E;
+    --db-sidebar-muted: #3A3A3E;
+    --db-sidebar-border: #3A3A3E;
+    --db-sidebar-text: #A0A0A0;
+    --db-sidebar-text-active: #FFFFFF;
+    --db-sidebar-text-hover: #F0F0EC;
+    --db-text-primary: #1C1C1E;
+    --db-text-body: #2D2D2F;
+    --db-text-subtle: #6B6B6F;
+    --db-text-muted: #A0A0A0;
+    --db-border: #E5E5E3;
+    --db-pink: #FF4F7A;
+    --db-pink-hover: #E8456E;
+    --db-pink-pressed: #D63D62;
+    --db-pink-light: #FFF0F3;
+    --db-pink-lighter: #FFE0E8;
+    --db-success: #22C55E;
+    --db-warning: #F59E0B;
+    --db-error: #EF4444;
+    --db-info: #3B82F6;
+    --db-shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+    --db-shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+    --db-shadow-lg: 0 4px 24px rgba(0,0,0,0.08);
+
+    /* shadcn HSL tokens — remapped onto new palette */
+    --background: 60 10% 97%;          /* #F7F7F5 */
+    --foreground: 240 3% 11%;          /* #1C1C1E */
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 10%;
+    --card-foreground: 240 3% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 10%;
+    --popover-foreground: 240 3% 11%;
 
-    --primary: 348 60% 60%;
+    --primary: 346 100% 65%;           /* #FF4F7A strawberry */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 135 20% 67%;
-    --secondary-foreground: 0 0% 10%;
+    --secondary: 60 10% 97%;           /* off-white */
+    --secondary-foreground: 240 3% 11%;
 
-    --muted: 220 9% 46%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 240 3% 43%;               /* #6B6B6F */
+    --muted-foreground: 240 3% 43%;
 
-    --accent: 18 76% 69%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 346 100% 97%;            /* #FFF0F3 pink light */
+    --accent-foreground: 346 80% 56%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;          /* #EF4444 */
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 40 13% 90%;
-    --input: 40 13% 90%;
-    --ring: 348 60% 60%;
+    --border: 60 6% 90%;               /* #E5E5E3 */
+    --input: 60 6% 90%;
+    --ring: 346 100% 65%;              /* strawberry focus ring */
 
     --radius: 0.75rem;
 
+    /* Legacy named palette — kept for backwards-compat on landing */
     --sage: 80 26% 60%;
     --sage-foreground: 0 0% 100%;
-    --grapefruit: 348 72% 56%;
-    --grapefruit-deep: 348 54% 54%;
+    --grapefruit: 346 100% 65%;        /* remapped to strawberry */
+    --grapefruit-deep: 346 78% 58%;
     --sage-light: 135 20% 67%;
     --salmon: 18 76% 69%;
     --gold: 43 65% 71%;
-    --cream: 40 20% 95%;
+    --cream: 0 0% 100%;            /* alternator = pure white on off-white body */
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Sidebar (charcoal) */
+    --sidebar-background: 240 3% 11%;        /* #1C1C1E */
+    --sidebar-foreground: 0 0% 63%;          /* #A0A0A0 */
+    --sidebar-primary: 346 100% 65%;         /* strawberry active accent */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3% 16%;            /* #2A2A2E hover */
+    --sidebar-accent-foreground: 48 17% 93%; /* #F0F0EC */
+    --sidebar-border: 240 3% 23%;            /* #3A3A3E */
+    --sidebar-ring: 346 100% 65%;
   }
 }
 

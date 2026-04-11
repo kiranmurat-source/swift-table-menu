@@ -28,15 +28,15 @@ const CATEGORIES = ['MENÜ', 'AI ARAÇLARI', 'SİPARİŞ & SERVİS', 'MÜŞTERİ
 
 const S: Record<string, React.CSSProperties> = {
   wrap: { maxWidth: 1100, margin: '0 auto', padding: '32px 24px' },
-  card: { background: '#fff', border: '1px solid #e7e5e4', borderRadius: 12, padding: 24, marginBottom: 16 },
-  input: { width: '100%', padding: '10px 14px', fontSize: 14, border: '1px solid #d6d3d1', borderRadius: 8, outline: 'none', background: '#fff', boxSizing: 'border-box' as const },
-  btn: { padding: '10px 20px', fontSize: 13, fontWeight: 700, color: '#fff', background: '#1c1917', border: 'none', borderRadius: 8, cursor: 'pointer' },
-  btnSm: { padding: '6px 14px', fontSize: 12, fontWeight: 600, border: '1px solid #d6d3d1', borderRadius: 6, cursor: 'pointer', background: '#fff', color: '#44403c' },
-  btnDanger: { padding: '6px 14px', fontSize: 12, fontWeight: 600, border: '1px solid #fecaca', borderRadius: 6, cursor: 'pointer', background: '#fff', color: '#dc2626' },
-  label: { display: 'block', fontSize: 13, fontWeight: 600, color: '#44403c', marginBottom: 6 },
-  badge: { fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 4, display: 'inline-block' },
-  tabs: { display: 'flex', gap: 4, marginBottom: 24, background: '#f5f5f4', borderRadius: 8, padding: 3, width: 'fit-content', flexWrap: 'wrap' as const },
-  tab: { padding: '8px 20px', fontSize: 13, fontWeight: 600, border: 'none', borderRadius: 6, cursor: 'pointer', transition: 'all 0.2s' },
+  card: { background: '#FFFFFF', border: '1px solid #E5E5E3', borderRadius: 12, padding: 24, marginBottom: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' },
+  input: { width: '100%', padding: '10px 14px', fontSize: 14, border: '1px solid #E5E5E3', borderRadius: 8, outline: 'none', background: '#FFFFFF', color: '#1C1C1E', boxSizing: 'border-box' as const, transition: 'border-color 0.15s ease, box-shadow 0.15s ease' },
+  btn: { padding: '10px 24px', fontSize: 13, fontWeight: 500, color: '#FFFFFF', background: '#FF4F7A', border: 'none', borderRadius: 8, cursor: 'pointer', transition: 'background 0.15s ease' },
+  btnSm: { padding: '6px 14px', fontSize: 12, fontWeight: 500, border: '1px solid #E5E5E3', borderRadius: 6, cursor: 'pointer', background: '#FFFFFF', color: '#2D2D2F', transition: 'all 0.15s ease' },
+  btnDanger: { padding: '6px 14px', fontSize: 12, fontWeight: 500, border: '1px solid #FECACA', borderRadius: 6, cursor: 'pointer', background: '#FFFFFF', color: '#EF4444', transition: 'all 0.15s ease' },
+  label: { display: 'block', fontSize: 13, fontWeight: 500, color: '#2D2D2F', marginBottom: 6 },
+  badge: { fontSize: 11, fontWeight: 500, padding: '4px 12px', borderRadius: 9999, display: 'inline-block' },
+  tabs: { display: 'flex', gap: 4, marginBottom: 24, background: '#F7F7F5', border: '1px solid #E5E5E3', borderRadius: 8, padding: 3, width: 'fit-content', flexWrap: 'wrap' as const },
+  tab: { padding: '8px 20px', fontSize: 13, fontWeight: 500, border: 'none', borderRadius: 6, cursor: 'pointer', transition: 'all 0.15s ease' },
   grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 },
 };
 
@@ -402,25 +402,25 @@ export default function SuperAdminDashboard() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 24 }}>
         <div style={{ ...S.card, marginBottom: 0, padding: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 36, height: 36, borderRadius: 8, background: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Storefront size={20} style={{ color: '#4f46e5' }} /></div>
-          <div><div style={{ fontSize: 24, fontWeight: 800, color: '#1c1917' }}>{restaurants.length}</div><div style={{ fontSize: 12, color: '#a8a29e' }}>Toplam Restoran</div></div>
+          <div><div style={{ fontSize: 24, fontWeight: 800, color: '#1C1C1E' }}>{restaurants.length}</div><div style={{ fontSize: 12, color: '#A0A0A0' }}>Toplam Restoran</div></div>
         </div>
         <div style={{ ...S.card, marginBottom: 0, padding: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 36, height: 36, borderRadius: 8, background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CheckCircle size={20} style={{ color: '#16a34a' }} /></div>
-          <div><div style={{ fontSize: 24, fontWeight: 800, color: '#1c1917' }}>{activeSubs.length}</div><div style={{ fontSize: 12, color: '#a8a29e' }}>Aktif Uyelik</div></div>
+          <div><div style={{ fontSize: 24, fontWeight: 800, color: '#1C1C1E' }}>{activeSubs.length}</div><div style={{ fontSize: 12, color: '#A0A0A0' }}>Aktif Uyelik</div></div>
         </div>
         <div style={{ ...S.card, marginBottom: 0, padding: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 36, height: 36, borderRadius: 8, background: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Money size={20} style={{ color: '#4f46e5' }} /></div>
-          <div><div style={{ fontSize: 24, fontWeight: 800, color: '#1c1917' }}>{monthlyRevenue.toLocaleString('tr-TR')}</div><div style={{ fontSize: 12, color: '#a8a29e' }}>Aylik Gelir (TL)</div></div>
+          <div><div style={{ fontSize: 24, fontWeight: 800, color: '#1C1C1E' }}>{monthlyRevenue.toLocaleString('tr-TR')}</div><div style={{ fontSize: 12, color: '#A0A0A0' }}>Aylik Gelir (TL)</div></div>
         </div>
         <div style={{ ...S.card, marginBottom: 0, padding: 16, display: 'flex', alignItems: 'center', gap: 12, border: expiringSubs.length > 0 ? '1px solid #fed7aa' : undefined, background: expiringSubs.length > 0 ? '#fff7ed' : '#fff' }}>
           <div style={{ width: 36, height: 36, borderRadius: 8, background: '#ffedd5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Warning size={20} style={{ color: '#ea580c' }} /></div>
-          <div><div style={{ fontSize: 24, fontWeight: 800, color: expiringSubs.length > 0 ? '#ea580c' : '#1c1917' }}>{expiringSubs.length}</div><div style={{ fontSize: 12, color: '#a8a29e' }}>Suresi Dolan</div></div>
+          <div><div style={{ fontSize: 24, fontWeight: 800, color: expiringSubs.length > 0 ? '#ea580c' : '#1C1C1E' }}>{expiringSubs.length}</div><div style={{ fontSize: 12, color: '#A0A0A0' }}>Suresi Dolan</div></div>
         </div>
       </div>
 
       <div style={S.tabs}>
         {(['restaurants', 'users', 'subscriptions', 'features'] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)} style={{ ...S.tab, background: tab === t ? '#fff' : 'transparent', color: tab === t ? '#1c1917' : '#78716c', boxShadow: tab === t ? '0 1px 3px rgba(0,0,0,0.08)' : 'none' }}>
+          <button key={t} onClick={() => setTab(t)} style={{ ...S.tab, background: tab === t ? '#fff' : 'transparent', color: tab === t ? '#1C1C1E' : '#6B6B6F', boxShadow: tab === t ? '0 1px 3px rgba(0,0,0,0.08)' : 'none' }}>
             {tabLabels[t]}
           </button>
         ))}
@@ -437,19 +437,19 @@ export default function SuperAdminDashboard() {
           </div>
         )}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1c1917' }}>Restoranlar</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1C1C1E' }}>Restoranlar</h2>
           <button onClick={() => setShowForm(!showForm)} style={S.btn}>{showForm ? 'Iptal' : '+ Restoran & Kullanici Ekle'}</button>
         </div>
         {showForm && (
           <form onSubmit={addRestaurant} style={{ ...S.card, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#78716c', textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: '1px solid #e7e5e4', paddingBottom: 6 }}>Isletme Bilgileri</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#6B6B6F', textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: '1px solid #E5E5E3', paddingBottom: 6 }}>Isletme Bilgileri</div>
             <div><label style={S.label}>Restoran Adi *</label><input style={S.input} value={form.name} onChange={e => { const name = e.target.value; setForm({ ...form, name, slug: generateSlug(name) }); }} required placeholder="Orn: Cafe Istanbul" /></div>
             <div><label style={S.label}>Slug (URL)</label><input style={S.input} value={form.slug} onChange={e => setForm({ ...form, slug: e.target.value })} placeholder="otomatik olusturulur" /></div>
             <div style={S.grid2}>
               <div><label style={S.label}>Adres</label><input style={S.input} value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} /></div>
               <div><label style={S.label}>Telefon</label><input style={S.input} value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} /></div>
             </div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#78716c', textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: '1px solid #e7e5e4', paddingBottom: 6, marginTop: 8 }}>Hesap Bilgileri</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#6B6B6F', textTransform: 'uppercase', letterSpacing: 0.5, borderBottom: '1px solid #E5E5E3', paddingBottom: 6, marginTop: 8 }}>Hesap Bilgileri</div>
             <div><label style={S.label}>Ad Soyad *</label><input style={S.input} value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} required placeholder="Restoran sahibi adi" /></div>
             <div style={S.grid2}>
               <div><label style={S.label}>E-posta *</label><input type="email" style={S.input} value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required /></div>
@@ -478,9 +478,9 @@ export default function SuperAdminDashboard() {
             ) : (
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <div style={{ fontSize: 16, fontWeight: 600, color: '#1c1917' }}>{r.name}</div>
-                  <div style={{ fontSize: 13, color: '#a8a29e', marginTop: 2 }}>/{r.slug} &middot; {r.current_plan}</div>
-                  {(r.address || r.phone) && <div style={{ fontSize: 12, color: '#78716c', marginTop: 2 }}>{r.address}{r.address && r.phone ? ' · ' : ''}{r.phone}</div>}
+                  <div style={{ fontSize: 16, fontWeight: 600, color: '#1C1C1E' }}>{r.name}</div>
+                  <div style={{ fontSize: 13, color: '#A0A0A0', marginTop: 2 }}>/{r.slug} &middot; {r.current_plan}</div>
+                  {(r.address || r.phone) && <div style={{ fontSize: 12, color: '#6B6B6F', marginTop: 2 }}>{r.address}{r.address && r.phone ? ' · ' : ''}{r.phone}</div>}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ ...S.badge, ...statusColor(r.subscription_status) }}>{r.subscription_status}</span>
@@ -492,13 +492,13 @@ export default function SuperAdminDashboard() {
             )}
           </div>
         ))}
-        {restaurants.length === 0 && <div style={{ textAlign: 'center', color: '#a8a29e', padding: 40, fontSize: 14 }}>Henuz restoran eklenmedi.</div>}
+        {restaurants.length === 0 && <div style={{ textAlign: 'center', color: '#A0A0A0', padding: 40, fontSize: 14 }}>Henuz restoran eklenmedi.</div>}
       </>)}
 
       {/* ============ KULLANICILAR ============ */}
       {tab === 'users' && (<>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1c1917' }}>Kullanicilar</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1C1C1E' }}>Kullanicilar</h2>
           <button onClick={() => setShowUserForm(!showUserForm)} style={S.btn}>{showUserForm ? 'Iptal' : '+ Kullanici Ekle'}</button>
         </div>
         {showUserForm && (
@@ -538,8 +538,8 @@ export default function SuperAdminDashboard() {
             ) : (
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <div style={{ fontSize: 15, fontWeight: 600, color: '#1c1917' }}>{u.full_name || u.email}</div>
-                  <div style={{ fontSize: 13, color: '#a8a29e' }}>{u.email}{u.restaurant_id ? ' · ' + restName(u.restaurant_id) : ''}</div>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: '#1C1C1E' }}>{u.full_name || u.email}</div>
+                  <div style={{ fontSize: 13, color: '#A0A0A0' }}>{u.email}{u.restaurant_id ? ' · ' + restName(u.restaurant_id) : ''}</div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ ...S.badge, background: u.role === 'super_admin' ? '#fee2e2' : '#e0e7ff', color: u.role === 'super_admin' ? '#dc2626' : '#4f46e5' }}>{u.role}</span>
@@ -555,7 +555,7 @@ export default function SuperAdminDashboard() {
       {/* ============ ÜYELİKLER ============ */}
       {tab === 'subscriptions' && (<>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1c1917' }}>Uyelikler</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1C1C1E' }}>Uyelikler</h2>
           <button onClick={() => setShowSubForm(!showSubForm)} style={S.btn}>{showSubForm ? 'Iptal' : '+ Uyelik Ekle'}</button>
         </div>
 
@@ -566,22 +566,22 @@ export default function SuperAdminDashboard() {
             const pFeats = allFeatures.filter(f => getPFValue(p.id, f.id) !== 'false').slice(0, 8);
             return (
               <div key={p.id} style={{ ...S.card, textAlign: 'center', marginBottom: 0 }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#1c1917' }}>{p.name}</div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: '#1c1917', margin: '8px 0' }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#1C1C1E' }}>{p.name}</div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: '#1C1C1E', margin: '8px 0' }}>
                   {p.price_monthly ? Number(p.price_monthly).toLocaleString('tr-TR') : '—'} TL
-                  <span style={{ fontSize: 13, fontWeight: 400, color: '#a8a29e' }}>/ay</span>
+                  <span style={{ fontSize: 13, fontWeight: 400, color: '#A0A0A0' }}>/ay</span>
                 </div>
-                <div style={{ fontSize: 12, color: '#78716c', marginBottom: 8 }}>
+                <div style={{ fontSize: 12, color: '#6B6B6F', marginBottom: 8 }}>
                   {Number(p.price_yearly).toLocaleString('tr-TR')} TL/yil
                 </div>
-                <div style={{ fontSize: 12, color: '#78716c', lineHeight: 1.8, textAlign: 'left', padding: '0 8px' }}>
+                <div style={{ fontSize: 12, color: '#6B6B6F', lineHeight: 1.8, textAlign: 'left', padding: '0 8px' }}>
                   {pFeats.map(f => {
                     const val = getPFValue(p.id, f.id);
                     return <div key={f.id}>• {f.name}{val !== 'true' ? ` (${val})` : ''}</div>;
                   })}
-                  {activeCount > 8 && <div style={{ color: '#a8a29e', fontStyle: 'italic' }}>+{activeCount - 8} ozellik daha</div>}
+                  {activeCount > 8 && <div style={{ color: '#A0A0A0', fontStyle: 'italic' }}>+{activeCount - 8} ozellik daha</div>}
                 </div>
-                <div style={{ marginTop: 8, fontSize: 11, fontWeight: 700, color: '#1c1917' }}>{activeCount} ozellik</div>
+                <div style={{ marginTop: 8, fontSize: 11, fontWeight: 700, color: '#1C1C1E' }}>{activeCount} ozellik</div>
               </div>
             );
           })}
@@ -618,13 +618,13 @@ export default function SuperAdminDashboard() {
           return (
             <div key={s.id} style={{ ...S.card, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <div style={{ fontSize: 15, fontWeight: 600, color: '#1c1917' }}>{restName(s.restaurant_id)}</div>
-                <div style={{ fontSize: 13, color: '#78716c', marginTop: 2 }}>
+                <div style={{ fontSize: 15, fontWeight: 600, color: '#1C1C1E' }}>{restName(s.restaurant_id)}</div>
+                <div style={{ fontSize: 13, color: '#6B6B6F', marginTop: 2 }}>
                   {planName(s.plan_id)} &middot; {s.start_date} - {s.end_date}
                 </div>
                 {expiring && <div style={{ fontSize: 12, color: '#ea580c', fontWeight: 600, marginTop: 4 }}>Son {days} gun!</div>}
                 {expired && <div style={{ fontSize: 12, color: '#dc2626', fontWeight: 600, marginTop: 4 }}>Suresi doldu ({Math.abs(days)} gun once)</div>}
-                {s.notes && <div style={{ fontSize: 12, color: '#a8a29e', marginTop: 2 }}>{s.notes}</div>}
+                {s.notes && <div style={{ fontSize: 12, color: '#A0A0A0', marginTop: 2 }}>{s.notes}</div>}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                 <span style={{ ...S.badge, ...statusColor(expired ? 'expired' : expiring ? 'expiring' : s.status) }}>{expired ? 'expired' : expiring ? 'expiring' : s.status}</span>
@@ -650,13 +650,13 @@ export default function SuperAdminDashboard() {
             </div>
           );
         })}
-        {subscriptions.length === 0 && <div style={{ textAlign: 'center', color: '#a8a29e', padding: 40, fontSize: 14 }}>Henuz uyelik bulunmuyor.</div>}
+        {subscriptions.length === 0 && <div style={{ textAlign: 'center', color: '#A0A0A0', padding: 40, fontSize: 14 }}>Henuz uyelik bulunmuyor.</div>}
       </>)}
 
       {/* ============ ÖZELLİKLER ============ */}
       {tab === 'features' && (<>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1c1917' }}>Ozellik Yonetimi</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1C1C1E' }}>Ozellik Yonetimi</h2>
           <button onClick={() => setShowFeatureForm(!showFeatureForm)} style={S.btn}>{showFeatureForm ? 'Iptal' : '+ Ozellik Ekle'}</button>
         </div>
 
@@ -679,12 +679,12 @@ export default function SuperAdminDashboard() {
         <div style={{ ...S.card, overflowX: 'auto', padding: 16 }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
-              <tr style={{ borderBottom: '2px solid #e7e5e4' }}>
-                <th style={{ textAlign: 'left', padding: '10px 8px', fontWeight: 700, color: '#1c1917', minWidth: 220 }}>Ozellik</th>
+              <tr style={{ borderBottom: '2px solid #E5E5E3' }}>
+                <th style={{ textAlign: 'left', padding: '10px 8px', fontWeight: 700, color: '#1C1C1E', minWidth: 220 }}>Ozellik</th>
                 {plans.map(p => (
-                  <th key={p.id} style={{ textAlign: 'center', padding: '10px 8px', fontWeight: 700, color: '#1c1917', minWidth: 100 }}>
+                  <th key={p.id} style={{ textAlign: 'center', padding: '10px 8px', fontWeight: 700, color: '#1C1C1E', minWidth: 100 }}>
                     {p.name}
-                    <div style={{ fontSize: 10, fontWeight: 400, color: '#a8a29e' }}>{planActiveCount(p.id)} aktif</div>
+                    <div style={{ fontSize: 10, fontWeight: 400, color: '#A0A0A0' }}>{planActiveCount(p.id)} aktif</div>
                   </th>
                 ))}
                 <th style={{ width: 40 }}></th>
@@ -696,15 +696,15 @@ export default function SuperAdminDashboard() {
                 if (catFeatures.length === 0) return null;
                 return [
                   <tr key={`cat-${cat}`}>
-                    <td colSpan={plans.length + 2} style={{ padding: '14px 8px 6px', fontWeight: 800, fontSize: 11, color: '#78716c', textTransform: 'uppercase' as const, letterSpacing: 1, borderTop: '1px solid #e7e5e4' }}>
+                    <td colSpan={plans.length + 2} style={{ padding: '14px 8px 6px', fontWeight: 800, fontSize: 11, color: '#6B6B6F', textTransform: 'uppercase' as const, letterSpacing: 1, borderTop: '1px solid #E5E5E3' }}>
                       {cat} ({catFeatures.length})
                     </td>
                   </tr>,
                   ...catFeatures.map(feat => (
-                    <tr key={feat.id} style={{ borderBottom: '1px solid #f5f5f4' }}>
-                      <td style={{ padding: '8px', color: '#44403c' }}>
+                    <tr key={feat.id} style={{ borderBottom: '1px solid #F7F7F5' }}>
+                      <td style={{ padding: '8px', color: '#2D2D2F' }}>
                         {feat.name}
-                        {feat.description && <div style={{ fontSize: 11, color: '#a8a29e' }}>{feat.description}</div>}
+                        {feat.description && <div style={{ fontSize: 11, color: '#A0A0A0' }}>{feat.description}</div>}
                       </td>
                       {plans.map(p => {
                         const val = getPFValue(p.id, feat.id);
@@ -731,8 +731,8 @@ export default function SuperAdminDashboard() {
                                 onClick={() => { setEditingPF(key); setEditPFValue(val); }}
                                 style={{
                                   cursor: 'pointer', padding: '3px 10px', borderRadius: 4, fontSize: 12, fontWeight: 600,
-                                  background: val === 'false' ? '#f5f5f4' : '#dcfce7',
-                                  color: val === 'false' ? '#a8a29e' : '#16a34a',
+                                  background: val === 'false' ? '#F7F7F5' : '#dcfce7',
+                                  color: val === 'false' ? '#A0A0A0' : '#16a34a',
                                   display: 'inline-block', minWidth: 36,
                                 }}
                                 title="Tikla: deger degistir"
@@ -744,7 +744,7 @@ export default function SuperAdminDashboard() {
                         );
                       })}
                       <td style={{ textAlign: 'center' }}>
-                        <button onClick={() => deleteFeature(feat.id)} style={{ background: 'none', border: 'none', color: '#d6d3d1', cursor: 'pointer', fontSize: 14, padding: 4 }} title="Sil"><XCircle size={14} /></button>
+                        <button onClick={() => deleteFeature(feat.id)} style={{ background: 'none', border: 'none', color: '#E5E5E3', cursor: 'pointer', fontSize: 14, padding: 4 }} title="Sil"><XCircle size={14} /></button>
                       </td>
                     </tr>
                   ))
@@ -754,7 +754,7 @@ export default function SuperAdminDashboard() {
           </table>
         </div>
 
-        <div style={{ fontSize: 12, color: '#a8a29e', marginTop: 8, padding: '0 4px' }}>
+        <div style={{ fontSize: 12, color: '#A0A0A0', marginTop: 8, padding: '0 4px' }}>
           Degerlere tikla ve duzenle: true, false veya ozel deger (2 dil, 3 tablet, 5 vs.) girebilirsin. Enter ile kaydet, Escape ile iptal.
         </div>
       </>)}
@@ -767,23 +767,23 @@ export default function SuperAdminDashboard() {
 const KPI_STYLES: Record<string, React.CSSProperties> = {
   sectionWrap: { marginBottom: 24 },
   sectionHeader: {
-    fontSize: 13, fontWeight: 700, color: '#a8a29e',
+    fontSize: 13, fontWeight: 700, color: '#A0A0A0',
     textTransform: 'uppercase', letterSpacing: 1,
-    borderBottom: '1px solid #e7e5e4', paddingBottom: 8, marginBottom: 16,
+    borderBottom: '1px solid #E5E5E3', paddingBottom: 8, marginBottom: 16,
   },
   grid4: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 },
   grid3: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 },
   card: {
-    background: '#fff', border: '1px solid #e7e5e4', borderRadius: 12,
+    background: '#fff', border: '1px solid #E5E5E3', borderRadius: 12,
     padding: 20, display: 'flex', flexDirection: 'column', gap: 8,
   },
-  cardHeader: { display: 'flex', alignItems: 'center', gap: 8, color: '#78716c' },
-  cardTitle: { fontSize: 13, fontWeight: 600, color: '#44403c' },
+  cardHeader: { display: 'flex', alignItems: 'center', gap: 8, color: '#6B6B6F' },
+  cardTitle: { fontSize: 13, fontWeight: 600, color: '#2D2D2F' },
   cardMetric: {
     fontFamily: "'Playfair Display', serif",
-    fontSize: 30, fontWeight: 700, color: '#1c1917', lineHeight: 1.1, marginTop: 4,
+    fontSize: 30, fontWeight: 700, color: '#1C1C1E', lineHeight: 1.1, marginTop: 4,
   },
-  cardSub: { fontSize: 12, color: '#a8a29e', fontWeight: 300 },
+  cardSub: { fontSize: 12, color: '#A0A0A0', fontWeight: 300 },
 };
 
 function KPICard({ icon, title, value, sub, valueColor, titleAttr }: {
@@ -796,7 +796,7 @@ function KPICard({ icon, title, value, sub, valueColor, titleAttr }: {
         {icon}
         <span style={KPI_STYLES.cardTitle}>{title}</span>
       </div>
-      <div style={{ ...KPI_STYLES.cardMetric, color: valueColor || '#1c1917' }}>{value}</div>
+      <div style={{ ...KPI_STYLES.cardMetric, color: valueColor || '#1C1C1E' }}>{value}</div>
       {sub && <div style={KPI_STYLES.cardSub}>{sub}</div>}
     </div>
   );
@@ -804,9 +804,9 @@ function KPICard({ icon, title, value, sub, valueColor, titleAttr }: {
 
 function KPISections({ data }: { data: KPIData }) {
   const photoColor = data.photoPercentage >= 80 ? '#16a34a' : data.photoPercentage >= 50 ? '#d97706' : '#dc2626';
-  const expiringColor = data.expiringSoon > 0 ? '#d97706' : '#1c1917';
+  const expiringColor = data.expiringSoon > 0 ? '#d97706' : '#1C1C1E';
   const emptyColor = data.emptyMenuRestaurants > 0 ? '#dc2626' : '#16a34a';
-  const iconProps = { size: 18, style: { color: '#78716c' } };
+  const iconProps = { size: 18, style: { color: '#6B6B6F' } };
 
   return (
     <div>

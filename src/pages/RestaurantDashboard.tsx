@@ -145,12 +145,12 @@ const SUPABASE_URL = 'https://qmnrawqvkwehufebbkxp.supabase.co';
 
 const S: Record<string, React.CSSProperties> = {
   wrap: { maxWidth: 900, margin: '0 auto', padding: '32px 24px' },
-  card: { background: '#fff', border: '1px solid #e7e5e4', borderRadius: 12, padding: 20, marginBottom: 12 },
-  input: { width: '100%', padding: '10px 14px', fontSize: 14, border: '1px solid #d6d3d1', borderRadius: 8, outline: 'none', background: '#fff', boxSizing: 'border-box' as const },
-  btn: { padding: '10px 20px', fontSize: 13, fontWeight: 700, color: '#fff', background: '#1c1917', border: 'none', borderRadius: 8, cursor: 'pointer' },
-  btnSm: { padding: '6px 14px', fontSize: 12, fontWeight: 600, border: '1px solid #d6d3d1', borderRadius: 6, cursor: 'pointer', background: '#fff', color: '#44403c' },
-  btnDanger: { padding: '6px 14px', fontSize: 12, fontWeight: 600, border: '1px solid #fecaca', borderRadius: 6, cursor: 'pointer', background: '#fff', color: '#dc2626' },
-  label: { display: 'block', fontSize: 13, fontWeight: 600, color: '#44403c', marginBottom: 6 },
+  card: { background: '#FFFFFF', border: '1px solid #E5E5E3', borderRadius: 12, padding: 20, marginBottom: 12, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' },
+  input: { width: '100%', padding: '10px 14px', fontSize: 14, border: '1px solid #E5E5E3', borderRadius: 8, outline: 'none', background: '#FFFFFF', color: '#1C1C1E', boxSizing: 'border-box' as const, transition: 'border-color 0.15s ease, box-shadow 0.15s ease' },
+  btn: { padding: '10px 24px', fontSize: 13, fontWeight: 500, color: '#FFFFFF', background: '#FF4F7A', border: 'none', borderRadius: 8, cursor: 'pointer', transition: 'background 0.15s ease' },
+  btnSm: { padding: '6px 14px', fontSize: 12, fontWeight: 500, border: '1px solid #E5E5E3', borderRadius: 6, cursor: 'pointer', background: '#FFFFFF', color: '#2D2D2F', transition: 'all 0.15s ease' },
+  btnDanger: { padding: '6px 14px', fontSize: 12, fontWeight: 500, border: '1px solid #FECACA', borderRadius: 6, cursor: 'pointer', background: '#FFFFFF', color: '#EF4444', transition: 'all 0.15s ease' },
+  label: { display: 'block', fontSize: 13, fontWeight: 500, color: '#2D2D2F', marginBottom: 6 },
   grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 },
   grid3: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 },
   badge: { fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 4, display: 'inline-block', marginRight: 4 },
@@ -162,13 +162,13 @@ const S: Record<string, React.CSSProperties> = {
     padding: '12px 16px',
     background: '#fff',
     borderRadius: 12,
-    border: '1px solid #e7e5e4',
+    border: '1px solid #E5E5E3',
     marginBottom: 8,
     transition: 'all 0.15s',
   },
   subCatWrap: {
     marginLeft: 24,
-    borderLeft: '2px solid #e7e5e4',
+    borderLeft: '2px solid #E5E5E3',
     paddingLeft: 12,
   },
   itemRow: {
@@ -176,14 +176,14 @@ const S: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: 12,
     padding: '8px 12px',
-    borderBottom: '1px solid #f5f5f4',
+    borderBottom: '1px solid #F7F7F5',
     background: '#fff',
     cursor: 'pointer',
     transition: 'background 0.1s',
   },
   itemsContainer: {
     background: '#fafafa',
-    border: '1px solid #e7e5e4',
+    border: '1px solid #E5E5E3',
     borderRadius: 8,
     margin: '4px 0 12px 36px',
     padding: '4px 0',
@@ -192,7 +192,7 @@ const S: Record<string, React.CSSProperties> = {
   inlinePriceBox: {
     width: 110,
     padding: '6px 10px',
-    border: '1px solid #d6d3d1',
+    border: '1px solid #E5E5E3',
     borderRadius: 8,
     fontSize: 13,
     fontWeight: 600,
@@ -241,7 +241,7 @@ const toggleSwitchStyle = (on: boolean): React.CSSProperties => ({
   width: 36,
   height: 20,
   borderRadius: 999,
-  background: on ? '#16a34a' : '#d6d3d1',
+  background: on ? '#16a34a' : '#E5E5E3',
   border: 'none',
   cursor: 'pointer',
   padding: 0,
@@ -306,10 +306,10 @@ function InlinePrice({ value, isSoldOut, onSave }: { value: number; isSoldOut: b
             if (e.key === 'Enter') { e.preventDefault(); commit(); }
             if (e.key === 'Escape') { setDraft(value.toString()); setEditing(false); }
           }}
-          style={{ width: 80, padding: '4px 8px', fontSize: 14, fontWeight: 700, border: '1px solid #1c1917', borderRadius: 6, outline: 'none' }}
+          style={{ width: 80, padding: '4px 8px', fontSize: 14, fontWeight: 700, border: '1px solid #1C1C1E', borderRadius: 6, outline: 'none' }}
         />
-        <span style={{ fontSize: 14, color: '#1c1917', fontWeight: 700 }}>₺</span>
-        {saving && <span style={{ fontSize: 10, color: '#78716c' }}>...</span>}
+        <span style={{ fontSize: 14, color: '#1C1C1E', fontWeight: 700 }}>₺</span>
+        {saving && <span style={{ fontSize: 10, color: '#6B6B6F' }}>...</span>}
       </span>
     );
   }
@@ -320,7 +320,7 @@ function InlinePrice({ value, isSoldOut, onSave }: { value: number; isSoldOut: b
       style={{
         fontSize: 14,
         fontWeight: 700,
-        color: '#1c1917',
+        color: '#1C1C1E',
         background: 'none',
         border: '1px dashed transparent',
         borderRadius: 4,
@@ -328,7 +328,7 @@ function InlinePrice({ value, isSoldOut, onSave }: { value: number; isSoldOut: b
         cursor: 'pointer',
         textDecoration: isSoldOut ? 'line-through' : 'none',
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#d6d3d1')}
+      onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#E5E5E3')}
       onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'transparent')}
       title="Düzenlemek için tıkla"
     >
@@ -571,7 +571,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
 
       {/* Images Section */}
       <div style={S.card}>
-        <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1c1917', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1C1C1E', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
           <Image size={16} /> Gorseller
         </h4>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
@@ -580,45 +580,45 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
             <input ref={logoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadImage(e.target.files[0], 'logo'); }} />
             {restaurant.logo_url ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                <img onError={handleImageError} src={getOptimizedImageUrl(restaurant.logo_url, 'card')} alt="Logo" style={{ width: 80, height: 80, borderRadius: 12, objectFit: 'cover', border: '1px solid #e7e5e4' }} />
+                <img onError={handleImageError} src={getOptimizedImageUrl(restaurant.logo_url, 'card')} alt="Logo" style={{ width: 80, height: 80, borderRadius: 12, objectFit: 'cover', border: '1px solid #E5E5E3' }} />
                 <div style={{ display: 'flex', gap: 6 }}>
                   <button type="button" onClick={() => logoRef.current?.click()} disabled={uploadingLogo} style={{ ...S.btnSm, fontSize: 11, padding: '4px 10px' }}>{uploadingLogo ? '...' : 'Degistir'}</button>
                   <button type="button" onClick={() => removeImage('logo')} style={{ ...S.btnDanger, fontSize: 11, padding: '4px 10px' }}><Trash size={12} /></button>
                 </div>
               </div>
             ) : (
-              <button type="button" onClick={() => logoRef.current?.click()} disabled={uploadingLogo} style={{ ...S.btnSm, width: '100%', padding: '20px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: '#a8a29e' }}>
+              <button type="button" onClick={() => logoRef.current?.click()} disabled={uploadingLogo} style={{ ...S.btnSm, width: '100%', padding: '20px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: '#A0A0A0' }}>
                 <Camera size={24} />
                 <span style={{ fontSize: 12 }}>{uploadingLogo ? 'Yukleniyor...' : 'Logo Yukle'}</span>
               </button>
             )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#a8a29e', marginTop: 4 }}><Info size={14} /><span>500×500px, kare, şeffaf arka plan, max 2MB</span></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#A0A0A0', marginTop: 4 }}><Info size={14} /><span>500×500px, kare, şeffaf arka plan, max 2MB</span></div>
           </div>
           <div>
             <label style={{ ...S.label, marginBottom: 10 }}>Kapak Gorseli</label>
             <input ref={coverRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadImage(e.target.files[0], 'cover'); }} />
             {coverImage ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                <img onError={handleImageError} src={getOptimizedImageUrl(coverImage, 'detail')} alt="Cover" style={{ width: '100%', height: 80, borderRadius: 8, objectFit: 'cover', border: '1px solid #e7e5e4' }} />
+                <img onError={handleImageError} src={getOptimizedImageUrl(coverImage, 'detail')} alt="Cover" style={{ width: '100%', height: 80, borderRadius: 8, objectFit: 'cover', border: '1px solid #E5E5E3' }} />
                 <div style={{ display: 'flex', gap: 6 }}>
                   <button type="button" onClick={() => coverRef.current?.click()} disabled={uploadingCover} style={{ ...S.btnSm, fontSize: 11, padding: '4px 10px' }}>{uploadingCover ? '...' : 'Degistir'}</button>
                   <button type="button" onClick={() => removeImage('cover')} style={{ ...S.btnDanger, fontSize: 11, padding: '4px 10px' }}><Trash size={12} /></button>
                 </div>
               </div>
             ) : (
-              <button type="button" onClick={() => coverRef.current?.click()} disabled={uploadingCover} style={{ ...S.btnSm, width: '100%', padding: '20px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: '#a8a29e' }}>
+              <button type="button" onClick={() => coverRef.current?.click()} disabled={uploadingCover} style={{ ...S.btnSm, width: '100%', padding: '20px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: '#A0A0A0' }}>
                 <Camera size={24} />
                 <span style={{ fontSize: 12 }}>{uploadingCover ? 'Yukleniyor...' : 'Kapak Yukle'}</span>
               </button>
             )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#a8a29e', marginTop: 4 }}><Info size={14} /><span>1200×400px, yatay geniş, max 5MB</span></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#A0A0A0', marginTop: 4 }}><Info size={14} /><span>1200×400px, yatay geniş, max 5MB</span></div>
           </div>
         </div>
       </div>
 
       {/* Info Form */}
       <form onSubmit={handleSave} style={{ ...S.card, display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1c1917', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1C1C1E', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
           <User size={16} /> Isletme Bilgileri
         </h4>
         <div>
@@ -645,7 +645,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
         </div>
 
         {/* Social Media */}
-        <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1c1917', marginTop: 8, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1C1C1E', marginTop: 8, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
           <Link size={16} /> Sosyal Medya
         </h4>
         <div style={S.grid2}>
@@ -689,7 +689,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
         </div>
 
         {/* Working Hours */}
-        <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1c1917', marginTop: 8, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1C1C1E', marginTop: 8, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
           <Globe size={16} /> Çalışma Saatleri
         </h4>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -697,7 +697,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
             const dh = workingHours[day] || { ...DEFAULT_DAY };
             return (
               <div key={day} style={{ display: 'grid', gridTemplateColumns: '110px 1fr 1fr auto', gap: 8, alignItems: 'center' }}>
-                <span style={{ fontSize: 13, color: '#44403c', fontWeight: 500 }}>{DAY_LABELS[day]}</span>
+                <span style={{ fontSize: 13, color: '#2D2D2F', fontWeight: 500 }}>{DAY_LABELS[day]}</span>
                 <input
                   type="time"
                   style={{ ...S.input, padding: '6px 10px', fontSize: 12, opacity: dh.closed ? 0.4 : 1 }}
@@ -712,7 +712,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
                   disabled={dh.closed}
                   onChange={e => setWorkingHours({ ...workingHours, [day]: { ...dh, close: e.target.value } })}
                 />
-                <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#78716c', cursor: 'pointer' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#6B6B6F', cursor: 'pointer' }}>
                   <input
                     type="checkbox"
                     checked={dh.closed}
@@ -726,7 +726,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
         </div>
 
         {/* Feature Toggles */}
-        <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1c1917', marginTop: 8, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1C1C1E', marginTop: 8, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
           <SquaresFour size={16} /> Menü Özellikleri
         </h4>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
@@ -740,7 +740,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
           ]).map(feat => (
             <label key={feat.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 8, border: '1px solid #f3f4f6', backgroundColor: form[feat.key] ? '#f0fdf4' : '#fafafa', cursor: 'pointer' }}>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#1c1917' }}>{feat.label}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#1C1C1E' }}>{feat.label}</div>
                 <div style={{ fontSize: 11, color: '#6b7280' }}>{feat.desc}</div>
               </div>
               <input
@@ -754,7 +754,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
         </div>
 
         {/* Theme Selector */}
-        <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1c1917', marginTop: 8, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1C1C1E', marginTop: 8, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
           <Package size={16} /> Menü Teması
         </h4>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -771,8 +771,8 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
                   borderRadius: 10,
                   cursor: 'pointer',
                   transition: 'all 0.15s',
-                  border: selected ? '2px solid #1c1917' : '1px solid #d6d3d1',
-                  boxShadow: selected ? '0 0 0 2px #fff, 0 0 0 4px #1c1917' : 'none',
+                  border: selected ? '2px solid #1C1C1E' : '1px solid #E5E5E3',
+                  boxShadow: selected ? '0 0 0 2px #fff, 0 0 0 4px #1C1C1E' : 'none',
                   background: t.bg,
                   color: t.text,
                   fontSize: 12,
@@ -790,12 +790,12 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
             );
           })}
         </div>
-        <p style={{ fontSize: 11, color: '#78716c', margin: 0 }}>
+        <p style={{ fontSize: 11, color: '#6B6B6F', margin: 0 }}>
           Tema sadece müşterilerinizin göreceği genel menü sayfasını etkiler.
         </p>
 
         {/* Menu Preview Link */}
-        <div style={{ padding: '10px 14px', background: '#f5f5f4', borderRadius: 8, fontSize: 13, color: '#78716c' }}>
+        <div style={{ padding: '10px 14px', background: '#F7F7F5', borderRadius: 8, fontSize: 13, color: '#6B6B6F' }}>
           Menu linkiniz:{' '}
           <a href={`/menu/${restaurant.slug}`} target="_blank" rel="noopener noreferrer" style={{ color: '#A8B977', fontWeight: 600 }}>
             tabbled.com/menu/{restaurant.slug}
@@ -1437,8 +1437,8 @@ export default function RestaurantDashboard() {
 
   if (!restaurant) return (
     <div style={{ maxWidth: 600, margin: '0 auto', padding: '60px 24px', textAlign: 'center' }}>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1c1917', marginBottom: 8 }}>Restoran Atanmadı</h2>
-      <p style={{ fontSize: 14, color: '#78716c' }}>Hesabınıza henüz bir restoran atanmamış. Lütfen yönetici ile iletişime geçin.</p>
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1C1C1E', marginBottom: 8 }}>Restoran Atanmadı</h2>
+      <p style={{ fontSize: 14, color: '#6B6B6F' }}>Hesabınıza henüz bir restoran atanmamış. Lütfen yönetici ile iletişime geçin.</p>
     </div>
   );
 
@@ -1642,7 +1642,7 @@ export default function RestaurantDashboard() {
           {msg && <div style={{ padding: '10px 14px', background: msg.includes('oluşturuldu') ? '#f0fdf4' : '#fef2f2', border: `1px solid ${msg.includes('oluşturuldu') ? '#bbf7d0' : '#fecaca'}`, borderRadius: 8, color: msg.includes('oluşturuldu') ? '#16a34a' : '#dc2626', fontSize: 13, marginBottom: 16 }} onClick={() => setMsg('')}>{msg} <span style={{ float: 'right', cursor: 'pointer' }}>✕</span></div>}
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1c1917' }}>Kategoriler</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1C1C1E' }}>Kategoriler</h3>
             <button onClick={() => setShowCatForm(!showCatForm)} style={S.btnSm}>{showCatForm ? 'İptal' : '+ Kategori'}</button>
           </div>
 
@@ -1670,7 +1670,7 @@ export default function RestaurantDashboard() {
                 <input ref={catFileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadCategoryImage(e.target.files[0], 'new'); }} />
                 {catForm.image_url ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <img onError={handleImageError} src={getOptimizedImageUrl(catForm.image_url, 'thumbnail')} alt="" style={{ width: 64, height: 64, borderRadius: 8, objectFit: 'cover', border: '1px solid #e7e5e4' }} />
+                    <img onError={handleImageError} src={getOptimizedImageUrl(catForm.image_url, 'thumbnail')} alt="" style={{ width: 64, height: 64, borderRadius: 8, objectFit: 'cover', border: '1px solid #E5E5E3' }} />
                     <button type="button" onClick={() => catFileRef.current?.click()} disabled={uploadingCatImage === 'new'} style={{ ...S.btnSm, fontSize: 11 }}>{uploadingCatImage === 'new' ? '...' : 'Değiştir'}</button>
                     <button type="button" onClick={() => setCatForm({ ...catForm, image_url: '' })} style={{ ...S.btnDanger, fontSize: 11 }}><Trash size={12} /></button>
                   </div>
@@ -1679,15 +1679,15 @@ export default function RestaurantDashboard() {
                     <Camera size={14} /> {uploadingCatImage === 'new' ? 'Yükleniyor...' : 'Görsel Yükle'}
                   </button>
                 )}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#a8a29e', marginTop: 4 }}><Info size={14} /><span>800×600px, yatay, max 3MB</span></div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#A0A0A0', marginTop: 4 }}><Info size={14} /><span>800×600px, yatay, max 3MB</span></div>
               </div>
               <button type="submit" disabled={saving} style={{ ...S.btn, alignSelf: 'flex-start' }}>{saving ? '...' : 'Ekle'}</button>
             </form>
           )}
 
           {/* Summary line */}
-          <div style={{ fontSize: 13, color: '#78716c', marginBottom: 10 }}>
-            Toplam: <b style={{ color: '#1c1917' }}>{items.length}</b> ürün
+          <div style={{ fontSize: 13, color: '#6B6B6F', marginBottom: 10 }}>
+            Toplam: <b style={{ color: '#1C1C1E' }}>{items.length}</b> ürün
             {totalMissingPhotos > 0 && <> · <span style={S.missingPhotoWarning}>{totalMissingPhotos} fotoğraf eksik</span></>}
           </div>
 
@@ -1702,7 +1702,7 @@ export default function RestaurantDashboard() {
           </div>
 
           {(() => { renderItemForm = () => (
-            <form onSubmit={addOrUpdateItem} style={{ ...S.card, display: 'flex', flexDirection: 'column', gap: 10, background: '#fafaf9', borderLeft: '3px solid #1c1917' }}>
+            <form onSubmit={addOrUpdateItem} style={{ ...S.card, display: 'flex', flexDirection: 'column', gap: 10, background: '#F7F7F5', borderLeft: '3px solid #1C1C1E' }}>
               <div>
                 <label style={S.label}>Kategori *</label>
                 <select
@@ -1798,7 +1798,7 @@ export default function RestaurantDashboard() {
                 )}
 
                 <Suspense fallback={
-                  <div style={{ ...S.input, minHeight: 112, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a8a29e', fontSize: 12 }}>
+                  <div style={{ ...S.input, minHeight: 112, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#A0A0A0', fontSize: 12 }}>
                     Editör yükleniyor...
                   </div>
                 }>
@@ -1853,7 +1853,7 @@ export default function RestaurantDashboard() {
                         {uploading ? 'Yükleniyor...' : <><Camera size={14} /> Görsel Seç</>}
                       </button>
                     )}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#a8a29e', marginTop: 4 }}><Info size={14} /><span>1200×800px, yatay, max 5MB</span></div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#A0A0A0', marginTop: 4 }}><Info size={14} /><span>1200×800px, yatay, max 5MB</span></div>
                   </div>
                 </div>
               ) : (
@@ -1875,9 +1875,9 @@ export default function RestaurantDashboard() {
                     </button>
                   </div>
                   {itemForm.variants.map((v, idx) => (
-                    <div key={idx} style={{ border: '1px solid #e7e5e4', borderRadius: 8, padding: 10, background: '#fafaf9' }}>
+                    <div key={idx} style={{ border: '1px solid #E5E5E3', borderRadius: 8, padding: 10, background: '#F7F7F5' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: '#78716c', textTransform: 'uppercase', letterSpacing: 0.5 }}>Varyant {idx + 1}</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: '#6B6B6F', textTransform: 'uppercase', letterSpacing: 0.5 }}>Varyant {idx + 1}</span>
                         <button
                           type="button"
                           onClick={() => {
@@ -1976,7 +1976,7 @@ export default function RestaurantDashboard() {
                         {uploading ? 'Yükleniyor...' : <><Camera size={14} /> Görsel Seç</>}
                       </button>
                     )}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#a8a29e', marginTop: 4 }}><Info size={14} /><span>1200×800px, yatay, max 5MB</span></div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#A0A0A0', marginTop: 4 }}><Info size={14} /><span>1200×800px, yatay, max 5MB</span></div>
                   </div>
                 </div>
               )}
@@ -1997,7 +1997,7 @@ export default function RestaurantDashboard() {
                     onChange={e => setItemForm({ ...itemForm, prep_time: e.target.value })}
                     style={{ ...S.input, width: 100 }}
                   />
-                  <span style={{ fontSize: 13, color: '#78716c' }}>dk</span>
+                  <span style={{ fontSize: 13, color: '#6B6B6F' }}>dk</span>
                 </div>
               </div>
               <div>
@@ -2016,9 +2016,9 @@ export default function RestaurantDashboard() {
                           borderRadius: 20,
                           cursor: 'pointer',
                           transition: 'all 0.15s',
-                          border: selected ? '2px solid #FF4F7A' : '1px solid #d6d3d1',
+                          border: selected ? '2px solid #FF4F7A' : '1px solid #E5E5E3',
                           background: selected ? '#fdf2f8' : '#fff',
-                          color: selected ? '#FF4F7A' : '#44403c',
+                          color: selected ? '#FF4F7A' : '#2D2D2F',
                           fontWeight: selected ? 700 : 400,
                           display: 'inline-flex',
                           alignItems: 'center',
@@ -2047,9 +2047,9 @@ export default function RestaurantDashboard() {
                           borderRadius: 20,
                           cursor: 'pointer',
                           transition: 'all 0.15s',
-                          border: selected ? '2px solid #FF4F7A' : '1px solid #d6d3d1',
+                          border: selected ? '2px solid #FF4F7A' : '1px solid #E5E5E3',
                           background: selected ? '#fdf2f8' : '#fff',
-                          color: selected ? '#FF4F7A' : '#44403c',
+                          color: selected ? '#FF4F7A' : '#2D2D2F',
                           fontWeight: selected ? 700 : 400,
                           display: 'inline-flex',
                           alignItems: 'center',
@@ -2063,23 +2063,23 @@ export default function RestaurantDashboard() {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#44403c' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#2D2D2F' }}>
                   <input type="checkbox" checked={itemForm.is_new} onChange={e => setItemForm({ ...itemForm, is_new: e.target.checked })} />
                   <Star size={14} /> Yeni Ürün
                 </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#44403c' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#2D2D2F' }}>
                   <input type="checkbox" checked={itemForm.is_featured} onChange={e => setItemForm({ ...itemForm, is_featured: e.target.checked })} />
                   <Star size={14} style={{ color: '#FF4F7A' }} /> Öne Çıkar
                 </label>
               </div>
               {/* Sold-out toggle */}
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#44403c' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#2D2D2F' }}>
                 <input type="checkbox" checked={itemForm.is_sold_out} onChange={e => setItemForm({ ...itemForm, is_sold_out: e.target.checked })} />
                 <XCircle size={14} /> Tükendi olarak işaretle
               </label>
 
               {/* Scheduling */}
-              <div style={{ borderTop: '1px solid #e7e5e4', paddingTop: 12, marginTop: 4 }}>
+              <div style={{ borderTop: '1px solid #E5E5E3', paddingTop: 12, marginTop: 4 }}>
                 <label style={{ ...S.label, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <Clock size={14} /> Zamanlama
                 </label>
@@ -2089,7 +2089,7 @@ export default function RestaurantDashboard() {
                     { v: 'date_range', label: 'Zaman aralığı (başlangıç – bitiş)' },
                     { v: 'periodic', label: 'Periyodik (haftalık saat aralığı)' },
                   ].map(opt => (
-                    <label key={opt.v} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#44403c', cursor: 'pointer' }}>
+                    <label key={opt.v} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#2D2D2F', cursor: 'pointer' }}>
                       <input
                         type="radio"
                         name="schedule_type"
@@ -2194,7 +2194,7 @@ export default function RestaurantDashboard() {
               </div>
 
               {/* Happy Hour (collapsible) */}
-              <div style={{ borderTop: '1px solid #e7e5e4', paddingTop: 12, marginTop: 4 }}>
+              <div style={{ borderTop: '1px solid #E5E5E3', paddingTop: 12, marginTop: 4 }}>
                 <div
                   onClick={() => setItemForm({ ...itemForm, happyHourOpen: !itemForm.happyHourOpen })}
                   style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#1C1C1E' }}
@@ -2295,7 +2295,7 @@ export default function RestaurantDashboard() {
               </div>
 
               {/* Nutrition Facts (collapsible) */}
-              <div style={{ borderTop: '1px solid #e7e5e4', paddingTop: 12, marginTop: 4 }}>
+              <div style={{ borderTop: '1px solid #E5E5E3', paddingTop: 12, marginTop: 4 }}>
                 <button
                   type="button"
                   onClick={() => setItemForm({ ...itemForm, nutritionOpen: !itemForm.nutritionOpen })}
@@ -2308,7 +2308,7 @@ export default function RestaurantDashboard() {
                     border: 'none',
                     padding: 0,
                     cursor: 'pointer',
-                    color: '#1c1917',
+                    color: '#1C1C1E',
                   }}
                 >
                   <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600 }}>
@@ -2323,7 +2323,7 @@ export default function RestaurantDashboard() {
                 </button>
                 {itemForm.nutritionOpen && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 10 }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#44403c', cursor: 'pointer' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#2D2D2F', cursor: 'pointer' }}>
                       <input
                         type="checkbox"
                         checked={itemForm.nutrition.show_on_menu}
@@ -2357,13 +2357,13 @@ export default function RestaurantDashboard() {
                               value={itemForm.nutrition[k]}
                               onChange={e => setNutr(k, e.target.value)}
                             />
-                            <span style={{ fontSize: 11, color: '#78716c', minWidth: 26 }}>{unit}</span>
+                            <span style={{ fontSize: 11, color: '#6B6B6F', minWidth: 26 }}>{unit}</span>
                           </div>
                         </div>
                       );
                       const Group = ({ title, children }: { title: string; children: React.ReactNode }) => (
-                        <div style={{ border: '1px solid #e7e5e4', borderRadius: 8, padding: 10, background: '#fafaf9' }}>
-                          <div style={{ fontSize: 11, fontWeight: 700, color: '#78716c', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>
+                        <div style={{ border: '1px solid #E5E5E3', borderRadius: 8, padding: 10, background: '#F7F7F5' }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: '#6B6B6F', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>
                             {title}
                           </div>
                           <div style={S.grid2}>{children}</div>
@@ -2446,7 +2446,7 @@ export default function RestaurantDashboard() {
                     <span
                       {...dragListeners}
                       onClick={(e) => e.stopPropagation()}
-                      style={{ cursor: 'grab', color: '#a8a29e', display: 'inline-flex', alignItems: 'center', touchAction: 'none', flexShrink: 0 }}
+                      style={{ cursor: 'grab', color: '#A0A0A0', display: 'inline-flex', alignItems: 'center', touchAction: 'none', flexShrink: 0 }}
                       title="Sürükleyerek sırala"
                     >
                       <Package size={16} />
@@ -2458,13 +2458,13 @@ export default function RestaurantDashboard() {
                   {item.image_url ? (
                     <img onError={handleImageError} src={getOptimizedImageUrl(item.image_url, 'card')} alt="" style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} loading="lazy" decoding="async" />
                   ) : (
-                    <div style={{ width: 48, height: 48, borderRadius: 8, background: '#f5f5f4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d6d3d1', flexShrink: 0 }}>
+                    <div style={{ width: 48, height: 48, borderRadius: 8, background: '#F7F7F5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#E5E5E3', flexShrink: 0 }}>
                       <Camera size={20} />
                     </div>
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 14, fontWeight: 500, color: '#1c1917', textDecoration: item.is_sold_out ? 'line-through' : 'none' }}>{item.name_tr}</span>
+                      <span style={{ fontSize: 14, fontWeight: 500, color: '#1C1C1E', textDecoration: item.is_sold_out ? 'line-through' : 'none' }}>{item.name_tr}</span>
                       {item.translations && Object.keys(item.translations).length > 0 && (
                         <span style={S.translationBadge}>EN</span>
                       )}
@@ -2482,7 +2482,7 @@ export default function RestaurantDashboard() {
                       {isTranslating && <span style={{ fontSize: 9, color: '#4338CA' }}><Globe size={10} /> Çevriliyor...</span>}
                     </div>
                     {item.description_tr && (
-                      <div style={{ fontSize: 12, color: '#a8a29e', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: 12, color: '#A0A0A0', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {item.description_tr}
                       </div>
                     )}
@@ -2504,10 +2504,10 @@ export default function RestaurantDashboard() {
                               gap: 4,
                               fontSize: 13,
                               fontWeight: 600,
-                              color: '#1c1917',
+                              color: '#1C1C1E',
                               textDecoration: item.is_sold_out ? 'line-through' : 'none',
                               background: '#fff',
-                              border: '1px dashed #d6d3d1',
+                              border: '1px dashed #E5E5E3',
                               borderRadius: 6,
                               padding: '4px 8px',
                               cursor: 'pointer',
@@ -2519,7 +2519,7 @@ export default function RestaurantDashboard() {
                         );
                       })()
                     ) : isActiveForm ? (
-                      <span style={{ fontSize: 13, fontWeight: 600, color: '#a8a29e', padding: '4px 8px' }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: '#A0A0A0', padding: '4px 8px' }}>
                         {Number(item.price).toFixed(2)} ₺
                       </span>
                     ) : (
@@ -2577,7 +2577,7 @@ export default function RestaurantDashboard() {
               if (catItems.length === 0) {
                 return (
                   <>
-                    <div style={{ fontSize: 12, color: '#a8a29e', padding: '12px 16px', fontStyle: 'italic' }}>
+                    <div style={{ fontSize: 12, color: '#A0A0A0', padding: '12px 16px', fontStyle: 'italic' }}>
                       Bu kategoride henüz ürün yok.
                     </div>
                     {showNewFormHere && (
@@ -2633,7 +2633,7 @@ export default function RestaurantDashboard() {
                   {dragListeners && (
                     <span
                       {...dragListeners}
-                      style={{ cursor: 'grab', color: '#a8a29e', display: 'inline-flex', alignItems: 'center', touchAction: 'none', flexShrink: 0 }}
+                      style={{ cursor: 'grab', color: '#A0A0A0', display: 'inline-flex', alignItems: 'center', touchAction: 'none', flexShrink: 0 }}
                       title="Sürükleyerek sırala"
                     >
                       <Package size={16} />
@@ -2642,7 +2642,7 @@ export default function RestaurantDashboard() {
                   {c.image_url ? (
                     <img onError={handleImageError} src={getOptimizedImageUrl(c.image_url, 'thumbnail')} alt="" style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
                   ) : (
-                    <div style={{ width: 40, height: 40, borderRadius: 8, background: '#f5f5f4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d6d3d1', flexShrink: 0 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 8, background: '#F7F7F5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#E5E5E3', flexShrink: 0 }}>
                       <Camera size={18} />
                     </div>
                   )}
@@ -2656,10 +2656,10 @@ export default function RestaurantDashboard() {
                     ) : (
                       <>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: opts.isSub ? 13 : 15, fontWeight: 600, color: '#1c1917' }}>{c.name_tr}</span>
+                          <span style={{ fontSize: opts.isSub ? 13 : 15, fontWeight: 600, color: '#1C1C1E' }}>{c.name_tr}</span>
                           {c.translations && Object.keys(c.translations).length > 0 && <span style={S.translationBadge}>EN</span>}
                         </div>
-                        <div style={{ fontSize: 11, color: '#78716c', marginTop: 2 }}>
+                        <div style={{ fontSize: 11, color: '#6B6B6F', marginTop: 2 }}>
                           {totalInScope} ürün
                           {missing > 0 && <> · <span style={S.missingPhotoWarning}>{missing} fotoğraf eksik</span></>}
                         </div>
@@ -2668,19 +2668,19 @@ export default function RestaurantDashboard() {
                   </div>
                   {!isEditing && (
                     <div style={S.accordionActions} onClick={(e) => e.stopPropagation()}>
-                      <label style={{ color: '#a8a29e', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', padding: 4 }} title="Kategori görseli">
+                      <label style={{ color: '#A0A0A0', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', padding: 4 }} title="Kategori görseli">
                         <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploadingCatImage === c.id} onChange={e => { if (e.target.files?.[0]) uploadCategoryImage(e.target.files[0], c.id); }} />
                         {uploadingCatImage === c.id ? <span style={{ fontSize: 10 }}>...</span> : <Camera size={16} />}
                       </label>
                       {c.image_url && (
-                        <button onClick={() => removeCategoryImage(c.id)} style={{ background: 'none', border: 'none', color: '#a8a29e', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }} title="Görseli kaldır"><Trash size={14} /></button>
+                        <button onClick={() => removeCategoryImage(c.id)} style={{ background: 'none', border: 'none', color: '#A0A0A0', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }} title="Görseli kaldır"><Trash size={14} /></button>
                       )}
-                      <button onClick={() => { setEditingCat(c.id); setEditCatForm({ name_tr: c.name_tr }); }} style={{ background: 'none', border: 'none', color: '#a8a29e', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }} title="Düzenle"><PencilSimple size={16} /></button>
+                      <button onClick={() => { setEditingCat(c.id); setEditCatForm({ name_tr: c.name_tr }); }} style={{ background: 'none', border: 'none', color: '#A0A0A0', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }} title="Düzenle"><PencilSimple size={16} /></button>
                       <button onClick={() => deleteCategory(c.id)} style={{ background: 'none', border: 'none', color: '#dc2626', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }} title="Sil"><Trash size={16} /></button>
                       <button
                         type="button"
                         onClick={() => toggleExpand(c.id)}
-                        style={{ background: 'none', border: 'none', color: '#78716c', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }}
+                        style={{ background: 'none', border: 'none', color: '#6B6B6F', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }}
                         title={isOpen ? 'Kapat' : 'Aç'}
                       >
                         {isOpen ? <CaretCircleUp size={20} /> : <CaretCircleDown size={20} />}
@@ -2694,10 +2694,10 @@ export default function RestaurantDashboard() {
             // Search mode: flat compact list
             if (searchQuery.trim()) {
               if (filteredItems.length === 0) {
-                return <div style={{ textAlign: 'center', color: '#a8a29e', padding: 40, fontSize: 14 }}>Eşleşen ürün bulunamadı.</div>;
+                return <div style={{ textAlign: 'center', color: '#A0A0A0', padding: 40, fontSize: 14 }}>Eşleşen ürün bulunamadı.</div>;
               }
               return (
-                <div style={{ border: '1px solid #e7e5e4', borderRadius: 12, overflow: 'hidden', background: '#fff' }}>
+                <div style={{ border: '1px solid #E5E5E3', borderRadius: 12, overflow: 'hidden', background: '#fff' }}>
                   {filteredItems.map(item => renderItemRow(item))}
                 </div>
               );
@@ -2705,7 +2705,7 @@ export default function RestaurantDashboard() {
 
             const rootCats = categories.filter(c => !c.parent_id);
             if (rootCats.length === 0) {
-              return <div style={{ textAlign: 'center', color: '#a8a29e', padding: 40, fontSize: 14 }}>Henüz kategori eklenmedi.</div>;
+              return <div style={{ textAlign: 'center', color: '#A0A0A0', padding: 40, fontSize: 14 }}>Henüz kategori eklenmedi.</div>;
             }
 
             return (
@@ -2969,7 +2969,7 @@ function PromosTab({ restaurant }: { restaurant: Restaurant }) {
       )}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1c1917' }}>Promosyonlar</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1C1C1E' }}>Promosyonlar</h3>
         <button onClick={() => { if (showForm) resetForm(); else { setForm(emptyPromoForm); setShowForm(true); } }} style={S.btnSm}>
           {showForm ? 'İptal' : '+ Yeni Promo'}
         </button>
@@ -2983,7 +2983,7 @@ function PromosTab({ restaurant }: { restaurant: Restaurant }) {
             <input ref={promoFileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadImage(e.target.files[0]); }} />
             {form.image_url ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <img onError={handleImageError} src={getOptimizedImageUrl(form.image_url, 'card')} alt="" style={{ width: 120, height: 72, borderRadius: 8, objectFit: 'cover', border: '1px solid #e7e5e4' }} />
+                <img onError={handleImageError} src={getOptimizedImageUrl(form.image_url, 'card')} alt="" style={{ width: 120, height: 72, borderRadius: 8, objectFit: 'cover', border: '1px solid #E5E5E3' }} />
                 <button type="button" onClick={() => promoFileRef.current?.click()} disabled={uploading} style={S.btnSm}>{uploading ? '...' : 'Değiştir'}</button>
                 <button type="button" onClick={() => setForm({ ...form, image_url: '' })} style={S.btnDanger}><Trash size={12} /></button>
               </div>
@@ -2992,7 +2992,7 @@ function PromosTab({ restaurant }: { restaurant: Restaurant }) {
                 <Camera size={14} /> {uploading ? 'Yükleniyor...' : 'Görsel Yükle'}
               </button>
             )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#a8a29e', marginTop: 4 }}><Info size={14} /><span>1080×1080px, kare, max 5MB</span></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#A0A0A0', marginTop: 4 }}><Info size={14} /><span>1080×1080px, kare, max 5MB</span></div>
           </div>
 
           <div style={S.grid2}>
@@ -3042,8 +3042,8 @@ function PromosTab({ restaurant }: { restaurant: Restaurant }) {
           </div>
 
           {/* Schedule */}
-          <div style={{ borderTop: '1px solid #f5f5f4', paddingTop: 12 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', color: '#44403c', fontWeight: 600 }}>
+          <div style={{ borderTop: '1px solid #F7F7F5', paddingTop: 12 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', color: '#2D2D2F', fontWeight: 600 }}>
               <input type="checkbox" checked={form.schedule_enabled} onChange={e => setForm({ ...form, schedule_enabled: e.target.checked })} />
               Saat Planlaması
             </label>
@@ -3074,9 +3074,9 @@ function PromosTab({ restaurant }: { restaurant: Restaurant }) {
                             fontSize: 12,
                             borderRadius: 20,
                             cursor: 'pointer',
-                            border: selected ? '2px solid #16a34a' : '1px solid #d6d3d1',
+                            border: selected ? '2px solid #16a34a' : '1px solid #E5E5E3',
                             background: selected ? '#dcfce7' : '#fff',
-                            color: selected ? '#16a34a' : '#44403c',
+                            color: selected ? '#16a34a' : '#2D2D2F',
                             fontWeight: selected ? 700 : 400,
                           }}
                         >
@@ -3091,11 +3091,11 @@ function PromosTab({ restaurant }: { restaurant: Restaurant }) {
           </div>
 
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#44403c' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#2D2D2F' }}>
               <input type="checkbox" checked={form.is_active} onChange={e => setForm({ ...form, is_active: e.target.checked })} />
               Aktif
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#44403c' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#2D2D2F' }}>
               <input type="checkbox" checked={form.show_once_per_session} onChange={e => setForm({ ...form, show_once_per_session: e.target.checked })} />
               Session başına bir kez göster
             </label>
@@ -3109,7 +3109,7 @@ function PromosTab({ restaurant }: { restaurant: Restaurant }) {
       )}
 
       {promos.length === 0 && !showForm && (
-        <div style={{ textAlign: 'center', color: '#a8a29e', padding: 40, fontSize: 14 }}>
+        <div style={{ textAlign: 'center', color: '#A0A0A0', padding: 40, fontSize: 14 }}>
           Henüz promo eklenmedi.
         </div>
       )}
@@ -3120,26 +3120,26 @@ function PromosTab({ restaurant }: { restaurant: Restaurant }) {
             {p.image_url ? (
               <img onError={handleImageError} src={getOptimizedImageUrl(p.image_url, 'card')} alt="" style={{ width: 84, height: 56, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
             ) : (
-              <div style={{ width: 84, height: 56, borderRadius: 8, background: '#f5f5f4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Image size={24} style={{ color: '#a8a29e' }} />
+              <div style={{ width: 84, height: 56, borderRadius: 8, background: '#F7F7F5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Image size={24} style={{ color: '#A0A0A0' }} />
               </div>
             )}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 15, fontWeight: 600, color: '#1c1917' }}>{p.title_tr}</div>
-              {p.description_tr && <div style={{ fontSize: 13, color: '#78716c', marginTop: 2 }}>{p.description_tr}</div>}
+              <div style={{ fontSize: 15, fontWeight: 600, color: '#1C1C1E' }}>{p.title_tr}</div>
+              {p.description_tr && <div style={{ fontSize: 13, color: '#6B6B6F', marginTop: 2 }}>{p.description_tr}</div>}
               <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                 <span style={{ ...S.badge, background: p.is_active ? '#dcfce7' : '#fee2e2', color: p.is_active ? '#16a34a' : '#dc2626' }}>
                   {p.is_active ? 'Aktif' : 'Pasif'}
                 </span>
                 {p.schedule_enabled && (
-                  <span style={{ fontSize: 11, color: '#78716c' }}>
+                  <span style={{ fontSize: 11, color: '#6B6B6F' }}>
                     {normalizeTime(p.schedule_start_time)} - {normalizeTime(p.schedule_end_time)}
                   </span>
                 )}
               </div>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 6, marginTop: 10, borderTop: '1px solid #f5f5f4', paddingTop: 10 }}>
+          <div style={{ display: 'flex', gap: 6, marginTop: 10, borderTop: '1px solid #F7F7F5', paddingTop: 10 }}>
             <button onClick={() => toggleActive(p)} style={{ ...S.btnSm, color: p.is_active ? '#16a34a' : '#dc2626' }}>
               {p.is_active ? 'Aktif' : 'Pasif'}
             </button>
