@@ -738,10 +738,10 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
             { key: 'feature_discount_codes' as const, label: 'İndirim Kodları', desc: 'Müşteriler sepette indirim kodu kullanabilir' },
             { key: 'feature_likes' as const, label: 'Ürün Beğeni', desc: 'Müşteriler ürünleri beğenebilir (kalp butonu)' },
           ]).map(feat => (
-            <label key={feat.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 8, border: '1px solid #f3f4f6', backgroundColor: form[feat.key] ? '#f0fdf4' : '#fafafa', cursor: 'pointer' }}>
+            <label key={feat.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 8, border: '1px solid #E5E5E3', backgroundColor: form[feat.key] ? '#f0fdf4' : '#F7F7F5', cursor: 'pointer' }}>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: '#1C1C1E' }}>{feat.label}</div>
-                <div style={{ fontSize: 11, color: '#6b7280' }}>{feat.desc}</div>
+                <div style={{ fontSize: 11, color: '#6B6B6F' }}>{feat.desc}</div>
               </div>
               <input
                 type="checkbox"
@@ -1589,7 +1589,7 @@ export default function RestaurantDashboard() {
       <main className="flex-1 min-w-0">
         {/* Mobile top bar — hamburger + section label */}
         {isMobile && (
-          <div className="sticky top-0 z-40 flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-200">
+          <div className="sticky top-0 z-40 flex items-center gap-3 px-4 py-3 bg-white border-b border-[#E5E5E3]">
             <button onClick={() => setSidebarOpen(true)} className="p-1" aria-label="Menü">
               <List size={22} />
             </button>
@@ -1754,7 +1754,7 @@ export default function RestaurantDashboard() {
                       <select
                         value={aiTone}
                         onChange={e => setAiTone(e.target.value as 'elegant' | 'casual' | 'descriptive')}
-                        style={{ fontSize: 11, padding: '4px 8px', borderRadius: 6, border: '1px solid #e5e7eb', backgroundColor: '#f9fafb', color: '#6b7280', cursor: 'pointer' }}
+                        style={{ fontSize: 11, padding: '4px 8px', borderRadius: 6, border: '1px solid #E5E5E3', backgroundColor: '#F7F7F5', color: '#6B6B6F', cursor: 'pointer' }}
                       >
                         <option value="descriptive">Detaylı</option>
                         <option value="elegant">Şık</option>
@@ -2209,7 +2209,7 @@ export default function RestaurantDashboard() {
                 </div>
 
                 {itemForm.happyHourOpen && (
-                  <div style={{ padding: 12, borderRadius: 8, border: '1px solid #f3f4f6', backgroundColor: '#fafafa', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <div style={{ padding: 12, borderRadius: 8, border: '1px solid #E5E5E3', backgroundColor: '#F7F7F5', display: 'flex', flexDirection: 'column', gap: 12 }}>
                     {/* Toggle */}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <label style={{ fontSize: 12, color: '#666' }}>Happy Hour Aktif</label>
@@ -2439,7 +2439,7 @@ export default function RestaurantDashboard() {
                   style={{
                     ...S.itemRow,
                     opacity: faded ? 0.6 : 1,
-                    background: isActiveForm ? '#eef2ff' : hoveredItem === item.id ? '#fafafa' : '#fff',
+                    background: isActiveForm ? '#eef2ff' : hoveredItem === item.id ? '#F7F7F5' : '#fff',
                   }}
                   onMouseEnter={() => setHoveredItem(item.id)}
                   onMouseLeave={() => setHoveredItem(null)}

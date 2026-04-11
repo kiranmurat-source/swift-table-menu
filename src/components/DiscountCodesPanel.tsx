@@ -19,8 +19,8 @@ interface DiscountCode {
 }
 
 const S = {
-  card: { padding: '12px 16px', borderRadius: 8, border: '1px solid #f3f4f6', backgroundColor: '#fff', marginBottom: 8 } as React.CSSProperties,
-  input: { width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13, outline: 'none', fontFamily: "'Inter', sans-serif" } as React.CSSProperties,
+  card: { padding: '12px 16px', borderRadius: 8, border: '1px solid #E5E5E3', backgroundColor: '#fff', marginBottom: 8 } as React.CSSProperties,
+  input: { width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #E5E5E3', fontSize: 13, outline: 'none', fontFamily: "'Inter', sans-serif" } as React.CSSProperties,
   label: { fontSize: 12, fontWeight: 600, color: '#1C1C1E', marginBottom: 4, display: 'block' } as React.CSSProperties,
 };
 
@@ -137,7 +137,7 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
   };
 
   const getStatus = (c: DiscountCode): { label: string; color: string; dotColor: string } => {
-    if (!c.is_active) return { label: 'Pasif', color: '#6b7280', dotColor: '#9ca3af' };
+    if (!c.is_active) return { label: 'Pasif', color: '#6B6B6F', dotColor: '#9ca3af' };
     if (c.expires_at && new Date(c.expires_at) < new Date()) return { label: 'Süresi Dolmuş', color: '#dc2626', dotColor: '#dc2626' };
     return { label: 'Aktif', color: '#16a34a', dotColor: '#22c55e' };
   };
@@ -168,7 +168,7 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
             <h3 style={{ fontSize: 14, fontWeight: 700, color: '#1C1C1E' }}>
               {editingId ? 'Kodu Düzenle' : 'Yeni İndirim Kodu'}
             </h3>
-            <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}>
+            <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B6B6F' }}>
               <XCircle size={20} />
             </button>
           </div>
@@ -188,7 +188,7 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
                 <button
                   type="button"
                   onClick={() => setForm({ ...form, code: generateCode() })}
-                  style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #e5e7eb', backgroundColor: '#fff', fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', color: '#6b7280' }}
+                  style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #E5E5E3', backgroundColor: '#fff', fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', color: '#6B6B6F' }}
                 >
                   Rastgele
                 </button>
@@ -225,7 +225,7 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
                   min={1}
                   max={form.discount_type === 'percentage' ? 100 : 10000}
                 />
-                <span style={{ fontSize: 13, color: '#6b7280' }}>{form.discount_type === 'percentage' ? '%' : '₺'}</span>
+                <span style={{ fontSize: 13, color: '#6B6B6F' }}>{form.discount_type === 'percentage' ? '%' : '₺'}</span>
               </div>
             </div>
 
@@ -241,7 +241,7 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
                   placeholder="0"
                   min={0}
                 />
-                <span style={{ fontSize: 13, color: '#6b7280' }}>₺</span>
+                <span style={{ fontSize: 13, color: '#6B6B6F' }}>₺</span>
               </div>
             </div>
 
@@ -326,7 +326,7 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
       ) : codes.length === 0 && !showForm ? (
         <div style={{ textAlign: 'center', padding: 48 }}>
           <Percent size={48} style={{ color: '#d1d5db', marginBottom: 12 }} />
-          <p style={{ fontSize: 14, color: '#6b7280' }}>Henüz indirim kodu oluşturmadınız.</p>
+          <p style={{ fontSize: 14, color: '#6B6B6F' }}>Henüz indirim kodu oluşturmadınız.</p>
           <button
             onClick={openCreate}
             style={{
@@ -348,7 +348,7 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
                   <span style={{ fontSize: 15, fontWeight: 700, fontFamily: 'monospace', color: '#1C1C1E', letterSpacing: '0.05em' }}>
                     {c.code}
                   </span>
-                  <span style={{ fontSize: 12, color: '#6b7280' }}>
+                  <span style={{ fontSize: 12, color: '#6B6B6F' }}>
                     {c.discount_type === 'percentage' ? `%${c.discount_value}` : `${Number(c.discount_value).toFixed(2)} ₺`} İndirim
                   </span>
                 </div>
@@ -364,7 +364,7 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
                   {status.label}
                 </button>
               </div>
-              <div style={{ fontSize: 11, color: '#6b7280', display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 4 }}>
+              <div style={{ fontSize: 11, color: '#6B6B6F', display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 4 }}>
                 <span>Min: {Number(c.min_order_amount) > 0 ? `${Number(c.min_order_amount).toFixed(0)} ₺` : 'Yok'}</span>
                 <span>Kullanım: {c.current_uses}/{c.max_uses ?? '∞'}</span>
                 <span>
@@ -381,7 +381,7 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 4 }}>
                 <button
                   onClick={() => openEdit(c)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 2, fontSize: 11, color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 2, fontSize: 11, color: '#6B6B6F', background: 'none', border: 'none', cursor: 'pointer' }}
                 >
                   <PencilSimple size={14} /> Düzenle
                 </button>

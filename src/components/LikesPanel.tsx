@@ -80,13 +80,13 @@ export default function LikesPanel({ restaurantId }: { restaurantId: string }) {
 
   if (loading) {
     return (
-      <div className="p-6 text-center text-gray-400 text-sm">Yükleniyor...</div>
+      <div className="p-6 text-center text-[#A0A0A0] text-sm">Yükleniyor...</div>
     );
   }
 
   return (
     <div className="p-4 max-w-2xl">
-      <h2 className="text-lg font-semibold text-stone-900 mb-4 flex items-center gap-2">
+      <h2 className="text-lg font-semibold text-[#1C1C1E] mb-4 flex items-center gap-2">
         <Heart size={20} weight="fill" className="text-[#FF4F7A]" />
         Beğeniler
       </h2>
@@ -100,18 +100,18 @@ export default function LikesPanel({ restaurantId }: { restaurantId: string }) {
         ].map(s => (
           <div
             key={s.label}
-            className="rounded-xl border border-gray-100 p-4 text-center"
+            className="rounded-xl border border-[#E5E5E3] p-4 text-center"
             style={{ backgroundColor: '#F7F7F5' }}
           >
-            <div className="text-2xl font-bold text-stone-900">{s.value}</div>
-            <div className="text-xs text-gray-500 mt-1">{s.label}</div>
+            <div className="text-2xl font-bold text-[#1C1C1E]">{s.value}</div>
+            <div className="text-xs text-[#6B6B6F] mt-1">{s.label}</div>
           </div>
         ))}
       </div>
 
       {/* Product list */}
       {rows.length === 0 ? (
-        <div className="text-center text-gray-400 text-sm py-8">
+        <div className="text-center text-[#A0A0A0] text-sm py-8">
           Henüz beğeni yok
         </div>
       ) : (
@@ -119,26 +119,26 @@ export default function LikesPanel({ restaurantId }: { restaurantId: string }) {
           {rows.map((row, i) => (
             <div
               key={row.menu_item_id}
-              className="flex items-center justify-between rounded-xl border border-gray-100 px-4 py-3"
+              className="flex items-center justify-between rounded-xl border border-[#E5E5E3] px-4 py-3"
               style={{ backgroundColor: i === 0 ? '#FFF0F3' : '#F7F7F5' }}
             >
               <div className="flex items-center gap-3 min-w-0">
                 <Heart
                   size={18}
                   weight="fill"
-                  className={i === 0 ? 'text-[#FF4F7A]' : 'text-gray-300'}
+                  className={i === 0 ? 'text-[#FF4F7A]' : 'text-[#A0A0A0]'}
                 />
-                <span className="text-sm font-medium text-stone-900 truncate">
+                <span className="text-sm font-medium text-[#1C1C1E] truncate">
                   {row.item_name}
                 </span>
               </div>
               <div className="flex items-center gap-3 flex-shrink-0">
-                <span className="text-sm font-bold text-stone-700">
+                <span className="text-sm font-bold text-[#2D2D2F]">
                   {row.like_count}
                 </span>
                 <button
                   onClick={() => handleReject(row.menu_item_id)}
-                  className="text-gray-300 hover:text-red-500 transition-colors"
+                  className="text-[#A0A0A0] hover:text-red-500 transition-colors"
                   title="Beğenileri reddet"
                 >
                   <Trash size={14} />

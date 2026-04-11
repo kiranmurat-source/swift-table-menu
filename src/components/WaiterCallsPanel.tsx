@@ -17,14 +17,14 @@ const callTypeLabels: Record<string, { label: string; color: string }> = {
   waiter: { label: 'Garson', color: '#FF4F7A' },
   bill: { label: 'Hesap', color: '#f59e0b' },
   water: { label: 'Su', color: '#3b82f6' },
-  other: { label: 'Diğer', color: '#6b7280' },
+  other: { label: 'Diğer', color: '#6B6B6F' },
 };
 
 const statusLabels: Record<string, { label: string; color: string }> = {
   pending: { label: 'Bekliyor', color: '#ef4444' },
   acknowledged: { label: 'Görüldü', color: '#f59e0b' },
   completed: { label: 'Tamamlandı', color: '#22c55e' },
-  cancelled: { label: 'İptal', color: '#6b7280' },
+  cancelled: { label: 'İptal', color: '#6B6B6F' },
 };
 
 function formatTime(dateStr: string) {
@@ -126,8 +126,8 @@ export default function WaiterCallsPanel({ restaurantId }: { restaurantId: strin
               onClick={() => setFilter(f)}
               style={{
                 padding: '6px 12px', fontSize: 12, borderRadius: 6, border: 'none',
-                backgroundColor: filter === f ? '#FF4F7A' : '#f3f4f6',
-                color: filter === f ? '#fff' : '#666',
+                backgroundColor: filter === f ? '#FF4F7A' : '#F7F7F5',
+                color: filter === f ? '#fff' : '#6B6B6F',
                 cursor: 'pointer',
               }}
             >

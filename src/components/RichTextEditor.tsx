@@ -42,24 +42,24 @@ const S = {
     cursor: 'pointer',
     fontSize: 13,
     fontWeight: 600,
-    color: '#44403c',
+    color: '#2D2D2F',
     padding: 0,
   },
   btnActive: {
-    background: '#e5e7eb',
-    color: '#1c1917',
+    background: '#E5E5E3',
+    color: '#1C1C1E',
   },
   btnClear: {
     width: 'auto' as const,
     padding: '0 8px',
     fontSize: 11,
     fontWeight: 500,
-    color: '#78716c',
+    color: '#6B6B6F',
   },
   separator: {
     width: 1,
     height: 18,
-    background: '#d6d3d1',
+    background: '#E5E5E3',
     margin: '0 4px',
   },
   content: {
@@ -67,7 +67,7 @@ const S = {
     fontSize: 14,
     fontFamily: "'Inter', sans-serif",
     lineHeight: 1.5,
-    color: '#1c1917',
+    color: '#1C1C1E',
     outline: 'none',
   },
 };

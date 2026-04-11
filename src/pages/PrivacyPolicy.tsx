@@ -38,30 +38,30 @@ export default function PrivacyPolicy() {
   const [lang, setLang] = useState<'tr' | 'en'>('tr');
   const c = content[lang];
   return (
-    <div style={{ minHeight: '100vh', background: '#fafaf9', fontFamily: "'Inter', -apple-system, sans-serif", color: '#1c1917' }}>
-      <div style={{ borderBottom: '1px solid #e7e5e4', background: '#fff', position: 'sticky', top: 0, zIndex: 10 }}>
+    <div style={{ minHeight: '100vh', background: '#F7F7F5', fontFamily: "'Inter', -apple-system, sans-serif", color: '#1C1C1E' }}>
+      <div style={{ borderBottom: '1px solid #E5E5E3', background: '#fff', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: 720, margin: '0 auto', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <a href="/" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8, color: '#1c1917' }}>
-            <span style={{ fontSize: 16, fontWeight: 700, color: '#78716c' }}>←</span>
+          <a href="/" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 8, color: '#1C1C1E' }}>
+            <span style={{ fontSize: 16, fontWeight: 700, color: '#6B6B6F' }}>←</span>
             <TabbledLogo sizeClass="h-7" href={null} />
           </a>
-          <div style={{ display: 'flex', gap: 4, background: '#f5f5f4', borderRadius: 8, padding: 3 }}>
+          <div style={{ display: 'flex', gap: 4, background: '#F7F7F5', borderRadius: 8, padding: 3 }}>
             {(['tr', 'en'] as const).map((l) => (
-              <button key={l} onClick={() => setLang(l)} style={{ padding: '6px 14px', fontSize: 13, fontWeight: 600, border: 'none', borderRadius: 6, cursor: 'pointer', transition: 'all 0.2s', background: lang === l ? '#fff' : 'transparent', color: lang === l ? '#1c1917' : '#78716c', boxShadow: lang === l ? '0 1px 3px rgba(0,0,0,0.08)' : 'none' }}>{l.toUpperCase()}</button>
+              <button key={l} onClick={() => setLang(l)} style={{ padding: '6px 14px', fontSize: 13, fontWeight: 600, border: 'none', borderRadius: 6, cursor: 'pointer', transition: 'all 0.2s', background: lang === l ? '#fff' : 'transparent', color: lang === l ? '#1C1C1E' : '#6B6B6F', boxShadow: lang === l ? '0 1px 3px rgba(0,0,0,0.08)' : 'none' }}>{l.toUpperCase()}</button>
             ))}
           </div>
         </div>
       </div>
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '48px 24px 80px' }}>
         <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.3, marginBottom: 8, color: '#0c0a09' }}>{c.title}</h1>
-        <p style={{ fontSize: 14, color: '#a8a29e', marginBottom: 48 }}>{c.lastUpdated}</p>
+        <p style={{ fontSize: 14, color: '#A0A0A0', marginBottom: 48 }}>{c.lastUpdated}</p>
         {c.sections.map((section, i) => (
           <div key={i} style={{ marginBottom: 36 }}>
-            <h2 style={{ fontSize: 17, fontWeight: 700, marginBottom: 12, color: '#1c1917', letterSpacing: '-0.2px' }}>{section.heading}</h2>
-            <div style={{ fontSize: 15, lineHeight: 1.75, color: '#44403c', whiteSpace: 'pre-line' }}>{section.body}</div>
+            <h2 style={{ fontSize: 17, fontWeight: 700, marginBottom: 12, color: '#1C1C1E', letterSpacing: '-0.2px' }}>{section.heading}</h2>
+            <div style={{ fontSize: 15, lineHeight: 1.75, color: '#2D2D2F', whiteSpace: 'pre-line' }}>{section.body}</div>
           </div>
         ))}
-        <div style={{ marginTop: 48, padding: '20px 24px', background: '#f5f5f4', borderRadius: 12, fontSize: 14, color: '#78716c', lineHeight: 1.6 }}>
+        <div style={{ marginTop: 48, padding: '20px 24px', background: '#F7F7F5', borderRadius: 12, fontSize: 14, color: '#6B6B6F', lineHeight: 1.6 }}>
           {lang === 'tr' ? 'Bu politika hakkında sorularınız için info@tabbled.com adresinden bize ulaşabilirsiniz.' : 'For questions about this policy, please contact us at info@tabbled.com.'}
         </div>
       </div>

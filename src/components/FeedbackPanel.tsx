@@ -14,7 +14,7 @@ interface Feedback {
 }
 
 const S = {
-  card: { padding: '12px 16px', borderRadius: 8, border: '1px solid #f3f4f6', backgroundColor: '#fff', marginBottom: 8 } as React.CSSProperties,
+  card: { padding: '12px 16px', borderRadius: 8, border: '1px solid #E5E5E3', backgroundColor: '#fff', marginBottom: 8 } as React.CSSProperties,
   summaryCard: { flex: 1, padding: 16, borderRadius: 8, border: '1px solid #E5E5E3', backgroundColor: '#F7F7F5', textAlign: 'center' as const },
 };
 
@@ -78,15 +78,15 @@ export default function FeedbackPanel({ restaurantId }: { restaurantId: string }
       <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
         <div style={S.summaryCard}>
           <div style={{ fontSize: 24, fontWeight: 700, color: '#F59E0B' }}>{avgRating.toFixed(1)}/5</div>
-          <div style={{ fontSize: 11, color: '#6b7280' }}>Ortalama</div>
+          <div style={{ fontSize: 11, color: '#6B6B6F' }}>Ortalama</div>
         </div>
         <div style={S.summaryCard}>
           <div style={{ fontSize: 24, fontWeight: 700, color: '#1C1C1E' }}>{items.length}</div>
-          <div style={{ fontSize: 11, color: '#6b7280' }}>Toplam</div>
+          <div style={{ fontSize: 11, color: '#6B6B6F' }}>Toplam</div>
         </div>
         <div style={S.summaryCard}>
           <div style={{ fontSize: 24, fontWeight: 700, color: '#22c55e' }}>+{thisWeek}</div>
-          <div style={{ fontSize: 11, color: '#6b7280' }}>Bu Hafta</div>
+          <div style={{ fontSize: 11, color: '#6B6B6F' }}>Bu Hafta</div>
         </div>
       </div>
 
@@ -121,7 +121,7 @@ export default function FeedbackPanel({ restaurantId }: { restaurantId: string }
       ) : items.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 48 }}>
           <ChatCircle size={48} style={{ color: '#d1d5db', marginBottom: 12 }} />
-          <p style={{ fontSize: 14, color: '#6b7280' }}>Henüz geri bildirim yok.</p>
+          <p style={{ fontSize: 14, color: '#6B6B6F' }}>Henüz geri bildirim yok.</p>
           <p style={{ fontSize: 12, color: '#A0A0A0' }}>Müşterileriniz menüden geri bildirim bırakabilir.</p>
         </div>
       ) : (
@@ -135,7 +135,7 @@ export default function FeedbackPanel({ restaurantId }: { restaurantId: string }
                     {fb.customer_name || 'Anonim'}
                   </span>
                   {fb.table_number && (
-                    <span style={{ fontSize: 10, color: '#6b7280', backgroundColor: '#f3f4f6', padding: '1px 6px', borderRadius: 4 }}>
+                    <span style={{ fontSize: 10, color: '#6B6B6F', backgroundColor: '#F7F7F5', padding: '1px 6px', borderRadius: 4 }}>
                       Masa {fb.table_number}
                     </span>
                   )}
@@ -161,7 +161,7 @@ export default function FeedbackPanel({ restaurantId }: { restaurantId: string }
           {hasMore && (
             <button
               onClick={() => fetchFeedback()}
-              style={{ width: '100%', padding: '10px', fontSize: 13, color: '#FF4F7A', backgroundColor: '#fff', border: '1px solid #f3f4f6', borderRadius: 8, cursor: 'pointer', fontWeight: 500, marginTop: 8 }}
+              style={{ width: '100%', padding: '10px', fontSize: 13, color: '#FF4F7A', backgroundColor: '#fff', border: '1px solid #E5E5E3', borderRadius: 8, cursor: 'pointer', fontWeight: 500, marginTop: 8 }}
             >
               Daha Fazla Yükle
             </button>
