@@ -44,6 +44,9 @@ export default function Blog() {
           property="og:description"
           content="QR menu, dijital menu sistemi, restoran pazarlama ve yasal duzenlemeler hakkında rehberler ve ipuclari."
         />
+        <meta property="og:image" content="https://tabbled.com/og-image.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="https://tabbled.com/og-image.png" />
       </Helmet>
 
       <Navbar />
