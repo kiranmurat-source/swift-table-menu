@@ -73,7 +73,7 @@ const PricingSection = () => {
       <div ref={ref} className="container mx-auto px-4 lg:px-8 section-fade-in">
         <div className="text-center mb-4">
           <h2 className="text-3xl sm:text-4xl font-extrabold mb-3">Her bütçeye uygun planlar</h2>
-          <p className="text-muted-foreground">Sadece yıllık abonelik. Kurulum ücreti yok.</p>
+          <p className="text-muted-foreground">14 gün ücretsiz deneyin. Kurulum ücreti yok.</p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mt-10">
@@ -122,14 +122,18 @@ const PricingSection = () => {
                 Toplam {p.featureCount} özellik
               </p>
 
-              <Button
-                variant={p.buttonVariant}
-                className={`w-full rounded-xl ${p.popular ? "bg-card text-grapefruit hover:bg-card/90 font-semibold" : ""}`}
-                size="lg"
-                onClick={() => window.open("https://wa.me/905325119484?text=Merhaba, Tabbled " + p.name + " planı hakkında bilgi almak istiyorum.", "_blank")}
-              >
-                Bilgi Al
-              </Button>
+              <a href={`/iletisim?plan=${p.name.toLowerCase()}`} className="block">
+                <Button
+                  variant={p.buttonVariant}
+                  className={`w-full rounded-xl ${p.popular ? "bg-card text-grapefruit hover:bg-card/90 font-semibold" : ""}`}
+                  size="lg"
+                >
+                  14 Gün Ücretsiz Deneyin
+                </Button>
+              </a>
+              <p className={`text-xs text-center mt-2 ${p.popular ? "text-card/70" : "text-muted-foreground"}`}>
+                Kredi kartı gerekmez · 14 gün ücretsiz
+              </p>
             </div>
           ))}
         </div>

@@ -53,6 +53,18 @@ Deno.serve(async (req) => {
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://tabbled.com/iletisim</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://tabbled.com/menu/demo</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://tabbled.com/privacy</loc>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>

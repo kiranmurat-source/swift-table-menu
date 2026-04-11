@@ -2,10 +2,10 @@ import TabbledLogo from "@/components/TabbledLogo";
 const footerLinks = [
   { label: "Özellikler", href: "#ozellikler" },
   { label: "Fiyatlar", href: "#fiyatlar" },
-  { label: "Demo Menü", href: "/menu/abc-restaurant" },
+  { label: "Demo Menü", href: "/menu/demo" },
   { label: "Blog", href: "/blog" },
   { label: "Gizlilik Politikası", href: "/privacy" },
-  { label: "İletişim", href: "mailto:info@tabbled.com" },
+  { label: "İletişim", href: "/iletisim" },
 ];
 const Footer = () => (
   <footer className="border-t border-border py-12">

@@ -7,11 +7,18 @@ const CTABanner = () => (
       <h2 className="text-3xl sm:text-4xl font-extrabold text-card mb-4">
         Menünüzü bugün dijitalleştirin
       </h2>
-      <p className="text-lg text-card/80 mb-8">1 Ocak 2026 itibarıyla QR menü yasal zorunluluk. Hemen başlayın.</p>
+      <p className="text-lg text-card/80 mb-8">
+        14 gün ücretsiz deneyin. Kredi kartı gerekmez, 2 dakikada kurulum.
+      </p>
       <div className="flex flex-wrap gap-4 justify-center">
-        <a href="/menu/abc-restaurant">
+        <a href="/iletisim">
           <Button variant="cta-white" size="lg" className="rounded-full px-10 text-base">
-            Demo Menüyü Gör <CaretCircleRight className="w-4 h-4" />
+            14 Gün Ücretsiz Deneyin <CaretCircleRight className="w-4 h-4" />
+          </Button>
+        </a>
+        <a href="/menu/demo">
+          <Button variant="hero-outline" size="lg" className="rounded-full px-10 text-base bg-transparent text-card border-card/40 hover:bg-card/10">
+            Demo Menüyü İncele
           </Button>
         </a>
       </div>

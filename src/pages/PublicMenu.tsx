@@ -20,6 +20,7 @@ import QuantitySelector from '../components/QuantitySelector';
 import CartBottomBar from '../components/CartBottomBar';
 import CartDrawer from '../components/CartDrawer';
 import { useLikes } from '../hooks/useLikes';
+import { demoRestaurant, demoCategories, demoItems } from '../data/demoMenuData';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -393,6 +394,7 @@ export default function PublicMenu() {
   const [promos, setPromos] = useState<Promo[]>([]);
   const [activePromo, setActivePromo] = useState<Promo | null>(null);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
+  const [demoThemeOverride, setDemoThemeOverride] = useState<string | null>(null);
   const cart = useCart();
 
   // Google Review prompt (triggered by product likes)
@@ -405,7 +407,10 @@ export default function PublicMenu() {
   const { likeCounts, likedItems, toggleLike } = useLikes(restaurant?.id);
   const likesEnabled = restaurant?.feature_likes !== false;
 
-  const theme = useMemo<MenuTheme>(() => getTheme(restaurant?.theme_color), [restaurant?.theme_color]);
+  const theme = useMemo<MenuTheme>(
+    () => getTheme(demoThemeOverride ?? restaurant?.theme_color),
+    [demoThemeOverride, restaurant?.theme_color],
+  );
 
   const lang: LangCode = useMemo(() => {
     if (langParam === 'tr') return 'tr';
@@ -430,6 +435,16 @@ export default function PublicMenu() {
     if (!slug) return;
     const startTime = performance.now();
     const LOADING_MIN_MS = 500;
+
+    // Static demo bypass: /menu/demo loads hardcoded data, no Supabase calls.
+    if (slug === 'demo') {
+      setRestaurant(demoRestaurant as unknown as Restaurant);
+      setCategories(demoCategories as unknown as MenuCategory[]);
+      setItems(demoItems as unknown as MenuItem[]);
+      setPromos([]);
+      const t = setTimeout(() => setLoading(false), LOADING_MIN_MS);
+      return () => clearTimeout(t);
+    }
 
     const fetchData = async () => {
       setLoading(true);
@@ -899,11 +914,64 @@ export default function PublicMenu() {
     handleAddToCart(menuItem);
   } : undefined;
 
+  const isDemo = slug === 'demo';
+
   return (
     <div
       className="min-h-screen"
       style={{ backgroundColor: theme.bg, color: theme.text, fontFamily: bodyFont }}
     >
+      {isDemo && (
+        <div
+          style={{
+            position: 'sticky',
+            top: 0,
+            zIndex: 60,
+            background: 'linear-gradient(90deg, #FF4F7A 0%, #E8456E 100%)',
+            color: '#fff',
+            textAlign: 'center',
+            padding: '10px 16px',
+            fontSize: 13,
+            fontFamily: "'Inter', sans-serif",
+            fontWeight: 500,
+          }}
+        >
+          <div>
+            🎉 Bu bir demo menüdür.{' '}
+            <a
+              href="/iletisim"
+              style={{ color: '#fff', fontWeight: 700, textDecoration: 'underline', marginLeft: 4 }}
+            >
+              14 gün ücretsiz deneyin →
+            </a>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 6 }}>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)' }}>Tema:</span>
+            {(['white', 'black', 'red'] as const).map((t) => {
+              const isActive = (demoThemeOverride ?? restaurant.theme_color ?? 'white') === t;
+              const bg = t === 'white' ? '#F7F7F8' : t === 'black' ? '#1C1C1E' : '#DC2626';
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setDemoThemeOverride(t)}
+                  aria-label={`Tema: ${t}`}
+                  style={{
+                    width: 18,
+                    height: 18,
+                    borderRadius: '50%',
+                    backgroundColor: bg,
+                    border: `2px solid ${isActive ? '#fff' : 'rgba(255,255,255,0.3)'}`,
+                    padding: 0,
+                    cursor: 'pointer',
+                    transition: 'border-color 0.15s',
+                  }}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
       <Helmet>
         <title>{`${restaurant.name} — Menü | Tabbled`}</title>
         <meta name="description" content={metaDescription} />

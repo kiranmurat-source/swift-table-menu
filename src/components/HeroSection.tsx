@@ -27,16 +27,22 @@ const HeroSection = () => {
               QR kodla tarayın, menüyü görüntüleyin, masadan sipariş verin. Garson çağırma, sipariş takibi ve çok dilli menü tek platformda.
             </p>
 
-            <div className="flex flex-wrap gap-4 mb-10">
-              <a href="/menu/abc-restaurant">
+            <div className="flex flex-wrap gap-4 mb-6">
+              <a href="/iletisim">
                 <Button variant="hero" size="lg" className="rounded-full px-8 text-base">
-                  Demo Menüyü Gör <CaretCircleRight className="w-4 h-4" />
+                  14 Gün Ücretsiz Deneyin <CaretCircleRight className="w-4 h-4" />
                 </Button>
               </a>
-              <Button variant="hero-outline" size="lg" className="rounded-full px-8 text-base" onClick={() => document.querySelector('#nasil-calisir')?.scrollIntoView({ behavior: 'smooth' })}>
-                <Play className="w-4 h-4" /> Nasıl Çalışır?
-              </Button>
+              <a href="/menu/demo">
+                <Button variant="hero-outline" size="lg" className="rounded-full px-8 text-base">
+                  <Play className="w-4 h-4" /> Demo Menüyü İncele
+                </Button>
+              </a>
             </div>
+
+            <p className="text-xs text-muted-foreground mb-10">
+              ✓ Kredi kartı gerekmez &nbsp; ✓ 2 dakikada kurulum &nbsp; ✓ İstediğiniz zaman iptal
+            </p>
 
             <div className="flex items-center gap-3">
               <div className="flex -space-x-2">

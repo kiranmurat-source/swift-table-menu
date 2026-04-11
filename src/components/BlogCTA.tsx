@@ -1,5 +1,3 @@
-const WA_LINK = 'https://wa.me/905325119484?text=Merhaba%2C%20Tabbled%20hakk%C4%B1nda%20bilgi%20almak%20istiyorum.';
-
 export default function BlogCTA() {
   return (
     <div
@@ -20,7 +18,7 @@ export default function BlogCTA() {
           marginBottom: 8,
         }}
       >
-        Dijital menunuzu bugun olusturun
+        14 Gün Ücretsiz Deneyin
       </h3>
       <p
         style={{
@@ -34,19 +32,17 @@ export default function BlogCTA() {
           lineHeight: 1.6,
         }}
       >
-        QR menu zorunluluguna uyum saglayın. FineDine ozellikleri, uygun fiyat.
+        Kredi kartı gerekmez. 2 dakikada kurulum. Basic plan özellikleri ile başlayın.
       </p>
       <div style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
         <a
-          href={WA_LINK}
-          target="_blank"
-          rel="noopener noreferrer"
+          href="/iletisim"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
             gap: 8,
             padding: '12px 24px',
-            borderRadius: 8,
+            borderRadius: 999,
             backgroundColor: '#FF4F7A',
             color: '#fff',
             fontSize: 14,
@@ -55,15 +51,15 @@ export default function BlogCTA() {
             fontFamily: "'Inter', sans-serif",
           }}
         >
-          WhatsApp ile Iletisim
+          Ücretsiz Başla
         </a>
         <a
-          href="/#fiyatlar"
+          href="/menu/demo"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
             padding: '12px 24px',
-            borderRadius: 8,
+            borderRadius: 999,
             backgroundColor: 'transparent',
             color: '#1C1C1E',
             fontSize: 14,
@@ -73,7 +69,7 @@ export default function BlogCTA() {
             fontFamily: "'Inter', sans-serif",
           }}
         >
-          Fiyatları Incele
+          Demo Menüyü İncele →
         </a>
       </div>
     </div>
