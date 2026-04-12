@@ -29,8 +29,15 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (user) {
-      supabase.from('profiles').select('role').eq('id', user.id).single()
-        .then(({ data }) => { setRole(data?.role ?? 'restaurant'); setRoleLoading(false); });
+      supabase.from('profiles').select('role, restaurant_id').eq('id', user.id).single()
+        .then(({ data }) => {
+          if (data && data.role !== 'super_admin' && !data.restaurant_id) {
+            navigate('/onboarding', { replace: true });
+            return;
+          }
+          setRole(data?.role ?? 'restaurant');
+          setRoleLoading(false);
+        });
     }
   }, [user]);
 

@@ -18,13 +18,15 @@ const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 const Blog = lazy(() => import("./pages/Blog.tsx"));
 const BlogPost = lazy(() => import("./pages/BlogPost.tsx"));
 const Contact = lazy(() => import("./pages/Contact.tsx"));
+const Onboarding = lazy(() => import("./pages/Onboarding.tsx"));
 
 const ConditionalWhatsApp = () => {
   const { pathname } = useLocation();
   const hide =
     pathname.startsWith("/menu/") ||
     pathname.startsWith("/dashboard") ||
-    pathname === "/login";
+    pathname === "/login" ||
+    pathname === "/onboarding";
   return hide ? null : <FloatingWhatsApp />;
 };
 
@@ -55,6 +57,7 @@ const App = () => (
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/iletisim" element={<Contact />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/onboarding" element={<Onboarding />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/blog" element={<Blog />} />
                 <Route path="/blog/:slug" element={<BlogPost />} />

@@ -9,8 +9,9 @@
 import { useEffect, useState, useRef, Fragment, lazy, Suspense, ReactNode, CSSProperties } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
-import { Camera, PencilSimple, CheckCircle, XCircle, AppleLogo, Star, Globe, Pen, Rows, User, Image, Trash, Link, Package, CaretCircleDown, CaretCircleUp, PlusCircle, Clock, Grains, Timer, Info, Bell, List, SquaresFour, Tag, Palette, ChatCircle, Percent, Heart, ChartBar, ArrowsClockwise } from "@phosphor-icons/react";
+import { Camera, PencilSimple, CheckCircle, XCircle, AppleLogo, Star, Globe, Pen, Rows, User, Image, Trash, Link, Package, CaretCircleDown, CaretCircleUp, PlusCircle, Clock, Grains, Timer, Info, Bell, List, SquaresFour, Tag, Palette, ChatCircle, Percent, Heart, ChartBar, ArrowsClockwise, Warning } from "@phosphor-icons/react";
 import RestaurantAnalytics from "@/components/dashboard/RestaurantAnalytics";
+import TabbledLogo from '@/components/TabbledLogo';
 import FeedbackPanel from '../components/FeedbackPanel';
 import ReviewsPanel from '../components/dashboard/ReviewsPanel';
 import DiscountCodesPanel from '../components/DiscountCodesPanel';
@@ -937,6 +938,8 @@ export default function RestaurantDashboard() {
     });
   };
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [trialExpired, setTrialExpired] = useState(false);
+  const [trialDaysLeft, setTrialDaysLeft] = useState<number | null>(null);
 
   const enabledLangs = (restaurant?.enabled_languages ?? []).filter(l => l !== 'tr');
   const plan = (restaurant?.current_plan || '').toLowerCase();
@@ -999,6 +1002,45 @@ export default function RestaurantDashboard() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
+  }, [restaurant?.id]);
+
+  // Trial subscription check
+  useEffect(() => {
+    if (!restaurant?.id) return;
+
+    const checkSubscription = async () => {
+      const { data: subs } = await supabase
+        .from('subscriptions')
+        .select('*, subscription_plans(name)')
+        .eq('restaurant_id', restaurant.id)
+        .order('end_date', { ascending: false })
+        .limit(1);
+
+      const activeSub = subs?.[0];
+
+      if (!activeSub) {
+        setTrialExpired(true);
+        return;
+      }
+
+      const endDate = new Date(activeSub.end_date);
+      const now = new Date();
+      const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+      if (daysLeft <= 0) {
+        setTrialExpired(true);
+        if (activeSub.status !== 'expired') {
+          await supabase
+            .from('subscriptions')
+            .update({ status: 'expired' })
+            .eq('id', activeSub.id);
+        }
+      } else {
+        setTrialDaysLeft(daysLeft);
+      }
+    };
+
+    checkSubscription();
   }, [restaurant?.id]);
 
   // Responsive: track mobile breakpoint
@@ -1508,6 +1550,50 @@ export default function RestaurantDashboard() {
     );
   }
 
+  if (trialExpired) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F7F7F5', padding: 16 }}>
+        <div style={{ maxWidth: 420, textAlign: 'center' }}>
+          <TabbledLogo logoType="vertical" sizeClass="h-16" />
+          <div style={{ background: '#FFFFFF', borderRadius: 16, padding: 32, boxShadow: '0 4px 24px rgba(0,0,0,0.08)', marginTop: 24 }}>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+              <Warning size={28} weight="regular" color="#EF4444" />
+            </div>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1C1C1E', marginBottom: 8 }}>
+              Deneme Süreniz Doldu
+            </h2>
+            <p style={{ fontSize: 14, color: '#6B6B6F', marginBottom: 24, lineHeight: 1.5 }}>
+              14 günlük ücretsiz deneme süreniz sona erdi. Tabbled'ı kullanmaya devam etmek için bir plan seçin.
+            </p>
+            <a
+              href="/iletisim?plan=basic&source=trial_expired"
+              style={{
+                display: 'block', width: '100%', padding: '11px 20px', fontSize: 14, fontWeight: 600,
+                color: '#FFFFFF', background: '#FF4F7A', border: 'none', borderRadius: 8,
+                textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box',
+              }}
+            >
+              Plan Seçin
+            </a>
+            <button
+              onClick={async () => {
+                await supabase.auth.signOut();
+                window.location.href = '/login';
+              }}
+              style={{
+                display: 'block', width: '100%', marginTop: 12, padding: '11px 20px',
+                fontSize: 13, color: '#A0A0A0', background: 'none', border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              Çıkış Yap
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (loadingData) return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '32px 24px' }}>
       <CategoryTabSkeleton />
@@ -1688,6 +1774,23 @@ export default function RestaurantDashboard() {
                 <span className="absolute -top-0.5 -right-0.5 text-[8px] font-bold text-white rounded-full w-4 h-4 flex items-center justify-center" style={{ background: '#FF4F7A' }}>{pendingCallCount}</span>
               </button>
             )}
+          </div>
+        )}
+
+        {trialDaysLeft !== null && trialDaysLeft <= 3 && !trialExpired && (
+          <div style={{ margin: '16px 16px 0', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Warning size={18} weight="regular" color="#D97706" />
+              <span style={{ fontSize: 13, color: '#92400E' }}>
+                Deneme süreniz {trialDaysLeft} gün sonra doluyor.
+              </span>
+            </div>
+            <a
+              href="/iletisim?plan=basic&source=trial_warning"
+              style={{ fontSize: 13, fontWeight: 500, color: '#FF4F7A', textDecoration: 'none', whiteSpace: 'nowrap' }}
+            >
+              Plan Seçin →
+            </a>
           </div>
         )}
 
