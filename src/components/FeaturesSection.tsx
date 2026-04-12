@@ -1,36 +1,69 @@
-import { Barcode, ShoppingCart, Bell, Kanban, Globe, Pulse } from "@phosphor-icons/react";
-import { useScrollReveal } from "@/hooks/use-scroll-reveal";
+import {
+  QrCode,
+  BellRinging,
+  WhatsappLogo,
+  ShoppingCart,
+  Warning,
+  XCircle,
+  Clock,
+  ChartBar,
+} from "@phosphor-icons/react";
+import { useRef, useState, useEffect } from "react";
+
+const useInView = (threshold = 0.1) => {
+  const ref = useRef<HTMLElement>(null);
+  const [isInView, setIsInView] = useState(false);
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setIsInView(true); },
+      { threshold }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [threshold]);
+  return { ref, isInView };
+};
 
 const features = [
-  { icon: Barcode, title: "QR Menü", desc: "Misafir QR kodu tarar, menü anında açılır. Uygulama indirmeye gerek yok. Tüm planlarda.", color: "bg-grapefruit/10 text-grapefruit" },
-  { icon: ShoppingCart, title: "Online Sipariş", desc: "Masadan sipariş, WhatsApp sipariş ve kendi teslimat altyapınız. Pro ve Premium.", color: "bg-sage/15 text-sage" },
-  { icon: Bell, title: "Garson Çağır", desc: "Tek tuşla garson çağırma. Pro ve Premium planlarda.", color: "bg-salmon/15 text-salmon" },
-  { icon: Pulse, title: "Alerjen & Kalori", desc: "Her üründe alerjen ikonları ve kalori bilgisi. Misafir güvenle sipariş verir. Tüm planlarda.", color: "bg-gold/20 text-foreground" },
-  { icon: Globe, title: "Çok Dilli Menü", desc: "Pro'da 2 dil, Premium'da 4 dil desteği. Yabancı misafirlerinize hitap edin.", color: "bg-sage-light/20 text-sage" },
-  { icon: Kanban, title: "Analytics & Raporlama", desc: "Hangi ürün çok görüntüleniyor? Kategori performansı ve trendler. Premium.", color: "bg-grapefruit/10 text-grapefruit" },
+  { icon: QrCode, title: "QR Dijital Menü", desc: "Temassız, güvenli ve şık bir menü deneyimi sunun." },
+  { icon: BellRinging, title: "Garson Çağırma", desc: "Müşterileriniz tek tıkla dijital olarak garson çağırsın." },
+  { icon: WhatsappLogo, title: "WhatsApp Sipariş", desc: "Doğrudan WhatsApp hattınıza sipariş yönlendirin." },
+  { icon: ShoppingCart, title: "Online Sipariş", desc: "Masadan veya paket servis için anlık sipariş alın." },
+  { icon: Warning, title: "Alerjen Bilgisi", desc: "14 AB alerjeni + vegan/vegetarian/helal etiketleri." },
+  { icon: XCircle, title: "Tükendi Güncelleme", desc: "Biten ürünleri anında menüden kaldırın." },
+  { icon: Clock, title: "Happy Hour", desc: "Zamanlı fiyat ve menü değişiklikleri otomatik aktif olsun." },
+  { icon: ChartBar, title: "Analitik Dashboard", desc: "En çok satan ürünleri ve müşteri davranışlarını izleyin." },
 ];
 
 const FeaturesSection = () => {
-  const ref = useScrollReveal();
+  const { ref, isInView } = useInView();
 
   return (
-    <section id="ozellikler" className="py-20 lg:py-28">
-      <div ref={ref} className="container mx-auto px-4 lg:px-8 section-fade-in">
-        <div className="text-center mb-14">
-          <h2 className="text-3xl sm:text-4xl font-extrabold mb-4">Tek platform, sınırsız olanak</h2>
-        </div>
-
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <section
+      ref={ref}
+      className={`py-20 lg:py-28 transition-all duration-700 ${
+        isInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+      }`}
+    >
+      <div className="max-w-7xl mx-auto px-4 lg:px-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map((f) => (
             <div
               key={f.title}
-              className="group p-6 rounded-2xl bg-card border border-border hover:border-sage/40 hover:scale-[1.01] transition-all duration-200"
+              className="p-6 rounded-xl bg-white group transition-all duration-300 cursor-default hover:bg-[#FF4F7A]"
+              style={{ boxShadow: "0 24px 48px -12px rgba(0,0,0,0.05)" }}
             >
-              <div className={`w-12 h-12 rounded-xl ${f.color} flex items-center justify-center mb-4`}>
-                <f.icon className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold mb-2">{f.title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+              <f.icon
+                size={32}
+                weight="thin"
+                className="text-[#FF4F7A] group-hover:text-white transition-colors"
+              />
+              <h3 className="text-lg font-bold mt-4 mb-2 text-[#1C1C1E] group-hover:text-white transition-colors">
+                {f.title}
+              </h3>
+              <p className="text-sm text-[#6B7280] group-hover:text-white/80 transition-colors">
+                {f.desc}
+              </p>
             </div>
           ))}
         </div>

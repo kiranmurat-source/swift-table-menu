@@ -9,7 +9,7 @@
 import { useEffect, useState, useRef, Fragment, lazy, Suspense, ReactNode, CSSProperties } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
-import { Camera, PencilSimple, CheckCircle, XCircle, AppleLogo, Star, Globe, Pen, Rows, User, Image, Trash, Link, Package, CaretCircleDown, CaretCircleUp, PlusCircle, Clock, Grains, Timer, Info, Bell, List, SquaresFour, Tag, Palette, ChatCircle, Percent, Heart, ChartBar } from "@phosphor-icons/react";
+import { Camera, PencilSimple, CheckCircle, XCircle, AppleLogo, Star, Globe, Pen, Rows, User, Image, Trash, Link, Package, CaretCircleDown, CaretCircleUp, PlusCircle, Clock, Grains, Timer, Info, Bell, List, SquaresFour, Tag, Palette, ChatCircle, Percent, Heart, ChartBar, ArrowsClockwise } from "@phosphor-icons/react";
 import RestaurantAnalytics from "@/components/dashboard/RestaurantAnalytics";
 import FeedbackPanel from '../components/FeedbackPanel';
 import ReviewsPanel from '../components/dashboard/ReviewsPanel';
@@ -135,6 +135,9 @@ type Restaurant = {
   feature_likes: boolean;
   feature_reviews: boolean;
   google_place_id: string | null;
+  google_rating: number | null;
+  google_review_count: number | null;
+  google_rating_updated_at: string | null;
 };
 
 const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
@@ -470,6 +473,10 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
   const [msg, setMsg] = useState('');
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [ratingLoading, setRatingLoading] = useState(false);
+  const [googleRating, setGoogleRating] = useState<number | null>(restaurant.google_rating ?? null);
+  const [googleReviewCount, setGoogleReviewCount] = useState<number | null>(restaurant.google_review_count ?? null);
+  const [googleRatingUpdatedAt, setGoogleRatingUpdatedAt] = useState<string | null>(restaurant.google_rating_updated_at ?? null);
   const logoRef = useRef<HTMLInputElement>(null);
   const coverRef = useRef<HTMLInputElement>(null);
 
@@ -701,6 +708,65 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
           <label style={S.label}>Google Place ID</label>
           <input style={S.input} value={form.google_place_id} onChange={e => setForm({ ...form, google_place_id: e.target.value })} placeholder="ChIJ... (Google Maps'ten kopyalayın)" />
           <div style={{ fontSize: 10, color: '#999', marginTop: 2 }}>Yüksek puanlı müşterileri Google Reviews'a yönlendirmek için gerekli</div>
+          {form.google_place_id && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
+              {googleRating ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#6B6B6F' }}>
+                  <Star size={16} weight="fill" style={{ color: '#F59E0B' }} />
+                  <span style={{ fontWeight: 600, color: '#1C1C1E' }}>{googleRating.toFixed(1)}</span>
+                  <span style={{ color: '#9CA3AF' }}>({googleReviewCount || 0} yorum)</span>
+                  {googleRatingUpdatedAt && (
+                    <span style={{ color: '#D1D5DB', fontSize: 11, marginLeft: 2 }}>
+                      · {new Date(googleRatingUpdatedAt).toLocaleDateString('tr-TR')}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <span style={{ fontSize: 12, color: '#9CA3AF' }}>Puan henüz çekilmedi</span>
+              )}
+              <button
+                type="button"
+                onClick={async () => {
+                  setRatingLoading(true);
+                  try {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    const res = await fetch(
+                      `${SUPABASE_URL}/functions/v1/fetch-google-rating`,
+                      {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${session?.access_token}`,
+                        },
+                        body: JSON.stringify({
+                          restaurant_id: restaurant.id,
+                          google_place_id: form.google_place_id,
+                        }),
+                      }
+                    );
+                    const result = await res.json();
+                    if (result.success) {
+                      setGoogleRating(result.rating);
+                      setGoogleReviewCount(result.review_count);
+                      setGoogleRatingUpdatedAt(new Date().toISOString());
+                      setMsg('Google puanı güncellendi');
+                    } else {
+                      setMsg(result.error || 'Puan çekilemedi');
+                    }
+                  } catch {
+                    setMsg('Bağlantı hatası');
+                  } finally {
+                    setRatingLoading(false);
+                  }
+                }}
+                disabled={ratingLoading}
+                style={{ fontSize: 12, color: '#FF4F7A', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, opacity: ratingLoading ? 0.5 : 1 }}
+              >
+                <ArrowsClockwise size={14} className={ratingLoading ? 'animate-spin' : ''} />
+                {ratingLoading ? 'Çekiliyor...' : 'Puanı Güncelle'}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Working Hours */}

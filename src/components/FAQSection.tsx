@@ -1,41 +1,84 @@
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { useScrollReveal } from "@/hooks/use-scroll-reveal";
+import { CaretDown } from "@phosphor-icons/react";
+import { useRef, useState, useEffect } from "react";
+
+const useInView = (threshold = 0.1) => {
+  const ref = useRef<HTMLElement>(null);
+  const [isInView, setIsInView] = useState(false);
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setIsInView(true); },
+      { threshold }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [threshold]);
+  return { ref, isInView };
+};
 
 const faqs = [
-  { q: "Tabbled nedir?", a: "Tabbled, restoran ve oteller için geliştirilmiş QR dijital menü platformudur. Misafirler QR kodu tarayarak menüye ulaşır, alerjen ve kalori bilgilerini görebilir." },
-  { q: "Kurulum ne kadar sürer?", a: "Admin panelden menünüzü 15-30 dakikada oluşturabilirsiniz. QR kodlarınız otomatik olarak üretilir, yazdırıp masalara yerleştirmeniz yeterli." },
-  { q: "Hangi cihazlarda çalışır?", a: "Tabbled tüm modern tarayıcılarda çalışır. Misafirlerinizin uygulama indirmesine gerek yoktur — iPhone, Android, tablet fark etmez." },
-  { q: "Çok dilli menü hangi planlarda var?", a: "Basic planda menü tek dildir. Pro planda 2 dil, Premium planda 4 dil desteği bulunur." },
-  { q: "Abonelik nasıl çalışır?", a: "Sadece yıllık abonelik sistemiyle çalışıyoruz. Kurulum ücreti yoktur. Ödeme banka havalesi veya kredi kartı ile yapılabilir." },
-  { q: "Ücretsiz deneme var mı?", a: "Ücretsiz deneme süresi bulunmamaktadır. Ancak demo menümüzü inceleyerek platformun nasıl çalıştığını görebilirsiniz." },
-  { q: "QR menü yasal zorunluluk mu?", a: "Evet, Fiyat Etiketi Yönetmeliği kapsamında 1 Ocak 2026 itibarıyla dijital menü zorunlu hale gelmiştir." },
-  { q: "Alerjen bilgileri nasıl eklenir?", a: "Admin panelden her ürüne alerjen bilgilerini (gluten, süt, yumurta, fıstık vb.) ve kalori değerlerini ekleyebilirsiniz. Misafirler menüde bu bilgileri görebilir." },
-  { q: "Garson çağırma ve sipariş özellikleri hangi planlarda?", a: "Garson çağırma ve WhatsApp sipariş Pro ve Premium planlarda mevcuttur. Online sipariş, masadan ödeme ve teslimat sadece Premium planda bulunur." },
-  { q: "Destek nasıl alırım?", a: "Tüm planlarda e-posta desteği mevcuttur. Premium planda öncelikli destek sağlanır." },
+  {
+    q: "Tabbled'ı kullanmaya nasıl başlarım?",
+    a: "14 gün ücretsiz deneme ile başlayın — kredi kartı gerekmez. İletişim sayfamızdan bize ulaşın, ekibimiz işletmenize özel hesabınızı dakikalar içinde oluşturur.",
+  },
+  {
+    q: "Müşterilerimin uygulama indirmesi gerekiyor mu?",
+    a: "Hayır, Tabbled tamamen web tabanlıdır. Müşterileriniz sadece QR kodu taratarak tarayıcı üzerinden menünüze ulaşır. Herhangi bir indirme gerekmez.",
+  },
+  {
+    q: "QR menü yasal olarak zorunlu mu?",
+    a: "Evet, 1 Ocak 2026 itibarıyla Fiyat Etiketi Yönetmeliği kapsamında işletmelerin dijital menü sunması zorunlu hale gelmiştir. Tabbled ile bu zorunluluğu kolayca karşılayabilirsiniz.",
+  },
+  {
+    q: "Çok dilli çeviri nasıl çalışıyor?",
+    a: "Menünüzü Türkçe olarak oluşturun, Çeviri Merkezi'nden tek tıkla 34 farklı dile profesyonelce çevirebilirsiniz. Turist misafirleriniz kendi dilinde sipariş verir.",
+  },
+  {
+    q: "Yıllık ödeme zorunlu mu?",
+    a: "Evet, tüm paketlerimiz yıllık ödeme ile sunulmaktadır. Bu sayede aylık maliyetinizi düşük tutuyoruz.",
+  },
+  {
+    q: "Mevcut menümü sisteme nasıl aktarırım?",
+    a: "Admin panelinizden kategorilerinizi ve ürünlerinizi kolayca ekleyebilirsiniz. Fotoğraf yükleme, alerjen seçimi ve AI destekli açıklama yazma ile menünüzü hızlıca oluşturabilirsiniz.",
+  },
 ];
 
 const FAQSection = () => {
-  const ref = useScrollReveal();
+  const { ref, isInView } = useInView();
 
   return (
-    <section className="py-20 lg:py-28">
-      <div ref={ref} className="container mx-auto px-4 lg:px-8 section-fade-in max-w-3xl">
+    <section
+      ref={ref}
+      id="sss"
+      className={`py-20 lg:py-28 transition-all duration-700 ${
+        isInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+      }`}
+    >
+      <div className="max-w-3xl mx-auto px-4 lg:px-8">
         <div className="text-center mb-14">
-          <h2 className="text-3xl sm:text-4xl font-extrabold mb-3">Sıkça Sorulan Sorular</h2>
+          <h2 className="text-4xl font-bold tracking-[-0.03em] text-[#1C1C1E]">
+            Sıkça Sorulan Sorular
+          </h2>
         </div>
 
-        <Accordion type="single" collapsible className="space-y-3">
+        <div className="space-y-3">
           {faqs.map((f, i) => (
-            <AccordionItem key={i} value={`faq-${i}`} className="border border-border rounded-xl px-6 data-[state=open]:border-sage/40 transition-colors">
-              <AccordionTrigger className="text-left font-semibold text-sm hover:no-underline py-4">
+            <details
+              key={i}
+              className="group bg-white p-6 rounded-xl cursor-pointer border border-gray-100 transition-all open:shadow-md"
+              style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
+            >
+              <summary className="flex justify-between items-center font-bold text-lg list-none text-[#1C1C1E] [&::-webkit-details-marker]:hidden">
                 {f.q}
-              </AccordionTrigger>
-              <AccordionContent className="text-sm text-muted-foreground leading-relaxed pb-4">
-                {f.a}
-              </AccordionContent>
-            </AccordionItem>
+                <CaretDown
+                  size={20}
+                  weight="thin"
+                  className="text-[#9CA3AF] group-open:rotate-180 transition-transform flex-shrink-0 ml-4"
+                />
+              </summary>
+              <p className="mt-4 text-[#6B7280] leading-relaxed">{f.a}</p>
+            </details>
           ))}
-        </Accordion>
+        </div>
       </div>
     </section>
   );

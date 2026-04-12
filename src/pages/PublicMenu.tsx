@@ -61,6 +61,8 @@ interface Restaurant {
   feature_likes: boolean;
   feature_reviews: boolean;
   google_place_id: string | null;
+  google_rating: number | null;
+  google_review_count: number | null;
 }
 
 interface MenuCategory {
@@ -325,6 +327,8 @@ const UI: Record<string, Record<UiLangCode, string>> = {
   reviewPromptText:  { tr: "Google Maps'te de yorum bırakmak ister misiniz?", en: 'Would you like to leave a review on Google Maps?', ar: 'هل ترغب في ترك تعليق على خرائط جوجل؟', zh: '您想在Google地图上留下评论吗？' },
   reviewButton:      { tr: "Google'da Yorum Yap", en: 'Review on Google', ar: 'تقييم على جوجل', zh: '在Google上评价' },
   notNow:            { tr: 'Şimdi değil', en: 'Not now', ar: 'ليس الآن', zh: '以后再说' },
+  reviews:           { tr: 'yorum', en: 'reviews', ar: 'تعليق', zh: '评论' },
+  writeReview:       { tr: 'Yorum Yaz', en: 'Write a Review', ar: 'اكتب تعليقاً', zh: '撰写评论' },
   // Discount
   enterDiscountCode:  { tr: 'İndirim kodu girin...', en: 'Enter discount code...', ar: '...أدخل رمز الخصم', zh: '请输入折扣码...' },
   applyCode:          { tr: 'Uygula', en: 'Apply', ar: 'تطبيق', zh: '应用' },
@@ -1069,6 +1073,46 @@ export default function PublicMenu() {
                 <p className="text-xs mt-1 leading-relaxed" style={{ color: theme.mutedText, fontWeight: 300 }}>
                   {t(restaurant.translations, 'tagline', restaurant.tagline, lang)}
                 </p>
+              )}
+              {/* Google Rating — always visible */}
+              {restaurant.google_rating && restaurant.google_place_id && (
+                <div className="flex flex-col items-start gap-2 mt-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-0.5">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star
+                          key={s}
+                          size={18}
+                          weight={restaurant.google_rating! >= s ? "fill" : "regular"}
+                          style={{ color: restaurant.google_rating! >= s - 0.5 ? '#F59E0B' : theme.mutedText, opacity: restaurant.google_rating! >= s - 0.5 ? 1 : 0.3 }}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-sm font-bold" style={{ color: theme.text }}>
+                      {restaurant.google_rating.toFixed(1)}
+                    </span>
+                    {(restaurant.google_review_count ?? 0) > 0 && (
+                      <span className="text-xs" style={{ color: theme.mutedText }}>
+                        ({restaurant.google_review_count} {UI.reviews[toUiLang(lang)]})
+                      </span>
+                    )}
+                  </div>
+                  <a
+                    href={`https://search.google.com/local/writereview?placeid=${restaurant.google_place_id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-colors"
+                    style={{ color: theme.mutedText, borderColor: theme.mutedText + '44' }}
+                  >
+                    <svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                    </svg>
+                    {UI.writeReview[toUiLang(lang)]}
+                  </a>
+                </div>
               )}
               {/* Info accordion toggle */}
               <button

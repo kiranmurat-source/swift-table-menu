@@ -1,41 +1,111 @@
-import { useScrollReveal } from "@/hooks/use-scroll-reveal";
-import PhoneMockup from "@/components/PhoneMockup";
+import { useRef, useState, useEffect } from "react";
+
+const useInView = (threshold = 0.1) => {
+  const ref = useRef<HTMLElement>(null);
+  const [isInView, setIsInView] = useState(false);
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setIsInView(true); },
+      { threshold }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [threshold]);
+  return { ref, isInView };
+};
 
 const steps = [
-  { num: "01", title: "Menünüzü yükleyin", desc: "Admin panelden kategoriler, ürünler, fotoğraflar ve fiyatları girin." },
-  { num: "02", title: "QR kodları oluşturun", desc: "Her masa için otomatik QR kod. Yazdırın, masalara yerleştirin." },
-  { num: "03", title: "Siparişleri yönetin", desc: "Misafir siparişleri canlı olarak admin panelde görünür." },
+  {
+    num: 1,
+    title: "Ücretsiz Deneyin",
+    desc: "14 günlük ücretsiz denemenizi başlatın. Kredi kartı gerekmez, iletişim formunu doldurun yeter.",
+  },
+  {
+    num: 2,
+    title: "Menünüzü Oluşturun",
+    desc: "Ürünlerinizi, fiyatlarınızı ve görsellerinizi admin panelinden kolayca ekleyin. AI açıklamalarla süresini yarıya indirin.",
+  },
+  {
+    num: 3,
+    title: "QR Kodu Paylaşın",
+    desc: "Size özel oluşturulan QR kodlarını masalarınıza yerleştirin ve dijital menünüzü yayına alın.",
+  },
 ];
 
 const HowItWorks = () => {
-  const ref = useScrollReveal();
+  const { ref, isInView } = useInView();
 
   return (
-    <section id="nasil-calisir" className="py-20 lg:py-28 bg-cream">
-      <div ref={ref} className="container mx-auto px-4 lg:px-8 section-fade-in">
+    <section
+      ref={ref}
+      id="nasil-calisir"
+      className={`py-20 lg:py-28 bg-[#F7F7F8] transition-all duration-700 ${
+        isInView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+      }`}
+    >
+      <div className="max-w-7xl mx-auto px-4 lg:px-8">
         <div className="text-center mb-14">
-          <h2 className="text-3xl sm:text-4xl font-extrabold mb-3">Nasıl Çalışır?</h2>
+          <h2 className="text-4xl font-bold tracking-[-0.03em] text-[#1C1C1E]">
+            Nasıl Çalışır?
+          </h2>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-12 items-center max-w-5xl mx-auto">
           {/* Left: Steps */}
-          <div className="space-y-8">
+          <div className="space-y-10">
             {steps.map((s) => (
-              <div key={s.num} className="flex items-start gap-5">
-                <div className="w-14 h-14 rounded-xl bg-grapefruit text-card flex items-center justify-center text-xl font-extrabold font-heading shadow-lg flex-shrink-0">
+              <div key={s.num} className="flex gap-6">
+                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-[#FF4F7A] text-white flex items-center justify-center font-bold text-xl">
                   {s.num}
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold mb-1">{s.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
+                  <h4 className="text-xl font-bold text-[#1C1C1E] mb-2">{s.title}</h4>
+                  <p className="text-[#6B7280] leading-relaxed">{s.desc}</p>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Right: Phone Mockup */}
+          {/* Right: Dashboard mockup */}
           <div className="flex justify-center">
-            <PhoneMockup />
+            <div className="rounded-2xl border border-[#E5E7EB] bg-white overflow-hidden w-full max-w-md"
+              style={{ boxShadow: "0 25px 50px -12px rgba(0,0,0,0.15)" }}
+            >
+              <div className="bg-[#1C1C1E] px-4 py-3 flex items-center gap-2">
+                <div className="flex gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-[#EF4444]" />
+                  <div className="w-3 h-3 rounded-full bg-[#F59E0B]" />
+                  <div className="w-3 h-3 rounded-full bg-[#22C55E]" />
+                </div>
+                <div className="flex-1 text-center">
+                  <span className="text-xs text-[#9CA3AF]">admin.tabbled.com</span>
+                </div>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-[#9CA3AF]">Toplam Görüntüleme</p>
+                    <p className="text-2xl font-bold text-[#1C1C1E]">1,234</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-[#9CA3AF]">Aktif Masalar</p>
+                    <p className="text-2xl font-bold text-[#FF4F7A]">18</p>
+                  </div>
+                </div>
+                <div className="h-px bg-[#E5E7EB]" />
+                <div className="space-y-3">
+                  {["Başlangıçlar", "Ana Yemekler", "Tatlılar"].map((cat, i) => (
+                    <div key={cat} className="flex items-center justify-between">
+                      <span className="text-sm text-[#1C1C1E]">{cat}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 rounded-full bg-[#FF4F7A]" style={{ width: [100, 160, 70][i] }} />
+                        <span className="text-xs text-[#9CA3AF]">{[24, 38, 18][i]}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

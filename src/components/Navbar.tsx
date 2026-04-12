@@ -1,15 +1,17 @@
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import TabbledLogo from "@/components/TabbledLogo";
-import { List, XCircle } from "@phosphor-icons/react";
+import { List, X } from "@phosphor-icons/react";
 
 const navLinks = [
   { label: "Özellikler", href: "#ozellikler" },
-  { label: "Fiyatlar", href: "#fiyatlar" },
   { label: "Nasıl Çalışır", href: "#nasil-calisir" },
-  { label: "Blog", href: "/blog" },
-  { label: "Demo", href: "/menu/demo" },
+  { label: "Fiyatlandırma", href: "#fiyatlandirma" },
+  { label: "SSS", href: "#sss" },
 ];
+
+const scrollTo = (id: string) => {
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+};
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -26,34 +28,37 @@ const Navbar = () => {
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled ? "shadow-sm" : ""
       }`}
-      style={{ backgroundColor: "rgba(255,255,255,0.95)", backdropFilter: "blur(12px)" }}
+      style={{
+        backgroundColor: "rgba(255,255,255,0.80)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+      }}
     >
-      <div className="container mx-auto flex items-center justify-between h-16 px-4 lg:px-8">
+      <div className="max-w-7xl mx-auto flex items-center justify-between h-16 px-4 lg:px-8">
         <TabbledLogo logoType="horizontal" sizeClass="h-8" />
 
         <div className="hidden md:flex items-center gap-8">
           {navLinks.map((l) => (
-            <a
+            <button
               key={l.href}
-              href={l.href}
-              onClick={(e) => {
-                if (l.href.startsWith('#')) {
-                  e.preventDefault();
-                  document.querySelector(l.href)?.scrollIntoView({ behavior: "smooth" });
-                }
-              }}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => scrollTo(l.href.slice(1))}
+              className="text-sm font-medium text-[#6B7280] hover:text-[#FF4F7A] transition-colors"
             >
               {l.label}
-            </a>
+            </button>
           ))}
         </div>
 
         <div className="hidden md:block">
-          <a href="/iletisim">
-            <Button variant="hero" size="lg" className="rounded-full px-6">
-              Ücretsiz Deneyin
-            </Button>
+          <a
+            href="/iletisim"
+            className="inline-block text-white text-sm font-bold px-6 py-2.5 rounded-lg hover:opacity-90 hover:scale-105 active:scale-95 transition-all duration-200"
+            style={{
+              background: "linear-gradient(135deg, #FF4F7A, #FF7B9C)",
+              boxShadow: "0 4px 14px rgba(255, 79, 122, 0.25)",
+            }}
+          >
+            14 Gün Ücretsiz Deneyin
           </a>
         </div>
 
@@ -62,34 +67,37 @@ const Navbar = () => {
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label="Menü"
         >
-          {mobileOpen ? <XCircle className="w-6 h-6" /> : <List className="w-6 h-6" />}
+          {mobileOpen ? (
+            <X size={24} weight="thin" className="text-[#1C1C1E]" />
+          ) : (
+            <List size={24} weight="thin" className="text-[#1C1C1E]" />
+          )}
         </button>
       </div>
 
       {mobileOpen && (
-        <div className="md:hidden bg-card border-t border-border px-4 pb-4">
+        <div className="md:hidden bg-white border-t border-[#E5E7EB] px-4 pb-4">
           {navLinks.map((l) => (
-            <a
+            <button
               key={l.href}
-              href={l.href}
-              className="block py-3 text-sm font-medium text-muted-foreground hover:text-foreground"
-              onClick={(e) => {
-                if (l.href.startsWith('#')) {
-                  e.preventDefault();
-                  setMobileOpen(false);
-                  document.querySelector(l.href)?.scrollIntoView({ behavior: "smooth" });
-                } else {
-                  setMobileOpen(false);
-                }
+              className="block w-full text-left py-3 text-sm font-medium text-[#6B7280] hover:text-[#FF4F7A]"
+              onClick={() => {
+                setMobileOpen(false);
+                scrollTo(l.href.slice(1));
               }}
             >
               {l.label}
-            </a>
+            </button>
           ))}
-          <a href="/iletisim">
-            <Button variant="hero" className="w-full mt-2 rounded-full">
-              Ücretsiz Deneyin
-            </Button>
+          <a
+            href="/iletisim"
+            className="block w-full text-center text-white text-sm font-bold px-6 py-2.5 rounded-lg mt-2"
+            style={{
+              background: "linear-gradient(135deg, #FF4F7A, #FF7B9C)",
+              boxShadow: "0 4px 14px rgba(255, 79, 122, 0.25)",
+            }}
+          >
+            14 Gün Ücretsiz Deneyin
           </a>
         </div>
       )}

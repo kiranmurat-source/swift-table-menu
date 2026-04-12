@@ -41,6 +41,8 @@ export const demoRestaurant = {
   feature_discount_codes: false,
   feature_likes: true,
   google_place_id: null,
+  google_rating: null,
+  google_review_count: null,
 };
 
 export const demoCategories = [

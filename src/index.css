@@ -92,13 +92,13 @@
 
   body {
     @apply bg-background text-foreground font-body antialiased;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Roboto', sans-serif;
     font-weight: 400;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Inter', sans-serif;
-    font-weight: 600;
+    font-family: 'Roboto', sans-serif;
+    font-weight: 700;
   }
 
   .text-muted-foreground {
@@ -186,7 +186,7 @@
 
 /* Blog content styles */
 .blog-content h2 {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Roboto', sans-serif;
   font-weight: 600;
   font-size: 24px;
   margin-top: 40px;
@@ -196,7 +196,7 @@
   line-height: 1.15;
 }
 .blog-content h3 {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Roboto', sans-serif;
   font-weight: 600;
   font-size: 20px;
   margin-top: 32px;
@@ -204,7 +204,7 @@
   color: #1C1C1E;
 }
 .blog-content p {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Roboto', sans-serif;
   font-weight: 400;
   font-size: 16px;
   line-height: 1.75;
@@ -216,7 +216,7 @@
   margin-bottom: 16px;
 }
 .blog-content li {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Roboto', sans-serif;
   font-size: 16px;
   line-height: 1.75;
   margin-bottom: 8px;
