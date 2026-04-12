@@ -40,7 +40,7 @@ const CTABanner = () => {
           kredi kartı gerekmez.
         </p>
         <a
-          href="/iletisim"
+          href="/login"
           className="inline-block bg-white text-[#FF4F7A] px-12 py-4 rounded-full font-bold text-lg hover:scale-105 transition-transform shadow-2xl relative z-10"
         >
           14 Gün Ücretsiz Deneyin

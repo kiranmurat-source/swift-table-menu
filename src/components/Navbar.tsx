@@ -49,9 +49,15 @@ const Navbar = () => {
           ))}
         </div>
 
-        <div className="hidden md:block">
+        <div className="hidden md:flex items-center gap-6">
           <a
-            href="/iletisim"
+            href="/login"
+            className="text-sm font-medium text-[#1C1C1E] hover:text-[#FF4F7A] transition-colors"
+          >
+            Giriş Yap
+          </a>
+          <a
+            href="/login"
             className="inline-block text-white text-sm font-bold px-6 py-2.5 rounded-lg hover:opacity-90 hover:scale-105 active:scale-95 transition-all duration-200"
             style={{
               background: "linear-gradient(135deg, #FF4F7A, #FF7B9C)",
@@ -90,7 +96,13 @@ const Navbar = () => {
             </button>
           ))}
           <a
-            href="/iletisim"
+            href="/login"
+            className="block w-full text-center py-3 text-sm font-medium text-[#1C1C1E] hover:text-[#FF4F7A]"
+          >
+            Giriş Yap
+          </a>
+          <a
+            href="/login"
             className="block w-full text-center text-white text-sm font-bold px-6 py-2.5 rounded-lg mt-2"
             style={{
               background: "linear-gradient(135deg, #FF4F7A, #FF7B9C)",

@@ -48,7 +48,7 @@ const HeroSection = () => {
 
             <div className="flex flex-wrap gap-4 mb-8">
               <a
-                href="/iletisim"
+                href="/login"
                 className="inline-block text-white font-bold px-8 py-3.5 rounded-lg hover:opacity-90 hover:scale-105 active:scale-95 transition-all duration-200"
                 style={{
                   background: "linear-gradient(135deg, #FF4F7A, #FF7B9C)",

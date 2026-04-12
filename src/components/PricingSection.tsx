@@ -49,7 +49,7 @@ const plans: Plan[] = [
     ],
     popular: false,
     ctaText: "14 Gün Ücretsiz Deneyin",
-    ctaHref: "/iletisim?plan=basic",
+    ctaHref: "/login",
   },
   {
     name: "Premium",
@@ -70,7 +70,7 @@ const plans: Plan[] = [
     ],
     popular: true,
     ctaText: "14 Gün Ücretsiz Deneyin",
-    ctaHref: "/iletisim?plan=premium",
+    ctaHref: "/login",
   },
   {
     name: "Enterprise",
@@ -87,7 +87,7 @@ const plans: Plan[] = [
     ],
     popular: false,
     ctaText: "Satışla Görüşün",
-    ctaHref: "/iletisim?plan=enterprise",
+    ctaHref: "/login",
   },
 ];
 

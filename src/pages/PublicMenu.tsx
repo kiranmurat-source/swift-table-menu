@@ -946,7 +946,7 @@ export default function PublicMenu() {
           <div>
             🎉 Bu bir demo menüdür.{' '}
             <a
-              href="/iletisim"
+              href="/login"
               style={{ color: '#fff', fontWeight: 700, textDecoration: 'underline', marginLeft: 4 }}
             >
               14 gün ücretsiz deneyin →
