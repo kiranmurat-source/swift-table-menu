@@ -182,7 +182,6 @@ export function LandingNavbar() {
               title="14 Gün Ücretsiz Deneyin"
               size="sm"
               className="w-full bg-[#FF4F7A] border-[#FF4F7A] text-white hover:bg-[#E8456E] hover:border-[#E8456E]"
-              className="w-full"
               asChild
             >
               <a href="/login">14 Gün Ücretsiz Deneyin</a>
