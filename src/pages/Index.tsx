@@ -2,6 +2,7 @@ import { Helmet } from "react-helmet-async";
 import { LandingNavbar } from "@/components/landing/Navbar1";
 import { HeroSection } from "@/components/landing/HeroSection";
 import { WhyNowSection } from "@/components/landing/WhyNowSection";
+import { FeaturesSection } from "@/components/landing/FeaturesSection";
 import { HowItWorksSection } from "@/components/landing/HowItWorksSection";
 import { PricingSection } from "@/components/landing/PricingSection";
 import { ComparisonSection } from "@/components/landing/ComparisonSection";
@@ -130,6 +131,7 @@ export default function Index() {
       <LandingNavbar />
       <HeroSection />
       <WhyNowSection />
+      <FeaturesSection />
       <HowItWorksSection />
       <PricingSection />
       <ComparisonSection />
