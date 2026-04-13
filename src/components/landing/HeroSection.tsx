@@ -37,7 +37,7 @@ export function HeroSection() {
         </div>
         <div className="ml-[10%]">
           <img
-            src="https://d22po4pjz3o32e.cloudfront.net/placeholder-image.svg"
+            src="/phone-mockup.webp"
             alt="Tabbled restoran dijital menü"
             className="w-full object-cover lg:h-screen lg:max-h-[60rem]"
           />
