@@ -6,6 +6,7 @@ const tabs = [
     label: "Menu islemleri",
     tagline: "Dijital",
     heading: "Icerik uretimini hizlandiran akilli araclar",
+    image: "/feature-1-menu.webp",
     description:
       "Tabbled, restoranlar icin dijital menuyu statik bir liste olmaktan cikarir. Saatlik ogunler, happy hour, zamanli menuler, fiyat varyantlari ve tukendi yonetimi gibi operasyonel detaylari tek panelden kontrol etmenizi saglar. Boylece menunuz guncel kalir, servis daha duzenli ilerler ve misafirler her zaman dogru bilgiye ulasir.",
   },
@@ -13,6 +14,7 @@ const tabs = [
     label: "AI araclari",
     tagline: "Akilli",
     heading: "QR menu yonetimi, fiyat guncellemeleri ve daha duzenli operasyon",
+    image: "/feature-2-ai.webp",
     description:
       "Tabbled, restoranlar icin dijital menu yonetimini sadelestirir. Kategori duzenleme, urun guncelleme, fiyat varyantlari, zamanli menuler, happy hour, tukendi isareti ve QR menu yayini gibi temel islemleri tek panelden yonetmenizi saglar. Boylece menu degisiklikleri daha hizli yapilir, ekip az zaman kaybeder ve misafirler her zaman guncel menuye ulasir.",
   },
@@ -20,6 +22,7 @@ const tabs = [
     label: "Misafir katilimi",
     tagline: "Katilim",
     heading: "Garson cagrisi, promosyonlar, geri bildirim",
+    image: "/feature-3-guest.webp",
     description:
       "Tabbled, QR menuyu pasif bir ekran olmaktan cikarir. Garson cagirma, geri bildirim toplama, promosyon gosterimi ve WhatsApp siparis gibi araclarla misafir deneyimini daha etkilesimli hale getirir. Restoranlar icin bu yapi hem servis akisini iyilestirir hem de misafir memnuniyetini daha gorunur hale getirir.",
   },
@@ -28,6 +31,7 @@ const tabs = [
     tagline: "Uyum",
     heading:
       "Cok dilli menu, alerjen bilgisi ve yasal uyuma hazir yayin",
+    image: "/feature-4-compliance.webp",
     description:
       "Turistlere hizmet veren veya daha duzenli bir menu altyapisi kurmak isteyen isletmeler icin cok dilli yayin artik onemli bir standart. Tabbled; cok dilli menu yonetimi, alerjen bilgisi, besin degerleri ve baskiya uygun menu ciktisi gibi ozelliklerle restoranlarin hem misafir beklentilerine hem de uyum gereksinimlerine daha rahat cevap vermesini saglar.",
   },
@@ -36,6 +40,7 @@ const tabs = [
     tagline: "Buyume",
     heading:
       "Restoran gorunurlugunu artiran SEO ve yorum odakli araclar",
+    image: "/feature-5-visibility.webp",
     description:
       "Dijital menu artik sadece masada acilan bir sayfa degil, ayni zamanda restoranin cevrim ici gorunurlugunu destekleyen bir alan. Tabbled, restoran SEO'su, Google yorum yonlendirmeleri, geri bildirim akisi ve arama odakli icerik yapisiyla isletmelerin dijital gorunurlugunu guclendirmesine yardimci olur. Daha iyi gorunurluk, daha guclu guven ve daha yuksek etkilesim anlamina gelir.",
   },
@@ -107,7 +112,7 @@ export function FeaturesSection() {
                 </div>
                 <div>
                   <img
-                    src="/placeholder-feature.webp"
+                    src={tab.image}
                     className="w-full object-cover"
                     alt={tab.heading}
                   />
