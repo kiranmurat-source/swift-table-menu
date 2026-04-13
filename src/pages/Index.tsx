@@ -1,5 +1,15 @@
 import { Helmet } from "react-helmet-async";
-import Navbar from "@/components/Navbar";
+import { LandingNavbar } from "@/components/landing/Navbar1";
+import { HeroSection } from "@/components/landing/HeroSection";
+import { WhyNowSection } from "@/components/landing/WhyNowSection";
+import { HowItWorksSection } from "@/components/landing/HowItWorksSection";
+import { PricingSection } from "@/components/landing/PricingSection";
+import { ComparisonSection } from "@/components/landing/ComparisonSection";
+import { FAQSection } from "@/components/landing/FAQSection";
+import { CTASection } from "@/components/landing/CTASection";
+import { LandingFooter } from "@/components/landing/LandingFooter";
+import CookieBanner from "@/components/CookieBanner";
+import FloatingWhatsApp from "@/components/FloatingWhatsApp";
 
 const landingSchema = {
   "@context": "https://schema.org",
@@ -81,48 +91,35 @@ const landingSchema = {
     },
   ],
 };
-import HeroSection from "@/components/HeroSection";
-import LogoBar from "@/components/LogoBar";
-import FeaturesSection from "@/components/FeaturesSection";
-import ValueProposition from "@/components/ValueProposition";
-import HowItWorks from "@/components/HowItWorks";
-import PricingSection from "@/components/PricingSection";
-import FeatureComparisonTable from "@/components/FeatureComparisonTable";
-import RoadmapSection from "@/components/RoadmapSection";
-import TestimonialsSection from "@/components/TestimonialsSection";
-import MetricsBar from "@/components/MetricsBar";
-import CTABanner from "@/components/CTABanner";
-import FAQSection from "@/components/FAQSection";
-import Footer from "@/components/Footer";
 
-const Index = () => {
+export default function Index() {
   return (
-    <div className="min-h-screen bg-background">
+    <>
       <Helmet>
-        <title>Tabbled — Dijital Menü ve QR Kod Platformu | Restoran, Kafe, Otel</title>
+        <title>Tabbled — Restoran Dijital Menü Platformu</title>
         <meta
           name="description"
-          content="Tabbled, Türkiye'deki restoran, kafe ve oteller için QR kod tabanlı dijital menü yönetim platformudur. Çok dilli menü, garson çağırma, WhatsApp sipariş ve müşteri yönetimi çözümleri sunar."
+          content="QR menüden fazlası: restoranınız için tek dijital merkez. Menü yönetimi, AI araçları, garson çağırma, çok dilli destek."
         />
         <meta
           name="keywords"
           content="dijital menü, QR menü, restoran menü, kafe menü, otel menü, QR kod, Türkiye, fiyat etiketi yönetmeliği"
         />
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="Tabbled — Dijital Menü ve QR Kod Platformu" />
+        <meta property="og:title" content="Tabbled — Restoran Dijital Menü Platformu" />
         <meta
           property="og:description"
-          content="Tabbled, Türkiye'deki restoran, kafe ve oteller için QR kod tabanlı dijital menü yönetim platformudur. Çok dilli menü, garson çağırma, WhatsApp sipariş ve müşteri yönetimi çözümleri sunar."
+          content="QR menüden fazlası: restoranınız için tek dijital merkez. Menü yönetimi, AI araçları, garson çağırma, çok dilli destek."
         />
         <meta property="og:image" content="https://tabbled.com/og-image.png" />
         <meta property="og:url" content="https://tabbled.com" />
         <meta property="og:site_name" content="Tabbled" />
         <meta property="og:locale" content="tr_TR" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Tabbled — Dijital Menü ve QR Kod Platformu" />
+        <meta name="twitter:title" content="Tabbled — Restoran Dijital Menü Platformu" />
         <meta
           name="twitter:description"
-          content="Tabbled, Türkiye'deki restoran, kafe ve oteller için QR kod tabanlı dijital menü yönetim platformudur. Çok dilli menü, garson çağırma, WhatsApp sipariş ve müşteri yönetimi çözümleri sunar."
+          content="QR menüden fazlası: restoranınız için tek dijital merkez. Menü yönetimi, AI araçları, garson çağırma, çok dilli destek."
         />
         <meta name="twitter:image" content="https://tabbled.com/og-image.png" />
         <link rel="canonical" href="https://tabbled.com" />
@@ -130,22 +127,17 @@ const Index = () => {
           {JSON.stringify(landingSchema)}
         </script>
       </Helmet>
-      <Navbar />
+      <LandingNavbar />
       <HeroSection />
-      <LogoBar />
-      <FeaturesSection />
-      <ValueProposition />
-      <HowItWorks />
+      <WhyNowSection />
+      <HowItWorksSection />
       <PricingSection />
-      <FeatureComparisonTable />
-      <RoadmapSection />
-      <TestimonialsSection />
-      <MetricsBar />
-      <CTABanner />
+      <ComparisonSection />
       <FAQSection />
-      <Footer />
-    </div>
+      <CTASection />
+      <LandingFooter />
+      <CookieBanner />
+      <FloatingWhatsApp />
+    </>
   );
-};
-
-export default Index;
+}

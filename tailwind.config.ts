@@ -1,8 +1,16 @@
 import type { Config } from "tailwindcss";
+import relumeTailwind from "@relume_io/relume-tailwind";
 
 export default {
   darkMode: ["class"],
-  content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  content: [
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
+    "./node_modules/@relume_io/relume-ui/dist/**/*.{js,ts,jsx,tsx}",
+  ],
+  presets: [relumeTailwind],
   prefix: "",
   theme: {
     container: {
