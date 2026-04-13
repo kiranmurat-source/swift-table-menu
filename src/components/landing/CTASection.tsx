@@ -15,7 +15,7 @@ export function CTASection() {
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-4 md:mt-8">
             <Button title="Demo" className="bg-[#FF4F7A] border-[#FF4F7A] text-white hover:bg-[#E8456E] hover:border-[#E8456E]" asChild>
-              <a href="/iletisim">14 Gün Ücretsiz Deneyin</a>
+              <a href="/login">14 Gün Ücretsiz Deneyin</a>
             </Button>
             <Button title="İletişime Geç" variant="secondary" asChild>
               <a href="/iletisim">İletişime Geç</a>

@@ -57,7 +57,7 @@ export function HowItWorksSection() {
           </div>
           <div className="mt-10 flex items-center gap-4 md:mt-14 lg:mt-16">
             <Button className="bg-[#FF4F7A] border-[#FF4F7A] text-white hover:bg-[#E8456E] hover:border-[#E8456E]" asChild>
-              <a href="/iletisim">14 Gün Ücretsiz Deneyin</a>
+              <a href="/login">14 Gün Ücretsiz Deneyin</a>
             </Button>
             <Button iconRight={<RxChevronRight />} variant="link" size="link" className="text-white" asChild>
               <a href="#ozellikler">Daha fazla</a>

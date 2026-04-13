@@ -185,7 +185,7 @@ export function LandingNavbar() {
               className="w-full"
               asChild
             >
-              <a href="/iletisim">14 Gün Ücretsiz Deneyin</a>
+              <a href="/login">14 Gün Ücretsiz Deneyin</a>
             </Button>
             <Button title="İletişime Geç" variant="secondary" size="sm" className="w-full" asChild>
               <a href="/iletisim">İletişime Geç</a>
