@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { RxChevronRight } from 'react-icons/rx';
 import { LandingNavbar } from '../components/landing/Navbar1';
 import { LandingFooter } from '../components/landing/LandingFooter';
-import BlogCard from '../components/BlogCard';
-import BlogCTA from '../components/BlogCTA';
+import { BlogCTASection } from '../components/landing/BlogCTASection';
+import FloatingWhatsApp from '../components/FloatingWhatsApp';
 import { blogPosts, getAllCategories } from '../lib/blogData';
 
 export default function Blog() {
@@ -51,108 +52,94 @@ export default function Blog() {
 
       <LandingNavbar />
 
-      <main
-        style={{
-          maxWidth: 960,
-          margin: '0 auto',
-          padding: '48px 20px 0',
-          fontFamily: "'Inter', sans-serif",
-          minHeight: '60vh',
-        }}
-      >
-        {/* Header */}
-        <div style={{ marginBottom: 32 }}>
-          <h1
-            style={{
-              fontFamily: "'Inter', sans-serif",
-              fontWeight: 700,
-              fontSize: 36,
-              color: '#1C1C1E',
-              marginBottom: 8,
-            }}
-          >
-            Blog
-          </h1>
-          <p style={{ fontSize: 15, color: '#6B6B6F', lineHeight: 1.6, maxWidth: 560 }}>
-            Restoran dijital menu dunyasından rehberler, ipuclari ve guncel yasal duzenlemeler.
-          </p>
-        </div>
+      <section className="px-[5%] py-16 md:py-24 lg:py-28">
+        <div className="container">
+          <div className="mb-12 md:mb-18 lg:mb-20">
+            <div className="mx-auto w-full max-w-lg text-center">
+              <p className="mb-3 font-semibold md:mb-4">Blog</p>
+              <h1 className="mb-5 text-5xl font-bold md:mb-6 md:text-7xl lg:text-8xl">
+                Restoran dunyasindan icgoruler
+              </h1>
+              <p className="md:text-md">
+                Stratejiler, rehberler ve sektor trendleri
+              </p>
+            </div>
+          </div>
 
-        {/* Category filter */}
-        {categories.length > 0 && (
-          <div
-            style={{
-              display: 'flex',
-              gap: 8,
-              marginBottom: 32,
-              flexWrap: 'wrap',
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => handleCategoryChange('')}
-              style={{
-                padding: '6px 16px',
-                borderRadius: 20,
-                border: `1px solid ${!activeCategory ? '#FF4F7A' : '#E5E7EB'}`,
-                backgroundColor: !activeCategory ? '#FF4F7A' : '#fff',
-                color: !activeCategory ? '#fff' : '#6B6B6F',
-                fontSize: 13,
-                fontWeight: !activeCategory ? 600 : 400,
-                cursor: 'pointer',
-                fontFamily: "'Inter', sans-serif",
-              }}
-            >
-              Tumu
-            </button>
-            {categories.map(cat => (
+          {categories.length > 0 && (
+            <div className="mb-12 flex flex-wrap items-center justify-center gap-3">
               <button
-                key={cat.id}
                 type="button"
-                onClick={() => handleCategoryChange(cat.id)}
-                style={{
-                  padding: '6px 16px',
-                  borderRadius: 20,
-                  border: `1px solid ${activeCategory === cat.id ? '#FF4F7A' : '#E5E7EB'}`,
-                  backgroundColor: activeCategory === cat.id ? '#FF4F7A' : '#fff',
-                  color: activeCategory === cat.id ? '#fff' : '#6B6B6F',
-                  fontSize: 13,
-                  fontWeight: activeCategory === cat.id ? 600 : 400,
-                  cursor: 'pointer',
-                  fontFamily: "'Inter', sans-serif",
-                }}
+                onClick={() => handleCategoryChange('')}
+                className={
+                  !activeCategory
+                    ? 'rounded-full bg-[#FF4F7A] px-4 py-2 text-sm font-semibold text-white'
+                    : 'rounded-full border border-border-primary px-4 py-2 text-sm font-semibold'
+                }
               >
-                {cat.label}
+                Tumu
               </button>
-            ))}
-          </div>
-        )}
+              {categories.map(cat => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => handleCategoryChange(cat.id)}
+                  className={
+                    activeCategory === cat.id
+                      ? 'rounded-full bg-[#FF4F7A] px-4 py-2 text-sm font-semibold text-white'
+                      : 'rounded-full border border-border-primary px-4 py-2 text-sm font-semibold'
+                  }
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          )}
 
-        {/* Posts grid */}
-        {filteredPosts.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '64px 0', color: '#9CA3AF' }}>
-            <p style={{ fontSize: 16, marginBottom: 4 }}>Yakında blog yazıları yayınlanacak.</p>
-            <p style={{ fontSize: 13 }}>Takipte kalın!</p>
-          </div>
-        ) : (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 400px), 1fr))',
-              gap: 24,
-            }}
-          >
-            {filteredPosts.map(post => (
-              <BlogCard key={post.slug} post={post} />
-            ))}
-          </div>
-        )}
+          {filteredPosts.length === 0 ? (
+            <div className="py-16 text-center text-text-secondary">
+              <p className="mb-1 text-base">Yakin zamanda blog yazilari yayinlanacak.</p>
+              <p className="text-sm">Takipte kalin!</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-x-12 gap-y-12 md:gap-y-16 lg:grid-cols-2">
+              {filteredPosts.map(post => (
+                <div key={post.slug} className="grid gap-x-8 gap-y-6 md:grid-cols-[.75fr_1fr] md:gap-y-4">
+                  <a href={`/blog/${post.slug}`} className="w-full">
+                    <img
+                      src={post.ogImage || 'https://d22po4pjz3o32e.cloudfront.net/placeholder-image-landscape.svg'}
+                      alt={post.title}
+                      className="aspect-square w-full object-cover"
+                    />
+                  </a>
+                  <div className="flex h-full flex-col items-start justify-start">
+                    <div className="mb-3 flex w-full items-center justify-start sm:mb-4">
+                      <p className="mr-4 bg-background-secondary px-2 py-1 text-sm font-semibold">
+                        {post.categoryLabel}
+                      </p>
+                      <p className="inline text-sm font-semibold">{post.readingTime} dk okuma</p>
+                    </div>
+                    <a className="mb-2" href={`/blog/${post.slug}`}>
+                      <h3 className="text-xl font-bold md:text-2xl">{post.title}</h3>
+                    </a>
+                    <p>{post.excerpt}</p>
+                    <a
+                      href={`/blog/${post.slug}`}
+                      className="mt-5 flex items-center gap-2 md:mt-6"
+                    >
+                      Devamini oku <RxChevronRight />
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
 
-        {/* CTA */}
-        <BlogCTA />
-      </main>
-
+      <BlogCTASection />
       <LandingFooter />
+      <FloatingWhatsApp />
     </>
   );
 }
