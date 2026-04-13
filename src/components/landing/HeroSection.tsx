@@ -30,14 +30,14 @@ export function HeroSection() {
       <div className="relative flex items-center">
         <div className="absolute w-[45%] pl-[5%] lg:pl-0">
           <img
-            src="/hero-restaurant.webp"
+            src="/phone-mockup.webp"
             alt="Tabbled restoran dijital menü"
             className="aspect-[2/3] w-full object-cover lg:h-full"
           />
         </div>
         <div className="ml-[10%]">
           <img
-            src="/phone-mockup.webp"
+            src="/hero-restaurant.webp"
             alt="Tabbled restoran dijital menü"
             className="w-full object-cover lg:h-screen lg:max-h-[60rem]"
           />
