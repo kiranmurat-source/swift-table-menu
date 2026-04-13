@@ -1692,43 +1692,36 @@ export default function RestaurantDashboard() {
 
   const sidebarContent = (
     <>
-      <div className="p-4 border-b border-[#3A3A3E]">
-        <div className="flex items-center gap-2">
-          {restaurant.logo_url && (
-            <img onError={handleImageError} src={getOptimizedImageUrl(restaurant.logo_url, 'thumbnail')} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
-          )}
-          <p className="font-semibold text-[13px] text-[#F0F0EC] truncate">{restaurant.name}</p>
-        </div>
+      {/* Header — restaurant branding */}
+      <div className="sb-header">
+        {restaurant.logo_url && (
+          <img onError={handleImageError} src={getOptimizedImageUrl(restaurant.logo_url, 'thumbnail')} alt="" className="sb-header-logo" />
+        )}
+        <p className="sb-header-name">{restaurant.name}</p>
       </div>
-      <nav className="flex-1 overflow-auto py-2">
+
+      {/* Navigation groups */}
+      <nav className="flex-1 overflow-auto py-3">
         {sidebarGroups.map((group, gIdx) => (
-          <div key={group.title || `grp-${gIdx}`} className="mb-4">
+          <div key={group.title || `grp-${gIdx}`} className="sb-group">
             {group.title && (
-              <div className="px-4 py-1 text-[10px] font-bold uppercase tracking-wider text-[#6B6B6F]" style={{ letterSpacing: '0.05em' }}>
-                {group.title}
-              </div>
+              <div className="sb-group-title">{group.title}</div>
             )}
-            {group.items.map((item) => {
+            {group.items.map((item, iIdx) => {
               const active = activeTab === item.key;
+              const Icon = item.icon;
               return (
                 <button
                   key={item.key}
                   onClick={() => handleSidebarNav(item.key)}
-                  className="w-full flex items-center px-4 py-2 text-[13px] transition-colors border-l-[2px]"
-                  style={{
-                    background: active ? '#2A2A2E' : 'transparent',
-                    borderLeftColor: active ? '#FF4F7A' : 'transparent',
-                    color: active ? '#FFFFFF' : '#A0A0A0',
-                    fontWeight: active ? 500 : 400,
-                  }}
-                  onMouseEnter={e => { if (!active) { e.currentTarget.style.background = '#2A2A2E'; e.currentTarget.style.color = '#F0F0EC'; }}}
-                  onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#A0A0A0'; }}}
+                  className="sb-item"
+                  data-active={active}
+                  style={{ animationDelay: `${gIdx * 40 + iIdx * 25}ms` }}
                 >
+                  <Icon size={16} weight={active ? 'fill' : 'regular'} className="sb-icon" />
                   <span className="flex-1 text-left">{item.label}</span>
                   {'badge' in item && (item as any).badge > 0 && (
-                    <span className="text-[10px] font-bold text-white rounded-full px-1.5 py-0.5 min-w-[18px] text-center" style={{ background: '#FF4F7A' }}>
-                      {(item as any).badge}
-                    </span>
+                    <span className="sb-badge">{(item as any).badge}</span>
                   )}
                 </button>
               );
@@ -1736,8 +1729,10 @@ export default function RestaurantDashboard() {
           </div>
         ))}
       </nav>
-      <div className="p-4 border-t border-[#3A3A3E] text-[11px] text-[#6B6B6F] flex items-center gap-1">
-        <Link size={12} /> tabbled.com/menu/{restaurant.slug}
+
+      {/* Footer — public menu link */}
+      <div className="sb-footer">
+        <Link size={13} /> tabbled.com/menu/{restaurant.slug}
       </div>
     </>
   );
@@ -1745,15 +1740,15 @@ export default function RestaurantDashboard() {
   return (
     <div className="flex min-h-screen bg-[#F7F7F5]">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col w-[240px] shrink-0 border-r border-[#3A3A3E] bg-[#1C1C1E] sticky top-0 self-start min-h-screen">
+      <aside className="sb-rail hidden md:flex flex-col w-[240px] shrink-0 border-r border-[#3A3A3E] bg-[#1C1C1E] sticky top-0 self-start min-h-screen">
         {sidebarContent}
       </aside>
 
       {/* Mobile Sidebar Overlay */}
       {isMobile && sidebarOpen && (
         <div className="fixed inset-0 z-50 flex">
-          <div className="fixed inset-0 bg-black/30" onClick={() => setSidebarOpen(false)} />
-          <aside className="relative z-10 flex flex-col w-[260px] bg-[#1C1C1E] min-h-screen shadow-xl animate-slide-in">
+          <div className="sb-backdrop" onClick={() => setSidebarOpen(false)} />
+          <aside className="relative z-10 flex flex-col w-[260px] bg-[#1C1C1E] min-h-screen shadow-2xl animate-sidebar-slide-in">
             {sidebarContent}
           </aside>
         </div>

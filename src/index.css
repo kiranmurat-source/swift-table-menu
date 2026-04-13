@@ -292,3 +292,173 @@
     display: block !important;
   }
 }
+
+/* ── Admin Sidebar ── */
+
+/* Sidebar nav item — base state */
+.sb-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--db-sidebar-text);
+  border-left: 2.5px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+  position: relative;
+}
+
+.sb-item:hover {
+  background: var(--db-sidebar-hover);
+  color: var(--db-sidebar-text-hover);
+}
+
+.sb-item:active {
+  background: #333338;
+}
+
+/* Active state — strawberry left accent with subtle inner glow */
+.sb-item[data-active="true"] {
+  background: var(--db-sidebar-hover);
+  color: #FFFFFF;
+  font-weight: 500;
+  border-left-color: var(--db-pink);
+  box-shadow: inset 3px 0 12px -4px rgba(255, 79, 122, 0.18);
+}
+
+/* Icon inside sidebar item */
+.sb-item .sb-icon {
+  flex-shrink: 0;
+  opacity: 0.5;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.sb-item:hover .sb-icon {
+  opacity: 0.8;
+  transform: translateX(1px);
+}
+
+.sb-item[data-active="true"] .sb-icon {
+  opacity: 1;
+  color: var(--db-pink);
+}
+
+/* Badge pill inside sidebar item */
+.sb-badge {
+  font-size: 10px;
+  font-weight: 700;
+  color: #FFFFFF;
+  background: var(--db-pink);
+  border-radius: 9999px;
+  padding: 1px 6px;
+  min-width: 18px;
+  text-align: center;
+  line-height: 16px;
+  box-shadow: 0 0 8px rgba(255, 79, 122, 0.3);
+  animation: sb-badge-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes sb-badge-pulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(255, 79, 122, 0.25); }
+  50% { box-shadow: 0 0 14px rgba(255, 79, 122, 0.45); }
+}
+
+/* Group title */
+.sb-group-title {
+  padding: 6px 16px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--db-text-subtle);
+  user-select: none;
+}
+
+/* Subtle divider between groups */
+.sb-group + .sb-group {
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  margin-top: 4px;
+  padding-top: 4px;
+}
+
+/* Sidebar header — restaurant branding */
+.sb-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--db-sidebar-border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sb-header-logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  transition: border-color 0.2s ease;
+}
+
+.sb-header-logo:hover {
+  border-color: rgba(255, 79, 122, 0.3);
+}
+
+.sb-header-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--db-sidebar-text-active);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Sidebar footer — public link */
+.sb-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--db-sidebar-border);
+  font-size: 11px;
+  color: var(--db-text-subtle);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.15s ease;
+}
+
+.sb-footer:hover {
+  color: var(--db-sidebar-text);
+}
+
+/* Mobile sidebar backdrop blur */
+.sb-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: sidebar-backdrop-in 0.2s ease-out;
+}
+
+/* Desktop sidebar subtle top-edge highlight */
+.sb-rail {
+  position: relative;
+}
+
+.sb-rail::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+}
