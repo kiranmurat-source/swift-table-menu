@@ -14,7 +14,7 @@ export function CTASection() {
             büyüyü hızlandırmalarına nasıl yardımcı olduğunu keşfedin.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-4 md:mt-8">
-            <Button title="Demo" asChild>
+            <Button title="Demo" className="bg-[#FF4F7A] border-[#FF4F7A] text-white hover:bg-[#E8456E] hover:border-[#E8456E]" asChild>
               <a href="/menu/demo">Demo</a>
             </Button>
             <Button title="İletişime Geç" variant="secondary" asChild>

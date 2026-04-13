@@ -4,7 +4,7 @@ import { RxChevronRight } from "react-icons/rx";
 
 export function HowItWorksSection() {
   return (
-    <section id="nasil-calisir" className="px-[5%] py-16 md:py-24 lg:py-28">
+    <section id="nasil-calisir" className="px-[5%] py-16 md:py-24 lg:py-28 bg-[#1C1C1E] text-white">
       <div className="container">
         <div className="flex flex-col items-center">
           <div className="rb-12 mb-12 w-full max-w-lg text-center md:mb-18 lg:mb-20">
@@ -56,10 +56,10 @@ export function HowItWorksSection() {
             </div>
           </div>
           <div className="mt-10 flex items-center gap-4 md:mt-14 lg:mt-16">
-            <Button variant="secondary" asChild>
+            <Button className="bg-[#FF4F7A] border-[#FF4F7A] text-white hover:bg-[#E8456E] hover:border-[#E8456E]" asChild>
               <a href="/menu/demo">Demo</a>
             </Button>
-            <Button iconRight={<RxChevronRight />} variant="link" size="link" asChild>
+            <Button iconRight={<RxChevronRight />} variant="link" size="link" className="text-white" asChild>
               <a href="#ozellikler">Daha fazla</a>
             </Button>
           </div>

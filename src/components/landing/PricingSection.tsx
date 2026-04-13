@@ -56,7 +56,7 @@ export function PricingSection() {
               </div>
             </div>
             <div>
-              <Button title="Başla" className="w-full" asChild>
+              <Button title="Başla" className="w-full bg-[#FF4F7A] border-[#FF4F7A] text-white hover:bg-[#E8456E] hover:border-[#E8456E]" asChild>
                 <a href="/iletisim?plan=basic">Başla</a>
               </Button>
             </div>
@@ -106,7 +106,7 @@ export function PricingSection() {
               </div>
             </div>
             <div>
-              <Button title="Başla" className="w-full" asChild>
+              <Button title="Başla" className="w-full bg-[#FF4F7A] border-[#FF4F7A] text-white hover:bg-[#E8456E] hover:border-[#E8456E]" asChild>
                 <a href="/iletisim?plan=premium">Başla</a>
               </Button>
             </div>
@@ -149,7 +149,7 @@ export function PricingSection() {
               </div>
             </div>
             <div>
-              <Button title="Başla" className="w-full" asChild>
+              <Button title="Başla" className="w-full bg-[#FF4F7A] border-[#FF4F7A] text-white hover:bg-[#E8456E] hover:border-[#E8456E]" asChild>
                 <a href="/iletisim?plan=enterprise">Başla</a>
               </Button>
             </div>

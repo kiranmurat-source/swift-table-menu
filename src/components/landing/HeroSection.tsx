@@ -5,7 +5,7 @@ export function HeroSection() {
   return (
     <section
       id="relume"
-      className="grid grid-cols-1 items-center gap-y-16 pt-16 md:pt-24 lg:grid-cols-2 lg:pt-0"
+      className="grid grid-cols-1 items-center gap-y-16 pt-16 md:pt-24 lg:grid-cols-2 lg:pt-0 bg-[#1C1C1E] text-white"
     >
       <div className="mx-[5%] sm:max-w-md md:justify-self-start lg:ml-[5vw] lg:mr-20 lg:justify-self-end">
         <h1 className="mb-5 text-6xl font-bold md:mb-6 md:text-9xl lg:text-10xl">
@@ -18,10 +18,10 @@ export function HeroSection() {
         </p>
         <div>
           <div className="mt-6 flex flex-wrap gap-4 md:mt-8">
-            <Button title="Demo" asChild>
+            <Button title="Demo" className="bg-[#FF4F7A] border-[#FF4F7A] text-white hover:bg-[#E8456E] hover:border-[#E8456E]" asChild>
               <a href="/menu/demo">Demo</a>
             </Button>
-            <Button title="İletişime" variant="secondary" asChild>
+            <Button title="İletişime" variant="secondary" className="border-white text-white hover:bg-white hover:text-[#1C1C1E]" asChild>
               <a href="/iletisim">İletişime</a>
             </Button>
           </div>

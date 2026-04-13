@@ -10,7 +10,7 @@ import { RxPlus } from "react-icons/rx";
 
 export function FAQSection() {
   return (
-    <section id="sss" className="px-[5%] py-16 md:py-24 lg:py-28">
+    <section id="sss" className="px-[5%] py-16 md:py-24 lg:py-28 bg-[#1C1C1E] text-white">
       <div className="container">
         <div className="rb-12 mb-12 max-w-lg md:mb-18 lg:mb-20">
           <h2 className="rb-5 mb-5 text-5xl font-bold md:mb-6 md:text-7xl lg:text-8xl">
@@ -26,11 +26,11 @@ export function FAQSection() {
         >
           <AccordionItem
             value="item-0"
-            className="border border-border-primary px-5 md:px-6"
+            className="border border-white/20 px-5 md:px-6"
           >
             <AccordionTrigger
               icon={
-                <RxPlus className="size-7 shrink-0 text-text-primary transition-transform duration-300 md:size-8" />
+                <RxPlus className="size-7 shrink-0 text-white transition-transform duration-300 md:size-8" />
               }
               className="md:py-5 md:text-md [&[data-state=open]>svg]:rotate-45"
             >
@@ -44,11 +44,11 @@ export function FAQSection() {
           </AccordionItem>
           <AccordionItem
             value="item-1"
-            className="border border-border-primary px-5 md:px-6"
+            className="border border-white/20 px-5 md:px-6"
           >
             <AccordionTrigger
               icon={
-                <RxPlus className="size-7 shrink-0 text-text-primary transition-transform duration-300 md:size-8" />
+                <RxPlus className="size-7 shrink-0 text-white transition-transform duration-300 md:size-8" />
               }
               className="md:py-5 md:text-md [&[data-state=open]>svg]:rotate-45"
             >
@@ -62,11 +62,11 @@ export function FAQSection() {
           </AccordionItem>
           <AccordionItem
             value="item-2"
-            className="border border-border-primary px-5 md:px-6"
+            className="border border-white/20 px-5 md:px-6"
           >
             <AccordionTrigger
               icon={
-                <RxPlus className="size-7 shrink-0 text-text-primary transition-transform duration-300 md:size-8" />
+                <RxPlus className="size-7 shrink-0 text-white transition-transform duration-300 md:size-8" />
               }
               className="md:py-5 md:text-md [&[data-state=open]>svg]:rotate-45"
             >
@@ -78,11 +78,11 @@ export function FAQSection() {
           </AccordionItem>
           <AccordionItem
             value="item-3"
-            className="border border-border-primary px-5 md:px-6"
+            className="border border-white/20 px-5 md:px-6"
           >
             <AccordionTrigger
               icon={
-                <RxPlus className="size-7 shrink-0 text-text-primary transition-transform duration-300 md:size-8" />
+                <RxPlus className="size-7 shrink-0 text-white transition-transform duration-300 md:size-8" />
               }
               className="md:py-5 md:text-md [&[data-state=open]>svg]:rotate-45"
             >
@@ -94,11 +94,11 @@ export function FAQSection() {
           </AccordionItem>
           <AccordionItem
             value="item-4"
-            className="border border-border-primary px-5 md:px-6"
+            className="border border-white/20 px-5 md:px-6"
           >
             <AccordionTrigger
               icon={
-                <RxPlus className="size-7 shrink-0 text-text-primary transition-transform duration-300 md:size-8" />
+                <RxPlus className="size-7 shrink-0 text-white transition-transform duration-300 md:size-8" />
               }
               className="md:py-5 md:text-md [&[data-state=open]>svg]:rotate-45"
             >
@@ -118,7 +118,7 @@ export function FAQSection() {
             için bize ulaşın. Hiçbir kayıt gerekli değildir.
           </p>
           <div className="mt-6 md:mt-8">
-            <Button title="Hangi plan benim için uygun?" variant="secondary">
+            <Button title="Hangi plan benim için uygun?" variant="secondary" className="border-white text-white hover:bg-white hover:text-[#1C1C1E]">
               Hangi plan benim için uygun?
             </Button>
           </div>
