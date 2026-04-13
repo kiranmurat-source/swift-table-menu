@@ -607,7 +607,7 @@ export default function PublicMenu() {
         className="min-h-screen flex flex-col items-center justify-center"
         style={{ backgroundColor: '#fff', fontFamily: bodyFont }}
       >
-        <AnimatedLogo size={80} message={UI.loading[toUiLang(lang)]} />
+        <AnimatedLogo size={80} />
       </div>
     );
   }

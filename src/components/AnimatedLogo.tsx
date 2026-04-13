@@ -19,7 +19,7 @@ const AnimatedLogo = ({ size = 80, message, showText = true }: AnimatedLogoProps
           @keyframes l3{0%,100%{fill:#1C1C1E}60%,80%{fill:#FF4F7A}}
           @keyframes l4{0%,100%{fill:#1C1C1E}85%,95%{fill:#FF4F7A}}
         `}</style>
-        <rect x="0" y="0" width="120" height="120" rx="24" fill="none" stroke="#1C1C1E" strokeWidth="3"/>
+
         <rect x="20" y="20" width="80" height="80" rx="16" fill="none" stroke="#1C1C1E" strokeWidth="3"/>
         <line x1="40" y1="40" x2="80" y2="40" stroke="#1C1C1E" strokeWidth="2.5"/>
         <line x1="40" y1="80" x2="80" y2="80" stroke="#1C1C1E" strokeWidth="2.5"/>
@@ -43,15 +43,7 @@ const AnimatedLogo = ({ size = 80, message, showText = true }: AnimatedLogoProps
         </div>
       )}
 
-      {message && (
-        <div style={{
-          fontSize: '13px',
-          color: '#1C1C1E',
-          opacity: 0.4
-        }}>
-          {message}
-        </div>
-      )}
+
     </div>
   );
 };
