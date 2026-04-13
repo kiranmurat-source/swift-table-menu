@@ -179,13 +179,13 @@ export function LandingNavbar() {
           </div>
           <div className="mt-6 flex flex-col items-center gap-4 lg:ml-4 lg:mt-0 lg:flex-row">
             <Button
-              title="Demo"
+              title="14 Gün Ücretsiz Deneyin"
               variant="secondary"
               size="sm"
               className="w-full"
               asChild
             >
-              <a href="/menu/demo">Demo</a>
+              <a href="/iletisim">14 Gün Ücretsiz Deneyin</a>
             </Button>
             <Button title="İletişime Geç" size="sm" className="w-full bg-[#FF4F7A] border-[#FF4F7A] text-white hover:bg-[#E8456E] hover:border-[#E8456E]" asChild>
               <a href="/iletisim">İletişime Geç</a>

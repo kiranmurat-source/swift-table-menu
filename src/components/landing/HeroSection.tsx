@@ -19,7 +19,7 @@ export function HeroSection() {
         <div>
           <div className="mt-6 flex flex-wrap gap-4 md:mt-8">
             <Button title="Demo" className="bg-[#FF4F7A] border-[#FF4F7A] text-white hover:bg-[#E8456E] hover:border-[#E8456E]" asChild>
-              <a href="/menu/demo">Demo</a>
+              <a href="/iletisim">14 Gün Ücretsiz Deneyin</a>
             </Button>
             <Button title="İletişime" variant="secondary" asChild>
               <a href="/iletisim">İletişime</a>
