@@ -3,8 +3,8 @@ import { useParams, Navigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import DOMPurify from 'dompurify';
 import { CalendarBlank, Clock, User } from "@phosphor-icons/react";
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
+import { LandingNavbar } from '../components/landing/Navbar1';
+import { LandingFooter } from '../components/landing/LandingFooter';
 import BlogBreadcrumb from '../components/BlogBreadcrumb';
 import BlogTOC from '../components/BlogTOC';
 import BlogFAQ from '../components/BlogFAQ';
@@ -88,7 +88,7 @@ export default function BlogPost() {
         {faqSchema && <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>}
       </Helmet>
 
-      <Navbar />
+      <LandingNavbar />
 
       <main
         style={{
@@ -215,7 +215,7 @@ export default function BlogPost() {
         <BlogCTA />
       </main>
 
-      <Footer />
+      <LandingFooter />
     </>
   );
 }

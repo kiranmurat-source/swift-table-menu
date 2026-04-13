@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
+import { LandingNavbar } from '../components/landing/Navbar1';
+import { LandingFooter } from '../components/landing/LandingFooter';
 import BlogCard from '../components/BlogCard';
 import BlogCTA from '../components/BlogCTA';
 import { blogPosts, getAllCategories } from '../lib/blogData';
@@ -49,7 +49,7 @@ export default function Blog() {
         <meta name="twitter:image" content="https://tabbled.com/og-image.png" />
       </Helmet>
 
-      <Navbar />
+      <LandingNavbar />
 
       <main
         style={{
@@ -152,7 +152,7 @@ export default function Blog() {
         <BlogCTA />
       </main>
 
-      <Footer />
+      <LandingFooter />
     </>
   );
 }
