@@ -163,7 +163,7 @@ export function LandingNavbar() {
                 className="bg-background-primary lg:absolute lg:z-50 lg:border lg:border-border-primary lg:p-2 lg:[--y-close:25%]"
               >
                 <a
-                  href="/iletisim"
+                  href="https://wa.me/905325119484?text=Merhaba%2C%20Tabbled%20hakk%C4%B1nda%20bilgi%20almak%20istiyorum"
                   className="block py-3 pl-[5%] text-md lg:px-4 lg:py-2 lg:text-base"
                 >
                   Destek
@@ -188,7 +188,7 @@ export function LandingNavbar() {
               <a href="/login">14 Gün Ücretsiz Deneyin</a>
             </Button>
             <Button title="İletişime Geç" variant="secondary" size="sm" className="w-full" asChild>
-              <a href="/iletisim">İletişime Geç</a>
+              <a href="https://wa.me/905325119484?text=Merhaba%2C%20Tabbled%20hakk%C4%B1nda%20bilgi%20almak%20istiyorum">İletişime Geç</a>
             </Button>
           </div>
         </motion.div>

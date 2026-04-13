@@ -18,7 +18,7 @@ export function CTASection() {
               <a href="/login">14 Gün Ücretsiz Deneyin</a>
             </Button>
             <Button title="İletişime Geç" variant="secondary" asChild>
-              <a href="/iletisim">İletişime Geç</a>
+              <a href="https://wa.me/905325119484?text=Merhaba%2C%20Tabbled%20hakk%C4%B1nda%20bilgi%20almak%20istiyorum">İletişime Geç</a>
             </Button>
           </div>
         </div>
