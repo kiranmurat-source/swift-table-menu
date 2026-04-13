@@ -1,14 +1,5 @@
 import { Helmet } from "react-helmet-async";
 import Navbar from "@/components/Navbar";
-import HeroSection from "@/components/HeroSection";
-import SocialProofStats from "@/components/SocialProofStats";
-import AIShowcase from "@/components/AIShowcase";
-import FeaturesSection from "@/components/FeaturesSection";
-import HowItWorks from "@/components/HowItWorks";
-import PricingSection from "@/components/PricingSection";
-import FAQSection from "@/components/FAQSection";
-import CTABanner from "@/components/CTABanner";
-import Footer from "@/components/Footer";
 
 const landingSchema = {
   "@context": "https://schema.org",
@@ -47,27 +38,29 @@ const landingSchema = {
         {
           "@type": "Offer",
           name: "Basic Plan",
-          price: "6588",
+          price: "3600",
           priceCurrency: "TRY",
           billingDuration: "P1Y",
           description:
-            "Sınırsız ürün & kategori, sınırsız masa, 34 dil desteği, QR kod oluşturma, alerjen & besin bilgisi, işletme künyesi, tema seçimi. 1 kullanıcı.",
+            "QR menü, alerjen bilgisi, QR kod özelleştirme, işletme künyesi. 1 kullanıcı, 1 şube.",
+        },
+        {
+          "@type": "Offer",
+          name: "Pro Plan",
+          price: "7200",
+          priceCurrency: "TRY",
+          billingDuration: "P1Y",
+          description:
+            "Basic özellikleri + çok dilli menü (2 dil), happy hour, garson çağırma, WhatsApp sipariş, AI menü açıklaması, geri bildirim, indirim kodları. 3 kullanıcı, 1 şube.",
         },
         {
           "@type": "Offer",
           name: "Premium Plan",
-          price: "17508",
+          price: "14400",
           priceCurrency: "TRY",
           billingDuration: "P1Y",
           description:
-            "Basic'teki her şey + AI destekli açıklamalar, otomatik çeviri (34 dil), garson çağırma, WhatsApp sipariş, happy hour & zamanlı menü, tükendi güncelleme, geri bildirim formu, indirim kodları, analitik dashboard. 5 kullanıcı.",
-        },
-        {
-          "@type": "Offer",
-          name: "Enterprise Plan",
-          priceCurrency: "TRY",
-          description:
-            "Premium'daki her şey + çoklu şube yönetimi, POS entegrasyonu, online sipariş & ödeme, tablet menü, 7/24 VIP destek, sınırsız kullanıcı.",
+            "Tüm özellikler: 40 özellik, 4 dil, online sipariş, masa rezervasyonu, sadakat programı, analitik, çoklu şube. 5 kullanıcı, 5 şube.",
         },
       ],
       featureList: [
@@ -80,42 +73,56 @@ const landingSchema = {
         "Happy Hour / Zamanlı Fiyat",
         "Besin Değerleri ve Alerjen Bilgisi",
         "AI Menü Açıklaması Yazıcı",
-        "Online Sipariş",
-        "Analitik Dashboard",
-        "Tükendi Güncelleme",
+        "Sepet Sistemi",
+        "3 Tema (Beyaz/Siyah/Kırmızı)",
+        "Promosyon Yönetimi",
+        "QR Kod Özelleştirme (Logo, Renk)",
       ],
     },
   ],
 };
+import HeroSection from "@/components/HeroSection";
+import LogoBar from "@/components/LogoBar";
+import FeaturesSection from "@/components/FeaturesSection";
+import ValueProposition from "@/components/ValueProposition";
+import HowItWorks from "@/components/HowItWorks";
+import PricingSection from "@/components/PricingSection";
+import FeatureComparisonTable from "@/components/FeatureComparisonTable";
+import RoadmapSection from "@/components/RoadmapSection";
+import TestimonialsSection from "@/components/TestimonialsSection";
+import MetricsBar from "@/components/MetricsBar";
+import CTABanner from "@/components/CTABanner";
+import FAQSection from "@/components/FAQSection";
+import Footer from "@/components/Footer";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       <Helmet>
-        <title>Tabbled | Restoranlar İçin AI Destekli Dijital Menü</title>
+        <title>Tabbled — Dijital Menü ve QR Kod Platformu | Restoran, Kafe, Otel</title>
         <meta
           name="description"
-          content="QR menü, 34 dilde otomatik çeviri, AI menü açıklaması, garson çağırma. 14 gün ücretsiz deneyin. 1 Ocak 2026 QR menü zorunluluğuna uyumlu. Türkiye'nin en akıllı dijital menü platformu."
+          content="Tabbled, Türkiye'deki restoran, kafe ve oteller için QR kod tabanlı dijital menü yönetim platformudur. Çok dilli menü, garson çağırma, WhatsApp sipariş ve müşteri yönetimi çözümleri sunar."
         />
         <meta
           name="keywords"
-          content="dijital menü, QR menü, restoran menü, kafe menü, otel menü, QR kod, AI menü, dijital menü zorunluluğu, Türkiye"
+          content="dijital menü, QR menü, restoran menü, kafe menü, otel menü, QR kod, Türkiye, fiyat etiketi yönetmeliği"
         />
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="Tabbled | Restoranlar İçin AI Destekli Dijital Menü" />
+        <meta property="og:title" content="Tabbled — Dijital Menü ve QR Kod Platformu" />
         <meta
           property="og:description"
-          content="QR menü, 34 dilde otomatik çeviri, AI menü açıklaması, garson çağırma. 14 gün ücretsiz deneyin. 1 Ocak 2026 QR menü zorunluluğuna uyumlu."
+          content="Tabbled, Türkiye'deki restoran, kafe ve oteller için QR kod tabanlı dijital menü yönetim platformudur. Çok dilli menü, garson çağırma, WhatsApp sipariş ve müşteri yönetimi çözümleri sunar."
         />
         <meta property="og:image" content="https://tabbled.com/og-image.png" />
         <meta property="og:url" content="https://tabbled.com" />
         <meta property="og:site_name" content="Tabbled" />
         <meta property="og:locale" content="tr_TR" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Tabbled | Restoranlar İçin AI Destekli Dijital Menü" />
+        <meta name="twitter:title" content="Tabbled — Dijital Menü ve QR Kod Platformu" />
         <meta
           name="twitter:description"
-          content="QR menü, 34 dilde otomatik çeviri, AI menü açıklaması, garson çağırma. 14 gün ücretsiz deneyin."
+          content="Tabbled, Türkiye'deki restoran, kafe ve oteller için QR kod tabanlı dijital menü yönetim platformudur. Çok dilli menü, garson çağırma, WhatsApp sipariş ve müşteri yönetimi çözümleri sunar."
         />
         <meta name="twitter:image" content="https://tabbled.com/og-image.png" />
         <link rel="canonical" href="https://tabbled.com" />
@@ -125,13 +132,17 @@ const Index = () => {
       </Helmet>
       <Navbar />
       <HeroSection />
-      <SocialProofStats />
-      <AIShowcase />
+      <LogoBar />
       <FeaturesSection />
+      <ValueProposition />
       <HowItWorks />
       <PricingSection />
-      <FAQSection />
+      <FeatureComparisonTable />
+      <RoadmapSection />
+      <TestimonialsSection />
+      <MetricsBar />
       <CTABanner />
+      <FAQSection />
       <Footer />
     </div>
   );
