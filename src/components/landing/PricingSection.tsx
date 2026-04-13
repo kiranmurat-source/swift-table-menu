@@ -112,8 +112,11 @@ export function PricingSection() {
             </div>
           </div>
           {/* Enterprise */}
-          <div className="flex h-full flex-col justify-between border border-border-primary px-6 py-8 md:p-8">
+          <div className="flex h-full flex-col justify-between border border-border-primary px-6 py-8 md:p-8 overflow-hidden">
             <div>
+              <div className="bg-[#1C1C1E] text-white text-sm font-medium text-center py-2 -mx-6 -mt-8 md:-mx-8 md:-mt-8 mb-6">
+                Çok Yakında
+              </div>
               <p className="font-semibold text-lg mb-2">Enterprise</p>
               <h3 className="my-2 text-6xl font-bold md:text-9xl lg:text-10xl">
                 Özel
