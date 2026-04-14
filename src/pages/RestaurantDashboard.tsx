@@ -9,11 +9,10 @@
 import { useEffect, useState, useRef, Fragment, lazy, Suspense, ReactNode, CSSProperties } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
-import { Camera, PencilSimple, CheckCircle, XCircle, AppleLogo, Star, Globe, Pen, Rows, User, Image, Trash, Link, Package, CaretCircleDown, CaretCircleUp, PlusCircle, Clock, Grains, Timer, Info, Bell, List, SquaresFour, Tag, Palette, ChatCircle, Percent, Heart, ChartBar, ArrowsClockwise, Warning, X, VideoCamera, Users } from "@phosphor-icons/react";
+import { Camera, PencilSimple, CheckCircle, XCircle, AppleLogo, Star, Globe, Pen, Rows, User, Image, Trash, Link, Package, CaretCircleDown, CaretCircleUp, CaretDown, CaretRight, PlusCircle, Clock, Grains, Timer, Info, Bell, List, SquaresFour, Tag, Palette, ChatCircle, Percent, Heart, ChartBar, ArrowsClockwise, Warning, X, VideoCamera, Users } from "@phosphor-icons/react";
 import RestaurantAnalytics from "@/components/dashboard/RestaurantAnalytics";
 import TabbledLogo from '@/components/TabbledLogo';
 import FeedbackPanel from '../components/FeedbackPanel';
-import ReviewsPanel from '../components/dashboard/ReviewsPanel';
 import DiscountCodesPanel from '../components/DiscountCodesPanel';
 import LikesPanel from '../components/LikesPanel';
 import CustomersPanel from '../components/CustomersPanel';
@@ -1041,9 +1040,24 @@ export default function RestaurantDashboard() {
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [editCatForm, setEditCatForm] = useState({ name_tr: '' });
   const [uploading, setUploading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'menu' | 'translations' | 'qr' | 'profile' | 'promos' | 'calls' | 'feedback' | 'discounts' | 'likes' | 'reviews' | 'customers' | 'analytics'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'menu' | 'translations' | 'qr' | 'profile' | 'promos' | 'calls' | 'feedback' | 'discounts' | 'likes' | 'customers' | 'analytics'>('dashboard');
   const [pendingCallCount, setPendingCallCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
+    if (typeof window === 'undefined') return {};
+    try {
+      const raw = localStorage.getItem('tabbled_sidebar_groups');
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return {};
+  });
+  const toggleGroup = (title: string) => {
+    setOpenGroups(prev => {
+      const next = { ...prev, [title]: !prev[title] };
+      try { localStorage.setItem('tabbled_sidebar_groups', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
   const [loadingData, setLoadingData] = useState(true);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -1818,7 +1832,6 @@ export default function RestaurantDashboard() {
         { key: 'customers' as const, label: 'Müşteriler', icon: Users },
         { key: 'calls' as const, label: 'Çağrılar', icon: Bell, badge: pendingCallCount },
         { key: 'feedback' as const, label: 'Geri Bildirim', icon: ChatCircle },
-        { key: 'reviews' as const, label: 'Yorumlar', icon: Star },
         { key: 'likes' as const, label: 'Beğeniler', icon: Heart },
         { key: 'promos' as const, label: 'Promosyonlar', icon: Tag },
       ],
@@ -1839,6 +1852,12 @@ export default function RestaurantDashboard() {
 
   const allSidebarItems = sidebarGroups.flatMap(g => g.items);
   const activeLabel = allSidebarItems.find(i => i.key === activeTab)?.label ?? 'Dashboard';
+  const activeGroupTitle = sidebarGroups.find(g => g.items.some(i => i.key === activeTab))?.title || '';
+  const isGroupOpen = (title: string) => {
+    if (!title) return true;
+    if (title in openGroups) return openGroups[title];
+    return title === activeGroupTitle;
+  };
 
   // Inline item form renderer. Assigned during render by the IIFE below so we
   // can keep the large JSX tree in-place while calling it from inside the
@@ -1862,32 +1881,52 @@ export default function RestaurantDashboard() {
 
       {/* Navigation groups */}
       <nav className="flex-1 overflow-auto py-3">
-        {sidebarGroups.map((group, gIdx) => (
-          <div key={group.title || `grp-${gIdx}`} className="sb-group">
-            {group.title && (
-              <div className="sb-group-title">{group.title}</div>
-            )}
-            {group.items.map((item, iIdx) => {
-              const active = activeTab === item.key;
-              const Icon = item.icon;
-              return (
+        {sidebarGroups.map((group, gIdx) => {
+          const open = isGroupOpen(group.title);
+          return (
+            <div key={group.title || `grp-${gIdx}`} className="sb-group">
+              {group.title && (
                 <button
-                  key={item.key}
-                  onClick={() => handleSidebarNav(item.key)}
-                  className="sb-item"
-                  data-active={active}
-                  style={{ animationDelay: `${gIdx * 40 + iIdx * 25}ms` }}
+                  type="button"
+                  onClick={() => toggleGroup(group.title)}
+                  className="sb-group-title"
+                  style={{ display: 'flex', alignItems: 'center', width: '100%', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                  aria-expanded={open}
                 >
-                  <Icon size={16} weight={active ? 'fill' : 'regular'} className="sb-icon" />
-                  <span className="flex-1 text-left">{item.label}</span>
-                  {'badge' in item && (item as any).badge > 0 && (
-                    <span className="sb-badge">{(item as any).badge}</span>
-                  )}
+                  <span style={{ flex: 1, textAlign: 'left' }}>{group.title}</span>
+                  {open ? <CaretDown size={12} weight="thin" /> : <CaretRight size={12} weight="thin" />}
                 </button>
-              );
-            })}
-          </div>
-        ))}
+              )}
+              <div
+                style={{
+                  maxHeight: open ? `${group.items.length * 50}px` : 0,
+                  overflow: 'hidden',
+                  transition: 'max-height 200ms ease',
+                }}
+              >
+                {group.items.map((item, iIdx) => {
+                  const active = activeTab === item.key;
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.key}
+                      onClick={() => handleSidebarNav(item.key)}
+                      className="sb-item"
+                      data-active={active}
+                      style={{ animationDelay: `${gIdx * 40 + iIdx * 25}ms` }}
+                    >
+                      <Icon size={16} weight={active ? 'fill' : 'regular'} className="sb-icon" />
+                      <span className="flex-1 text-left">{item.label}</span>
+                      {'badge' in item && (item as any).badge > 0 && (
+                        <span className="sb-badge">{(item as any).badge}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
       </nav>
 
       {/* Footer — public menu link */}
@@ -1902,7 +1941,7 @@ export default function RestaurantDashboard() {
   return (
     <div className="flex min-h-screen" style={{ backgroundColor: adminTheme.pageBg, color: adminTheme.value }}>
       {/* Desktop Sidebar */}
-      <aside className="sb-rail hidden md:flex flex-col w-[240px] shrink-0 border-r border-[#3A3A3E] bg-[#1C1C1E] sticky top-0 self-start min-h-screen">
+      <aside className="sb-rail hidden md:flex flex-col w-[240px] shrink-0 border-r border-[#3A3A3E] bg-[#1C1C1E] sticky top-0 self-start h-screen overflow-hidden">
         {sidebarContent}
       </aside>
 
@@ -2013,13 +2052,12 @@ export default function RestaurantDashboard() {
             />
           )}
           {activeTab === 'profile' && <ProfileTab restaurant={restaurant} onUpdate={(r) => setRestaurant(r)} />}
-      {activeTab === 'qr' && <QRManager restaurant={restaurant} />}
+      {activeTab === 'qr' && <QRManager restaurant={restaurant} theme={adminTheme} />}
       {activeTab === 'promos' && <PromosTab restaurant={restaurant} />}
       {activeTab === 'calls' && <WaiterCallsPanel restaurantId={restaurant.id} theme={adminTheme} />}
       {activeTab === 'feedback' && <FeedbackPanel restaurantId={restaurant.id} theme={adminTheme} />}
       {activeTab === 'customers' && <CustomersPanel restaurantId={restaurant.id} theme={adminTheme} />}
       {activeTab === 'analytics' && <AnalyticsPanel restaurantId={restaurant.id} theme={adminTheme} />}
-      {activeTab === 'reviews' && <ReviewsPanel restaurantId={restaurant.id} />}
       {activeTab === 'discounts' && <DiscountCodesPanel restaurantId={restaurant.id} theme={adminTheme} />}
       {activeTab === 'likes' && <LikesPanel restaurantId={restaurant.id} theme={adminTheme} />}
       {activeTab === 'translations' && (

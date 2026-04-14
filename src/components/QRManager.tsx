@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '../lib/supabase';
 import { XCircle, DownloadSimple } from "@phosphor-icons/react";
+import type { AdminTheme } from '../lib/adminTheme';
 
 type QRCode = {
   id: string;
@@ -23,14 +24,14 @@ type Restaurant = {
   logo_url: string | null;
 };
 
-const S: Record<string, React.CSSProperties> = {
-  input: { width: '100%', padding: '10px 14px', fontSize: 14, border: '1px solid #E5E5E3', borderRadius: 8, outline: 'none', background: '#fff', boxSizing: 'border-box' as const },
-  btn: { padding: '10px 20px', fontSize: 13, fontWeight: 700, color: '#fff', background: '#1C1C1E', border: 'none', borderRadius: 8, cursor: 'pointer' },
-  btnSm: { padding: '6px 14px', fontSize: 12, fontWeight: 600, border: '1px solid #E5E5E3', borderRadius: 6, cursor: 'pointer', background: '#fff', color: '#2D2D2F' },
-  btnDanger: { padding: '6px 14px', fontSize: 12, fontWeight: 600, border: '1px solid #FECACA', borderRadius: 6, cursor: 'pointer', background: '#fff', color: '#EF4444' },
-  label: { display: 'block', fontSize: 13, fontWeight: 600, color: '#2D2D2F', marginBottom: 6 },
-  card: { background: '#fff', border: '1px solid #E5E5E3', borderRadius: 12, padding: 20, marginBottom: 12 },
-};
+const makeStyles = (t?: AdminTheme): Record<string, React.CSSProperties> => ({
+  input: { width: '100%', padding: '10px 14px', fontSize: 14, border: `1px solid ${t?.inputBorder || '#E5E5E3'}`, borderRadius: 8, outline: 'none', background: t?.inputBg || '#fff', color: t?.inputText || '#2D2D2F', boxSizing: 'border-box' as const },
+  btn: { padding: '10px 20px', fontSize: 13, fontWeight: 700, color: '#fff', background: '#FF4F7A', border: 'none', borderRadius: 8, cursor: 'pointer' },
+  btnSm: { padding: '6px 14px', fontSize: 12, fontWeight: 600, border: `1px solid ${t?.cardBorder || '#E5E5E3'}`, borderRadius: 6, cursor: 'pointer', background: t?.cardBg || '#fff', color: t?.value || '#2D2D2F' },
+  btnDanger: { padding: '6px 14px', fontSize: 12, fontWeight: 600, border: '1px solid #FECACA', borderRadius: 6, cursor: 'pointer', background: t?.cardBg || '#fff', color: '#EF4444' },
+  label: { display: 'block', fontSize: 13, fontWeight: 600, color: t?.value || '#2D2D2F', marginBottom: 6 },
+  card: { background: t?.cardBg || '#fff', border: `1px solid ${t?.cardBorder || '#E5E5E3'}`, borderRadius: 12, padding: 20, marginBottom: 12, color: t?.value },
+});
 
 const COLOR_OPTIONS = [
   { value: '#422B21', label: 'Kahve' },
@@ -43,9 +44,11 @@ const COLOR_OPTIONS = [
 
 interface QRManagerProps {
   restaurant: Restaurant;
+  theme?: AdminTheme;
 }
 
-export default function QRManager({ restaurant }: QRManagerProps) {
+export default function QRManager({ restaurant, theme }: QRManagerProps) {
+  const S = makeStyles(theme);
   const [qrCodes, setQrCodes] = useState<QRCode[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ label: '', table_number: '', color: '#422B21', include_logo: true });

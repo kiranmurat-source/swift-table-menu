@@ -201,7 +201,7 @@ export default function CustomersPanel({ restaurantId, theme }: { restaurantId: 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="İsim, email veya telefon ara..."
-            style={{ width: '100%', padding: '8px 10px 8px 32px', border: `1px solid ${t.cardBorder}`, borderRadius: 8, fontSize: 13 }}
+            style={{ width: '100%', padding: '8px 10px 8px 32px', border: `1px solid ${t.inputBorder}`, background: t.inputBg, color: t.inputText, borderRadius: 8, fontSize: 13 }}
           />
         </div>
         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
@@ -214,9 +214,9 @@ export default function CustomersPanel({ restaurantId, theme }: { restaurantId: 
                 onClick={() => setTagFilter(tag)}
                 style={{
                   padding: '4px 10px', borderRadius: 12, fontSize: 12,
-                  border: active ? '1px solid #FF4F7A' : '1px solid #E5E5E3',
-                  background: active ? '#FF4F7A' : '#FFFFFF',
-                  color: active ? '#FFFFFF' : '#1C1C1E',
+                  border: active ? '1px solid #FF4F7A' : `1px solid ${t.cardBorder}`,
+                  background: active ? '#FF4F7A' : t.cardBg,
+                  color: active ? '#FFFFFF' : t.value,
                   cursor: 'pointer',
                 }}
               >
@@ -252,20 +252,20 @@ export default function CustomersPanel({ restaurantId, theme }: { restaurantId: 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
             <label style={{ fontSize: 12, color: t.subtle }}>
               İsim *
-              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: `1px solid ${t.cardBorder}`, borderRadius: 6, fontSize: 13, marginTop: 4 }} />
+              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: `1px solid ${t.inputBorder}`, background: t.inputBg, color: t.inputText, borderRadius: 6, fontSize: 13, marginTop: 4 }} />
             </label>
             <label style={{ fontSize: 12, color: t.subtle }}>
               Email
-              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: `1px solid ${t.cardBorder}`, borderRadius: 6, fontSize: 13, marginTop: 4 }} />
+              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: `1px solid ${t.inputBorder}`, background: t.inputBg, color: t.inputText, borderRadius: 6, fontSize: 13, marginTop: 4 }} />
             </label>
             <label style={{ fontSize: 12, color: t.subtle }}>
               Telefon
-              <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: `1px solid ${t.cardBorder}`, borderRadius: 6, fontSize: 13, marginTop: 4 }} />
+              <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: `1px solid ${t.inputBorder}`, background: t.inputBg, color: t.inputText, borderRadius: 6, fontSize: 13, marginTop: 4 }} />
             </label>
           </div>
           <label style={{ fontSize: 12, color: t.subtle, display: 'block', marginTop: 10 }}>
             Notlar
-            <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} style={{ width: '100%', padding: '8px 10px', border: `1px solid ${t.cardBorder}`, borderRadius: 6, fontSize: 13, marginTop: 4, resize: 'vertical' }} />
+            <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} style={{ width: '100%', padding: '8px 10px', border: `1px solid ${t.inputBorder}`, background: t.inputBg, color: t.inputText, borderRadius: 6, fontSize: 13, marginTop: 4, resize: 'vertical' }} />
           </label>
           <div style={{ marginTop: 10 }}>
             <div style={{ fontSize: 12, color: t.subtle, marginBottom: 6 }}>Etiketler</div>
@@ -279,9 +279,9 @@ export default function CustomersPanel({ restaurantId, theme }: { restaurantId: 
                     onClick={() => toggleTag(tag)}
                     style={{
                       padding: '4px 10px', borderRadius: 12, fontSize: 12,
-                      border: active ? '1px solid #FF4F7A' : '1px solid #E5E5E3',
-                      background: active ? '#FF4F7A' : '#FFFFFF',
-                      color: active ? '#FFFFFF' : '#1C1C1E',
+                      border: active ? '1px solid #FF4F7A' : `1px solid ${t.cardBorder}`,
+                      background: active ? '#FF4F7A' : t.cardBg,
+                      color: active ? '#FFFFFF' : t.value,
                       cursor: 'pointer',
                     }}
                   >
@@ -295,7 +295,7 @@ export default function CustomersPanel({ restaurantId, theme }: { restaurantId: 
             <button type="button" onClick={saveCustomer} style={{ background: '#FF4F7A', color: '#FFFFFF', border: 'none', padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
               {editingId ? 'Güncelle' : 'Kaydet'}
             </button>
-            <button type="button" onClick={resetForm} style={{ background: '#FFFFFF', color: t.value, border: `1px solid ${t.cardBorder}`, padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>
+            <button type="button" onClick={resetForm} style={{ background: t.cardBg, color: t.value, border: `1px solid ${t.cardBorder}`, padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>
               İptal
             </button>
           </div>
