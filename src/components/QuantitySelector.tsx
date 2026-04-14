@@ -12,7 +12,7 @@ export default function QuantitySelector({ quantity, onIncrement, onDecrement, s
   const h = size === 'sm' ? 28 : 36;
   const fontSize = size === 'sm' ? 12 : 14;
   const btnW = size === 'sm' ? 28 : 36;
-  const accent = theme.key === 'red' ? '#fff' : '#FF4F7A';
+  const accent = '#FF4F7A';
   const bg = theme.key === 'black' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)';
 
   return (

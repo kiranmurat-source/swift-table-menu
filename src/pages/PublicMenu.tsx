@@ -5,8 +5,9 @@ import DOMPurify from 'dompurify';
 import { supabase } from '../lib/supabase';
 import { getOptimizedImageUrl, handleImageError } from '../lib/imageUtils';
 import {
-  Star, AppleLogo, Thermometer, MapPin, Phone, Globe, CaretDown,
-  ForkKnife, XCircle, Funnel, Timer, SquaresFour, ListBullets, Tag, Heart, Clock,
+  Star, AppleLogo, Thermometer, MapPin, Phone, Globe, CaretDown, CaretLeft,
+  ForkKnife, XCircle, Funnel, Timer, SquaresFour, GridFour, ListBullets, Tag, Heart, Clock, Play,
+
 } from "@phosphor-icons/react";
 import { AllergenBadgeList } from '../components/AllergenIcon';
 import { getTheme, type MenuTheme } from '../lib/themes';
@@ -105,7 +106,7 @@ interface Nutrition {
 interface MenuItem {
   id: string; restaurant_id: string; category_id: string;
   name_tr: string; description_tr: string | null; price: number;
-  image_url: string | null; is_available: boolean; is_popular: boolean;
+  image_url: string | null; video_url: string | null; is_available: boolean; is_popular: boolean;
   is_new: boolean; is_vegetarian: boolean;
   is_featured: boolean;
   is_sold_out: boolean;
@@ -271,6 +272,10 @@ const UI: Record<string, Record<UiLangCode, string>> = {
   vegetarian:   { tr: 'Vejetaryen', en: 'Vegetarian', ar: 'نباتي', zh: '素食' },
   table:        { tr: 'Masa', en: 'Table', ar: 'طاولة', zh: '桌号' },
   other:        { tr: 'Diğer', en: 'Other', ar: 'أخرى', zh: '其他' },
+  categories:   { tr: 'Kategoriler', en: 'Categories', ar: 'الفئات', zh: '分类' },
+  backToCategories: { tr: 'Kategoriler', en: 'Categories', ar: 'الفئات', zh: '分类' },
+  recommendations:  { tr: 'Yanında İyi Gider', en: 'Goes Well With', ar: 'يتناسب مع', zh: '搭配推荐' },
+  itemsCount:   { tr: 'ürün', en: 'items', ar: 'عنصر', zh: '项' },
   viewMenu:     { tr: 'Menüyü Görüntüle', en: 'View Menu', ar: 'عرض القائمة', zh: '查看菜单' },
   allergens:    { tr: 'Alerjenler', en: 'Allergens', ar: 'مسببات الحساسية', zh: '过敏原' },
   startingFrom: { tr: "{price} ₺'den başlayan", en: 'Starting from {price} ₺', ar: 'يبدأ من {price} ₺', zh: '起价 {price} ₺' },
@@ -394,7 +399,7 @@ export default function PublicMenu() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [excludeAllergens, setExcludeAllergens] = useState<string[]>([]);
   const [preferences, setPreferences] = useState<string[]>([]);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [viewMode, setViewMode] = useState<'categories' | 'grid' | 'list'>('categories');
   const [scrollActiveCategory, setScrollActiveCategory] = useState<string | null>(null);
   const isScrollingToCategory = useRef(false);
   const tabBarRef = useRef<HTMLDivElement>(null);
@@ -1306,23 +1311,23 @@ export default function PublicMenu() {
               );
             })}
           </div>
-          {/* Grid/List Toggle — same row, right side */}
+          {/* View Mode Toggle — Categories / Grid / List */}
           <div
             className="flex-shrink-0 flex items-center gap-1"
             style={{ paddingRight: 16, paddingLeft: 8, borderLeft: `1px solid ${theme.divider}` }}
           >
             <button
-              onClick={() => setViewMode('list')}
+              onClick={() => { setViewMode('categories'); setActiveCategory(null); }}
               className="flex items-center justify-center"
               style={{
                 width: 32, height: 32, borderRadius: 8, border: 'none',
-                backgroundColor: viewMode === 'list' ? theme.categoryActiveBg : 'transparent',
-                color: viewMode === 'list' ? theme.categoryActiveText : theme.mutedText,
+                backgroundColor: viewMode === 'categories' ? theme.categoryActiveBg : 'transparent',
+                color: viewMode === 'categories' ? theme.categoryActiveText : theme.mutedText,
                 cursor: 'pointer',
               }}
-              aria-label="Liste görünüm"
+              aria-label={UI.categories[toUiLang(lang)]}
             >
-              <ListBullets size={18} />
+              <SquaresFour size={18} weight="thin" />
             </button>
             <button
               onClick={() => setViewMode('grid')}
@@ -1333,9 +1338,22 @@ export default function PublicMenu() {
                 color: viewMode === 'grid' ? theme.categoryActiveText : theme.mutedText,
                 cursor: 'pointer',
               }}
-              aria-label="Grid görünüm"
+              aria-label="Grid"
             >
-              <SquaresFour size={18} />
+              <GridFour size={18} weight="thin" />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className="flex items-center justify-center"
+              style={{
+                width: 32, height: 32, borderRadius: 8, border: 'none',
+                backgroundColor: viewMode === 'list' ? theme.categoryActiveBg : 'transparent',
+                color: viewMode === 'list' ? theme.categoryActiveText : theme.mutedText,
+                cursor: 'pointer',
+              }}
+              aria-label="List"
+            >
+              <ListBullets size={18} weight="thin" />
             </button>
           </div>
         </div>
@@ -1343,6 +1361,24 @@ export default function PublicMenu() {
 
       {/* Content */}
       <main className="max-w-[480px] mx-auto pb-20" style={{ padding: '16px 16px 80px' }}>
+        {effectiveActiveCategory && (
+          <button
+            onClick={() => { setActiveCategory(null); setViewMode('categories'); window.scrollTo({ top: 0 }); }}
+            className="inline-flex items-center gap-1.5 text-sm transition-opacity hover:opacity-70"
+            style={{
+              marginBottom: 12,
+              color: theme.mutedText,
+              fontWeight: 500,
+              background: 'transparent',
+              border: 'none',
+              padding: '4px 0',
+              cursor: 'pointer',
+            }}
+          >
+            <CaretLeft size={16} weight="thin" />
+            <span>{UI.backToCategories[toUiLang(lang)]}</span>
+          </button>
+        )}
         {filterApplied && !hasNoItems && (
           <p
             className="text-[11px] mb-3 text-center"
@@ -1381,6 +1417,70 @@ export default function PublicMenu() {
               <ForkKnife size={28} style={{ color: theme.mutedText }} />
             </div>
             <p className="text-sm" style={{ color: theme.mutedText }}>{UI.noItems[toUiLang(lang)]}</p>
+          </div>
+        ) : viewMode === 'categories' && !effectiveActiveCategory && !filterApplied && visibleCategories.length > 0 ? (
+          <div className="grid grid-cols-2" style={{ gap: 8 }}>
+            {visibleCategories.map((cat) => {
+              const count = categoryCountMap.get(cat.id) ?? 0;
+              const img = cat.image_url ? getOptimizedImageUrl(cat.image_url, 'card') : '';
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => { setActiveCategory(cat.id); setViewMode('list'); window.scrollTo({ top: 0 }); }}
+                  className="relative overflow-hidden text-left"
+                  style={{
+                    aspectRatio: '1 / 1',
+                    borderRadius: 12,
+                    border: `1px solid ${theme.cardBorder}`,
+                    background: img ? '#000' : theme.cardBg,
+                    boxShadow: theme.cardShadow,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {img && (
+                    <img
+                      src={img}
+                      alt={t(cat.translations, 'name', cat.name_tr, lang)}
+                      onError={handleImageError}
+                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  )}
+                  {img && (
+                    <div
+                      style={{
+                        position: 'absolute', inset: 0,
+                        background: 'linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,0.65) 100%)',
+                      }}
+                    />
+                  )}
+                  <span
+                    style={{
+                      position: 'absolute', top: 8, right: 8,
+                      fontSize: 11, fontWeight: 600,
+                      padding: '2px 8px', borderRadius: 999,
+                      background: img ? 'rgba(255,255,255,0.92)' : theme.badgeBg,
+                      color: img ? '#1C1C1E' : theme.badgeText,
+                    }}
+                  >
+                    {count}
+                  </span>
+                  <span
+                    style={{
+                      position: 'absolute', left: 12, right: 12, bottom: 12,
+                      fontFamily: headingFont,
+                      fontWeight: 700,
+                      fontSize: img ? 18 : 22,
+                      letterSpacing: '-0.02em',
+                      color: img ? '#FFFFFF' : theme.text,
+                      textShadow: img ? '0 1px 4px rgba(0,0,0,0.4)' : 'none',
+                      lineHeight: 1.15,
+                    }}
+                  >
+                    {t(cat.translations, 'name', cat.name_tr, lang)}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         ) : effectiveActiveCategory ? (
           (() => {
@@ -1493,7 +1593,7 @@ export default function PublicMenu() {
           <ReviewsSection
             restaurantId={restaurant.id}
             language={lang}
-            theme={theme.key as 'white' | 'black' | 'red'}
+            theme={theme.key as 'white' | 'black'}
             tableNumber={table}
           />
         )}
@@ -1585,7 +1685,7 @@ export default function PublicMenu() {
 
       {/* Item Detail Modal */}
       {selectedItem && (
-        <ItemDetailModal item={selectedItem} lang={lang} theme={theme} onClose={() => setSelectedItem(null)} onAddToCart={cartEnabled ? handleAddToCart : undefined} likeCount={likeCounts[selectedItem.id]} isLiked={likedItems.has(selectedItem.id)} onLike={likesEnabled ? async (id) => { const ok = await toggleLike(id, restaurant!.id); if (ok && restaurant?.google_place_id) setTimeout(() => setShowReviewPrompt(true), 800); } : undefined} />
+        <ItemDetailModal item={selectedItem} allItems={items} lang={lang} theme={theme} onClose={() => setSelectedItem(null)} onSelectItem={setSelectedItem} onAddToCart={cartEnabled ? handleAddToCart : undefined} likeCount={likeCounts[selectedItem.id]} isLiked={likedItems.has(selectedItem.id)} onLike={likesEnabled ? async (id) => { const ok = await toggleLike(id, restaurant!.id); if (ok && restaurant?.google_place_id) setTimeout(() => setShowReviewPrompt(true), 800); } : undefined} />
       )}
 
       {/* Promo Popup */}
@@ -1831,7 +1931,7 @@ const SOLD_OUT_LABELS: Record<UiLangCode, string> = {
   tr: 'Tükendi', en: 'Sold Out', ar: 'نفد', zh: '售罄',
 };
 
-function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToCart, cartQty, likeCount, isLiked, onLike }: { item: MenuItem; lang: LangCode; theme: MenuTheme; onSelect: (item: MenuItem) => void; viewMode?: 'grid' | 'list'; onAddToCart?: (item: MenuItem) => void; cartQty?: number; likeCount?: number; isLiked?: boolean; onLike?: (itemId: string) => void }) {
+function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToCart, cartQty, likeCount, isLiked, onLike }: { item: MenuItem; lang: LangCode; theme: MenuTheme; onSelect: (item: MenuItem) => void; viewMode?: 'categories' | 'grid' | 'list'; onAddToCart?: (item: MenuItem) => void; cartQty?: number; likeCount?: number; isLiked?: boolean; onLike?: (itemId: string) => void }) {
   const name = t(item.translations, 'name', item.name_tr, lang);
   const description = t(item.translations, 'description', item.description_tr, lang);
   const hasBadges = item.is_popular || item.is_new || item.is_vegetarian;
@@ -1844,7 +1944,7 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToC
   const prepTime = item.prep_time ?? null;
   const minutesLabel = UI.minutes[toUiLang(lang)];
   const soldOutLabel = SOLD_OUT_LABELS[toUiLang(lang)];
-  const soldOutWrapperStyle: React.CSSProperties = isSoldOut ? { opacity: 0.6 } : {};
+  const soldOutWrapperStyle: React.CSSProperties = isSoldOut ? { opacity: 0.5 } : {};
   const soldOutPriceStyle: React.CSSProperties = isSoldOut ? { textDecoration: 'line-through', opacity: 0.5 } : {};
   const happyHour = !isSoldOut && isHappyHourActive(item);
   const hhPrice = happyHour ? (item.happy_hour_price ?? null) : null;
@@ -1877,7 +1977,7 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToC
 
   const canAddToCart = !isSoldOut && onAddToCart;
   const isVariant = hasVariants(item);
-  const cartAccent = theme.key === 'red' ? '#fff' : '#FF4F7A';
+  const cartAccent = '#FF4F7A';
 
   const LikeButton = onLike ? (
     <button
@@ -1921,8 +2021,8 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToC
   if (isFeatured) {
     return (
       <div
-        className="rounded-2xl overflow-hidden transition-all duration-200 cursor-pointer active:scale-[0.98]"
-        style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}`, boxShadow: theme.cardShadow, ...soldOutWrapperStyle }}
+        className="overflow-hidden transition-all duration-200 cursor-pointer active:scale-[0.98]"
+        style={{ borderRadius: 12, backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}`, boxShadow: theme.cardShadow, gridColumn: viewMode === 'grid' ? 'span 2' : undefined, ...soldOutWrapperStyle }}
         onClick={() => onSelect(item)}
       >
         <div className="relative">
@@ -2015,17 +2115,17 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToC
   if (viewMode === 'grid') {
     return (
       <div
-        className="rounded-2xl overflow-hidden transition-all duration-200 cursor-pointer active:scale-[0.98]"
-        style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}`, boxShadow: theme.cardShadow, ...soldOutWrapperStyle }}
+        className="overflow-hidden transition-all duration-200 cursor-pointer active:scale-[0.98]"
+        style={{ borderRadius: 12, backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}`, boxShadow: theme.cardShadow, ...soldOutWrapperStyle }}
         onClick={() => onSelect(item)}
       >
         <div className="relative">
           {item.image_url ? (
-            <img onError={handleImageError} src={getOptimizedImageUrl(item.image_url, 'card')} alt={name} className="w-full object-cover" style={{ height: 128 }} loading="lazy" decoding="async" />
+            <img onError={handleImageError} src={getOptimizedImageUrl(item.image_url, 'card')} alt={name} className="w-full object-cover" style={{ aspectRatio: '1 / 1' }} loading="lazy" decoding="async" />
           ) : (
             <div
               className="w-full flex items-center justify-center"
-              style={{ aspectRatio: '4/3', borderRadius: '8px 8px 0 0', backgroundColor: `${theme.accent}15` }}
+              style={{ aspectRatio: '1 / 1', backgroundColor: `${theme.accent}15` }}
             >
               <span style={{ fontSize: 28, fontWeight: 700, color: `${theme.accent}80`, fontFamily: headingFont }}>
                 {name.charAt(0).toUpperCase()}
@@ -2079,6 +2179,7 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToC
       style={{
         padding: 12,
         gap: 12,
+        borderRadius: 12,
         backgroundColor: theme.cardBg,
         border: `1px solid ${theme.cardBorder}`,
         boxShadow: theme.cardShadow,
@@ -2088,11 +2189,11 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToC
     >
       <div className="relative flex-shrink-0">
         {item.image_url ? (
-          <img onError={handleImageError} src={getOptimizedImageUrl(item.image_url, 'card')} alt={name} className="w-[88px] h-[88px] rounded-lg object-cover" loading="lazy" decoding="async" />
+          <img onError={handleImageError} src={getOptimizedImageUrl(item.image_url, 'card')} alt={name} className="object-cover" style={{ width: 96, height: 96, borderRadius: 12 }} loading="lazy" decoding="async" />
         ) : (
           <div
-            className="w-[88px] h-[88px] rounded-lg flex items-center justify-center"
-            style={{ backgroundColor: `${theme.accent}15` }}
+            className="flex items-center justify-center"
+            style={{ width: 96, height: 96, borderRadius: 12, backgroundColor: `${theme.accent}15` }}
           >
             <span style={{ fontSize: 28, fontWeight: 700, color: `${theme.accent}80`, fontFamily: headingFont }}>
               {name.charAt(0).toUpperCase()}
@@ -2115,7 +2216,7 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToC
         <div className="flex items-start justify-between gap-2">
           <h3
             className="line-clamp-2"
-            style={{ fontFamily: bodyFont, fontWeight: 600, fontSize: 14, lineHeight: 1.3, color: theme.text }}
+            style={{ fontFamily: bodyFont, fontWeight: 600, fontSize: 16, lineHeight: 1.3, color: theme.text }}
           >
             {name || <span className="italic" style={{ color: theme.mutedText }}>—</span>}
           </h3>
@@ -2130,7 +2231,7 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToC
         </div>
         {SoldOutBadge && <div style={{ marginTop: 4 }}>{SoldOutBadge}</div>}
         {description && (
-          <p className="line-clamp-2" style={{ fontFamily: bodyFont, fontSize: 12, fontWeight: 400, lineHeight: 1.5, color: theme.mutedText, marginTop: 4 }}>
+          <p className="line-clamp-2" style={{ fontFamily: bodyFont, fontSize: 14, fontWeight: 300, lineHeight: 1.5, color: theme.mutedText, marginTop: 4 }}>
             {stripHtml(description)}
           </p>
         )}
@@ -2196,9 +2297,47 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToC
 /*  Item Detail Modal                                                  */
 /* ------------------------------------------------------------------ */
 
-function ItemDetailModal({ item, lang, theme, onClose, onAddToCart, likeCount, isLiked, onLike }: { item: MenuItem; lang: LangCode; theme: MenuTheme; onClose: () => void; onAddToCart?: (item: MenuItem, variant?: string, price?: number) => void; likeCount?: number; isLiked?: boolean; onLike?: (itemId: string) => void }) {
+function parseVideoEmbed(url: string | null | undefined): { type: 'youtube' | 'vimeo' | 'direct'; src: string } | null {
+  if (!url) return null;
+  const v = url.trim();
+  const yt = v.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
+  if (yt) return { type: 'youtube', src: `https://www.youtube.com/embed/${yt[1]}?autoplay=1` };
+  const vm = v.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  if (vm) return { type: 'vimeo', src: `https://player.vimeo.com/video/${vm[1]}?autoplay=1` };
+  return { type: 'direct', src: v };
+}
+
+type RecRow = { recommended_item_id: string; reason_tr: string | null; reason_en: string | null; sort_order: number };
+
+function ItemDetailModal({ item, allItems, lang, theme, onClose, onSelectItem, onAddToCart, likeCount, isLiked, onLike }: { item: MenuItem; allItems?: MenuItem[]; lang: LangCode; theme: MenuTheme; onClose: () => void; onSelectItem?: (item: MenuItem) => void; onAddToCart?: (item: MenuItem, variant?: string, price?: number) => void; likeCount?: number; isLiked?: boolean; onLike?: (itemId: string) => void }) {
   const [selectedVariant, setSelectedVariant] = useState<number | null>(hasVariants(item) ? null : 0);
   const [modalQty, setModalQty] = useState(1);
+  const [showVideo, setShowVideo] = useState(false);
+  const [recommendations, setRecommendations] = useState<RecRow[]>([]);
+  const video = parseVideoEmbed(item.video_url);
+
+  useEffect(() => {
+    setShowVideo(false);
+    setSelectedVariant(hasVariants(item) ? null : 0);
+    setModalQty(1);
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('item_recommendations')
+        .select('recommended_item_id, reason_tr, reason_en, sort_order')
+        .eq('menu_item_id', item.id)
+        .order('sort_order');
+      if (!cancelled) setRecommendations((data as RecRow[]) ?? []);
+    })();
+    return () => { cancelled = true; };
+  }, [item.id]);
+
+  const recItems = recommendations
+    .map((r) => {
+      const it = allItems?.find((x) => x.id === r.recommended_item_id);
+      return it ? { item: it, reason_tr: r.reason_tr, reason_en: r.reason_en } : null;
+    })
+    .filter((x): x is { item: MenuItem; reason_tr: string | null; reason_en: string | null } => x !== null);
   const name = t(item.translations, 'name', item.name_tr, lang);
   const description = t(item.translations, 'description', item.description_tr, lang);
   const hasAllergens = item.allergens && item.allergens.length > 0;
@@ -2206,7 +2345,7 @@ function ItemDetailModal({ item, lang, theme, onClose, onAddToCart, likeCount, i
   const bodyFont = "'Inter', sans-serif";
   const happyHour = !item.is_sold_out && isHappyHourActive(item);
   const isVariant = hasVariants(item);
-  const cartAccent = theme.key === 'red' ? '#fff' : '#FF4F7A';
+  const cartAccent = '#FF4F7A';
   const hhPrice = happyHour ? (item.happy_hour_price ?? null) : null;
   const hhLabel = item.happy_hour_label || 'Happy Hour';
   const discountWord = HH_DISCOUNT_LABEL[toUiLang(lang)] || 'off';
@@ -2233,8 +2372,56 @@ function ItemDetailModal({ item, lang, theme, onClose, onAddToCart, likeCount, i
           <XCircle size={20} />
         </button>
 
-        {item.image_url ? (
-          <img onError={handleImageError} src={getOptimizedImageUrl(item.image_url, 'detail')} alt={name} className="w-full h-64 object-cover rounded-t-3xl sm:rounded-t-3xl" loading="lazy" decoding="async" />
+        {video && showVideo ? (
+          <div className="w-full rounded-t-3xl overflow-hidden" style={{ background: '#000' }}>
+            {video.type === 'direct' ? (
+              <video src={video.src} controls autoPlay style={{ width: '100%', maxHeight: 240, display: 'block' }} />
+            ) : (
+              <iframe
+                src={video.src}
+                style={{ width: '100%', aspectRatio: '16/9', maxHeight: 240, border: 'none', display: 'block' }}
+                allow="autoplay; encrypted-media"
+                allowFullScreen
+                title={name}
+              />
+            )}
+          </div>
+        ) : item.image_url ? (
+          <div className="relative">
+            <img onError={handleImageError} src={getOptimizedImageUrl(item.image_url, 'detail')} alt={name} className="w-full h-64 object-cover rounded-t-3xl sm:rounded-t-3xl" loading="lazy" decoding="async" />
+            {video && (
+              <button
+                type="button"
+                onClick={() => setShowVideo(true)}
+                aria-label="Play video"
+                className="absolute inset-0 flex items-center justify-center transition-opacity"
+                style={{ background: 'rgba(0,0,0,0.15)', cursor: 'pointer', border: 'none' }}
+              >
+                <span
+                  className="flex items-center justify-center"
+                  style={{
+                    width: 64, height: 64, borderRadius: '50%',
+                    background: 'rgba(255,255,255,0.95)', color: '#1C1C1E',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+                  }}
+                >
+                  <Play size={28} weight="fill" />
+                </span>
+              </button>
+            )}
+          </div>
+        ) : video ? (
+          <button
+            type="button"
+            onClick={() => setShowVideo(true)}
+            aria-label="Play video"
+            className="w-full flex items-center justify-center rounded-t-3xl"
+            style={{ height: 192, backgroundColor: `${theme.accent}15`, border: 'none', cursor: 'pointer' }}
+          >
+            <span style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(255,255,255,0.95)', color: '#1C1C1E', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.2)' }}>
+              <Play size={28} weight="fill" />
+            </span>
+          </button>
         ) : (
           <div
             className="w-full flex items-center justify-center rounded-t-3xl"
@@ -2519,6 +2706,55 @@ function ItemDetailModal({ item, lang, theme, onClose, onAddToCart, likeCount, i
                     ) * modalQty
                   ).toFixed(2)} ₺
                 </button>
+              </div>
+            </div>
+          )}
+
+          {recItems.length > 0 && (
+            <div style={{ marginTop: 24, paddingTop: 16, borderTop: `1px solid ${theme.divider}` }}>
+              <h3 style={{ fontFamily: headingFont, fontWeight: 700, fontSize: 16, letterSpacing: '-0.02em', color: theme.text, marginBottom: 12 }}>
+                {UI.recommendations[toUiLang(lang)]}
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {recItems.map(({ item: rec, reason_tr, reason_en }) => {
+                  const reason = toUiLang(lang) === 'tr' ? reason_tr : (reason_en || reason_tr);
+                  const recName = t(rec.translations, 'name', rec.name_tr, lang);
+                  return (
+                    <button
+                      key={rec.id}
+                      type="button"
+                      onClick={() => onSelectItem?.(rec)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 10,
+                        padding: 8, borderRadius: 12,
+                        background: theme.cardBg,
+                        border: `1px solid ${theme.cardBorder}`,
+                        cursor: 'pointer', textAlign: 'left', width: '100%',
+                      }}
+                    >
+                      {rec.image_url ? (
+                        <img onError={handleImageError} src={getOptimizedImageUrl(rec.image_url, 'thumbnail')} alt="" style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
+                      ) : (
+                        <div style={{ width: 56, height: 56, borderRadius: 8, background: `${theme.accent}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: headingFont, fontWeight: 700, color: theme.mutedText }}>
+                          {recName.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontFamily: bodyFont, fontWeight: 600, fontSize: 14, color: theme.text, lineHeight: 1.3 }}>
+                          {recName}
+                        </div>
+                        {reason && (
+                          <div style={{ fontFamily: bodyFont, fontWeight: 300, fontStyle: 'italic', fontSize: 12, color: theme.mutedText, marginTop: 2, lineHeight: 1.4 }}>
+                            {reason}
+                          </div>
+                        )}
+                      </div>
+                      <span className="tabular-nums" style={{ fontFamily: bodyFont, fontWeight: 700, fontSize: 14, color: theme.price, flexShrink: 0 }}>
+                        {formatPriceDisplay(rec, toUiLang(lang))}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}

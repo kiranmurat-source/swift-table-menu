@@ -13,7 +13,7 @@ interface Props {
 export default function CartBottomBar({ totalItems, totalAmount, onOpen, theme, label, itemsLabel }: Props) {
   if (totalItems === 0) return null;
 
-  const bg = theme.key === 'red' ? '#1C1C1E' : '#FF4F7A';
+  const bg = '#FF4F7A';
 
   return (
     <button

@@ -68,7 +68,7 @@ export default function WaiterCallBar({ restaurantId, tableNumber, theme, langua
     }
   };
 
-  const btnColor = theme.key === 'white' || theme.key === 'red' ? '#fff' : theme.bg;
+  const btnColor = theme.key === 'white' ? '#fff' : theme.bg;
 
   return (
     <div

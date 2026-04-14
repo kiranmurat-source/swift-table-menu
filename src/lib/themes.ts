@@ -67,28 +67,6 @@ export const THEMES: Record<string, MenuTheme> = {
     divider: 'rgba(255,255,255,0.08)',
     invertIcons: true,
   },
-  red: {
-    key: 'red',
-    label_tr: 'Kırmızı (Bold)',
-    bg: '#DC2626',
-    text: '#FFFFFF',
-    cardBg: 'rgba(255,255,255,0.15)',
-    cardBorder: 'rgba(255,255,255,0.25)',
-    cardShadow: '0 1px 3px rgba(0,0,0,0.04)',
-    modalBg: '#DC2626',
-    price: '#FFFFFF',
-    accent: '#FFFFFF',
-    mutedText: 'rgba(255,255,255,0.7)',
-    splashOverlay: 'rgba(0,0,0,0.5)',
-    badgeBg: 'rgba(255,255,255,0.2)',
-    badgeText: '#FFFFFF',
-    categoryBg: 'rgba(255,255,255,0.1)',
-    categoryActiveBg: '#FFFFFF',
-    categoryActiveText: '#DC2626',
-    inputBg: 'rgba(255,255,255,0.1)',
-    divider: 'rgba(255,255,255,0.2)',
-    invertIcons: true,
-  },
 };
 
 export function getTheme(key: string | null | undefined): MenuTheme {

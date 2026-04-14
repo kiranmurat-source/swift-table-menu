@@ -58,7 +58,7 @@ export default function FeedbackModal({ restaurantId, googlePlaceId, tableNumber
     setSubmitting(false);
   };
 
-  const accent = theme.key === 'red' ? '#fff' : '#FF4F7A';
+  const accent = '#FF4F7A';
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" onClick={onClose}>

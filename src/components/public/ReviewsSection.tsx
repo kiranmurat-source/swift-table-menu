@@ -8,7 +8,7 @@ import { getFingerprint } from '@/lib/fingerprint';
 interface ReviewsSectionProps {
   restaurantId: string;
   language: string;
-  theme: 'white' | 'black' | 'red';
+  theme: 'white' | 'black';
   tableNumber?: string | null;
 }
 
@@ -42,7 +42,7 @@ type ThemeStyles = {
   buttonText: string;
 };
 
-const getThemeStyles = (theme: 'white' | 'black' | 'red'): ThemeStyles => {
+const getThemeStyles = (theme: 'white' | 'black'): ThemeStyles => {
   switch (theme) {
     case 'black':
       return {
@@ -50,13 +50,6 @@ const getThemeStyles = (theme: 'white' | 'black' | 'red'): ThemeStyles => {
         textSecondary: '#8E8E93', border: '#3A3A3C', inputBg: '#3A3A3C',
         inputText: '#FFFFFF', starActive: '#FF4F7A', starInactive: '#3A3A3C',
         replyBg: '#2A2A2E', buttonBg: '#FF4F7A', buttonText: '#FFFFFF',
-      };
-    case 'red':
-      return {
-        sectionBg: '#FFF5F5', cardBg: '#FFFFFF', textPrimary: '#1C1C1E',
-        textSecondary: '#6B7280', border: '#FEE2E2', inputBg: '#FFFFFF',
-        inputText: '#1C1C1E', starActive: '#FF4F7A', starInactive: '#E5E7EB',
-        replyBg: '#FFF1F2', buttonBg: '#FF4F7A', buttonText: '#FFFFFF',
       };
     default:
       return {

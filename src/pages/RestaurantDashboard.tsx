@@ -9,7 +9,7 @@
 import { useEffect, useState, useRef, Fragment, lazy, Suspense, ReactNode, CSSProperties } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
-import { Camera, PencilSimple, CheckCircle, XCircle, AppleLogo, Star, Globe, Pen, Rows, User, Image, Trash, Link, Package, CaretCircleDown, CaretCircleUp, PlusCircle, Clock, Grains, Timer, Info, Bell, List, SquaresFour, Tag, Palette, ChatCircle, Percent, Heart, ChartBar, ArrowsClockwise, Warning } from "@phosphor-icons/react";
+import { Camera, PencilSimple, CheckCircle, XCircle, AppleLogo, Star, Globe, Pen, Rows, User, Image, Trash, Link, Package, CaretCircleDown, CaretCircleUp, PlusCircle, Clock, Grains, Timer, Info, Bell, List, SquaresFour, Tag, Palette, ChatCircle, Percent, Heart, ChartBar, ArrowsClockwise, Warning, X, VideoCamera } from "@phosphor-icons/react";
 import RestaurantAnalytics from "@/components/dashboard/RestaurantAnalytics";
 import TabbledLogo from '@/components/TabbledLogo';
 import FeedbackPanel from '../components/FeedbackPanel';
@@ -106,7 +106,7 @@ type Nutrition = {
 type MenuItem = {
   id: string; category_id: string; name_tr: string; name_en: string | null;
   description_tr: string | null; description_en: string | null; price: number;
-  image_url: string | null; is_available: boolean; is_popular: boolean; sort_order: number;
+  image_url: string | null; video_url: string | null; is_available: boolean; is_popular: boolean; sort_order: number;
   calories: number | null; allergens: string[] | null; is_vegetarian: boolean; is_new: boolean;
   is_featured: boolean;
   is_sold_out: boolean;
@@ -402,7 +402,9 @@ const NUTRITION_NUMERIC_KEYS: Array<keyof NutritionDraft> = [
 ];
 
 const emptyItemForm = {
-  name_tr: '', description_tr: '', price: '', image_url: '',
+  name_tr: '', description_tr: '', price: '', image_url: '', video_url: '',
+  recommended_ids: [] as string[],
+  recommendation_reasons: {} as Record<string, { tr: string; en: string }>,
   allergens: [] as string[], is_vegetarian: false, is_new: false, is_featured: false,
   is_sold_out: false,
   schedule_type: 'always' as 'always' | 'date_range' | 'periodic',
@@ -1337,6 +1339,7 @@ export default function RestaurantDashboard() {
         ? Math.max(1, Math.min(999, parseInt(itemForm.prep_time)))
         : null,
       image_url: itemForm.image_url || null,
+      video_url: itemForm.video_url || null,
       calories: caloriesForDb,
       allergens: itemForm.allergens.length > 0 ? itemForm.allergens : null,
       is_vegetarian: itemForm.allergens.includes('vegetarian'),
@@ -1364,6 +1367,21 @@ export default function RestaurantDashboard() {
     } else {
       const { data: newItem } = await supabase.from('menu_items').insert({ ...payload, translations: {} }).select().single();
       if (newItem) savedId = newItem.id;
+    }
+
+    // Sync recommendations
+    if (savedId) {
+      await supabase.from('item_recommendations').delete().eq('menu_item_id', savedId);
+      const recRows = itemForm.recommended_ids.slice(0, 5).map((rid, idx) => ({
+        menu_item_id: savedId,
+        recommended_item_id: rid,
+        reason_tr: itemForm.recommendation_reasons[rid]?.tr || null,
+        reason_en: itemForm.recommendation_reasons[rid]?.en || null,
+        sort_order: idx,
+      }));
+      if (recRows.length > 0) {
+        await supabase.from('item_recommendations').insert(recRows);
+      }
     }
 
     // Keep the form open after save; just reset dirty snapshot and toast.
@@ -1433,8 +1451,21 @@ export default function RestaurantDashboard() {
     initialFormJsonRef.current = '';
   }
 
-  function startEdit(item: MenuItem) {
+  async function startEdit(item: MenuItem) {
     setEditingItem(item.id);
+    const { data: recs } = await supabase
+      .from('item_recommendations')
+      .select('recommended_item_id, reason_tr, reason_en, sort_order')
+      .eq('menu_item_id', item.id)
+      .order('sort_order');
+    const recommended_ids = (recs ?? []).map((r: any) => r.recommended_item_id as string);
+    const recommendation_reasons: Record<string, { tr: string; en: string }> = {};
+    for (const r of recs ?? []) {
+      recommendation_reasons[r.recommended_item_id] = {
+        tr: r.reason_tr ?? '',
+        en: r.reason_en ?? '',
+      };
+    }
     const baseSchedule = defaultPeriodicSchedule();
     const mergedPeriodic = { ...baseSchedule };
     if (item.schedule_periodic) {
@@ -1479,6 +1510,9 @@ export default function RestaurantDashboard() {
       description_tr: item.description_tr || '',
       price: item.price.toString(),
       image_url: item.image_url || '',
+      video_url: item.video_url || '',
+      recommended_ids,
+      recommendation_reasons,
       allergens: item.allergens || [],
       is_vegetarian: item.is_vegetarian || false,
       is_new: item.is_new || false,
@@ -2055,6 +2089,108 @@ export default function RestaurantDashboard() {
                       </button>
                     )}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#A0A0A0', marginTop: 4 }}><Info size={14} /><span>1200×800px, yatay, max 5MB</span></div>
+                  </div>
+                  <div>
+                    <label style={S.label}>Video</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <input
+                        style={{ ...S.input, flex: 1 }}
+                        value={itemForm.video_url}
+                        onChange={e => setItemForm({ ...itemForm, video_url: e.target.value })}
+                        placeholder="https://...mp4 veya YouTube/Vimeo linki"
+                      />
+                      {itemForm.video_url && (
+                        <button
+                          type="button"
+                          onClick={() => setItemForm({ ...itemForm, video_url: '' })}
+                          style={{ ...S.btnSm, padding: '6px 10px', fontSize: 11, color: '#EF4444' }}
+                          title="Video URL'ini kaldır"
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
+                    </div>
+                    {itemForm.video_url && (
+                      <div style={{ marginTop: 8, borderRadius: 8, overflow: 'hidden', maxWidth: 320, border: '1px solid #E5E5E3' }}>
+                        {(() => {
+                          const v = itemForm.video_url.trim();
+                          const yt = v.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
+                          const vm = v.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+                          if (yt) return <iframe src={`https://www.youtube.com/embed/${yt[1]}`} style={{ width: '100%', aspectRatio: '16/9', border: 'none' }} allow="encrypted-media" />;
+                          if (vm) return <iframe src={`https://player.vimeo.com/video/${vm[1]}`} style={{ width: '100%', aspectRatio: '16/9', border: 'none' }} allow="encrypted-media" />;
+                          return <video src={v} controls style={{ width: '100%', maxHeight: 240 }} />;
+                        })()}
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#A0A0A0', marginTop: 4 }}><Info size={14} /><span>.mp4/.webm direkt URL veya YouTube/Vimeo linki — Storage'a yüklenmez</span></div>
+                  </div>
+                  <div>
+                    <label style={S.label}>Önerilen Ürünler ({itemForm.recommended_ids.length}/5)</label>
+                    {itemForm.recommended_ids.length > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
+                        {itemForm.recommended_ids.map((rid) => {
+                          const recItem = items.find((it) => it.id === rid);
+                          if (!recItem) return null;
+                          const reasons = itemForm.recommendation_reasons[rid] || { tr: '', en: '' };
+                          return (
+                            <div key={rid} style={{ border: '1px solid #E5E5E3', borderRadius: 8, padding: 10, background: '#F7F7F5' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                                <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{recItem.name_tr}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const next_ids = itemForm.recommended_ids.filter((x) => x !== rid);
+                                    const next_reasons = { ...itemForm.recommendation_reasons };
+                                    delete next_reasons[rid];
+                                    setItemForm({ ...itemForm, recommended_ids: next_ids, recommendation_reasons: next_reasons });
+                                  }}
+                                  style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: 2, display: 'inline-flex' }}
+                                  title="Kaldır"
+                                >
+                                  <X size={14} />
+                                </button>
+                              </div>
+                              <input
+                                style={{ ...S.input, padding: '6px 10px', fontSize: 12, marginBottom: 4 }}
+                                value={reasons.tr}
+                                onChange={(e) => setItemForm({ ...itemForm, recommendation_reasons: { ...itemForm.recommendation_reasons, [rid]: { ...reasons, tr: e.target.value } } })}
+                                placeholder="Neden? (TR) — ör: Acılı nachos'u serinleten bir eşlik"
+                              />
+                              <input
+                                style={{ ...S.input, padding: '6px 10px', fontSize: 12 }}
+                                value={reasons.en}
+                                onChange={(e) => setItemForm({ ...itemForm, recommendation_reasons: { ...itemForm.recommendation_reasons, [rid]: { ...reasons, en: e.target.value } } })}
+                                placeholder="Why? (EN) — optional"
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {itemForm.recommended_ids.length < 5 && (
+                      <select
+                        style={S.input}
+                        value=""
+                        onChange={(e) => {
+                          const id = e.target.value;
+                          if (!id) return;
+                          if (itemForm.recommended_ids.includes(id)) return;
+                          setItemForm({
+                            ...itemForm,
+                            recommended_ids: [...itemForm.recommended_ids, id],
+                            recommendation_reasons: { ...itemForm.recommendation_reasons, [id]: { tr: '', en: '' } },
+                          });
+                        }}
+                      >
+                        <option value="">+ Öneri ekle...</option>
+                        {items
+                          .filter((it) => it.id !== editingItem && !itemForm.recommended_ids.includes(it.id))
+                          .map((it) => (
+                            <option key={it.id} value={it.id}>{it.name_tr}</option>
+                          ))}
+                      </select>
+                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#A0A0A0', marginTop: 4 }}><Info size={14} /><span>Ürün detayında "Yanında İyi Gider" olarak gösterilir. Max 5.</span></div>
                   </div>
                 </div>
               ) : (
