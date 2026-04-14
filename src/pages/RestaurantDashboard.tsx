@@ -9,13 +9,14 @@
 import { useEffect, useState, useRef, Fragment, lazy, Suspense, ReactNode, CSSProperties } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
-import { Camera, PencilSimple, CheckCircle, XCircle, AppleLogo, Star, Globe, Pen, Rows, User, Image, Trash, Link, Package, CaretCircleDown, CaretCircleUp, PlusCircle, Clock, Grains, Timer, Info, Bell, List, SquaresFour, Tag, Palette, ChatCircle, Percent, Heart, ChartBar, ArrowsClockwise, Warning, X, VideoCamera } from "@phosphor-icons/react";
+import { Camera, PencilSimple, CheckCircle, XCircle, AppleLogo, Star, Globe, Pen, Rows, User, Image, Trash, Link, Package, CaretCircleDown, CaretCircleUp, PlusCircle, Clock, Grains, Timer, Info, Bell, List, SquaresFour, Tag, Palette, ChatCircle, Percent, Heart, ChartBar, ArrowsClockwise, Warning, X, VideoCamera, Users } from "@phosphor-icons/react";
 import RestaurantAnalytics from "@/components/dashboard/RestaurantAnalytics";
 import TabbledLogo from '@/components/TabbledLogo';
 import FeedbackPanel from '../components/FeedbackPanel';
 import ReviewsPanel from '../components/dashboard/ReviewsPanel';
 import DiscountCodesPanel from '../components/DiscountCodesPanel';
 import LikesPanel from '../components/LikesPanel';
+import CustomersPanel from '../components/CustomersPanel';
 import {
   DndContext,
   closestCenter,
@@ -982,7 +983,7 @@ export default function RestaurantDashboard() {
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [editCatForm, setEditCatForm] = useState({ name_tr: '' });
   const [uploading, setUploading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'menu' | 'translations' | 'qr' | 'profile' | 'promos' | 'calls' | 'feedback' | 'discounts' | 'likes' | 'reviews'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'menu' | 'translations' | 'qr' | 'profile' | 'promos' | 'calls' | 'feedback' | 'discounts' | 'likes' | 'reviews' | 'customers'>('dashboard');
   const [pendingCallCount, setPendingCallCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
@@ -1002,6 +1003,7 @@ export default function RestaurantDashboard() {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [trialExpired, setTrialExpired] = useState(false);
   const [trialDaysLeft, setTrialDaysLeft] = useState<number | null>(null);
+  const [planName, setPlanName] = useState<string | null>(null);
 
   const enabledLangs = (restaurant?.enabled_languages ?? []).filter(l => l !== 'tr');
   const plan = (restaurant?.current_plan || '').toLowerCase();
@@ -1082,8 +1084,12 @@ export default function RestaurantDashboard() {
 
       if (!activeSub) {
         setTrialExpired(true);
+        setPlanName(null);
         return;
       }
+
+      const subPlanName = (activeSub as { subscription_plans?: { name?: string } }).subscription_plans?.name || null;
+      setPlanName(subPlanName);
 
       const endDate = new Date(activeSub.end_date);
       const now = new Date();
@@ -1750,6 +1756,7 @@ export default function RestaurantDashboard() {
     {
       title: 'Müşteri İlişkileri',
       items: [
+        { key: 'customers' as const, label: 'Müşteriler', icon: Users },
         { key: 'calls' as const, label: 'Çağrılar', icon: Bell, badge: pendingCallCount },
         { key: 'feedback' as const, label: 'Geri Bildirim', icon: ChatCircle },
         { key: 'reviews' as const, label: 'Yorumlar', icon: Star },
@@ -1884,17 +1891,52 @@ export default function RestaurantDashboard() {
         )}
 
         <div style={S.wrap}>
-          <div className="hidden md:flex" style={{ alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-            {enabledLangs.length > 0 && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#4338CA', background: '#EEF2FF', padding: '2px 8px', borderRadius: 12 }}>
-                <Globe size={12} /> {enabledLangs.map(l => l.toUpperCase()).join(', ')}
-              </span>
+          <div
+            className="hidden md:flex"
+            style={{
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              marginBottom: 16,
+              background: planName ? 'rgba(255,79,122,0.08)' : '#F3F4F6',
+              borderLeft: `3px solid ${planName ? '#FF4F7A' : '#D1D5DB'}`,
+              borderRadius: 8,
+              padding: '10px 14px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {planName ? (
+                <span style={{ background: '#FF4F7A', color: '#FFFFFF', fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 12 }}>
+                  {planName}
+                </span>
+              ) : (
+                <span style={{ fontSize: 13, color: '#6B6B6F' }}>Henüz plan atanmadı</span>
+              )}
+            </div>
+            {hasAI && planName && (
+              <div style={{ fontSize: 12, color: '#6B6B6F' }}>
+                AI Kredisi: <span style={{ color: '#FF4F7A', fontWeight: 600 }}>—/{plan === 'enterprise' ? '∞' : '150'}</span>
+              </div>
             )}
-            {hasAI && (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#9333EA', background: '#F3E8FF', padding: '2px 8px', borderRadius: 12 }}>
-                <Pen size={12} /> AI Açıklama
-              </span>
-            )}
+            {planName && plan !== 'enterprise' ? (
+              <a
+                href="https://wa.me/905325119484?text=Plan%C4%B1m%C4%B1%20y%C3%BCkseltmek%20istiyorum"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ fontSize: 12, fontWeight: 600, color: '#FF4F7A', border: '1px solid #FF4F7A', padding: '4px 12px', borderRadius: 12, textDecoration: 'none' }}
+              >
+                Yükselt
+              </a>
+            ) : !planName ? (
+              <a
+                href="https://wa.me/905325119484?text=Plan%20hakk%C4%B1nda%20bilgi%20almak%20istiyorum"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ fontSize: 12, fontWeight: 600, color: '#FF4F7A', border: '1px solid #FF4F7A', padding: '4px 12px', borderRadius: 12, textDecoration: 'none' }}
+              >
+                İletişime Geç
+              </a>
+            ) : null}
           </div>
 
           {activeTab === 'dashboard' && (
@@ -1913,6 +1955,7 @@ export default function RestaurantDashboard() {
       {activeTab === 'promos' && <PromosTab restaurant={restaurant} />}
       {activeTab === 'calls' && <WaiterCallsPanel restaurantId={restaurant.id} />}
       {activeTab === 'feedback' && <FeedbackPanel restaurantId={restaurant.id} />}
+      {activeTab === 'customers' && <CustomersPanel restaurantId={restaurant.id} />}
       {activeTab === 'reviews' && <ReviewsPanel restaurantId={restaurant.id} />}
       {activeTab === 'discounts' && <DiscountCodesPanel restaurantId={restaurant.id} />}
       {activeTab === 'likes' && <LikesPanel restaurantId={restaurant.id} />}
