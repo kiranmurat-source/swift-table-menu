@@ -142,7 +142,7 @@ export default function QRManager({ restaurant }: QRManagerProps) {
 
       // Label at bottom
       ctx.fillStyle = '#1C1C1E';
-      ctx.font = "bold 32px 'Inter', sans-serif";
+      ctx.font = "bold 32px 'Roboto', sans-serif";
       ctx.textAlign = 'center';
       ctx.fillText(qr.label, size / 2, size + 48);
 

@@ -74,7 +74,7 @@ export default function Contact() {
   };
 
   return (
-    <div className="min-h-screen bg-background" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="min-h-screen bg-background" style={{ fontFamily: "'Roboto', sans-serif" }}>
       <Helmet>
         <title>İletişim — Tabbled | 14 Gün Ücretsiz Deneyin</title>
         <meta

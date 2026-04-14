@@ -40,7 +40,7 @@ export default function BlogTOC({ items }: { items: TOCItem[] }) {
       >
         <p
           style={{
-            fontFamily: "'Inter', sans-serif",
+            fontFamily: "'Roboto', sans-serif",
             fontWeight: 600,
             fontSize: 11,
             color: '#A0A0A0',
@@ -63,7 +63,7 @@ export default function BlogTOC({ items }: { items: TOCItem[] }) {
                   document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth' });
                 }}
                 style={{
-                  fontFamily: "'Inter', sans-serif",
+                  fontFamily: "'Roboto', sans-serif",
                   fontSize: 13,
                   color: activeId === item.id ? '#FF4F7A' : '#6B6B6F',
                   fontWeight: activeId === item.id ? 600 : 400,
@@ -87,7 +87,7 @@ export default function BlogTOC({ items }: { items: TOCItem[] }) {
           textAlign: 'center',
         }}
       >
-        <p style={{ fontSize: 16, marginBottom: 4, fontFamily: "'Inter', sans-serif" }}>
+        <p style={{ fontSize: 16, marginBottom: 4, fontFamily: "'Roboto', sans-serif" }}>
           Ucretsiz Demo
         </p>
         <p
@@ -95,7 +95,7 @@ export default function BlogTOC({ items }: { items: TOCItem[] }) {
             fontSize: 13,
             color: '#6B6B6F',
             marginBottom: 16,
-            fontFamily: "'Inter', sans-serif",
+            fontFamily: "'Roboto', sans-serif",
             lineHeight: 1.5,
           }}
         >
@@ -114,7 +114,7 @@ export default function BlogTOC({ items }: { items: TOCItem[] }) {
             fontSize: 13,
             fontWeight: 600,
             textDecoration: 'none',
-            fontFamily: "'Inter', sans-serif",
+            fontFamily: "'Roboto', sans-serif",
           }}
         >
           Demo Talep Et

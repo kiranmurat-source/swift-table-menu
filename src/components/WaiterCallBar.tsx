@@ -108,7 +108,7 @@ export default function WaiterCallBar({ restaurantId, tableNumber, theme, langua
                 cursor: cooldown ? 'not-allowed' : 'pointer',
                 opacity: cooldown ? 0.6 : 1,
                 transform: pressed === 'waiter' ? 'scale(0.97)' : 'scale(1)',
-                fontFamily: "'Inter', sans-serif",
+                fontFamily: "'Roboto', sans-serif",
               }}
             >
               {calling ? <Spinner /> : (
@@ -138,7 +138,7 @@ export default function WaiterCallBar({ restaurantId, tableNumber, theme, langua
                 cursor: cooldown ? 'not-allowed' : 'pointer',
                 opacity: cooldown ? 0.6 : 1,
                 transform: pressed === 'bill' ? 'scale(0.97)' : 'scale(1)',
-                fontFamily: "'Inter', sans-serif",
+                fontFamily: "'Roboto', sans-serif",
               }}
             >
               {calling ? <Spinner /> : (

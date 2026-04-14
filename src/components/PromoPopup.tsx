@@ -60,8 +60,8 @@ interface PromoPopupProps {
 
 export default function PromoPopup({ promo, theme, lang, onClose, onNavigateCategory }: PromoPopupProps) {
   const [visible, setVisible] = useState(false);
-  const headingFont = "'Playfair Display', serif";
-  const bodyFont = "'Inter', sans-serif";
+  const headingFont = "'Roboto', sans-serif";
+  const bodyFont = "'Roboto', sans-serif";
 
   useEffect(() => {
     const id = setTimeout(() => setVisible(true), 10);

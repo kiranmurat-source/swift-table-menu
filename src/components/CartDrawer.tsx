@@ -145,7 +145,7 @@ export default function CartDrawer({
           color: theme.text,
           borderRadius: '20px 20px 0 0',
           maxHeight: '85vh',
-          fontFamily: "'Inter', sans-serif",
+          fontFamily: "'Roboto', sans-serif",
           animation: 'modalSlideUp 0.3s ease-out forwards',
         }}
       >
@@ -156,7 +156,7 @@ export default function CartDrawer({
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 20px 12px' }}>
-          <h2 style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, fontSize: 18, color: theme.text }}>
+          <h2 style={{ fontFamily: "'Roboto', sans-serif", fontWeight: 700, fontSize: 18, color: theme.text }}>
             {ui.yourCart} ({totalItems} {ui.items})
           </h2>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -211,7 +211,7 @@ export default function CartDrawer({
                         style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
                       />
                     ) : (
-                      <div style={{ width: 48, height: 48, borderRadius: 8, backgroundColor: theme.divider, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700, color: theme.mutedText, fontFamily: "'Playfair Display', serif" }}>
+                      <div style={{ width: 48, height: 48, borderRadius: 8, backgroundColor: theme.divider, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700, color: theme.mutedText, fontFamily: "'Roboto', sans-serif" }}>
                         {item.name.charAt(0)}
                       </div>
                     )}
@@ -228,7 +228,7 @@ export default function CartDrawer({
                           size="sm"
                           theme={theme}
                         />
-                        <span style={{ fontSize: 14, fontWeight: 700, color: theme.price, fontFamily: "'Inter', sans-serif" }}>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: theme.price, fontFamily: "'Roboto', sans-serif" }}>
                           {(item.price * item.quantity).toFixed(2)} ₺
                         </span>
                       </div>
@@ -265,7 +265,7 @@ export default function CartDrawer({
                   backgroundColor: theme.cardBg,
                   color: theme.text,
                   fontSize: 13,
-                  fontFamily: "'Inter', sans-serif",
+                  fontFamily: "'Roboto', sans-serif",
                   resize: 'none',
                   outline: 'none',
                 }}
@@ -331,7 +331,7 @@ export default function CartDrawer({
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: 8,
-                  fontFamily: "'Inter', sans-serif",
+                  fontFamily: "'Roboto', sans-serif",
                 }}
               >
                 <WhatsAppIcon size={18} />

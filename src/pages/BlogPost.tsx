@@ -95,7 +95,7 @@ export default function BlogPost() {
           maxWidth: 1080,
           margin: '0 auto',
           padding: '32px 20px 0',
-          fontFamily: "'Inter', sans-serif",
+          fontFamily: "'Roboto', sans-serif",
           minHeight: '60vh',
         }}
       >
@@ -120,7 +120,7 @@ export default function BlogPost() {
 
           <h1
             style={{
-              fontFamily: "'Inter', sans-serif",
+              fontFamily: "'Roboto', sans-serif",
               fontWeight: 700,
               fontSize: 'clamp(26px, 4vw, 36px)',
               color: '#1C1C1E',
@@ -188,7 +188,7 @@ export default function BlogPost() {
           <div style={{ marginTop: 48 }}>
             <h2
               style={{
-                fontFamily: "'Inter', sans-serif",
+                fontFamily: "'Roboto', sans-serif",
                 fontWeight: 600,
                 fontSize: 24,
                 color: '#1C1C1E',

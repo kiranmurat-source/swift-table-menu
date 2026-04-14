@@ -112,7 +112,7 @@ const sectionTitle: React.CSSProperties = {
   textTransform: 'uppercase',
   letterSpacing: '0.08em',
   marginBottom: 14,
-  fontFamily: "'Inter', sans-serif",
+  fontFamily: "'Roboto', sans-serif",
 };
 
 const bigNumber: React.CSSProperties = {
@@ -120,7 +120,7 @@ const bigNumber: React.CSSProperties = {
   fontWeight: 800,
   color: '#1C1C1E',
   lineHeight: 1,
-  fontFamily: "'Inter', sans-serif",
+  fontFamily: "'Roboto', sans-serif",
   letterSpacing: '-0.02em',
 };
 
@@ -128,7 +128,7 @@ const subText: React.CSSProperties = {
   fontSize: 12,
   color: '#6B6B6F',
   marginTop: 6,
-  fontFamily: "'Inter', sans-serif",
+  fontFamily: "'Roboto', sans-serif",
 };
 
 const emptyState: React.CSSProperties = {
@@ -136,7 +136,7 @@ const emptyState: React.CSSProperties = {
   color: '#9CA3AF',
   textAlign: 'center',
   padding: '24px 0',
-  fontFamily: "'Inter', sans-serif",
+  fontFamily: "'Roboto', sans-serif",
 };
 
 /* --------------------------------- helpers -------------------------------- */
@@ -438,7 +438,7 @@ function RecentFeedback({ feedback, onSeeAll }: { feedback: FeedbackRow[]; onSee
                 fontWeight: 600,
                 cursor: 'pointer',
                 padding: 0,
-                fontFamily: "'Inter', sans-serif",
+                fontFamily: "'Roboto', sans-serif",
               }}
             >
               Tümünü Gör →
@@ -516,7 +516,7 @@ function PendingReviews({ reviews, onSeeAll }: { reviews: PendingReviewRow[]; on
             fontWeight: 600,
             cursor: 'pointer',
             padding: 0,
-            fontFamily: "'Inter', sans-serif",
+            fontFamily: "'Roboto', sans-serif",
           }}
         >
           Tümünü Gör →
@@ -606,7 +606,7 @@ function DiscountCodesStatus({ codes, onSeeAll }: { codes: DiscountCodeRow[]; on
                 fontWeight: 600,
                 cursor: 'pointer',
                 padding: 0,
-                fontFamily: "'Inter', sans-serif",
+                fontFamily: "'Roboto', sans-serif",
               }}
             >
               Tümünü Gör →
@@ -809,7 +809,7 @@ export default function RestaurantAnalytics({
   }, [restaurantId, featureWaiterCalls, featureFeedback, featureLikes, featureDiscountCodes, featureReviews]);
 
   return (
-    <div style={{ padding: '4px 0 32px', fontFamily: "'Inter', sans-serif" }}>
+    <div style={{ padding: '4px 0 32px', fontFamily: "'Roboto', sans-serif" }}>
       <style>{`
         @keyframes dash-shimmer {
           0% { background-position: 200% 0; }

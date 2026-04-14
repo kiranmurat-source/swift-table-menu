@@ -285,7 +285,7 @@ export default function ReviewsSection({ restaurantId, language, theme, tableNum
       style={{
         backgroundColor: S.sectionBg,
         padding: '32px 16px 40px',
-        fontFamily: "'Inter', sans-serif",
+        fontFamily: "'Roboto', sans-serif",
       }}
     >
       <div style={{ maxWidth: 720, margin: '0 auto' }}>

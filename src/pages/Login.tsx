@@ -48,7 +48,7 @@ export default function Login() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F7F7F5', fontFamily: "'Inter', -apple-system, sans-serif", padding: 16 }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F7F7F5', fontFamily: "'Roboto', -apple-system, sans-serif", padding: 16 }}>
       <div style={{ width: '100%', maxWidth: 420, background: '#FFFFFF', borderRadius: 16, boxShadow: '0 4px 24px rgba(0,0,0,0.08)', padding: 40 }}>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <TabbledLogo logoType="vertical" sizeClass="h-20" />

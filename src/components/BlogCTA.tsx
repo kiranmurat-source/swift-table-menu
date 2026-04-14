@@ -11,7 +11,7 @@ export default function BlogCTA() {
     >
       <h3
         style={{
-          fontFamily: "'Inter', sans-serif",
+          fontFamily: "'Roboto', sans-serif",
           fontWeight: 700,
           fontSize: 24,
           color: '#1C1C1E',
@@ -22,7 +22,7 @@ export default function BlogCTA() {
       </h3>
       <p
         style={{
-          fontFamily: "'Inter', sans-serif",
+          fontFamily: "'Roboto', sans-serif",
           fontSize: 14,
           color: '#6B6B6F',
           marginBottom: 24,
@@ -48,7 +48,7 @@ export default function BlogCTA() {
             fontSize: 14,
             fontWeight: 600,
             textDecoration: 'none',
-            fontFamily: "'Inter', sans-serif",
+            fontFamily: "'Roboto', sans-serif",
           }}
         >
           Ücretsiz Başla
@@ -66,7 +66,7 @@ export default function BlogCTA() {
             fontWeight: 600,
             textDecoration: 'none',
             border: '1px solid #E5E7EB',
-            fontFamily: "'Inter', sans-serif",
+            fontFamily: "'Roboto', sans-serif",
           }}
         >
           Demo Menüyü İncele →

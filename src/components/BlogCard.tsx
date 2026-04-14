@@ -39,7 +39,7 @@ export default function BlogCard({ post }: { post: BlogPost }) {
           padding: '2px 10px',
           borderRadius: 12,
           marginBottom: 12,
-          fontFamily: "'Inter', sans-serif",
+          fontFamily: "'Roboto', sans-serif",
         }}
       >
         {post.categoryLabel}
@@ -48,7 +48,7 @@ export default function BlogCard({ post }: { post: BlogPost }) {
       {/* Title */}
       <h3
         style={{
-          fontFamily: "'Inter', sans-serif",
+          fontFamily: "'Roboto', sans-serif",
           fontWeight: 600,
           fontSize: 18,
           color: '#1C1C1E',
@@ -66,7 +66,7 @@ export default function BlogCard({ post }: { post: BlogPost }) {
       {/* Excerpt */}
       <p
         style={{
-          fontFamily: "'Inter', sans-serif",
+          fontFamily: "'Roboto', sans-serif",
           fontWeight: 400,
           fontSize: 14,
           color: '#6B6B6F',
@@ -87,7 +87,7 @@ export default function BlogCard({ post }: { post: BlogPost }) {
           display: 'flex',
           alignItems: 'center',
           gap: 12,
-          fontFamily: "'Inter', sans-serif",
+          fontFamily: "'Roboto', sans-serif",
           fontSize: 12,
           color: '#A0A0A0',
         }}

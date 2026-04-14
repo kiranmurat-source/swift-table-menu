@@ -646,8 +646,8 @@ export default function PublicMenu() {
     setActiveCategory(categoryId);
   }, [activeCategory]);
 
-  const headingFont = "'Playfair Display', serif";
-  const bodyFont = "'Inter', sans-serif";
+  const headingFont = "'Roboto', sans-serif";
+  const bodyFont = "'Roboto', sans-serif";
 
   /* ---- Loading ---- */
   if (loading) {
@@ -1058,7 +1058,7 @@ export default function PublicMenu() {
             textAlign: 'center',
             padding: '10px 16px',
             fontSize: 13,
-            fontFamily: "'Inter', sans-serif",
+            fontFamily: "'Roboto', sans-serif",
             fontWeight: 500,
           }}
         >
@@ -1846,8 +1846,8 @@ function FilterPanel({
   onClose: () => void;
 }) {
   const fl = FILTER_LABELS[toUiLang(lang)];
-  const headingFont = "'Playfair Display', serif";
-  const bodyFont = "'Inter', sans-serif";
+  const headingFont = "'Roboto', sans-serif";
+  const bodyFont = "'Roboto', sans-serif";
   const iconLang: 'tr' | 'en' = lang === 'tr' ? 'tr' : 'en';
 
   const prefChips: { key: string; label: string }[] = [
@@ -1996,8 +1996,8 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToC
   const description = t(item.translations, 'description', item.description_tr, lang);
   const hasBadges = item.is_popular || item.is_new || item.is_vegetarian;
   const hasAllergens = item.allergens && item.allergens.length > 0;
-  const headingFont = "'Playfair Display', serif";
-  const bodyFont = "'Inter', sans-serif";
+  const headingFont = "'Roboto', sans-serif";
+  const bodyFont = "'Roboto', sans-serif";
   const isFeatured = item.is_featured;
   const isSoldOut = item.is_sold_out;
   const displayCalories = item.nutrition?.calories ?? item.calories ?? null;
@@ -2418,8 +2418,8 @@ function ItemDetailModal({ item, allItems, lang, theme, onClose, onSelectItem, o
   const name = t(item.translations, 'name', item.name_tr, lang);
   const description = t(item.translations, 'description', item.description_tr, lang);
   const hasAllergens = item.allergens && item.allergens.length > 0;
-  const headingFont = "'Playfair Display', serif";
-  const bodyFont = "'Inter', sans-serif";
+  const headingFont = "'Roboto', sans-serif";
+  const bodyFont = "'Roboto', sans-serif";
   const happyHour = !item.is_sold_out && isHappyHourActive(item);
   const isVariant = hasVariants(item);
   const cartAccent = '#FF4F7A';
@@ -2854,7 +2854,7 @@ function NutritionFactsTable({
   lang: LangCode;
   theme: MenuTheme;
 }) {
-  const headingFont = "'Playfair Display', serif";
+  const headingFont = "'Roboto', sans-serif";
   const uiLang = toUiLang(lang);
 
   // Helper: render a row only if value is a number (0 is allowed)

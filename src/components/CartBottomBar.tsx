@@ -30,7 +30,7 @@ export default function CartBottomBar({ totalItems, totalAmount, onOpen, theme, 
         border: 'none',
         borderRadius: '16px 16px 0 0',
         cursor: 'pointer',
-        fontFamily: "'Inter', sans-serif",
+        fontFamily: "'Roboto', sans-serif",
         boxShadow: '0 -4px 20px rgba(0,0,0,0.15)',
         animation: 'cartBarSlideUp 0.3s ease-out',
       }}

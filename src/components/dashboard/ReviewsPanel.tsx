@@ -19,7 +19,7 @@ interface Review {
 type Filter = 'all' | 'pending' | 'approved' | 'rejected';
 
 const S = {
-  wrapper: { padding: '4px 0 32px', fontFamily: "'Inter', sans-serif" } as React.CSSProperties,
+  wrapper: { padding: '4px 0 32px', fontFamily: "'Roboto', sans-serif" } as React.CSSProperties,
   header: { fontSize: 22, fontWeight: 700, color: '#1C1C1E', margin: 0, letterSpacing: '-0.01em' } as React.CSSProperties,
   sub: { fontSize: 13, color: '#6B6B6F', marginTop: 4 } as React.CSSProperties,
   statsGrid: {

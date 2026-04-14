@@ -142,7 +142,7 @@ export default function DiscountCodeInput({
             flex: 1, padding: '8px 12px', borderRadius: 8,
             border: `1px solid ${error ? '#dc2626' : theme.cardBorder}`,
             backgroundColor: theme.cardBg, color: theme.text,
-            fontSize: 13, fontFamily: "'Inter', sans-serif",
+            fontSize: 13, fontFamily: "'Roboto', sans-serif",
             outline: 'none', letterSpacing: '0.05em',
           }}
           onKeyDown={e => e.key === 'Enter' && handleApply()}
@@ -157,7 +157,7 @@ export default function DiscountCodeInput({
             color: '#fff', fontSize: 13, fontWeight: 600,
             cursor: !code.trim() ? 'not-allowed' : 'pointer',
             opacity: !code.trim() ? 0.5 : 1,
-            fontFamily: "'Inter', sans-serif",
+            fontFamily: "'Roboto', sans-serif",
           }}
         >
           {loading ? '...' : ui.apply}

@@ -780,7 +780,7 @@ const KPI_STYLES: Record<string, React.CSSProperties> = {
   cardHeader: { display: 'flex', alignItems: 'center', gap: 8, color: '#6B6B6F' },
   cardTitle: { fontSize: 13, fontWeight: 600, color: '#2D2D2F' },
   cardMetric: {
-    fontFamily: "'Inter', sans-serif",
+    fontFamily: "'Roboto', sans-serif",
     fontSize: 30, fontWeight: 700, color: '#1C1C1E', lineHeight: 1.1, marginTop: 4,
   },
   cardSub: { fontSize: 12, color: '#A0A0A0', fontWeight: 300 },

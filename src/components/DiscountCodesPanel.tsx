@@ -20,7 +20,7 @@ interface DiscountCode {
 
 const S = {
   card: { padding: '12px 16px', borderRadius: 8, border: '1px solid #E5E5E3', backgroundColor: '#fff', marginBottom: 8 } as React.CSSProperties,
-  input: { width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #E5E5E3', fontSize: 13, outline: 'none', fontFamily: "'Inter', sans-serif" } as React.CSSProperties,
+  input: { width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #E5E5E3', fontSize: 13, outline: 'none', fontFamily: "'Roboto', sans-serif" } as React.CSSProperties,
   label: { fontSize: 12, fontWeight: 600, color: '#1C1C1E', marginBottom: 4, display: 'block' } as React.CSSProperties,
 };
 

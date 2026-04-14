@@ -159,7 +159,7 @@ const Onboarding = () => {
       <Helmet>
         <title>İşletme Bilgileri | Tabbled</title>
       </Helmet>
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F7F7F5', fontFamily: "'Inter', -apple-system, sans-serif", padding: 16 }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F7F7F5', fontFamily: "'Roboto', -apple-system, sans-serif", padding: 16 }}>
         <div style={{ width: '100%', maxWidth: 420 }}>
           {/* Logo */}
           <div style={{ textAlign: 'center', marginBottom: 28 }}>

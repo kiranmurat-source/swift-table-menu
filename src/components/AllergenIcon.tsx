@@ -38,7 +38,7 @@ export function AllergenIcon({
       {showLabel && (
         <span
           className="text-xs"
-          style={{ fontFamily: "'Inter', sans-serif", fontWeight: 400, color: labelColor }}
+          style={{ fontFamily: "'Roboto', sans-serif", fontWeight: 400, color: labelColor }}
         >
           {label}
         </span>

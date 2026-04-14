@@ -39,7 +39,7 @@ export default function PrivacyPolicy() {
   const [lang, setLang] = useState<'tr' | 'en'>('tr');
   const c = content[lang];
   return (
-    <div style={{ minHeight: '100vh', background: '#F7F7F5', fontFamily: "'Inter', -apple-system, sans-serif", color: '#1C1C1E' }}>
+    <div style={{ minHeight: '100vh', background: '#F7F7F5', fontFamily: "'Roboto', -apple-system, sans-serif", color: '#1C1C1E' }}>
       <Helmet>
         <title>Gizlilik Politikası — Tabbled</title>
         <meta name="description" content="Tabbled KVKK ve gizlilik politikası. Kişisel verilerin korunması hakkında bilgilendirme." />

@@ -61,7 +61,7 @@ Object.assign(S, {
     padding: 16,
   },
   title: {
-    fontFamily: "'Inter', sans-serif",
+    fontFamily: "'Roboto', sans-serif",
     fontSize: 22,
     fontWeight: 700,
     color: '#1C1C1E',

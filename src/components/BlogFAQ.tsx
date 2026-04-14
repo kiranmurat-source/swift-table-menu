@@ -15,7 +15,7 @@ export default function BlogFAQ({ items }: { items: FAQItem[] }) {
     <div style={{ marginTop: 40 }}>
       <h2
         style={{
-          fontFamily: "'Inter', sans-serif",
+          fontFamily: "'Roboto', sans-serif",
           fontWeight: 600,
           fontSize: 24,
           color: '#1C1C1E',
@@ -48,7 +48,7 @@ export default function BlogFAQ({ items }: { items: FAQItem[] }) {
                   border: 'none',
                   backgroundColor: isOpen ? '#F7F7F5' : '#fff',
                   cursor: 'pointer',
-                  fontFamily: "'Inter', sans-serif",
+                  fontFamily: "'Roboto', sans-serif",
                   fontWeight: 600,
                   fontSize: 15,
                   color: '#1C1C1E',
@@ -70,7 +70,7 @@ export default function BlogFAQ({ items }: { items: FAQItem[] }) {
                 <div
                   style={{
                     padding: '0 16px 14px',
-                    fontFamily: "'Inter', sans-serif",
+                    fontFamily: "'Roboto', sans-serif",
                     fontSize: 14,
                     color: '#6B6B6F',
                     lineHeight: 1.7,

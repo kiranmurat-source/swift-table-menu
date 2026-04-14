@@ -69,11 +69,11 @@ export default function Dashboard() {
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
-  if (loading || roleLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Inter', sans-serif" }}>Yukleniyor...</div>;
+  if (loading || roleLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Roboto', sans-serif" }}>Yukleniyor...</div>;
   if (!user) return null;
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F7F7F5', fontFamily: "'Inter', -apple-system, sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: '#F7F7F5', fontFamily: "'Roboto', -apple-system, sans-serif" }}>
       <div style={{ borderBottom: '1px solid #E5E5E3', background: '#FFFFFF', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
           <TabbledLogo sizeClass="h-7" />

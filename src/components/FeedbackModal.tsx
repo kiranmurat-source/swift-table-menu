@@ -27,8 +27,8 @@ export default function FeedbackModal({ restaurantId, googlePlaceId, tableNumber
   const [comment, setComment] = useState('');
   const [name, setName] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const bodyFont = "'Inter', sans-serif";
-  const headingFont = "'Playfair Display', serif";
+  const bodyFont = "'Roboto', sans-serif";
+  const headingFont = "'Roboto', sans-serif";
 
   const highRating = rating >= 4;
   const showGoogle = highRating && !!googlePlaceId;

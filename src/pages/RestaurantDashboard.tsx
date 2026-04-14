@@ -2161,7 +2161,7 @@ export default function RestaurantDashboard() {
                         type="button"
                         onClick={generateAIDescription}
                         disabled={generatingAI || !itemForm.name_tr}
-                        style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', fontSize: 11, fontWeight: 600, borderRadius: 6, border: 'none', backgroundColor: generatingAI ? '#E5E5E3' : '#FF4F7A', color: generatingAI ? '#999' : '#fff', cursor: generatingAI ? 'not-allowed' : 'pointer', transition: 'all 0.15s', opacity: !itemForm.name_tr ? 0.5 : 1, fontFamily: "'Inter', sans-serif" }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', fontSize: 11, fontWeight: 600, borderRadius: 6, border: 'none', backgroundColor: generatingAI ? '#E5E5E3' : '#FF4F7A', color: generatingAI ? '#999' : '#fff', cursor: generatingAI ? 'not-allowed' : 'pointer', transition: 'all 0.15s', opacity: !itemForm.name_tr ? 0.5 : 1, fontFamily: "'Roboto', sans-serif" }}
                         title="AI ile açıklama oluştur"
                       >
                         {generatingAI ? (

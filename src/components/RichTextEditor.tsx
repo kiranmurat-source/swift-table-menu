@@ -65,7 +65,7 @@ const S = {
   content: {
     padding: 12,
     fontSize: 14,
-    fontFamily: "'Inter', sans-serif",
+    fontFamily: "'Roboto', sans-serif",
     lineHeight: 1.5,
     color: '#1C1C1E',
     outline: 'none',

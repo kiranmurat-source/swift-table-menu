@@ -9,7 +9,7 @@ export default function BlogBreadcrumb({ categoryLabel, category }: Props) {
   return (
     <nav
       style={{
-        fontFamily: "'Inter', sans-serif",
+        fontFamily: "'Roboto', sans-serif",
         fontSize: 13,
         color: '#A0A0A0',
         marginBottom: 24,

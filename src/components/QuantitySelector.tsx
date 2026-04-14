@@ -53,7 +53,7 @@ export default function QuantitySelector({ quantity, onIncrement, onDecrement, s
           fontSize,
           fontWeight: 700,
           color: theme.text,
-          fontFamily: "'Inter', sans-serif",
+          fontFamily: "'Roboto', sans-serif",
         }}
       >
         {quantity}
