@@ -451,23 +451,6 @@ export default function PublicMenu() {
     setViewModeInitialized(true);
   }, [restaurant, viewModeInitialized]);
 
-  // Page view tracking — once per session per restaurant
-  useEffect(() => {
-    if (!restaurant?.id) return;
-    const flagKey = `tabbled_pv_${restaurant.id}`;
-    try {
-      if (sessionStorage.getItem(flagKey)) return;
-      sessionStorage.setItem(flagKey, '1');
-    } catch { /* ignore storage errors */ }
-    void supabase.from('menu_page_views').insert({
-      restaurant_id: restaurant.id,
-      fingerprint: getFingerprint(),
-      table_number: table || null,
-      language: lang,
-      user_agent: (typeof navigator !== 'undefined' ? navigator.userAgent : '').slice(0, 200),
-    });
-  }, [restaurant?.id, table, lang]);
-
   const lang: LangCode = useMemo(() => {
     if (langParam === 'tr') return 'tr';
     if (!restaurant) return 'tr';
@@ -486,6 +469,23 @@ export default function PublicMenu() {
     if (newLang === 'tr') { params.delete('lang'); } else { params.set('lang', newLang); }
     setSearchParams(params, { replace: true });
   };
+
+  // Page view tracking — once per session per restaurant
+  useEffect(() => {
+    if (!restaurant?.id) return;
+    const flagKey = `tabbled_pv_${restaurant.id}`;
+    try {
+      if (sessionStorage.getItem(flagKey)) return;
+      sessionStorage.setItem(flagKey, '1');
+    } catch { /* ignore storage errors */ }
+    void supabase.from('menu_page_views').insert({
+      restaurant_id: restaurant.id,
+      fingerprint: getFingerprint(),
+      table_number: table || null,
+      language: lang,
+      user_agent: (typeof navigator !== 'undefined' ? navigator.userAgent : '').slice(0, 200),
+    });
+  }, [restaurant?.id, table, lang]);
 
   useEffect(() => {
     if (!slug) return;
