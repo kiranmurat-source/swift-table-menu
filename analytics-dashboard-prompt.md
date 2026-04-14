@@ -1,438 +1,284 @@
-# CLAUDE CODE PROMPT — Restoran Analytics Dashboard
-## Sidebar'da Ayrı Dashboard Sayfası (Orta Seviye)
+# ANALİTİK SİSTEMİ — MENÜ GÖRÜNTÜLENMELERİ + ÜRÜN TIKLAMA + SÜRE TAKİBİ
+## Claude Code Prompt — 14 Nisan 2026 (v5)
 
 ---
 
-## GÖREV ÖZETI
-
-Restoran admin panelinin sidebar'ına "Dashboard" sayfası ekle. Restoran sahibinin işletme performansını tek bakışta görmesini sağla.
-
----
-
-## PROJE BİLGİLERİ
+## PROJE BAĞLAMI
 
 - **Proje dizini:** /opt/khp/tabbled/
-- **Stack:** React + Vite + TypeScript + shadcn/ui
-- **İkon:** Phosphor Icons (@phosphor-icons/react)
-- **Marka:** #FF4F7A (pembe), #1C1C1E (siyah), #F7F7F8 (açık gri)
-- **Admin sidebar:** Sol sidebar, 4 grup (Menü Yönetimi / Müşteri İlişkileri / Pazarlama / Görünüm)
-- **DB tablolar:** restaurants, menu_categories, menu_items, waiter_calls, feedback, discount_codes, product_likes
-- **RPC:** increment_discount_usage, get_like_counts
-- **Feature toggle'lar:** feature_waiter_calls, feature_cart, feature_whatsapp_order, feature_feedback, feature_discount_codes, feature_likes
+- **Stack:** React + Vite + TypeScript + S.* inline styles
+- **Supabase project-ref:** qmnrawqvkwehufebbkxp
+- **Public menü:** src/pages/PublicMenu.tsx
+- **Admin dashboard:** src/components/dashboard/RestaurantAnalytics.tsx
+- **İkonlar:** Phosphor Icons (@phosphor-icons/react) — SADECE "Thin" ağırlık. Emoji YASAK.
+- **Marka renkleri:** #FF4F7A / #1C1C1E / #F7F7F8
+- **Mevcut tablo:** menu_item_views (ürün detay modal açılma kaydı — id, menu_item_id, restaurant_id, fingerprint, created_at)
+- **Mevcut RPC'ler:** get_item_view_counts, get_daily_views
 
 ---
 
-## DASHBOARD YERLEŞİMİ
+## MEVCUT DURUM
 
-Sidebar'da EN ÜSTE ekle — tüm grupların üzerinde, tek başına:
-
-```
-┌──────────────────┐
-│  📊 Dashboard    │  ← YENİ (aktif: pembe sol border + bold)
-│                  │
-│  MENÜ YÖNETİMİ  │
-│  Menü            │
-│  Çeviri Merkezi  │
-│  QR Kodları      │
-│                  │
-│  MÜŞTERİ İLİŞ.  │
-│  Çağrılar        │
-│  Geri Bildirim   │
-│  Beğeniler       │
-│  ...             │
-└──────────────────┘
-```
-
-Dashboard, sidebar'daki ilk item olsun. Restoran paneli açıldığında varsayılan olarak Dashboard gösterilsin (şu an muhtemelen Menü gösteriliyor — bunu Dashboard'a çevir).
+- `menu_item_views` tablosu var ama sadece detay modal açılma kaydı tutuyor
+- Eksik: menü sayfa açılma kaydı, detayda kalma süresi
+- Admin dashboard'da basit istatistikler var (toplam ürün, aktif ürün, geri bildirim, beğeni)
+- Detaylı analitik sayfası yok
 
 ---
 
-## DASHBOARD İÇERİĞİ
+## GÖREV 1: DB DEĞİŞİKLİKLERİ
 
-### Bölüm 1: Özet Kartlar (4 kart, üst sıra)
-
-Grid: mobilde 2x2, desktop'ta 4x1
-
-```
-┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐
-│  Toplam  │ │ Aktif   │ │ Geri    │ │ Toplam  │
-│  Ürün    │ │ Ürün    │ │ Bildirim│ │ Beğeni  │
-│   47     │ │   42    │ │  ★ 4.2  │ │   128   │
-│  5 pasif │ │ 3 tüken │ │  23 adet│ │ bu hafta│
-└─────────┘ └─────────┘ └─────────┘ └─────────┘
-```
-
-**Kart 1 — Toplam Ürün:**
-- Büyük sayı: menu_items COUNT (WHERE restaurant_id = current)
-- Alt metin: "{x} pasif" (is_available = false)
-- İkon: ForkKnife (Phosphor)
-
-**Kart 2 — Aktif Ürün:**
-- Büyük sayı: menu_items COUNT (WHERE is_available = true AND is_sold_out != true)
-- Alt metin: "{x} tükendi" (is_sold_out = true)
-- İkon: CheckCircle (Phosphor)
-
-**Kart 3 — Geri Bildirim:**
-- Büyük sayı: feedback ortalama puan (★ X.X)
-- Alt metin: "{x} değerlendirme" (feedback COUNT)
-- İkon: Star (Phosphor)
-- Puan yoksa: "—" göster, alt metin: "Henüz değerlendirme yok"
-
-**Kart 4 — Toplam Beğeni:**
-- Büyük sayı: product_likes COUNT (WHERE status = 'approved')
-- Alt metin: "bu hafta +{x}" (son 7 gün)
-- İkon: Heart (Phosphor)
-
-### Bölüm 2: Garson Çağrıları (son 7 gün grafiği)
-
-**Koşul:** Sadece `feature_waiter_calls !== false` ise göster.
-
-**Basit bar chart — son 7 gün:**
-
-Supabase'den veri çek:
-```sql
-SELECT DATE(created_at) as date, COUNT(*) as count
-FROM waiter_calls
-WHERE restaurant_id = '{id}'
-AND created_at >= NOW() - INTERVAL '7 days'
-GROUP BY DATE(created_at)
-ORDER BY date
-```
-
-**NOT:** Supabase JS client'ta aggregate yok — tüm son 7 günlük waiter_calls'ı çek, JS'te grupla.
-
-**Görsel:** Basit CSS bar chart (kütüphane ekleme — sade div'lerle yap).
-
-```
-Garson Çağrıları (Son 7 Gün)
-┌────────────────────────────────────┐
-│  █                                 │
-│  █  █        █                     │
-│  █  █  █     █  █                  │
-│  █  █  █  █  █  █  █              │
-│  Pzt Sal Çar Per Cum Cmt Paz     │
-│  12  8   5   3   15  10  7        │
-└────────────────────────────────────┘
-  Toplam: 60 çağrı
-```
-
-- Bar rengi: #FF4F7A (pembe)
-- Altında: "Toplam: {x} çağrı" ve "Ort: {x}/gün"
-- Veri yoksa: "Son 7 günde garson çağrısı yok" mesajı
-
-### Bölüm 3: Popüler Ürünler (En Çok Beğenilen Top 5)
-
-**Koşul:** Sadece `feature_likes !== false` ise göster.
-
-RPC `get_like_counts` kullan, sonuçları sırala, ilk 5'i al.
-
-```
-En Çok Beğenilen Ürünler
-┌──────────────────────────────────────┐
-│ 1. 🔥 Adana Kebap          ♥ 45    │
-│ 2.    Künefe                ♥ 38    │
-│ 3.    Mantı                 ♥ 29    │
-│ 4.    Serpme Kahvaltı       ♥ 22    │
-│ 5.    Baklava               ♥ 18    │
-└──────────────────────────────────────┘
-```
-
-- 1. sıradaki öne çıksın (🔥 veya Fire ikonu)
-- Her satırda: sıra + ürün adı + kalp + beğeni sayısı
-- Veri yoksa: "Henüz beğeni yok" mesajı
-
-### Bölüm 4: Son Geri Bildirimler (Son 5)
-
-**Koşul:** Sadece `feature_feedback !== false` ise göster.
+### SQL (AYRI DOSYA — Supabase Dashboard'dan çalıştırılacak)
 
 ```sql
-SELECT * FROM feedback
-WHERE restaurant_id = '{id}'
-ORDER BY created_at DESC
-LIMIT 5
-```
+-- 1. Menü görüntülenme tablosu (sayfa açılma)
+CREATE TABLE IF NOT EXISTS menu_page_views (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  restaurant_id UUID NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+  fingerprint TEXT,
+  table_number TEXT,
+  language TEXT DEFAULT 'tr',
+  user_agent TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-```
-Son Geri Bildirimler
-┌──────────────────────────────────────┐
-│ ★★★★★  "Harika yemekler!"          │
-│ Ahmet · 2 saat önce · Masa 5       │
-│──────────────────────────────────────│
-│ ★★★★☆  "Servis biraz yavaştı"      │
-│ Elif · 1 gün önce · Masa 12        │
-│──────────────────────────────────────│
-│ ...                                  │
-└──────────────────────────────────────┘
-  Tümünü Gör →  (link: Geri Bildirim sayfasına)
-```
+CREATE INDEX IF NOT EXISTS idx_page_views_restaurant ON menu_page_views(restaurant_id);
+CREATE INDEX IF NOT EXISTS idx_page_views_created ON menu_page_views(created_at);
+CREATE INDEX IF NOT EXISTS idx_page_views_restaurant_created ON menu_page_views(restaurant_id, created_at);
 
-- Yıldız + yorum kısaltması (max 50 karakter, üstü ...)
-- İsim + göreceli zaman (X saat/gün önce) + masa no
-- "Tümünü Gör →" linki sidebar'daki Geri Bildirim sayfasına yönlendir
-- Veri yoksa: "Henüz geri bildirim yok" mesajı
+ALTER TABLE menu_page_views ENABLE ROW LEVEL SECURITY;
 
-### Bölüm 5: İndirim Kodları Durumu
+CREATE POLICY "Anyone can insert page views"
+  ON menu_page_views FOR INSERT
+  TO anon, authenticated
+  WITH CHECK (true);
 
-**Koşul:** Sadece `feature_discount_codes !== false` ise göster.
-
-```sql
-SELECT code, discount_type, discount_value, current_uses, max_uses, is_active, expires_at
-FROM discount_codes
-WHERE restaurant_id = '{id}' AND is_active = true
-ORDER BY current_uses DESC
-LIMIT 5
-```
-
-```
-Aktif İndirim Kodları
-┌──────────────────────────────────────┐
-│ HOSGELDIN   %15    12/50 kullanım   │
-│ YAZ2026     20 TL  5/∞  kullanım   │
-│ VIP10       %10    28/30 kullanım ⚠ │
-└──────────────────────────────────────┘
-  Tümünü Gör →  (link: İndirim Kodları sayfasına)
-```
-
-- Kod adı + indirim (% veya TL) + kullanım/limit
-- Limiti dolmak üzere olanlarda ⚠ uyarı (>%80 kullanılmış)
-- Süresi dolmuş/pasif kodlar gösterilmez
-- "Tümünü Gör →" linki İndirim Kodları sayfasına
-- Veri yoksa: "Aktif indirim kodu yok" mesajı
-
-### Bölüm 6: Hızlı İstatistikler (Menü Özeti)
-
-```
-Menü Özeti
-┌──────────────────────────────────────┐
-│ Kategoriler:  8                      │
-│ Alt kategoriler: 3                   │
-│ Fotoğraflı ürün: 35/47 (%74)       │
-│ Alerjen bilgili: 28/47 (%60)       │
-│ Tükendi (86'd): 2                    │
-│ Öne çıkan: 5                        │
-└──────────────────────────────────────┘
-```
-
-- Kategori sayısı (parent kategoriler)
-- Alt kategori sayısı (parent_id IS NOT NULL)
-- Fotoğraflı ürün oranı (image_url IS NOT NULL / toplam)
-- Alerjen bilgili ürün oranı (allergens dizisi boş olmayan / toplam)
-- Tükendi sayısı
-- Öne çıkan (is_featured) sayısı
-- Eksik oranlar %50'nin altındaysa sarı uyarı rengi
-
----
-
-## TASARIM PRENSİPLERİ
-
-### Layout
-```
-Desktop (>1024px):
-┌────────────────────────────────────────────┐
-│  [Kart1] [Kart2] [Kart3] [Kart4]          │  ← 4 sütun grid
-├─────────────────────┬──────────────────────┤
-│  Garson Çağrıları   │  Popüler Ürünler     │  ← 2 sütun
-│  (bar chart)        │  (top 5 liste)       │
-├─────────────────────┴──────────────────────┤
-│  Son Geri Bildirimler                      │  ← tam genişlik
-├─────────────────────┬──────────────────────┤
-│  İndirim Kodları    │  Menü Özeti          │  ← 2 sütun
-└─────────────────────┴──────────────────────┘
-
-Mobil (<768px):
-Kartlar 2x2, geri kalanı tek sütun (full width)
-```
-
-### Stil
-- Kart arka plan: beyaz, border: 1px solid #E5E7EB, border-radius: 12px
-- Kart padding: 20px
-- Başlık: Inter 14px semibold, text-gray-500, uppercase, letter-spacing 0.05em
-- Büyük sayı: Inter 28px bold, text-gray-900
-- Alt metin: Inter 13px, text-gray-500
-- İkon: 20px, text-gray-400 (kart'ın sağ üstünde veya başlık yanında)
-- Bölüm arası boşluk: 24px
-- Bar chart bar: #FF4F7A, border-radius: 4px üst
-
-### Loading State
-- Her bölüm için ayrı loading (paralel fetch)
-- Shimmer skeleton animasyonu (mevcut loading skeleton'la tutarlı)
-
-### Boş State
-- Her bölüm veri yoksa kendi boş mesajını göstersin (yukarıda belirtildi)
-- Gri ikon + açık gri metin, ortalanmış
-
----
-
-## TEKNİK UYGULAMA
-
-### Dosya: src/components/dashboard/RestaurantAnalytics.tsx
-
-Tek büyük bileşen yerine, her bölüm ayrı bileşen olabilir (ama tek dosyada tutulabilir):
-
-```typescript
-// Ana bileşen
-const RestaurantAnalytics = ({ restaurantId }: { restaurantId: string }) => {
-  // Tüm verileri paralel çek
-  // ...
-  return (
-    <div className="space-y-6 p-4 md:p-6">
-      <h1 className="text-2xl font-bold">Dashboard</h1>
-      <SummaryCards ... />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <WaiterCallsChart ... />
-        <PopularItems ... />
-      </div>
-      <RecentFeedback ... />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <DiscountCodesStatus ... />
-        <MenuSummary ... />
-      </div>
-    </div>
+CREATE POLICY "Owner can view own page views"
+  ON menu_page_views FOR SELECT
+  TO authenticated
+  USING (
+    restaurant_id IN (SELECT restaurant_id FROM profiles WHERE id = auth.uid())
+    OR is_super_admin()
   );
-};
-```
 
-### Veri Çekme
+CREATE POLICY "Super admin can delete page views"
+  ON menu_page_views FOR DELETE
+  TO authenticated
+  USING (is_super_admin());
 
-Supabase JS client kullan. Aggregate yok — tüm veriyi çek, JS'te hesapla.
+-- 2. menu_item_views tablosuna duration_seconds kolonu ekle
+ALTER TABLE menu_item_views ADD COLUMN IF NOT EXISTS duration_seconds INTEGER;
 
-```typescript
-// Paralel fetch
-const [
-  { data: items },
-  { data: categories },
-  { data: waiterCalls },
-  { data: feedbackData },
-  { data: discountCodes },
-] = await Promise.all([
-  supabase.from('menu_items').select('*').eq('restaurant_id', restaurantId),
-  supabase.from('menu_categories').select('*').eq('restaurant_id', restaurantId),
-  supabase.from('waiter_calls').select('*').eq('restaurant_id', restaurantId).gte('created_at', sevenDaysAgo),
-  supabase.from('feedback').select('*').eq('restaurant_id', restaurantId).order('created_at', { ascending: false }).limit(5),
-  supabase.from('discount_codes').select('*').eq('restaurant_id', restaurantId).eq('is_active', true),
-]);
+-- 3. RPC: Menü sayfa görüntülenme sayıları (günlük)
+CREATE OR REPLACE FUNCTION get_page_view_counts(
+  p_restaurant_id UUID,
+  p_days INTEGER DEFAULT 30
+)
+RETURNS TABLE(view_date DATE, view_count BIGINT) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT DATE(mpv.created_at) as view_date, COUNT(*)::BIGINT as view_count
+  FROM menu_page_views mpv
+  WHERE mpv.restaurant_id = p_restaurant_id
+    AND mpv.created_at >= NOW() - (p_days || ' days')::INTERVAL
+  GROUP BY DATE(mpv.created_at)
+  ORDER BY view_date;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
-// Beğeniler RPC ile
-const { data: likeCounts } = await supabase.rpc('get_like_counts', { p_restaurant_id: restaurantId });
-```
-
-### Bar Chart (CSS-only, kütüphane yok)
-
-```tsx
-const WaiterCallsChart = ({ data }: { data: { date: string; count: number }[] }) => {
-  const maxCount = Math.max(...data.map(d => d.count), 1);
-  
-  return (
-    <div className="bg-white border rounded-xl p-5">
-      <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">
-        Garson Çağrıları (Son 7 Gün)
-      </h3>
-      <div className="flex items-end gap-2 h-32">
-        {data.map((d) => (
-          <div key={d.date} className="flex-1 flex flex-col items-center gap-1">
-            <span className="text-xs text-gray-500">{d.count}</span>
-            <div
-              className="w-full bg-[#FF4F7A] rounded-t"
-              style={{ height: `${(d.count / maxCount) * 100}%`, minHeight: d.count > 0 ? '4px' : '0' }}
-            />
-            <span className="text-xs text-gray-400">{dayLabel(d.date)}</span>
-          </div>
-        ))}
-      </div>
-      <div className="mt-3 text-sm text-gray-500">
-        Toplam: {data.reduce((s, d) => s + d.count, 0)} çağrı · 
-        Ort: {(data.reduce((s, d) => s + d.count, 0) / 7).toFixed(1)}/gün
-      </div>
-    </div>
+-- 4. RPC: Toplam menü görüntülenme
+CREATE OR REPLACE FUNCTION get_total_page_views(
+  p_restaurant_id UUID,
+  p_days INTEGER DEFAULT 30
+)
+RETURNS BIGINT AS $$
+BEGIN
+  RETURN (
+    SELECT COUNT(*)::BIGINT
+    FROM menu_page_views
+    WHERE restaurant_id = p_restaurant_id
+      AND created_at >= NOW() - (p_days || ' days')::INTERVAL
   );
-};
-```
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
-### Göreceli Zaman
+-- 5. RPC: Ürün ortalama kalma süresi
+CREATE OR REPLACE FUNCTION get_item_avg_duration(
+  p_restaurant_id UUID,
+  p_days INTEGER DEFAULT 30
+)
+RETURNS TABLE(menu_item_id UUID, avg_duration NUMERIC, view_count BIGINT) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    miv.menu_item_id,
+    ROUND(AVG(miv.duration_seconds)::NUMERIC, 1) as avg_duration,
+    COUNT(*)::BIGINT as view_count
+  FROM menu_item_views miv
+  WHERE miv.restaurant_id = p_restaurant_id
+    AND miv.created_at >= NOW() - (p_days || ' days')::INTERVAL
+    AND miv.duration_seconds IS NOT NULL
+    AND miv.duration_seconds > 0
+    AND miv.duration_seconds < 300
+  GROUP BY miv.menu_item_id
+  ORDER BY view_count DESC;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
-```typescript
-const timeAgo = (date: string): string => {
-  const now = new Date();
-  const d = new Date(date);
-  const diffMs = now.getTime() - d.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  const diffHour = Math.floor(diffMs / 3600000);
-  const diffDay = Math.floor(diffMs / 86400000);
-  
-  if (diffMin < 1) return 'Az önce';
-  if (diffMin < 60) return `${diffMin} dk önce`;
-  if (diffHour < 24) return `${diffHour} saat önce`;
-  if (diffDay < 7) return `${diffDay} gün önce`;
-  return d.toLocaleDateString('tr-TR');
-};
-```
-
----
-
-## SIDEBAR ENTEGRASYONU
-
-### RestaurantDashboard.tsx (veya sidebar bileşeni)
-
-1. Sidebar'a "Dashboard" item'ı ekle — EN ÜSTE, grup dışı
-2. İkon: ChartBar veya ChartLine (Phosphor)
-3. Varsayılan aktif tab: "dashboard" (ilk açılışta Dashboard gösterilsin)
-4. Tab değişim mantığına "dashboard" case'i ekle
-
-```tsx
-// Sidebar items — Dashboard en üstte
-<button
-  onClick={() => setActiveTab('dashboard')}
-  className={`flex items-center gap-3 px-4 py-2.5 w-full text-left rounded-lg transition-colors ${
-    activeTab === 'dashboard'
-      ? 'bg-[#FF4F7A]/10 text-[#FF4F7A] font-semibold border-l-3 border-[#FF4F7A]'
-      : 'text-gray-400 hover:text-white hover:bg-white/5'
-  }`}
->
-  <ChartBar size={20} weight={activeTab === 'dashboard' ? 'bold' : 'regular'} />
-  <span>Dashboard</span>
-</button>
-
-{/* Boşluk / ayırıcı */}
-<div className="my-2 border-t border-white/10" />
-
-{/* Mevcut gruplar devam eder */}
-```
-
-### Tab İçeriği
-
-```tsx
-{activeTab === 'dashboard' && (
-  <RestaurantAnalytics restaurantId={restaurant.id} />
-)}
+-- 6. RPC: Saat bazlı menü görüntülenme (ısı haritası için)
+CREATE OR REPLACE FUNCTION get_hourly_page_views(
+  p_restaurant_id UUID,
+  p_days INTEGER DEFAULT 7
+)
+RETURNS TABLE(hour_of_day INTEGER, view_count BIGINT) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    EXTRACT(HOUR FROM mpv.created_at)::INTEGER as hour_of_day,
+    COUNT(*)::BIGINT as view_count
+  FROM menu_page_views mpv
+  WHERE mpv.restaurant_id = p_restaurant_id
+    AND mpv.created_at >= NOW() - (p_days || ' days')::INTERVAL
+  GROUP BY hour_of_day
+  ORDER BY hour_of_day;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 ```
 
 ---
 
-## DOĞRULAMA
+## GÖREV 2: PUBLIC MENÜ — VERİ TOPLAMA
 
-```bash
-# Bileşen oluşturuldu mu?
-ls src/components/dashboard/RestaurantAnalytics.tsx
+### Menü sayfa açılma kaydı (PublicMenu.tsx)
+- Menü sayfası yüklendiğinde (splash sonrası, ürünler göründüğünde) `menu_page_views`'a kayıt at
+- Kayıt verileri:
+  - restaurant_id
+  - fingerprint (mevcut fingerprint.ts kullan)
+  - table_number (URL'den ?table=X)
+  - language (seçili dil)
+  - user_agent (navigator.userAgent, ilk 200 karakter)
+- Session başına 1 kayıt (aynı session'da tekrar tekrar kayıt atma — sessionStorage flag)
 
-# Sidebar'da Dashboard var mı?
-grep -n "dashboard\|Dashboard\|ChartBar" src/pages/RestaurantDashboard.tsx
+### Ürün detay süresi (PublicMenu.tsx)
+- Detay modal açıldığında timestamp kaydet (modalOpenTime)
+- Modal kapandığında süreyi hesapla: `duration = Date.now() - modalOpenTime`
+- Mevcut `menu_item_views` INSERT'ine `duration_seconds` ekle
+- duration_seconds = Math.round(duration / 1000)
+- Max 300 saniye (5 dk üzeri outlier, kaydetme)
+- 0 veya negatif → null (kaydetme)
 
-# Build test
-cd /opt/khp/tabbled
-npm run build
-```
+**NOT:** Mevcut item view kaydı modal açılışında atılıyor. Bunu değiştir:
+- Modal açılışında: sadece timestamp kaydet (henüz INSERT yapma)
+- Modal kapanışında: INSERT yap (duration_seconds ile birlikte)
+- Eğer modal 2 saniyeden kısa açık kaldıysa: INSERT YAPMA (yanlışlıkla tıklama)
 
 ---
 
-## HATIRLATMALAR
+## GÖREV 3: ADMIN ANALİTİK DASHBOARD'U
 
-- Supabase JS client'ta aggregate (COUNT, AVG, SUM) yok — fetch + JS hesaplama kullan
-- Bar chart için harici kütüphane EKLEME — CSS div'lerle yap (bundle büyümesin)
-- Feature toggle kontrolü: her bölüm ilgili feature kapalıysa gizlensin
-- Paralel veri çekme (Promise.all) — sıralı fetch performans düşürür
-- Loading: her bölüm bağımsız shimmer skeleton göstersin
-- Mobilde 2x2 grid + tek sütun layout
-- Veri yoksa her bölüm kendi boş state'ini göstersin — genel "veri yok" sayfası olmasın
-- Dashboard varsayılan açılış tabı olsun (mevcut varsayılan ne ise onu değiştir)
-- Göreceli zaman Türkçe: "dk", "saat", "gün" — İngilizce değil
-- Kart tasarımı mevcut admin panel kartlarıyla (KPI Dashboard, Geri Bildirim özet kartları) tutarlı olsun
+### Yeni bileşen: AnalyticsDashboard.tsx
+
+Admin sidebar'da mevcut "Dashboard" tab'ını genişlet veya altına **"Analitik"** tab'ı ekle (Phosphor: ChartBar, Thin).
+
+### Dashboard yapısı:
+
+#### A. Özet Kartları (üst kısım, 4 kart)
+1. **Menü Görüntülenme** — son 30 gün toplam sayfa açılma
+   - Alt metin: "son 30 gün"
+   - Trend: bu hafta vs geçen hafta (yeşil ↑ veya kırmızı ↓ ok)
+2. **Ürün Tıklama** — son 30 gün toplam detay modal açılma
+   - Alt metin: "son 30 gün"
+   - Trend ok
+3. **Ort. İnceleme Süresi** — tüm ürünlerin ortalama detay süresi (saniye)
+   - Format: "12.5 sn"
+4. **Bugün Görüntülenme** — bugünkü menü açılma sayısı
+
+#### B. Günlük Görüntülenme Grafiği (son 7 veya 30 gün)
+- Basit bar chart (CSS, recharts kullanma — mevcut dashboard pattern'i)
+- X ekseni: tarih (gün)
+- Y ekseni: görüntülenme sayısı
+- İki seri: menü açılma (mavi) + ürün tıklama (pembe)
+- Filtre: 7 gün / 30 gün toggle
+
+#### C. En Çok Tıklanan Ürünler (Top 10)
+- Tablo: sıra, ürün adı, tıklama sayısı, ort. süre
+- Sıralama: tıklama sayısına göre (en çok → en az)
+- Ort. süre format: "X.X sn"
+- Son 30 gün verisi
+
+#### D. Saat Bazlı Yoğunluk (Isı Haritası)
+- 24 saat yatay bar (0-23)
+- Her saatin yoğunluğuna göre renk (açık pembe → koyu pembe)
+- Son 7 gün verisi
+- Restoranın en yoğun saatlerini gösterir
+
+#### E. Popüler Kategoriler
+- Kategorilerdeki ürünlerin toplam tıklama sayısına göre sıralama
+- Basit liste: kategori adı + toplam tıklama
+- Client-side hesaplama (ürün tıklamalarını kategoriye göre grupla)
+
+### Tasarım kuralları
+- SKILL.md'deki 4-nokta boşluk sistemi
+- Kartlar: beyaz arka plan, hafif gölge, 12px radius
+- Başlıklar: font-weight 600, 14px, muted renk
+- Değerler: font-weight 700, 24px
+- Trend okları: yeşil (#22C55E) yukarı ↑, kırmızı (#EF4444) aşağı ↓
+- Chart: CSS bar chart (recharts kullanma — bundle şişmesin)
+- Isı haritası: CSS grid, 24 kutu, opacity veya background-color interpolation
+
+---
+
+## GENEL KURALLAR
+
+1. **Phosphor Icons:** SADECE Thin ağırlık
+2. **Emoji YASAK**
+3. **S.* inline styles**
+4. **recharts KULLANMA** — CSS bar chart yap (bundle optimize)
+5. **DB migration SQL'ini ÇALIŞTIRMA** — dosyaya yaz
+6. **Mevcut özellikleri BOZMA**
+7. **Supabase JS client aggregation yok** — RPC kullan veya client-side hesapla
+8. **Build test:** `npm run build`
+
+---
+
+## SQL DOSYASI
+
+`/opt/khp/tabbled/supabase-migration-analytics.sql` dosyasına yaz:
+- menu_page_views tablosu + index'ler + RLS
+- menu_item_views.duration_seconds kolonu
+- 4 RPC: get_page_view_counts, get_total_page_views, get_item_avg_duration, get_hourly_page_views
+
+---
+
+## TEST CHECKLIST
+
+### Veri Toplama
+- [ ] Menü açıldığında menu_page_views'a kayıt atılıyor
+- [ ] Aynı session'da tekrar kayıt atılmıyor
+- [ ] Ürün detay modal açılıp kapanınca menu_item_views'a duration_seconds ile kayıt
+- [ ] 2 saniyeden kısa açılmalarda kayıt atılmıyor
+- [ ] 300 saniye üzeri duration kaydedilmiyor
+
+### Admin Dashboard
+- [ ] Sidebar'da "Analitik" tab'ı var (ChartBar ikonu)
+- [ ] 4 özet kartı doğru veri gösteriyor
+- [ ] Trend okları çalışıyor (bu hafta vs geçen hafta)
+- [ ] Günlük görüntülenme grafiği görünüyor (7/30 gün toggle)
+- [ ] En çok tıklanan ürünler listesi (Top 10)
+- [ ] Saat bazlı yoğunluk ısı haritası
+- [ ] Popüler kategoriler listesi
+- [ ] Veri yokken "Henüz veri yok" mesajı
+
+### Regresyon
+- [ ] Mevcut dashboard çalışıyor
+- [ ] Ürün detay modalı normal açılıp kapanıyor
+- [ ] Beğeni sistemi çalışıyor
+- [ ] Sepet, WhatsApp, garson çalışıyor
+
+---
+
+## ÖNCELİK SIRASI
+
+1. **SQL dosyası oluştur** (page_views + duration + RPC'ler)
+2. **Public menü veri toplama** (sayfa açılma + ürün süre)
+3. **Admin analitik dashboard** (kartlar + chart + tablo + ısı haritası)

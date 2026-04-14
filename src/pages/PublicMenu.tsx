@@ -9,6 +9,7 @@ import {
   ForkKnife, XCircle, Funnel, Timer, Tag, Heart, Clock, Play,
 } from "@phosphor-icons/react";
 import FeedbackModal from '../components/FeedbackModal';
+import { getFingerprint } from '../lib/fingerprint';
 import { AllergenBadgeList } from '../components/AllergenIcon';
 import { getTheme, type MenuTheme } from '../lib/themes';
 import { getAllergenInfo, ALLERGEN_LIST, DIET_LIST } from '../lib/allergens';
@@ -448,6 +449,23 @@ export default function PublicMenu() {
     }
     setViewModeInitialized(true);
   }, [restaurant, viewModeInitialized]);
+
+  // Page view tracking — once per session per restaurant
+  useEffect(() => {
+    if (!restaurant?.id) return;
+    const flagKey = `tabbled_pv_${restaurant.id}`;
+    try {
+      if (sessionStorage.getItem(flagKey)) return;
+      sessionStorage.setItem(flagKey, '1');
+    } catch { /* ignore storage errors */ }
+    void supabase.from('menu_page_views').insert({
+      restaurant_id: restaurant.id,
+      fingerprint: getFingerprint(),
+      table_number: table || null,
+      language: lang,
+      user_agent: (typeof navigator !== 'undefined' ? navigator.userAgent : '').slice(0, 200),
+    });
+  }, [restaurant?.id, table, lang]);
 
   const lang: LangCode = useMemo(() => {
     if (langParam === 'tr') return 'tr';
@@ -2343,6 +2361,23 @@ function ItemDetailModal({ item, allItems, lang, theme, onClose, onSelectItem, o
   const [showVideo, setShowVideo] = useState(false);
   const [recommendations, setRecommendations] = useState<RecRow[]>([]);
   const video = parseVideoEmbed(item.video_url);
+
+  // Track view duration: record when modal closes (min 2s, max 300s)
+  useEffect(() => {
+    const openedAt = Date.now();
+    const itemId = item.id;
+    const restaurantId = item.restaurant_id;
+    return () => {
+      const duration = Math.round((Date.now() - openedAt) / 1000);
+      if (duration < 2 || duration > 300) return;
+      void supabase.from('menu_item_views').insert({
+        menu_item_id: itemId,
+        restaurant_id: restaurantId,
+        fingerprint: getFingerprint(),
+        duration_seconds: duration,
+      });
+    };
+  }, [item.id, item.restaurant_id]);
 
   useEffect(() => {
     setShowVideo(false);

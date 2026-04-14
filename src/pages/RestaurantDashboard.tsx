@@ -17,6 +17,7 @@ import ReviewsPanel from '../components/dashboard/ReviewsPanel';
 import DiscountCodesPanel from '../components/DiscountCodesPanel';
 import LikesPanel from '../components/LikesPanel';
 import CustomersPanel from '../components/CustomersPanel';
+import AnalyticsPanel from '../components/AnalyticsPanel';
 import {
   DndContext,
   closestCenter,
@@ -983,7 +984,7 @@ export default function RestaurantDashboard() {
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [editCatForm, setEditCatForm] = useState({ name_tr: '' });
   const [uploading, setUploading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'menu' | 'translations' | 'qr' | 'profile' | 'promos' | 'calls' | 'feedback' | 'discounts' | 'likes' | 'reviews' | 'customers'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'menu' | 'translations' | 'qr' | 'profile' | 'promos' | 'calls' | 'feedback' | 'discounts' | 'likes' | 'reviews' | 'customers' | 'analytics'>('dashboard');
   const [pendingCallCount, setPendingCallCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
@@ -1743,6 +1744,7 @@ export default function RestaurantDashboard() {
       title: '',
       items: [
         { key: 'dashboard' as const, label: 'Dashboard', icon: ChartBar },
+        { key: 'analytics' as const, label: 'Analitik', icon: ChartBar },
       ],
     },
     {
@@ -1956,6 +1958,7 @@ export default function RestaurantDashboard() {
       {activeTab === 'calls' && <WaiterCallsPanel restaurantId={restaurant.id} />}
       {activeTab === 'feedback' && <FeedbackPanel restaurantId={restaurant.id} />}
       {activeTab === 'customers' && <CustomersPanel restaurantId={restaurant.id} />}
+      {activeTab === 'analytics' && <AnalyticsPanel restaurantId={restaurant.id} />}
       {activeTab === 'reviews' && <ReviewsPanel restaurantId={restaurant.id} />}
       {activeTab === 'discounts' && <DiscountCodesPanel restaurantId={restaurant.id} />}
       {activeTab === 'likes' && <LikesPanel restaurantId={restaurant.id} />}
