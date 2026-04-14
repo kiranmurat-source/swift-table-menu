@@ -764,19 +764,32 @@ export default function PublicMenu() {
 
           {/* Social Media Icons */}
           {socials.length > 0 && (
-            <div className="flex items-center gap-4 mb-8">
-              {socials.map(({ type, url }) => (
-                <a
-                  key={type}
-                  href={url!}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#FFFFFF' }}
-                >
-                  <SocialIcon type={type} size={18} />
-                </a>
-              ))}
+            <div className="flex items-center mb-8" style={{ gap: 12 }}>
+              {socials.map(({ type, url }) => {
+                const iconBg = coverImage
+                  ? 'rgba(255,255,255,0.2)'
+                  : theme.key === 'black'
+                    ? 'rgba(255,255,255,0.12)'
+                    : 'rgba(0,0,0,0.06)';
+                const iconColor = coverImage || theme.key === 'black' ? '#FFFFFF' : theme.text;
+                const iconBorder = coverImage
+                  ? '1px solid rgba(255,255,255,0.25)'
+                  : theme.key === 'black'
+                    ? '1px solid rgba(255,255,255,0.15)'
+                    : '1px solid rgba(0,0,0,0.08)';
+                return (
+                  <a
+                    key={type}
+                    href={url!}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
+                    style={{ width: 36, height: 36, backgroundColor: iconBg, color: iconColor, border: iconBorder }}
+                  >
+                    <SocialIcon type={type} size={18} />
+                  </a>
+                );
+              })}
             </div>
           )}
 
