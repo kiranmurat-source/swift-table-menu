@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Heart, Trash } from '@phosphor-icons/react';
+import type { AdminTheme } from '../lib/adminTheme';
+import { getAdminTheme } from '../lib/adminTheme';
 
 interface LikeRow {
   menu_item_id: string;
@@ -14,7 +16,8 @@ interface LikeStat {
   week: number;
 }
 
-export default function LikesPanel({ restaurantId }: { restaurantId: string }) {
+export default function LikesPanel({ restaurantId, theme }: { restaurantId: string; theme?: AdminTheme }) {
+  const t = theme ?? getAdminTheme('light');
   const [rows, setRows] = useState<LikeRow[]>([]);
   const [stats, setStats] = useState<LikeStat>({ total: 0, today: 0, week: 0 });
   const [loading, setLoading] = useState(true);
@@ -22,13 +25,11 @@ export default function LikesPanel({ restaurantId }: { restaurantId: string }) {
   const fetchData = async () => {
     setLoading(true);
 
-    // Get all likes with item names
     const { data: likes } = await supabase
       .from('product_likes')
       .select('id, menu_item_id, status, created_at')
       .eq('restaurant_id', restaurantId);
 
-    // Get menu item names
     const { data: items } = await supabase
       .from('menu_items')
       .select('id, name_tr')
@@ -48,7 +49,6 @@ export default function LikesPanel({ restaurantId }: { restaurantId: string }) {
       week: approved.filter(l => l.created_at >= weekStart).length,
     });
 
-    // Group by menu_item_id
     const countMap = new Map<string, number>();
     approved.forEach(l => {
       countMap.set(l.menu_item_id, (countMap.get(l.menu_item_id) || 0) + 1);
@@ -66,7 +66,7 @@ export default function LikesPanel({ restaurantId }: { restaurantId: string }) {
     setLoading(false);
   };
 
-  useEffect(() => { fetchData(); }, [restaurantId]);
+  useEffect(() => { fetchData(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [restaurantId]);
 
   const handleReject = async (menuItemId: string) => {
     if (!confirm('Bu ürünün tüm beğenilerini reddetmek istediğinize emin misiniz?')) return;
@@ -80,68 +80,79 @@ export default function LikesPanel({ restaurantId }: { restaurantId: string }) {
 
   if (loading) {
     return (
-      <div className="p-6 text-center text-[#A0A0A0] text-sm">Yükleniyor...</div>
+      <div style={{ padding: 24, textAlign: 'center', color: t.subtle, fontSize: 13 }}>Yükleniyor...</div>
     );
   }
 
+  const statCardStyle: React.CSSProperties = {
+    borderRadius: 12,
+    border: `1px solid ${t.cardBorder}`,
+    padding: 16,
+    textAlign: 'center',
+    backgroundColor: t.cardBg,
+    boxShadow: t.cardShadow,
+  };
+
   return (
-    <div className="p-4 max-w-2xl">
-      <h2 className="text-lg font-semibold text-[#1C1C1E] mb-4 flex items-center gap-2">
-        <Heart size={20} weight="fill" className="text-[#FF4F7A]" />
+    <div style={{ padding: 16, maxWidth: 672 }}>
+      <h2 style={{ fontSize: 18, fontWeight: 600, color: t.value, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <Heart size={20} weight="fill" style={{ color: t.accent }} />
         Beğeniler
       </h2>
 
-      {/* Stats cards */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
         {[
           { label: 'Toplam', value: stats.total },
           { label: 'Bugün', value: stats.today },
           { label: 'Son 7 gün', value: stats.week },
         ].map(s => (
-          <div
-            key={s.label}
-            className="rounded-xl border border-[#E5E5E3] p-4 text-center"
-            style={{ backgroundColor: '#F7F7F5' }}
-          >
-            <div className="text-2xl font-bold text-[#1C1C1E]">{s.value}</div>
-            <div className="text-xs text-[#6B6B6F] mt-1">{s.label}</div>
+          <div key={s.label} style={statCardStyle}>
+            <div style={{ fontSize: 24, fontWeight: 700, color: t.value }}>{s.value}</div>
+            <div style={{ fontSize: 12, color: t.subtle, marginTop: 4 }}>{s.label}</div>
           </div>
         ))}
       </div>
 
-      {/* Product list */}
       {rows.length === 0 ? (
-        <div className="text-center text-[#A0A0A0] text-sm py-8">
+        <div style={{ textAlign: 'center', color: t.subtle, fontSize: 13, padding: 32 }}>
           Henüz beğeni yok
         </div>
       ) : (
-        <div className="flex flex-col gap-2">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {rows.map((row, i) => (
             <div
               key={row.menu_item_id}
-              className="flex items-center justify-between rounded-xl border border-[#E5E5E3] px-4 py-3"
-              style={{ backgroundColor: i === 0 ? '#FFF0F3' : '#F7F7F5' }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                borderRadius: 12,
+                border: `1px solid ${i === 0 ? t.accent : t.cardBorder}`,
+                padding: '12px 16px',
+                backgroundColor: t.cardBg,
+                boxShadow: t.cardShadow,
+              }}
             >
-              <div className="flex items-center gap-3 min-w-0">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
                 <Heart
                   size={18}
                   weight="fill"
-                  className={i === 0 ? 'text-[#FF4F7A]' : 'text-[#A0A0A0]'}
+                  style={{ color: i === 0 ? t.accent : t.icon }}
                 />
-                <span className="text-sm font-medium text-[#1C1C1E] truncate">
+                <span style={{ fontSize: 14, fontWeight: 500, color: t.value, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {row.item_name}
                 </span>
               </div>
-              <div className="flex items-center gap-3 flex-shrink-0">
-                <span className="text-sm font-bold text-[#2D2D2F]">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: t.value }}>
                   {row.like_count}
                 </span>
                 <button
                   onClick={() => handleReject(row.menu_item_id)}
-                  className="text-[#A0A0A0] hover:text-[#FF4F7A] transition-colors"
+                  style={{ background: 'none', border: 'none', color: t.icon, cursor: 'pointer', padding: 2 }}
                   title="Beğenileri reddet"
                 >
-                  <Trash size={14} />
+                  <Trash size={14} weight="thin" />
                 </button>
               </div>
             </div>

@@ -2009,18 +2009,19 @@ export default function RestaurantDashboard() {
               featureDiscountCodes={restaurant.feature_discount_codes !== false}
               featureReviews={restaurant.feature_reviews !== false}
               onNavigate={(tab) => setActiveTab(tab as typeof activeTab)}
+              theme={adminTheme}
             />
           )}
           {activeTab === 'profile' && <ProfileTab restaurant={restaurant} onUpdate={(r) => setRestaurant(r)} />}
       {activeTab === 'qr' && <QRManager restaurant={restaurant} />}
       {activeTab === 'promos' && <PromosTab restaurant={restaurant} />}
-      {activeTab === 'calls' && <WaiterCallsPanel restaurantId={restaurant.id} />}
-      {activeTab === 'feedback' && <FeedbackPanel restaurantId={restaurant.id} />}
+      {activeTab === 'calls' && <WaiterCallsPanel restaurantId={restaurant.id} theme={adminTheme} />}
+      {activeTab === 'feedback' && <FeedbackPanel restaurantId={restaurant.id} theme={adminTheme} />}
       {activeTab === 'customers' && <CustomersPanel restaurantId={restaurant.id} theme={adminTheme} />}
       {activeTab === 'analytics' && <AnalyticsPanel restaurantId={restaurant.id} theme={adminTheme} />}
       {activeTab === 'reviews' && <ReviewsPanel restaurantId={restaurant.id} />}
-      {activeTab === 'discounts' && <DiscountCodesPanel restaurantId={restaurant.id} />}
-      {activeTab === 'likes' && <LikesPanel restaurantId={restaurant.id} />}
+      {activeTab === 'discounts' && <DiscountCodesPanel restaurantId={restaurant.id} theme={adminTheme} />}
+      {activeTab === 'likes' && <LikesPanel restaurantId={restaurant.id} theme={adminTheme} />}
       {activeTab === 'translations' && (
         <TranslationCenter
           restaurantId={restaurant.id}

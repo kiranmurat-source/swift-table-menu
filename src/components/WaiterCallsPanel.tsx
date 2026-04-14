@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Bell, CheckCircle, Clock } from "@phosphor-icons/react";
+import type { AdminTheme } from '../lib/adminTheme';
+import { getAdminTheme } from '../lib/adminTheme';
 
 interface WaiterCall {
   id: string;
@@ -51,7 +53,8 @@ function playNotificationSound() {
   } catch { /* silent */ }
 }
 
-export default function WaiterCallsPanel({ restaurantId }: { restaurantId: string }) {
+export default function WaiterCallsPanel({ restaurantId, theme }: { restaurantId: string; theme?: AdminTheme }) {
+  const t = theme ?? getAdminTheme('light');
   const [calls, setCalls] = useState<WaiterCall[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'pending' | 'all'>('pending');
@@ -112,9 +115,9 @@ export default function WaiterCallsPanel({ restaurantId }: { restaurantId: strin
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>Garson Çağrıları</h2>
+          <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: t.value }}>Garson Çağrıları</h2>
           {pendingCount > 0 && (
-            <span style={{ backgroundColor: '#ef4444', color: '#fff', fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 12, minWidth: 20, textAlign: 'center' }}>
+            <span style={{ backgroundColor: t.danger, color: '#fff', fontSize: 12, fontWeight: 700, padding: '2px 8px', borderRadius: 12, minWidth: 20, textAlign: 'center' }}>
               {pendingCount}
             </span>
           )}
@@ -126,8 +129,8 @@ export default function WaiterCallsPanel({ restaurantId }: { restaurantId: strin
               onClick={() => setFilter(f)}
               style={{
                 padding: '6px 12px', fontSize: 12, borderRadius: 6, border: 'none',
-                backgroundColor: filter === f ? '#FF4F7A' : '#F7F7F5',
-                color: filter === f ? '#fff' : '#6B6B6F',
+                backgroundColor: filter === f ? t.accent : t.hoverBg,
+                color: filter === f ? '#fff' : t.heading,
                 cursor: 'pointer',
               }}
             >
@@ -138,10 +141,10 @@ export default function WaiterCallsPanel({ restaurantId }: { restaurantId: strin
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: 40, color: '#999' }}>Yükleniyor...</div>
+        <div style={{ textAlign: 'center', padding: 40, color: t.subtle }}>Yükleniyor...</div>
       ) : calls.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 40, color: '#999' }}>
-          <Bell size={48} style={{ opacity: 0.3, marginBottom: 8 }} />
+        <div style={{ textAlign: 'center', padding: 40, color: t.subtle }}>
+          <Bell size={48} weight="thin" style={{ opacity: 0.5, marginBottom: 8, color: t.icon }} />
           <div>Henüz çağrı yok</div>
         </div>
       ) : (
@@ -149,19 +152,22 @@ export default function WaiterCallsPanel({ restaurantId }: { restaurantId: strin
           {calls.map(call => {
             const typeInfo = callTypeLabels[call.call_type] || callTypeLabels.other;
             const statusInfo = statusLabels[call.status] || statusLabels.pending;
+            const isPending = call.status === 'pending';
             return (
               <div
                 key={call.id}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 12,
                   padding: '12px 16px', borderRadius: 10,
-                  border: `1px solid ${call.status === 'pending' ? '#FECACA' : '#E5E5E3'}`,
-                  backgroundColor: call.status === 'pending' ? '#FEE2E2' : '#fff',
+                  border: `1px solid ${isPending ? t.danger : t.cardBorder}`,
+                  backgroundColor: t.cardBg,
+                  boxShadow: t.cardShadow,
+                  borderLeftWidth: isPending ? 4 : 1,
                 }}
               >
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontWeight: 700, fontSize: 16 }}>Masa {call.table_number}</span>
+                    <span style={{ fontWeight: 700, fontSize: 16, color: t.value }}>Masa {call.table_number}</span>
                     <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 4, backgroundColor: `${typeInfo.color}20`, color: typeInfo.color, fontWeight: 600 }}>
                       {typeInfo.label}
                     </span>
@@ -169,8 +175,8 @@ export default function WaiterCallsPanel({ restaurantId }: { restaurantId: strin
                       {statusInfo.label}
                     </span>
                   </div>
-                  <div style={{ fontSize: 12, color: '#999', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Clock size={12} />
+                  <div style={{ fontSize: 12, color: t.subtle, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Clock size={12} weight="thin" />
                     {formatTime(call.created_at)}
                   </div>
                 </div>
@@ -179,7 +185,7 @@ export default function WaiterCallsPanel({ restaurantId }: { restaurantId: strin
                   {call.status === 'pending' && (
                     <button
                       onClick={() => updateStatus(call.id, 'acknowledged')}
-                      style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #f59e0b', backgroundColor: '#fffbeb', color: '#f59e0b', cursor: 'pointer', fontWeight: 600 }}
+                      style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: `1px solid ${t.warning}`, backgroundColor: 'transparent', color: t.warning, cursor: 'pointer', fontWeight: 600 }}
                     >
                       Görüldü
                     </button>
@@ -187,9 +193,9 @@ export default function WaiterCallsPanel({ restaurantId }: { restaurantId: strin
                   {(call.status === 'pending' || call.status === 'acknowledged') && (
                     <button
                       onClick={() => updateStatus(call.id, 'completed')}
-                      style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: 'none', backgroundColor: '#22c55e', color: '#fff', cursor: 'pointer', fontWeight: 600 }}
+                      style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: 'none', backgroundColor: t.success, color: '#fff', cursor: 'pointer', fontWeight: 600 }}
                     >
-                      <CheckCircle size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                      <CheckCircle size={14} weight="thin" style={{ verticalAlign: 'middle', marginRight: 4 }} />
                       Tamamla
                     </button>
                   )}

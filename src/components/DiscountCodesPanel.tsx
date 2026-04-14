@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { PlusCircle, XCircle, PencilSimple, Trash, Percent } from "@phosphor-icons/react";
 import { supabase } from '../lib/supabase';
+import type { AdminTheme } from '../lib/adminTheme';
+import { getAdminTheme } from '../lib/adminTheme';
 
 interface DiscountCode {
   id: string;
@@ -18,11 +20,13 @@ interface DiscountCode {
   created_at: string;
 }
 
-const S = {
-  card: { padding: '12px 16px', borderRadius: 8, border: '1px solid #E5E5E3', backgroundColor: '#fff', marginBottom: 8 } as React.CSSProperties,
-  input: { width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #E5E5E3', fontSize: 13, outline: 'none', fontFamily: "'Roboto', sans-serif" } as React.CSSProperties,
-  label: { fontSize: 12, fontWeight: 600, color: '#1C1C1E', marginBottom: 4, display: 'block' } as React.CSSProperties,
-};
+function makeStyles(t: AdminTheme) {
+  return {
+    card: { padding: '12px 16px', borderRadius: 8, border: `1px solid ${t.cardBorder}`, backgroundColor: t.cardBg, marginBottom: 8, boxShadow: t.cardShadow } as React.CSSProperties,
+    input: { width: '100%', padding: '8px 12px', borderRadius: 8, border: `1px solid ${t.cardBorder}`, fontSize: 13, outline: 'none', fontFamily: "'Roboto', sans-serif", backgroundColor: t.inputBg, color: t.value } as React.CSSProperties,
+    label: { fontSize: 12, fontWeight: 600, color: t.value, marginBottom: 4, display: 'block' } as React.CSSProperties,
+  };
+}
 
 const EMPTY_FORM = {
   code: '', discount_type: 'percentage' as const, discount_value: '',
@@ -34,7 +38,9 @@ function generateCode(): string {
   return Math.random().toString(36).substring(2, 10).toUpperCase();
 }
 
-export default function DiscountCodesPanel({ restaurantId }: { restaurantId: string }) {
+export default function DiscountCodesPanel({ restaurantId, theme }: { restaurantId: string; theme?: AdminTheme }) {
+  const t = theme ?? getAdminTheme('light');
+  const S = makeStyles(t);
   const [codes, setCodes] = useState<DiscountCode[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -137,39 +143,39 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
   };
 
   const getStatus = (c: DiscountCode): { label: string; color: string; dotColor: string } => {
-    if (!c.is_active) return { label: 'Pasif', color: '#6B6B6F', dotColor: '#9ca3af' };
-    if (c.expires_at && new Date(c.expires_at) < new Date()) return { label: 'Süresi Dolmuş', color: '#EF4444', dotColor: '#EF4444' };
-    return { label: 'Aktif', color: '#22C55E', dotColor: '#22c55e' };
+    if (!c.is_active) return { label: 'Pasif', color: t.subtle, dotColor: t.icon };
+    if (c.expires_at && new Date(c.expires_at) < new Date()) return { label: 'Süresi Dolmuş', color: t.danger, dotColor: t.danger };
+    return { label: 'Aktif', color: t.success, dotColor: t.success };
   };
 
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 700, color: '#1C1C1E', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Percent size={20} /> İndirim Kodları
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: t.value, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Percent size={20} weight="thin" /> İndirim Kodları
         </h2>
         <button
           onClick={openCreate}
           style={{
             display: 'flex', alignItems: 'center', gap: 4,
             padding: '6px 14px', borderRadius: 8, border: 'none',
-            backgroundColor: '#FF4F7A', color: '#fff', fontSize: 13,
+            backgroundColor: t.accent, color: '#fff', fontSize: 13,
             fontWeight: 600, cursor: 'pointer',
           }}
         >
-          <PlusCircle size={16} /> Yeni Kod Oluştur
+          <PlusCircle size={16} weight="thin" /> Yeni Kod Oluştur
         </button>
       </div>
 
       {/* Form */}
       {showForm && (
-        <div style={{ ...S.card, backgroundColor: '#F7F7F5', marginBottom: 16, padding: 16 }}>
+        <div style={{ ...S.card, backgroundColor: t.hoverBg, marginBottom: 16, padding: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: '#1C1C1E' }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, color: t.value }}>
               {editingId ? 'Kodu Düzenle' : 'Yeni İndirim Kodu'}
             </h3>
-            <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B6B6F' }}>
-              <XCircle size={20} />
+            <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.subtle }}>
+              <XCircle size={20} weight="thin" />
             </button>
           </div>
 
@@ -188,7 +194,7 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
                 <button
                   type="button"
                   onClick={() => setForm({ ...form, code: generateCode() })}
-                  style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #E5E5E3', backgroundColor: '#fff', fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', color: '#6B6B6F' }}
+                  style={{ padding: '8px 12px', borderRadius: 8, border: `1px solid ${t.cardBorder}`, backgroundColor: t.cardBg, fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap', color: t.heading }}
                 >
                   Rastgele
                 </button>
@@ -199,14 +205,14 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
             <div>
               <label style={S.label}>İndirim Tipi</label>
               <div style={{ display: 'flex', gap: 12 }}>
-                {(['percentage', 'fixed'] as const).map(t => (
-                  <label key={t} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, cursor: 'pointer', color: '#1C1C1E' }}>
+                {(['percentage', 'fixed'] as const).map(dt => (
+                  <label key={dt} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, cursor: 'pointer', color: t.value }}>
                     <input
                       type="radio"
-                      checked={form.discount_type === t}
-                      onChange={() => setForm({ ...form, discount_type: t })}
+                      checked={form.discount_type === dt}
+                      onChange={() => setForm({ ...form, discount_type: dt })}
                     />
-                    {t === 'percentage' ? 'Yüzde (%)' : 'Sabit Tutar (₺)'}
+                    {dt === 'percentage' ? 'Yüzde (%)' : 'Sabit Tutar (₺)'}
                   </label>
                 ))}
               </div>
@@ -225,7 +231,7 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
                   min={1}
                   max={form.discount_type === 'percentage' ? 100 : 10000}
                 />
-                <span style={{ fontSize: 13, color: '#6B6B6F' }}>{form.discount_type === 'percentage' ? '%' : '₺'}</span>
+                <span style={{ fontSize: 13, color: t.heading }}>{form.discount_type === 'percentage' ? '%' : '₺'}</span>
               </div>
             </div>
 
@@ -241,7 +247,7 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
                   placeholder="0"
                   min={0}
                 />
-                <span style={{ fontSize: 13, color: '#6B6B6F' }}>₺</span>
+                <span style={{ fontSize: 13, color: t.heading }}>₺</span>
               </div>
             </div>
 
@@ -293,7 +299,7 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
             </div>
 
             {/* Active toggle */}
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', color: '#1C1C1E' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', color: t.value }}>
               <input
                 type="checkbox"
                 checked={form.is_active}
@@ -303,14 +309,14 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
               Aktif
             </label>
 
-            {error && <p style={{ fontSize: 12, color: '#EF4444' }}>{error}</p>}
+            {error && <p style={{ fontSize: 12, color: t.danger }}>{error}</p>}
 
             <button
               onClick={handleSave}
               disabled={saving}
               style={{
                 padding: '10px 0', borderRadius: 8, border: 'none',
-                backgroundColor: '#FF4F7A', color: '#fff', fontSize: 14,
+                backgroundColor: t.accent, color: '#fff', fontSize: 14,
                 fontWeight: 600, cursor: 'pointer',
               }}
             >
@@ -322,16 +328,16 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
 
       {/* List */}
       {loading ? (
-        <p style={{ textAlign: 'center', color: '#A0A0A0', fontSize: 13, padding: 32 }}>Yükleniyor...</p>
+        <p style={{ textAlign: 'center', color: t.subtle, fontSize: 13, padding: 32 }}>Yükleniyor...</p>
       ) : codes.length === 0 && !showForm ? (
         <div style={{ textAlign: 'center', padding: 48 }}>
-          <Percent size={48} style={{ color: '#d1d5db', marginBottom: 12 }} />
-          <p style={{ fontSize: 14, color: '#6B6B6F' }}>Henüz indirim kodu oluşturmadınız.</p>
+          <Percent size={48} weight="thin" style={{ color: t.icon, marginBottom: 12 }} />
+          <p style={{ fontSize: 14, color: t.subtle }}>Henüz indirim kodu oluşturmadınız.</p>
           <button
             onClick={openCreate}
             style={{
               marginTop: 12, padding: '8px 16px', borderRadius: 8, border: 'none',
-              backgroundColor: '#FF4F7A', color: '#fff', fontSize: 13,
+              backgroundColor: t.accent, color: '#fff', fontSize: 13,
               fontWeight: 600, cursor: 'pointer',
             }}
           >
@@ -345,10 +351,10 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
             <div key={c.id} style={S.card}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 15, fontWeight: 700, fontFamily: 'monospace', color: '#1C1C1E', letterSpacing: '0.05em' }}>
+                  <span style={{ fontSize: 15, fontWeight: 700, fontFamily: 'monospace', color: t.value, letterSpacing: '0.05em' }}>
                     {c.code}
                   </span>
-                  <span style={{ fontSize: 12, color: '#6B6B6F' }}>
+                  <span style={{ fontSize: 12, color: t.heading }}>
                     {c.discount_type === 'percentage' ? `%${c.discount_value}` : `${Number(c.discount_value).toFixed(2)} ₺`} İndirim
                   </span>
                 </div>
@@ -364,32 +370,32 @@ export default function DiscountCodesPanel({ restaurantId }: { restaurantId: str
                   {status.label}
                 </button>
               </div>
-              <div style={{ fontSize: 11, color: '#6B6B6F', display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 4 }}>
+              <div style={{ fontSize: 11, color: t.heading, display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 4 }}>
                 <span>Min: {Number(c.min_order_amount) > 0 ? `${Number(c.min_order_amount).toFixed(0)} ₺` : 'Yok'}</span>
                 <span>Kullanım: {c.current_uses}/{c.max_uses ?? '∞'}</span>
                 <span>
                   Son: {c.expires_at
                     ? (new Date(c.expires_at) < new Date()
-                      ? <span style={{ color: '#EF4444' }}>Süresi dolmuş</span>
+                      ? <span style={{ color: t.danger }}>Süresi dolmuş</span>
                       : new Date(c.expires_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' }))
                     : 'Süresiz'}
                 </span>
               </div>
               {c.description && (
-                <p style={{ fontSize: 11, color: '#A0A0A0', margin: '2px 0' }}>{c.description}</p>
+                <p style={{ fontSize: 11, color: t.subtle, margin: '2px 0' }}>{c.description}</p>
               )}
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 4 }}>
                 <button
                   onClick={() => openEdit(c)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 2, fontSize: 11, color: '#6B6B6F', background: 'none', border: 'none', cursor: 'pointer' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 2, fontSize: 11, color: t.heading, background: 'none', border: 'none', cursor: 'pointer' }}
                 >
-                  <PencilSimple size={14} /> Düzenle
+                  <PencilSimple size={14} weight="thin" /> Düzenle
                 </button>
                 <button
                   onClick={() => handleDelete(c.id)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 2, fontSize: 11, color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 2, fontSize: 11, color: t.danger, background: 'none', border: 'none', cursor: 'pointer' }}
                 >
-                  <Trash size={14} /> Sil
+                  <Trash size={14} weight="thin" /> Sil
                 </button>
               </div>
             </div>

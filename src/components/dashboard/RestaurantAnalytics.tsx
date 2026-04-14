@@ -12,6 +12,8 @@ import {
   ChartBar,
 } from '@phosphor-icons/react';
 import { supabase } from '../../lib/supabase';
+import type { AdminTheme } from '../../lib/adminTheme';
+import { getAdminTheme } from '../../lib/adminTheme';
 
 /* ---------------------------------- types --------------------------------- */
 
@@ -23,6 +25,7 @@ interface Props {
   featureDiscountCodes: boolean;
   featureReviews: boolean;
   onNavigate?: (tab: string) => void;
+  theme?: AdminTheme;
 }
 
 interface MenuItemRow {
@@ -97,47 +100,49 @@ interface AllData {
 
 /* --------------------------------- styles --------------------------------- */
 
-const card: React.CSSProperties = {
-  background: '#FFFFFF',
-  border: '1px solid #E5E5E3',
-  borderRadius: 12,
-  padding: 20,
-  boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-};
-
-const sectionTitle: React.CSSProperties = {
-  fontSize: 11,
-  fontWeight: 700,
-  color: '#6B6B6F',
-  textTransform: 'uppercase',
-  letterSpacing: '0.08em',
-  marginBottom: 14,
-  fontFamily: "'Roboto', sans-serif",
-};
-
-const bigNumber: React.CSSProperties = {
-  fontSize: 28,
-  fontWeight: 800,
-  color: '#1C1C1E',
-  lineHeight: 1,
-  fontFamily: "'Roboto', sans-serif",
-  letterSpacing: '-0.02em',
-};
-
-const subText: React.CSSProperties = {
-  fontSize: 12,
-  color: '#6B6B6F',
-  marginTop: 6,
-  fontFamily: "'Roboto', sans-serif",
-};
-
-const emptyState: React.CSSProperties = {
-  fontSize: 13,
-  color: '#9CA3AF',
-  textAlign: 'center',
-  padding: '24px 0',
-  fontFamily: "'Roboto', sans-serif",
-};
+function makeStyles(t: AdminTheme) {
+  return {
+    card: {
+      background: t.cardBg,
+      border: `1px solid ${t.cardBorder}`,
+      borderRadius: 12,
+      padding: 20,
+      boxShadow: t.cardShadow,
+    } as React.CSSProperties,
+    sectionTitle: {
+      fontSize: 11,
+      fontWeight: 700,
+      color: t.heading,
+      textTransform: 'uppercase',
+      letterSpacing: '0.08em',
+      marginBottom: 14,
+      fontFamily: "'Roboto', sans-serif",
+    } as React.CSSProperties,
+    bigNumber: {
+      fontSize: 28,
+      fontWeight: 800,
+      color: t.value,
+      lineHeight: 1,
+      fontFamily: "'Roboto', sans-serif",
+      letterSpacing: '-0.02em',
+    } as React.CSSProperties,
+    subText: {
+      fontSize: 12,
+      color: t.heading,
+      marginTop: 6,
+      fontFamily: "'Roboto', sans-serif",
+    } as React.CSSProperties,
+    emptyState: {
+      fontSize: 13,
+      color: t.subtle,
+      textAlign: 'center',
+      padding: '24px 0',
+      fontFamily: "'Roboto', sans-serif",
+    } as React.CSSProperties,
+    divider: `1px solid ${t.divider}`,
+  };
+}
+type StyleMap = ReturnType<typeof makeStyles>;
 
 /* --------------------------------- helpers -------------------------------- */
 
@@ -181,13 +186,16 @@ function buildLast7Days(calls: WaiterCallRow[]): { dayLabel: string; count: numb
 
 /* --------------------------------- loading -------------------------------- */
 
-function SkeletonBlock({ height = 120 }: { height?: number }) {
+function SkeletonBlock({ height = 120, t, s }: { height?: number; t: AdminTheme; s: StyleMap }) {
+  const isDark = t.key === 'dark';
+  const shimmerA = isDark ? '#1F2229' : '#F3F3F1';
+  const shimmerB = isDark ? '#2A2D36' : '#FAFAF8';
   return (
     <div
       style={{
-        ...card,
+        ...s.card,
         height,
-        background: 'linear-gradient(90deg, #F3F3F1 0%, #FAFAF8 50%, #F3F3F1 100%)',
+        background: `linear-gradient(90deg, ${shimmerA} 0%, ${shimmerB} 50%, ${shimmerA} 100%)`,
         backgroundSize: '200% 100%',
         animation: 'dash-shimmer 1.4s ease-in-out infinite',
       }}
@@ -197,7 +205,7 @@ function SkeletonBlock({ height = 120 }: { height?: number }) {
 
 /* ------------------------------ summary cards ----------------------------- */
 
-function SummaryCards({ data }: { data: AllData }) {
+function SummaryCards({ data, t, s }: { data: AllData; t: AdminTheme; s: StyleMap }) {
   const total = data.items.length;
   const inactive = data.items.filter((i) => !i.is_available).length;
   const active = data.items.filter((i) => i.is_available && !i.is_sold_out).length;
@@ -213,25 +221,25 @@ function SummaryCards({ data }: { data: AllData }) {
       title: 'Toplam Ürün',
       value: String(total),
       sub: inactive > 0 ? `${inactive} pasif` : 'Tümü aktif',
-      icon: <ForkKnife size={20} color="#9CA3AF" />,
+      icon: <ForkKnife size={20} color={t.icon} weight="thin" />,
     },
     {
       title: 'Aktif Ürün',
       value: String(active),
       sub: soldOut > 0 ? `${soldOut} tükendi` : 'Tükenen yok',
-      icon: <CheckCircle size={20} color="#9CA3AF" />,
+      icon: <CheckCircle size={20} color={t.icon} weight="thin" />,
     },
     {
       title: 'Geri Bildirim',
       value: data.avgRating !== null ? `★ ${data.avgRating.toFixed(1)}` : '—',
       sub: data.allFeedbackCount > 0 ? `${data.allFeedbackCount} değerlendirme` : 'Henüz değerlendirme yok',
-      icon: <Star size={20} color="#9CA3AF" />,
+      icon: <Star size={20} color={t.icon} weight="thin" />,
     },
     {
       title: 'Toplam Beğeni',
       value: String(data.totalLikeCount),
       sub: data.weeklyLikeCount > 0 ? `bu hafta +${data.weeklyLikeCount}` : 'bu hafta 0',
-      icon: <Heart size={20} color="#9CA3AF" />,
+      icon: <Heart size={20} color={t.icon} weight="thin" />,
     },
   ];
 
@@ -244,13 +252,13 @@ function SummaryCards({ data }: { data: AllData }) {
       }}
     >
       {items.map((it) => (
-        <div key={it.title} style={card}>
+        <div key={it.title} style={s.card}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
-            <span style={sectionTitle}>{it.title}</span>
+            <span style={s.sectionTitle}>{it.title}</span>
             {it.icon}
           </div>
-          <div style={bigNumber}>{it.value}</div>
-          <div style={subText}>{it.sub}</div>
+          <div style={s.bigNumber}>{it.value}</div>
+          <div style={s.subText}>{it.sub}</div>
         </div>
       ))}
     </div>
@@ -259,21 +267,21 @@ function SummaryCards({ data }: { data: AllData }) {
 
 /* -------------------------- waiter calls bar chart ------------------------ */
 
-function WaiterCallsChart({ calls }: { calls: WaiterCallRow[] }) {
+function WaiterCallsChart({ calls, t, s }: { calls: WaiterCallRow[]; t: AdminTheme; s: StyleMap }) {
   const buckets = buildLast7Days(calls);
-  const total = buckets.reduce((s, b) => s + b.count, 0);
+  const total = buckets.reduce((sum, b) => sum + b.count, 0);
   const max = Math.max(...buckets.map((b) => b.count), 1);
   const avg = total / 7;
 
   return (
-    <div style={card}>
+    <div style={s.card}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-        <Bell size={16} color="#6B6B6F" />
-        <span style={sectionTitle}>Garson Çağrıları (Son 7 Gün)</span>
+        <Bell size={16} color={t.heading} weight="thin" />
+        <span style={s.sectionTitle}>Garson Çağrıları (Son 7 Gün)</span>
       </div>
 
       {total === 0 ? (
-        <div style={emptyState}>Son 7 günde garson çağrısı yok</div>
+        <div style={s.emptyState}>Son 7 günde garson çağrısı yok</div>
       ) : (
         <>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 140, padding: '8px 0' }}>
@@ -290,25 +298,25 @@ function WaiterCallsChart({ calls }: { calls: WaiterCallRow[] }) {
                   justifyContent: 'flex-end',
                 }}
               >
-                <span style={{ fontSize: 11, color: '#6B6B6F', fontWeight: 600 }}>{b.count}</span>
+                <span style={{ fontSize: 11, color: t.heading, fontWeight: 600 }}>{b.count}</span>
                 <div
                   style={{
                     width: '100%',
                     height: `${(b.count / max) * 100}%`,
                     minHeight: b.count > 0 ? 4 : 0,
-                    background: b.count > 0 ? '#FF4F7A' : '#F3F3F1',
+                    background: b.count > 0 ? t.chartBar : t.chartGrid,
                     borderTopLeftRadius: 4,
                     borderTopRightRadius: 4,
                     transition: 'height 0.2s',
                   }}
                 />
-                <span style={{ fontSize: 11, color: '#9CA3AF' }}>{b.dayLabel}</span>
+                <span style={{ fontSize: 11, color: t.chartLabel }}>{b.dayLabel}</span>
               </div>
             ))}
           </div>
-          <div style={{ marginTop: 14, fontSize: 12, color: '#6B6B6F' }}>
-            Toplam: <strong style={{ color: '#1C1C1E' }}>{total}</strong> çağrı · Ort:{' '}
-            <strong style={{ color: '#1C1C1E' }}>{avg.toFixed(1)}</strong>/gün
+          <div style={{ marginTop: 14, fontSize: 12, color: t.heading }}>
+            Toplam: <strong style={{ color: t.value }}>{total}</strong> çağrı · Ort:{' '}
+            <strong style={{ color: t.value }}>{avg.toFixed(1)}</strong>/gün
           </div>
         </>
       )}
@@ -318,8 +326,7 @@ function WaiterCallsChart({ calls }: { calls: WaiterCallRow[] }) {
 
 /* ------------------------------ popular items ----------------------------- */
 
-function PopularItems({ items, likes }: { items: MenuItemRow[]; likes: LikeRow[] }) {
-  // likes are pre-filtered at the DB level (status=approved, last 90 days)
+function PopularItems({ items, likes, t, s }: { items: MenuItemRow[]; likes: LikeRow[]; t: AdminTheme; s: StyleMap }) {
   const countMap = new Map<string, number>();
   for (const l of likes) countMap.set(l.menu_item_id, (countMap.get(l.menu_item_id) || 0) + 1);
   const itemMap = new Map(items.map((i) => [i.id, i.name_tr]));
@@ -329,13 +336,13 @@ function PopularItems({ items, likes }: { items: MenuItemRow[]; likes: LikeRow[]
     .slice(0, 5);
 
   return (
-    <div style={card}>
+    <div style={s.card}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-        <Heart size={16} color="#6B6B6F" weight="fill" />
-        <span style={sectionTitle}>En Çok Beğenilen Ürünler</span>
+        <Heart size={16} color={t.accent} weight="fill" />
+        <span style={s.sectionTitle}>En Çok Beğenilen Ürünler</span>
       </div>
       {top5.length === 0 ? (
-        <div style={emptyState}>Henüz beğeni yok</div>
+        <div style={s.emptyState}>Henüz beğeni yok</div>
       ) : (
         <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
           {top5.map((row, idx) => (
@@ -346,27 +353,27 @@ function PopularItems({ items, likes }: { items: MenuItemRow[]; likes: LikeRow[]
                 alignItems: 'center',
                 gap: 12,
                 padding: '10px 0',
-                borderBottom: idx < top5.length - 1 ? '1px solid #F0F0EC' : 'none',
+                borderBottom: idx < top5.length - 1 ? s.divider : 'none',
               }}
             >
               <span
                 style={{
                   width: 22,
                   fontSize: 13,
-                  color: idx === 0 ? '#FF4F7A' : '#9CA3AF',
+                  color: idx === 0 ? t.accent : t.subtle,
                   fontWeight: 700,
                   textAlign: 'center',
                 }}
               >
                 {idx + 1}.
               </span>
-              {idx === 0 && <Fire size={16} color="#FF4F7A" weight="fill" />}
-              <span style={{ flex: 1, fontSize: 14, color: '#1C1C1E', fontWeight: idx === 0 ? 600 : 500 }}>
+              {idx === 0 && <Fire size={16} color={t.accent} weight="fill" />}
+              <span style={{ flex: 1, fontSize: 14, color: t.value, fontWeight: idx === 0 ? 600 : 500 }}>
                 {row.name}
               </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: '#6B6B6F' }}>
-                <Heart size={14} color="#FF4F7A" weight="fill" />
-                <strong style={{ color: '#1C1C1E' }}>{row.count}</strong>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: t.heading }}>
+                <Heart size={14} color={t.accent} weight="fill" />
+                <strong style={{ color: t.value }}>{row.count}</strong>
               </span>
             </li>
           ))}
@@ -378,17 +385,17 @@ function PopularItems({ items, likes }: { items: MenuItemRow[]; likes: LikeRow[]
 
 /* ----------------------------- recent feedback ---------------------------- */
 
-function RecentFeedback({ feedback, onSeeAll }: { feedback: FeedbackRow[]; onSeeAll?: () => void }) {
+function RecentFeedback({ feedback, onSeeAll, t, s }: { feedback: FeedbackRow[]; onSeeAll?: () => void; t: AdminTheme; s: StyleMap }) {
   const rows = feedback.slice(0, 5);
 
   return (
-    <div style={card}>
+    <div style={s.card}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-        <ChatCircle size={16} color="#6B6B6F" />
-        <span style={sectionTitle}>Son Geri Bildirimler</span>
+        <ChatCircle size={16} color={t.heading} weight="thin" />
+        <span style={s.sectionTitle}>Son Geri Bildirimler</span>
       </div>
       {rows.length === 0 ? (
-        <div style={emptyState}>Henüz geri bildirim yok</div>
+        <div style={s.emptyState}>Henüz geri bildirim yok</div>
       ) : (
         <>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
@@ -399,7 +406,7 @@ function RecentFeedback({ feedback, onSeeAll }: { feedback: FeedbackRow[]; onSee
                   key={f.id}
                   style={{
                     padding: '12px 0',
-                    borderBottom: idx < rows.length - 1 ? '1px solid #F0F0EC' : 'none',
+                    borderBottom: idx < rows.length - 1 ? s.divider : 'none',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
@@ -407,17 +414,17 @@ function RecentFeedback({ feedback, onSeeAll }: { feedback: FeedbackRow[]; onSee
                       <Star
                         key={n}
                         size={13}
-                        color={n <= f.rating ? '#FF4F7A' : '#E5E5E3'}
+                        color={n <= f.rating ? t.accent : t.cardBorder}
                         weight={n <= f.rating ? 'fill' : 'regular'}
                       />
                     ))}
                     {truncated && (
-                      <span style={{ marginLeft: 8, fontSize: 13, color: '#1C1C1E', fontStyle: 'italic' }}>
+                      <span style={{ marginLeft: 8, fontSize: 13, color: t.value, fontStyle: 'italic' }}>
                         "{truncated}"
                       </span>
                     )}
                   </div>
-                  <div style={{ fontSize: 11, color: '#9CA3AF' }}>
+                  <div style={{ fontSize: 11, color: t.subtle }}>
                     {f.customer_name || 'Anonim'} · {timeAgo(f.created_at)}
                     {f.table_number ? ` · Masa ${f.table_number}` : ''}
                   </div>
@@ -433,7 +440,7 @@ function RecentFeedback({ feedback, onSeeAll }: { feedback: FeedbackRow[]; onSee
                 marginTop: 12,
                 background: 'none',
                 border: 'none',
-                color: '#FF4F7A',
+                color: t.accent,
                 fontSize: 13,
                 fontWeight: 600,
                 cursor: 'pointer',
@@ -452,19 +459,19 @@ function RecentFeedback({ feedback, onSeeAll }: { feedback: FeedbackRow[]; onSee
 
 /* ----------------------------- pending reviews --------------------------- */
 
-function PendingReviews({ reviews, onSeeAll }: { reviews: PendingReviewRow[]; onSeeAll?: () => void }) {
+function PendingReviews({ reviews, onSeeAll, t, s }: { reviews: PendingReviewRow[]; onSeeAll?: () => void; t: AdminTheme; s: StyleMap }) {
   return (
-    <div style={card}>
+    <div style={s.card}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-        <Star size={16} color="#FF4F7A" weight="fill" />
-        <span style={sectionTitle}>Bekleyen Yorumlar</span>
+        <Star size={16} color={t.accent} weight="fill" />
+        <span style={s.sectionTitle}>Bekleyen Yorumlar</span>
         <span
           style={{
             marginLeft: 'auto',
             fontSize: 11,
             fontWeight: 700,
-            color: '#92400E',
-            backgroundColor: '#FEF3C7',
+            color: t.warning,
+            backgroundColor: `${t.warning}22`,
             padding: '3px 10px',
             borderRadius: 999,
           }}
@@ -480,7 +487,7 @@ function PendingReviews({ reviews, onSeeAll }: { reviews: PendingReviewRow[]; on
               key={r.id}
               style={{
                 padding: '12px 0',
-                borderBottom: idx < reviews.length - 1 ? '1px solid #F0F0EC' : 'none',
+                borderBottom: idx < reviews.length - 1 ? s.divider : 'none',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
@@ -488,15 +495,15 @@ function PendingReviews({ reviews, onSeeAll }: { reviews: PendingReviewRow[]; on
                   <Star
                     key={n}
                     size={13}
-                    color={n <= r.rating ? '#FF4F7A' : '#E5E5E3'}
+                    color={n <= r.rating ? t.accent : t.cardBorder}
                     weight={n <= r.rating ? 'fill' : 'regular'}
                   />
                 ))}
-                <span style={{ marginLeft: 8, fontSize: 13, color: '#1C1C1E', fontStyle: 'italic' }}>
+                <span style={{ marginLeft: 8, fontSize: 13, color: t.value, fontStyle: 'italic' }}>
                   "{truncated}"
                 </span>
               </div>
-              <div style={{ fontSize: 11, color: '#9CA3AF' }}>
+              <div style={{ fontSize: 11, color: t.subtle }}>
                 {r.customer_name || 'Misafir'} · {timeAgo(r.created_at)}
               </div>
             </li>
@@ -511,7 +518,7 @@ function PendingReviews({ reviews, onSeeAll }: { reviews: PendingReviewRow[]; on
             marginTop: 12,
             background: 'none',
             border: 'none',
-            color: '#FF4F7A',
+            color: t.accent,
             fontSize: 13,
             fontWeight: 600,
             cursor: 'pointer',
@@ -528,7 +535,7 @@ function PendingReviews({ reviews, onSeeAll }: { reviews: PendingReviewRow[]; on
 
 /* --------------------------- discount codes status ------------------------ */
 
-function DiscountCodesStatus({ codes, onSeeAll }: { codes: DiscountCodeRow[]; onSeeAll?: () => void }) {
+function DiscountCodesStatus({ codes, onSeeAll, t, s }: { codes: DiscountCodeRow[]; onSeeAll?: () => void; t: AdminTheme; s: StyleMap }) {
   const now = Date.now();
   const active = codes
     .filter((c) => c.is_active && (!c.expires_at || new Date(c.expires_at).getTime() > now))
@@ -536,13 +543,13 @@ function DiscountCodesStatus({ codes, onSeeAll }: { codes: DiscountCodeRow[]; on
     .slice(0, 5);
 
   return (
-    <div style={card}>
+    <div style={s.card}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-        <Percent size={16} color="#6B6B6F" />
-        <span style={sectionTitle}>Aktif İndirim Kodları</span>
+        <Percent size={16} color={t.heading} weight="thin" />
+        <span style={s.sectionTitle}>Aktif İndirim Kodları</span>
       </div>
       {active.length === 0 ? (
-        <div style={emptyState}>Aktif indirim kodu yok</div>
+        <div style={s.emptyState}>Aktif indirim kodu yok</div>
       ) : (
         <>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
@@ -559,7 +566,7 @@ function DiscountCodesStatus({ codes, onSeeAll }: { codes: DiscountCodeRow[]; on
                     alignItems: 'center',
                     gap: 12,
                     padding: '10px 0',
-                    borderBottom: idx < active.length - 1 ? '1px solid #F0F0EC' : 'none',
+                    borderBottom: idx < active.length - 1 ? s.divider : 'none',
                   }}
                 >
                   <span
@@ -567,7 +574,7 @@ function DiscountCodesStatus({ codes, onSeeAll }: { codes: DiscountCodeRow[]; on
                       fontFamily: 'monospace',
                       fontSize: 13,
                       fontWeight: 700,
-                      color: '#1C1C1E',
+                      color: t.value,
                       minWidth: 100,
                     }}
                   >
@@ -576,19 +583,19 @@ function DiscountCodesStatus({ codes, onSeeAll }: { codes: DiscountCodeRow[]; on
                   <span
                     style={{
                       fontSize: 12,
-                      color: '#FF4F7A',
+                      color: t.accent,
                       fontWeight: 600,
-                      background: '#FFF0F3',
+                      background: t.heatmapLow,
                       padding: '2px 8px',
                       borderRadius: 4,
                     }}
                   >
                     {valueLabel}
                   </span>
-                  <span style={{ flex: 1, fontSize: 12, color: '#6B6B6F', textAlign: 'right' }}>
+                  <span style={{ flex: 1, fontSize: 12, color: t.heading, textAlign: 'right' }}>
                     {usage} kullanım
                   </span>
-                  {warn && <WarningCircle size={16} color="#F59E0B" weight="fill" />}
+                  {warn && <WarningCircle size={16} color={t.warning} weight="fill" />}
                 </li>
               );
             })}
@@ -601,7 +608,7 @@ function DiscountCodesStatus({ codes, onSeeAll }: { codes: DiscountCodeRow[]; on
                 marginTop: 12,
                 background: 'none',
                 border: 'none',
-                color: '#FF4F7A',
+                color: t.accent,
                 fontSize: 13,
                 fontWeight: 600,
                 cursor: 'pointer',
@@ -620,7 +627,7 @@ function DiscountCodesStatus({ codes, onSeeAll }: { codes: DiscountCodeRow[]; on
 
 /* -------------------------------- menu summary ---------------------------- */
 
-function MenuSummary({ items, categories }: { items: MenuItemRow[]; categories: CategoryRow[] }) {
+function MenuSummary({ items, categories, t, s }: { items: MenuItemRow[]; categories: CategoryRow[]; t: AdminTheme; s: StyleMap }) {
   const total = items.length || 1;
   const parentCats = categories.filter((c) => !c.parent_id).length;
   const subCats = categories.filter((c) => !!c.parent_id).length;
@@ -650,10 +657,10 @@ function MenuSummary({ items, categories }: { items: MenuItemRow[]; categories: 
   ];
 
   return (
-    <div style={card}>
+    <div style={s.card}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-        <ChartBar size={16} color="#6B6B6F" />
-        <span style={sectionTitle}>Menü Özeti</span>
+        <ChartBar size={16} color={t.heading} weight="thin" />
+        <span style={s.sectionTitle}>Menü Özeti</span>
       </div>
       <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
         {rows.map((r, idx) => (
@@ -664,16 +671,16 @@ function MenuSummary({ items, categories }: { items: MenuItemRow[]; categories: 
               justifyContent: 'space-between',
               alignItems: 'center',
               padding: '10px 0',
-              borderBottom: idx < rows.length - 1 ? '1px solid #F0F0EC' : 'none',
+              borderBottom: idx < rows.length - 1 ? s.divider : 'none',
               fontSize: 13,
             }}
           >
-            <span style={{ color: '#6B6B6F' }}>{r.label}</span>
+            <span style={{ color: t.heading }}>{r.label}</span>
             <span
               style={{
-                color: r.warn ? '#D97706' : '#1C1C1E',
+                color: r.warn ? t.warning : t.value,
                 fontWeight: 600,
-                background: r.warn ? '#FEF3C7' : 'transparent',
+                background: r.warn ? `${t.warning}22` : 'transparent',
                 padding: r.warn ? '2px 8px' : 0,
                 borderRadius: 4,
               }}
@@ -697,7 +704,10 @@ export default function RestaurantAnalytics({
   featureDiscountCodes,
   featureReviews,
   onNavigate,
+  theme,
 }: Props) {
+  const t = theme ?? getAdminTheme('light');
+  const s = makeStyles(t);
   const [data, setData] = useState<AllData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -818,28 +828,28 @@ export default function RestaurantAnalytics({
       `}</style>
 
       <div style={{ marginBottom: 20 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1C1C1E', margin: 0, letterSpacing: '-0.01em' }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: t.value, margin: 0, letterSpacing: '-0.01em' }}>
           Dashboard
         </h1>
-        <p style={{ fontSize: 13, color: '#6B6B6F', marginTop: 4 }}>İşletmenizin genel durumu</p>
+        <p style={{ fontSize: 13, color: t.heading, marginTop: 4 }}>İşletmenizin genel durumu</p>
       </div>
 
       {loading || !data ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
-            <SkeletonBlock />
-            <SkeletonBlock />
-            <SkeletonBlock />
-            <SkeletonBlock />
+            <SkeletonBlock t={t} s={s} />
+            <SkeletonBlock t={t} s={s} />
+            <SkeletonBlock t={t} s={s} />
+            <SkeletonBlock t={t} s={s} />
           </div>
           <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
-            <SkeletonBlock height={220} />
-            <SkeletonBlock height={220} />
+            <SkeletonBlock height={220} t={t} s={s} />
+            <SkeletonBlock height={220} t={t} s={s} />
           </div>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <SummaryCards data={data} />
+          <SummaryCards data={data} t={t} s={s} />
 
           {(featureWaiterCalls || featureLikes) && (
             <div
@@ -849,19 +859,20 @@ export default function RestaurantAnalytics({
                 gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
               }}
             >
-              {featureWaiterCalls && <WaiterCallsChart calls={data.waiterCalls} />}
-              {featureLikes && <PopularItems items={data.items} likes={data.likes} />}
+              {featureWaiterCalls && <WaiterCallsChart calls={data.waiterCalls} t={t} s={s} />}
+              {featureLikes && <PopularItems items={data.items} likes={data.likes} t={t} s={s} />}
             </div>
           )}
 
           {featureFeedback && (
-            <RecentFeedback feedback={data.feedback} onSeeAll={onNavigate ? () => onNavigate('feedback') : undefined} />
+            <RecentFeedback feedback={data.feedback} onSeeAll={onNavigate ? () => onNavigate('feedback') : undefined} t={t} s={s} />
           )}
 
           {featureReviews && data.pendingReviews.length > 0 && (
             <PendingReviews
               reviews={data.pendingReviews}
               onSeeAll={onNavigate ? () => onNavigate('reviews') : undefined}
+              t={t} s={s}
             />
           )}
 
@@ -876,9 +887,10 @@ export default function RestaurantAnalytics({
               <DiscountCodesStatus
                 codes={data.discountCodes}
                 onSeeAll={onNavigate ? () => onNavigate('discounts') : undefined}
+                t={t} s={s}
               />
             )}
-            <MenuSummary items={data.items} categories={data.categories} />
+            <MenuSummary items={data.items} categories={data.categories} t={t} s={s} />
           </div>
         </div>
       )}
