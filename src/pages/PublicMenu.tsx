@@ -65,6 +65,7 @@ interface Restaurant {
   google_rating: number | null;
   google_review_count: number | null;
   menu_view_mode: string | null;
+  admin_theme: string | null;
 }
 
 interface MenuCategory {

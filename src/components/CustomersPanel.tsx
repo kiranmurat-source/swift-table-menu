@@ -4,6 +4,8 @@ import {
   ChatCircle, ShoppingCart, CalendarBlank, MagnifyingGlass, Star,
 } from '@phosphor-icons/react';
 import { supabase } from '../lib/supabase';
+import type { AdminTheme } from '../lib/adminTheme';
+import { getAdminTheme } from '../lib/adminTheme';
 
 type Customer = {
   id: string;
@@ -38,13 +40,15 @@ const SOURCE_LABEL: Record<string, { label: string; Icon: typeof PencilSimple }>
   reservation: { label: 'Rezervasyon', Icon: CalendarBlank },
 };
 
-const card: React.CSSProperties = {
-  background: '#FFFFFF',
-  border: '1px solid #E5E5E3',
-  borderRadius: 10,
-  padding: 14,
-  boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-};
+function cardStyle(t: AdminTheme): React.CSSProperties {
+  return {
+    background: t.cardBg,
+    border: `1px solid ${t.cardBorder}`,
+    borderRadius: 10,
+    padding: 14,
+    boxShadow: t.cardShadow,
+  };
+}
 
 function formatDate(iso: string | null | undefined): string {
   if (!iso) return '—';
@@ -55,7 +59,9 @@ function formatDate(iso: string | null | undefined): string {
   }
 }
 
-export default function CustomersPanel({ restaurantId }: { restaurantId: string }) {
+export default function CustomersPanel({ restaurantId, theme }: { restaurantId: string; theme?: AdminTheme }) {
+  const t = theme ?? getAdminTheme('light');
+  const card = cardStyle(t);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -178,10 +184,10 @@ export default function CustomersPanel({ restaurantId }: { restaurantId: string 
           { label: 'Aktif', value: stats.active, Icon: CheckCircle },
         ].map(s => (
           <div key={s.label} style={card}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#6B6B6F', fontSize: 12, marginBottom: 4 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: t.subtle, fontSize: 12, marginBottom: 4 }}>
               <s.Icon size={16} weight="thin" /> {s.label}
             </div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: '#1C1C1E' }}>{s.value}</div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: t.value }}>{s.value}</div>
           </div>
         ))}
       </div>
@@ -189,13 +195,13 @@ export default function CustomersPanel({ restaurantId }: { restaurantId: string 
       {/* Toolbar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         <div style={{ position: 'relative', flex: '1 1 240px', minWidth: 200 }}>
-          <MagnifyingGlass size={16} weight="thin" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#6B6B6F' }} />
+          <MagnifyingGlass size={16} weight="thin" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: t.subtle }} />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="İsim, email veya telefon ara..."
-            style={{ width: '100%', padding: '8px 10px 8px 32px', border: '1px solid #E5E5E3', borderRadius: 8, fontSize: 13 }}
+            style={{ width: '100%', padding: '8px 10px 8px 32px', border: `1px solid ${t.cardBorder}`, borderRadius: 8, fontSize: 13 }}
           />
         </div>
         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
@@ -236,33 +242,33 @@ export default function CustomersPanel({ restaurantId }: { restaurantId: string 
       {showForm && (
         <div style={{ ...card, borderLeft: '3px solid #FF4F7A' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1C1C1E', margin: 0 }}>
+            <h4 style={{ fontSize: 14, fontWeight: 600, color: t.value, margin: 0 }}>
               {editingId ? 'Müşteriyi Düzenle' : 'Yeni Müşteri'}
             </h4>
-            <button type="button" onClick={resetForm} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6B6B6F' }}>
+            <button type="button" onClick={resetForm} style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.subtle }}>
               <X size={18} weight="thin" />
             </button>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
-            <label style={{ fontSize: 12, color: '#6B6B6F' }}>
+            <label style={{ fontSize: 12, color: t.subtle }}>
               İsim *
-              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: '1px solid #E5E5E3', borderRadius: 6, fontSize: 13, marginTop: 4 }} />
+              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: `1px solid ${t.cardBorder}`, borderRadius: 6, fontSize: 13, marginTop: 4 }} />
             </label>
-            <label style={{ fontSize: 12, color: '#6B6B6F' }}>
+            <label style={{ fontSize: 12, color: t.subtle }}>
               Email
-              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: '1px solid #E5E5E3', borderRadius: 6, fontSize: 13, marginTop: 4 }} />
+              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: `1px solid ${t.cardBorder}`, borderRadius: 6, fontSize: 13, marginTop: 4 }} />
             </label>
-            <label style={{ fontSize: 12, color: '#6B6B6F' }}>
+            <label style={{ fontSize: 12, color: t.subtle }}>
               Telefon
-              <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: '1px solid #E5E5E3', borderRadius: 6, fontSize: 13, marginTop: 4 }} />
+              <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: `1px solid ${t.cardBorder}`, borderRadius: 6, fontSize: 13, marginTop: 4 }} />
             </label>
           </div>
-          <label style={{ fontSize: 12, color: '#6B6B6F', display: 'block', marginTop: 10 }}>
+          <label style={{ fontSize: 12, color: t.subtle, display: 'block', marginTop: 10 }}>
             Notlar
-            <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} style={{ width: '100%', padding: '8px 10px', border: '1px solid #E5E5E3', borderRadius: 6, fontSize: 13, marginTop: 4, resize: 'vertical' }} />
+            <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} style={{ width: '100%', padding: '8px 10px', border: `1px solid ${t.cardBorder}`, borderRadius: 6, fontSize: 13, marginTop: 4, resize: 'vertical' }} />
           </label>
           <div style={{ marginTop: 10 }}>
-            <div style={{ fontSize: 12, color: '#6B6B6F', marginBottom: 6 }}>Etiketler</div>
+            <div style={{ fontSize: 12, color: t.subtle, marginBottom: 6 }}>Etiketler</div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {TAG_OPTIONS.map(tag => {
                 const active = form.tags.includes(tag);
@@ -289,7 +295,7 @@ export default function CustomersPanel({ restaurantId }: { restaurantId: string 
             <button type="button" onClick={saveCustomer} style={{ background: '#FF4F7A', color: '#FFFFFF', border: 'none', padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
               {editingId ? 'Güncelle' : 'Kaydet'}
             </button>
-            <button type="button" onClick={resetForm} style={{ background: '#FFFFFF', color: '#1C1C1E', border: '1px solid #E5E5E3', padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>
+            <button type="button" onClick={resetForm} style={{ background: '#FFFFFF', color: t.value, border: `1px solid ${t.cardBorder}`, padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>
               İptal
             </button>
           </div>
@@ -298,9 +304,9 @@ export default function CustomersPanel({ restaurantId }: { restaurantId: string 
 
       {/* List */}
       {loading ? (
-        <div style={{ ...card, textAlign: 'center', color: '#6B6B6F', fontSize: 13 }}>Yükleniyor...</div>
+        <div style={{ ...card, textAlign: 'center', color: t.subtle, fontSize: 13 }}>Yükleniyor...</div>
       ) : filtered.length === 0 ? (
-        <div style={{ ...card, textAlign: 'center', color: '#6B6B6F', fontSize: 13 }}>
+        <div style={{ ...card, textAlign: 'center', color: t.subtle, fontSize: 13 }}>
           {customers.length === 0 ? 'Henüz müşteri yok. Müşteri ekleyerek başlayın.' : 'Arama sonucu bulunamadı.'}
         </div>
       ) : (
@@ -308,7 +314,7 @@ export default function CustomersPanel({ restaurantId }: { restaurantId: string 
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
-                <tr style={{ background: '#F7F7F5', color: '#6B6B6F', fontSize: 12 }}>
+                <tr style={{ background: t.tableHeaderBg, color: t.subtle, fontSize: 12 }}>
                   <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 600 }}>İsim</th>
                   <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 600 }}>İletişim</th>
                   <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 600 }}>Kaynak</th>
@@ -322,17 +328,17 @@ export default function CustomersPanel({ restaurantId }: { restaurantId: string 
                 {filtered.map(c => {
                   const src = SOURCE_LABEL[c.source] || SOURCE_LABEL.manual;
                   return (
-                    <tr key={c.id} style={{ borderTop: '1px solid #E5E5E3' }}>
-                      <td style={{ padding: '10px 12px', fontWeight: 500, color: '#1C1C1E' }}>
+                    <tr key={c.id} style={{ borderTop: `1px solid ${t.divider}` }}>
+                      <td style={{ padding: '10px 12px', fontWeight: 500, color: t.value }}>
                         {c.name ?? '—'}
-                        {!c.is_active && <span style={{ marginLeft: 6, fontSize: 11, color: '#6B6B6F' }}>(pasif)</span>}
+                        {!c.is_active && <span style={{ marginLeft: 6, fontSize: 11, color: t.subtle }}>(pasif)</span>}
                       </td>
-                      <td style={{ padding: '10px 12px', color: '#2D2D2F' }}>
+                      <td style={{ padding: '10px 12px', color: t.value }}>
                         <div>{c.email ?? '—'}</div>
-                        <div style={{ color: '#6B6B6F', fontSize: 12 }}>{c.phone ?? ''}</div>
+                        <div style={{ color: t.subtle, fontSize: 12 }}>{c.phone ?? ''}</div>
                       </td>
                       <td style={{ padding: '10px 12px' }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#6B6B6F' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, color: t.subtle }}>
                           <src.Icon size={14} weight="thin" /> {src.label}
                         </span>
                       </td>
@@ -345,13 +351,13 @@ export default function CustomersPanel({ restaurantId }: { restaurantId: string 
                           ))}
                         </div>
                       </td>
-                      <td style={{ padding: '10px 12px', fontSize: 12, color: '#6B6B6F' }}>
+                      <td style={{ padding: '10px 12px', fontSize: 12, color: t.subtle }}>
                         <div>{formatDate(c.first_visit)}</div>
                         <div>{formatDate(c.last_visit)}</div>
                       </td>
-                      <td style={{ padding: '10px 12px', textAlign: 'center', color: '#1C1C1E' }}>{c.visit_count}</td>
+                      <td style={{ padding: '10px 12px', textAlign: 'center', color: t.value }}>{c.visit_count}</td>
                       <td style={{ padding: '10px 12px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                        <button type="button" onClick={() => startEdit(c)} style={{ background: 'none', border: 'none', color: '#6B6B6F', cursor: 'pointer', padding: 4 }} title="Düzenle">
+                        <button type="button" onClick={() => startEdit(c)} style={{ background: 'none', border: 'none', color: t.subtle, cursor: 'pointer', padding: 4 }} title="Düzenle">
                           <PencilSimple size={16} weight="thin" />
                         </button>
                         <button type="button" onClick={() => deleteCustomer(c.id)} style={{ background: 'none', border: 'none', color: '#DC2626', cursor: 'pointer', padding: 4 }} title="Sil">

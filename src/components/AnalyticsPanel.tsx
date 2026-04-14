@@ -3,6 +3,8 @@ import {
   Eye, CursorClick, Clock, CalendarBlank, ChartBar, TrendUp, TrendDown,
 } from '@phosphor-icons/react';
 import { supabase } from '../lib/supabase';
+import type { AdminTheme } from '../lib/adminTheme';
+import { getAdminTheme } from '../lib/adminTheme';
 
 type DayCount = { view_date: string; view_count: number };
 type HourCount = { hour_of_day: number; view_count: number };
@@ -10,13 +12,15 @@ type ItemDuration = { menu_item_id: string; avg_duration: number; view_count: nu
 type Item = { id: string; name_tr: string; category_id: string };
 type Category = { id: string; name_tr: string };
 
-const card: React.CSSProperties = {
-  background: '#FFFFFF',
-  border: '1px solid #E5E5E3',
-  borderRadius: 12,
-  padding: 16,
-  boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-};
+function cardStyle(t: AdminTheme): React.CSSProperties {
+  return {
+    background: t.cardBg,
+    border: `1px solid ${t.cardBorder}`,
+    borderRadius: 12,
+    padding: 16,
+    boxShadow: t.cardShadow,
+  };
+}
 
 const PINK = '#FF4F7A';
 const BLUE = '#4F7AFF';
@@ -41,7 +45,9 @@ function pct(curr: number, prev: number): number | null {
   return Math.round(((curr - prev) / prev) * 100);
 }
 
-export default function AnalyticsPanel({ restaurantId }: { restaurantId: string }) {
+export default function AnalyticsPanel({ restaurantId, theme }: { restaurantId: string; theme?: AdminTheme }) {
+  const t = theme ?? getAdminTheme('light');
+  const card = cardStyle(t);
   const [range, setRange] = useState<7 | 30>(30);
   const [loading, setLoading] = useState(true);
   const [pageDaily, setPageDaily] = useState<DayCount[]>([]);
@@ -157,12 +163,13 @@ export default function AnalyticsPanel({ restaurantId }: { restaurantId: string 
 
   const Stat = ({ label, value, Icon, trend, sub }: { label: string; value: string | number; Icon: typeof Eye; trend?: number | null; sub?: string }) => (
     <div style={card}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#6B6B6F', fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
-        <Icon size={16} weight="thin" /> {label}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <span style={{ color: t.heading, fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</span>
+        <Icon size={20} weight="thin" color={t.icon} />
       </div>
-      <div style={{ fontSize: 24, fontWeight: 700, color: '#1C1C1E' }}>{value}</div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, fontSize: 12 }}>
-        {sub && <span style={{ color: '#6B6B6F' }}>{sub}</span>}
+      <div style={{ fontSize: 28, fontWeight: 700, color: t.value }}>{value}</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, fontSize: 13 }}>
+        {sub && <span style={{ color: t.subtle }}>{sub}</span>}
         {trend != null && (
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2, color: trend >= 0 ? '#22C55E' : '#EF4444', fontWeight: 600 }}>
             {trend >= 0 ? <TrendUp size={12} weight="thin" /> : <TrendDown size={12} weight="thin" />}
@@ -186,7 +193,7 @@ export default function AnalyticsPanel({ restaurantId }: { restaurantId: string 
       {/* Daily chart */}
       <div style={card}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1C1C1E', margin: 0, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <h4 style={{ fontSize: 14, fontWeight: 600, color: t.value, margin: 0, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <ChartBar size={16} weight="thin" /> Günlük Görüntülenme
           </h4>
           <div style={{ display: 'flex', gap: 4 }}>
@@ -197,9 +204,9 @@ export default function AnalyticsPanel({ restaurantId }: { restaurantId: string 
                 onClick={() => setRange(n as 7 | 30)}
                 style={{
                   padding: '4px 10px', fontSize: 12, borderRadius: 8,
-                  border: range === n ? '1px solid #1C1C1E' : '1px solid #E5E5E3',
-                  background: range === n ? '#1C1C1E' : '#FFFFFF',
-                  color: range === n ? '#FFFFFF' : '#1C1C1E',
+                  border: `1px solid ${range === n ? t.value : t.cardBorder}`,
+                  background: range === n ? t.value : t.cardBg,
+                  color: range === n ? t.cardBg : t.value,
                   cursor: 'pointer',
                 }}
               >
@@ -208,7 +215,7 @@ export default function AnalyticsPanel({ restaurantId }: { restaurantId: string 
             ))}
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 12, fontSize: 11, color: '#6B6B6F', marginBottom: 8 }}>
+        <div style={{ display: 'flex', gap: 12, fontSize: 11, color: t.subtle, marginBottom: 8 }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
             <span style={{ width: 10, height: 10, borderRadius: 2, background: BLUE, display: 'inline-block' }} /> Sayfa
           </span>
@@ -224,7 +231,7 @@ export default function AnalyticsPanel({ restaurantId }: { restaurantId: string 
                 <div style={{ width: '40%', background: PINK, height: `${(d.item / maxDay) * 100}%`, minHeight: d.item > 0 ? 2 : 0, borderRadius: '2px 2px 0 0' }} />
               </div>
               {range === 7 && (
-                <span style={{ fontSize: 9, color: '#6B6B6F' }}>{d.date.slice(5)}</span>
+                <span style={{ fontSize: 9, color: t.subtle }}>{d.date.slice(5)}</span>
               )}
             </div>
           ))}
@@ -234,13 +241,13 @@ export default function AnalyticsPanel({ restaurantId }: { restaurantId: string 
       {/* Top items + categories */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 12 }}>
         <div style={card}>
-          <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1C1C1E', margin: '0 0 12px 0' }}>En Çok Tıklanan Ürünler</h4>
+          <h4 style={{ fontSize: 14, fontWeight: 600, color: t.value, margin: '0 0 12px 0' }}>En Çok Tıklanan Ürünler</h4>
           {topItems.length === 0 ? (
-            <div style={{ fontSize: 13, color: '#6B6B6F', textAlign: 'center', padding: 20 }}>Henüz veri yok</div>
+            <div style={{ fontSize: 13, color: t.subtle, textAlign: 'center', padding: 20 }}>Henüz veri yok</div>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
-                <tr style={{ fontSize: 11, color: '#6B6B6F', textAlign: 'left' }}>
+                <tr style={{ fontSize: 11, color: t.tableHeaderText, textAlign: 'left', textTransform: 'uppercase' }}>
                   <th style={{ padding: '6px 4px', fontWeight: 600, width: 24 }}>#</th>
                   <th style={{ padding: '6px 4px', fontWeight: 600 }}>Ürün</th>
                   <th style={{ padding: '6px 4px', fontWeight: 600, textAlign: 'right' }}>Tıklama</th>
@@ -249,11 +256,11 @@ export default function AnalyticsPanel({ restaurantId }: { restaurantId: string 
               </thead>
               <tbody>
                 {topItems.map((it, i) => (
-                  <tr key={it.id} style={{ borderTop: '1px solid #F0F0EC' }}>
-                    <td style={{ padding: '6px 4px', color: '#6B6B6F' }}>{i + 1}</td>
-                    <td style={{ padding: '6px 4px', color: '#1C1C1E' }}>{it.name}</td>
+                  <tr key={it.id} style={{ borderTop: `1px solid ${t.divider}` }}>
+                    <td style={{ padding: '6px 4px', color: t.subtle }}>{i + 1}</td>
+                    <td style={{ padding: '6px 4px', color: t.value }}>{it.name}</td>
                     <td style={{ padding: '6px 4px', textAlign: 'right', fontWeight: 600 }}>{it.clicks}</td>
-                    <td style={{ padding: '6px 4px', textAlign: 'right', color: '#6B6B6F' }}>{it.avg} sn</td>
+                    <td style={{ padding: '6px 4px', textAlign: 'right', color: t.subtle }}>{it.avg} sn</td>
                   </tr>
                 ))}
               </tbody>
@@ -262,9 +269,9 @@ export default function AnalyticsPanel({ restaurantId }: { restaurantId: string 
         </div>
 
         <div style={card}>
-          <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1C1C1E', margin: '0 0 12px 0' }}>Popüler Kategoriler</h4>
+          <h4 style={{ fontSize: 14, fontWeight: 600, color: t.value, margin: '0 0 12px 0' }}>Popüler Kategoriler</h4>
           {topCategories.length === 0 ? (
-            <div style={{ fontSize: 13, color: '#6B6B6F', textAlign: 'center', padding: 20 }}>Henüz veri yok</div>
+            <div style={{ fontSize: 13, color: t.subtle, textAlign: 'center', padding: 20 }}>Henüz veri yok</div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {topCategories.map(c => {
@@ -272,10 +279,10 @@ export default function AnalyticsPanel({ restaurantId }: { restaurantId: string 
                 return (
                   <div key={c.id}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
-                      <span style={{ color: '#1C1C1E' }}>{c.name}</span>
-                      <span style={{ color: '#6B6B6F' }}>{c.clicks}</span>
+                      <span style={{ color: t.value }}>{c.name}</span>
+                      <span style={{ color: t.subtle }}>{c.clicks}</span>
                     </div>
-                    <div style={{ height: 6, background: '#F0F0EC', borderRadius: 3, overflow: 'hidden' }}>
+                    <div style={{ height: 6, background: t.divider, borderRadius: 3, overflow: 'hidden' }}>
                       <div style={{ height: '100%', width: `${(c.clicks / max) * 100}%`, background: PINK }} />
                     </div>
                   </div>
@@ -288,15 +295,15 @@ export default function AnalyticsPanel({ restaurantId }: { restaurantId: string 
 
       {/* Hourly heatmap */}
       <div style={card}>
-        <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1C1C1E', margin: '0 0 12px 0' }}>
-          Saat Bazlı Yoğunluk <span style={{ fontWeight: 400, fontSize: 11, color: '#6B6B6F' }}>son 7 gün</span>
+        <h4 style={{ fontSize: 14, fontWeight: 600, color: t.value, margin: '0 0 12px 0' }}>
+          Saat Bazlı Yoğunluk <span style={{ fontWeight: 400, fontSize: 11, color: t.subtle }}>son 7 gün</span>
         </h4>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(24, 1fr)', gap: 2 }}>
           {Array.from({ length: 24 }, (_, h) => {
             const count = hourlyMap.get(h) ?? 0;
             const intensity = count / maxHourly;
             const bg = count === 0
-              ? '#F7F7F5'
+              ? t.divider
               : `rgba(255,79,122,${Math.max(0.15, intensity)})`;
             return (
               <div
@@ -321,7 +328,7 @@ export default function AnalyticsPanel({ restaurantId }: { restaurantId: string 
         </div>
       </div>
 
-      {loading && <div style={{ fontSize: 12, color: '#6B6B6F', textAlign: 'center' }}>Yükleniyor...</div>}
+      {loading && <div style={{ fontSize: 12, color: t.subtle, textAlign: 'center' }}>Yükleniyor...</div>}
     </div>
   );
 }

@@ -44,6 +44,7 @@ export const demoRestaurant = {
   google_rating: null,
   google_review_count: null,
   menu_view_mode: 'categories',
+  admin_theme: 'light',
 };
 
 export const demoCategories = [

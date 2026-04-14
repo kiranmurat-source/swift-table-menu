@@ -18,6 +18,7 @@ import DiscountCodesPanel from '../components/DiscountCodesPanel';
 import LikesPanel from '../components/LikesPanel';
 import CustomersPanel from '../components/CustomersPanel';
 import AnalyticsPanel from '../components/AnalyticsPanel';
+import { getAdminTheme } from '../lib/adminTheme';
 import {
   DndContext,
   closestCenter,
@@ -142,6 +143,7 @@ type Restaurant = {
   google_review_count: number | null;
   google_rating_updated_at: string | null;
   menu_view_mode: string | null;
+  admin_theme: string | null;
 };
 
 const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
@@ -448,6 +450,7 @@ async function triggerTranslation(table: string, recordId: string, languages: st
 function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate: (r: Restaurant) => void }) {
   const [currentTheme, setCurrentTheme] = useState<string>(restaurant.theme_color || 'white');
   const [currentViewMode, setCurrentViewMode] = useState<string>(restaurant.menu_view_mode || 'categories');
+  const [currentAdminTheme, setCurrentAdminTheme] = useState<string>(restaurant.admin_theme || 'light');
   const [form, setForm] = useState({
     name: restaurant.name,
     address: restaurant.address || '',
@@ -601,6 +604,23 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
     } else {
       onUpdate({ ...restaurant, menu_view_mode: mode });
       setMsg('Menü görünümü güncellendi');
+    }
+    setTimeout(() => setMsg(''), 3000);
+  }
+
+  async function handleAdminThemeChange(mode: string) {
+    const prev = currentAdminTheme;
+    setCurrentAdminTheme(mode);
+    const { error } = await supabase
+      .from('restaurants')
+      .update({ admin_theme: mode })
+      .eq('id', restaurant.id);
+    if (error) {
+      setCurrentAdminTheme(prev);
+      setMsg('Hata: ' + error.message);
+    } else {
+      onUpdate({ ...restaurant, admin_theme: mode });
+      setMsg('Yönetim paneli teması güncellendi');
     }
     setTimeout(() => setMsg(''), 3000);
   }
@@ -939,6 +959,43 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
         </div>
         <p style={{ fontSize: 11, color: '#6B6B6F', margin: 0 }}>
           Müşterilerinizin menüyü nasıl göreceğini seçin.
+        </p>
+
+        {/* Admin Panel Theme Selector */}
+        <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1C1C1E', marginTop: 16, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Palette size={16} /> Yönetim Paneli Teması
+        </h4>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {([
+            { key: 'light', label: 'Açık', bg: '#FFFFFF', fg: '#111827' },
+            { key: 'dark', label: 'Koyu', bg: '#1A1D26', fg: '#F9FAFB' },
+          ] as const).map((opt) => {
+            const selected = currentAdminTheme === opt.key;
+            return (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => handleAdminThemeChange(opt.key)}
+                style={{
+                  flex: '1 1 120px',
+                  padding: '12px 14px',
+                  borderRadius: 10,
+                  cursor: 'pointer',
+                  border: selected ? '2px solid #1C1C1E' : '1px solid #E5E5E3',
+                  background: opt.bg,
+                  color: opt.fg,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  textAlign: 'left',
+                }}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+        <p style={{ fontSize: 11, color: '#6B6B6F', margin: 0 }}>
+          Yönetim panelinin görünümünü seçin (sidebar koyu kalır).
         </p>
 
         {/* Menu Preview Link */}
@@ -1840,8 +1897,10 @@ export default function RestaurantDashboard() {
     </>
   );
 
+  const adminTheme = getAdminTheme(restaurant?.admin_theme);
+
   return (
-    <div className="flex min-h-screen bg-[#F7F7F5]">
+    <div className="flex min-h-screen" style={{ backgroundColor: adminTheme.pageBg, color: adminTheme.value }}>
       {/* Desktop Sidebar */}
       <aside className="sb-rail hidden md:flex flex-col w-[240px] shrink-0 border-r border-[#3A3A3E] bg-[#1C1C1E] sticky top-0 self-start min-h-screen">
         {sidebarContent}
@@ -1957,8 +2016,8 @@ export default function RestaurantDashboard() {
       {activeTab === 'promos' && <PromosTab restaurant={restaurant} />}
       {activeTab === 'calls' && <WaiterCallsPanel restaurantId={restaurant.id} />}
       {activeTab === 'feedback' && <FeedbackPanel restaurantId={restaurant.id} />}
-      {activeTab === 'customers' && <CustomersPanel restaurantId={restaurant.id} />}
-      {activeTab === 'analytics' && <AnalyticsPanel restaurantId={restaurant.id} />}
+      {activeTab === 'customers' && <CustomersPanel restaurantId={restaurant.id} theme={adminTheme} />}
+      {activeTab === 'analytics' && <AnalyticsPanel restaurantId={restaurant.id} theme={adminTheme} />}
       {activeTab === 'reviews' && <ReviewsPanel restaurantId={restaurant.id} />}
       {activeTab === 'discounts' && <DiscountCodesPanel restaurantId={restaurant.id} />}
       {activeTab === 'likes' && <LikesPanel restaurantId={restaurant.id} />}
