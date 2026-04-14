@@ -43,6 +43,7 @@ export const demoRestaurant = {
   google_place_id: null,
   google_rating: null,
   google_review_count: null,
+  menu_view_mode: 'categories',
 };
 
 export const demoCategories = [

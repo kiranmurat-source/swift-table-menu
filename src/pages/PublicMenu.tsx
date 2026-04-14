@@ -6,9 +6,9 @@ import { supabase } from '../lib/supabase';
 import { getOptimizedImageUrl, handleImageError } from '../lib/imageUtils';
 import {
   Star, AppleLogo, Thermometer, MapPin, Phone, Globe, CaretDown, CaretLeft,
-  ForkKnife, XCircle, Funnel, Timer, SquaresFour, GridFour, ListBullets, Tag, Heart, Clock, Play,
-
+  ForkKnife, XCircle, Funnel, Timer, Tag, Heart, Clock, Play, ChatCircle,
 } from "@phosphor-icons/react";
+import FeedbackModal from '../components/FeedbackModal';
 import { AllergenBadgeList } from '../components/AllergenIcon';
 import { getTheme, type MenuTheme } from '../lib/themes';
 import { getAllergenInfo, ALLERGEN_LIST, DIET_LIST } from '../lib/allergens';
@@ -64,6 +64,7 @@ interface Restaurant {
   google_place_id: string | null;
   google_rating: number | null;
   google_review_count: number | null;
+  menu_view_mode: string | null;
 }
 
 interface MenuCategory {
@@ -306,6 +307,20 @@ const UI: Record<string, Record<UiLangCode, string>> = {
   },
   prepTime:         { tr: 'Hazırlanma Süresi', en: 'Prep Time', ar: 'وقت التحضير', zh: '准备时间' },
   minutes:          { tr: 'dk', en: 'min', ar: 'دقيقة', zh: '分钟' },
+  // Feedback
+  feedbackBtn:        { tr: 'Geri Bildirim', en: 'Feedback', ar: 'ملاحظات', zh: '反馈' },
+  rateExperience:     { tr: 'Deneyiminizi Değerlendirin', en: 'Rate Your Experience', ar: 'قيّم تجربتك', zh: '评价您的体验' },
+  shareExperience:    { tr: 'Düşünceleriniz bizim için değerli', en: 'Your thoughts matter to us', ar: 'رأيك يهمنا', zh: '您的想法对我们很重要' },
+  yourName:           { tr: 'Adınız (isteğe bağlı)', en: 'Your name (optional)', ar: 'اسمك (اختياري)', zh: '您的姓名（可选）' },
+  fbSubmit:           { tr: 'Gönder', en: 'Submit', ar: 'إرسال', zh: '提交' },
+  thankYou:           { tr: 'Teşekkürler!', en: 'Thank You!', ar: 'شكراً!', zh: '谢谢！' },
+  feedbackReceived:   { tr: 'Geri bildiriminiz alındı', en: 'Your feedback has been received', ar: 'تم استلام ملاحظاتك', zh: '已收到您的反馈' },
+  feedbackReceivedLow:{ tr: 'Geri bildiriminiz için teşekkürler. Daha iyisini yapmak için çalışacağız.', en: 'Thanks for your feedback. We will work to do better.', ar: 'شكراً على ملاحظاتك، سنعمل لتقديم الأفضل.', zh: '感谢您的反馈，我们会努力做得更好。' },
+  rateOnGoogle:       { tr: "Google'da Değerlendirin", en: 'Rate on Google', ar: 'قيّم على جوجل', zh: '在Google上评价' },
+  googleHelps:        { tr: "Google'daki yorumunuz başkalarına da yardımcı olur.", en: 'Your Google review helps others too.', ar: 'مراجعتك على جوجل تساعد الآخرين أيضاً.', zh: '您在Google上的评价对其他人也有帮助。' },
+  rateOnGoogleBtn:    { tr: "Google'da Yorum Yap", en: 'Review on Google', ar: 'مراجعة على جوجل', zh: '在Google上评价' },
+  noThanks:           { tr: 'Hayır, Teşekkürler', en: 'No, Thanks', ar: 'لا، شكراً', zh: '不，谢谢' },
+  ok:                 { tr: 'Tamam', en: 'OK', ar: 'حسناً', zh: '好的' },
   // Cart
   viewCart:          { tr: 'Sepeti Gör', en: 'View Cart', ar: 'عرض السلة', zh: '查看购物车' },
   yourCart:          { tr: 'Sepetiniz', en: 'Your Cart', ar: 'سلتك', zh: '你的购物车' },
@@ -400,6 +415,7 @@ export default function PublicMenu() {
   const [excludeAllergens, setExcludeAllergens] = useState<string[]>([]);
   const [preferences, setPreferences] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'categories' | 'grid' | 'list'>('categories');
+  const [viewModeInitialized, setViewModeInitialized] = useState(false);
   const [scrollActiveCategory, setScrollActiveCategory] = useState<string | null>(null);
   const isScrollingToCategory = useRef(false);
   const tabBarRef = useRef<HTMLDivElement>(null);
@@ -407,6 +423,7 @@ export default function PublicMenu() {
   const [activePromo, setActivePromo] = useState<Promo | null>(null);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
   const [demoThemeOverride, setDemoThemeOverride] = useState<string | null>(null);
+  const [showFeedback, setShowFeedback] = useState(false);
   const cart = useCart();
 
   // Google Review prompt (triggered by product likes)
@@ -423,6 +440,15 @@ export default function PublicMenu() {
     () => getTheme(demoThemeOverride ?? restaurant?.theme_color),
     [demoThemeOverride, restaurant?.theme_color],
   );
+
+  useEffect(() => {
+    if (!restaurant || viewModeInitialized) return;
+    const pref = restaurant.menu_view_mode;
+    if (pref === 'grid' || pref === 'list' || pref === 'categories') {
+      setViewMode(pref);
+    }
+    setViewModeInitialized(true);
+  }, [restaurant, viewModeInitialized]);
 
   const lang: LangCode = useMemo(() => {
     if (langParam === 'tr') return 'tr';
@@ -785,6 +811,59 @@ export default function PublicMenu() {
             <img src="/tabbled-logo-horizontal.png" alt="Tabbled" className="h-5 w-auto block brightness-0 invert opacity-60" />
           </a>
         </div>
+
+        {/* Floating Feedback Button */}
+        {restaurant.feature_feedback !== false && (
+          <button
+            type="button"
+            onClick={() => setShowFeedback(true)}
+            aria-label={UI.feedbackBtn[toUiLang(lang)]}
+            style={{
+              position: 'fixed',
+              bottom: 24,
+              right: 24,
+              width: 48,
+              height: 48,
+              borderRadius: '50%',
+              backgroundColor: '#1C1C1E',
+              color: '#FFFFFF',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+              zIndex: 50,
+            }}
+          >
+            <ChatCircle size={24} weight="thin" />
+          </button>
+        )}
+
+        {showFeedback && (
+          <FeedbackModal
+            restaurantId={restaurant.id}
+            googlePlaceId={restaurant.google_place_id}
+            tableNumber={table}
+            lang={lang}
+            theme={theme}
+            ui={{
+              rateExperience: UI.rateExperience[toUiLang(lang)],
+              shareExperience: UI.shareExperience[toUiLang(lang)],
+              yourName: UI.yourName[toUiLang(lang)],
+              submit: UI.fbSubmit[toUiLang(lang)],
+              thankYou: UI.thankYou[toUiLang(lang)],
+              feedbackReceived: UI.feedbackReceived[toUiLang(lang)],
+              feedbackReceivedLow: UI.feedbackReceivedLow[toUiLang(lang)],
+              rateOnGoogle: UI.rateOnGoogle[toUiLang(lang)],
+              googleHelps: UI.googleHelps[toUiLang(lang)],
+              rateOnGoogleBtn: UI.rateOnGoogleBtn[toUiLang(lang)],
+              noThanks: UI.noThanks[toUiLang(lang)],
+              ok: UI.ok[toUiLang(lang)],
+            }}
+            onClose={() => setShowFeedback(false)}
+          />
+        )}
       </div>
     );
   }
@@ -959,9 +1038,9 @@ export default function PublicMenu() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 6 }}>
             <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)' }}>Tema:</span>
-            {(['white', 'black', 'red'] as const).map((t) => {
+            {(['white', 'black'] as const).map((t) => {
               const isActive = (demoThemeOverride ?? restaurant.theme_color ?? 'white') === t;
-              const bg = t === 'white' ? '#F7F7F8' : t === 'black' ? '#1C1C1E' : '#DC2626';
+              const bg = t === 'white' ? '#F7F7F8' : '#1C1C1E';
               return (
                 <button
                   key={t}
@@ -1310,51 +1389,6 @@ export default function PublicMenu() {
                 </button>
               );
             })}
-          </div>
-          {/* View Mode Toggle — Categories / Grid / List */}
-          <div
-            className="flex-shrink-0 flex items-center gap-1"
-            style={{ paddingRight: 16, paddingLeft: 8, borderLeft: `1px solid ${theme.divider}` }}
-          >
-            <button
-              onClick={() => { setViewMode('categories'); setActiveCategory(null); }}
-              className="flex items-center justify-center"
-              style={{
-                width: 32, height: 32, borderRadius: 8, border: 'none',
-                backgroundColor: viewMode === 'categories' ? theme.categoryActiveBg : 'transparent',
-                color: viewMode === 'categories' ? theme.categoryActiveText : theme.mutedText,
-                cursor: 'pointer',
-              }}
-              aria-label={UI.categories[toUiLang(lang)]}
-            >
-              <SquaresFour size={18} weight="thin" />
-            </button>
-            <button
-              onClick={() => setViewMode('grid')}
-              className="flex items-center justify-center"
-              style={{
-                width: 32, height: 32, borderRadius: 8, border: 'none',
-                backgroundColor: viewMode === 'grid' ? theme.categoryActiveBg : 'transparent',
-                color: viewMode === 'grid' ? theme.categoryActiveText : theme.mutedText,
-                cursor: 'pointer',
-              }}
-              aria-label="Grid"
-            >
-              <GridFour size={18} weight="thin" />
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className="flex items-center justify-center"
-              style={{
-                width: 32, height: 32, borderRadius: 8, border: 'none',
-                backgroundColor: viewMode === 'list' ? theme.categoryActiveBg : 'transparent',
-                color: viewMode === 'list' ? theme.categoryActiveText : theme.mutedText,
-                cursor: 'pointer',
-              }}
-              aria-label="List"
-            >
-              <ListBullets size={18} weight="thin" />
-            </button>
           </div>
         </div>
       </div>

@@ -139,6 +139,7 @@ type Restaurant = {
   google_rating: number | null;
   google_review_count: number | null;
   google_rating_updated_at: string | null;
+  menu_view_mode: string | null;
 };
 
 const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
@@ -444,6 +445,7 @@ async function triggerTranslation(table: string, recordId: string, languages: st
 
 function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate: (r: Restaurant) => void }) {
   const [currentTheme, setCurrentTheme] = useState<string>(restaurant.theme_color || 'white');
+  const [currentViewMode, setCurrentViewMode] = useState<string>(restaurant.menu_view_mode || 'categories');
   const [form, setForm] = useState({
     name: restaurant.name,
     address: restaurant.address || '',
@@ -580,6 +582,23 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
     } else {
       onUpdate({ ...restaurant, theme_color: themeKey });
       setMsg('Tema güncellendi');
+    }
+    setTimeout(() => setMsg(''), 3000);
+  }
+
+  async function handleViewModeChange(mode: string) {
+    const prev = currentViewMode;
+    setCurrentViewMode(mode);
+    const { error } = await supabase
+      .from('restaurants')
+      .update({ menu_view_mode: mode })
+      .eq('id', restaurant.id);
+    if (error) {
+      setCurrentViewMode(prev);
+      setMsg('Hata: ' + error.message);
+    } else {
+      onUpdate({ ...restaurant, menu_view_mode: mode });
+      setMsg('Menü görünümü güncellendi');
     }
     setTimeout(() => setMsg(''), 3000);
   }
@@ -877,6 +896,47 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
         </div>
         <p style={{ fontSize: 11, color: '#6B6B6F', margin: 0 }}>
           Tema sadece müşterilerinizin göreceği genel menü sayfasını etkiler.
+        </p>
+
+        {/* Menu View Mode Selector */}
+        <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1C1C1E', marginTop: 16, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Package size={16} /> Menü Görünümü
+        </h4>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {([
+            { key: 'categories', label: 'Kategoriler', desc: 'Büyük kategori kartlarıyla açılış' },
+            { key: 'grid', label: 'Grid', desc: '2 sütun ürün kartları' },
+            { key: 'list', label: 'List', desc: 'Yatay ürün kartları' },
+          ] as const).map((opt) => {
+            const selected = currentViewMode === opt.key;
+            return (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => handleViewModeChange(opt.key)}
+                style={{
+                  flex: '1 1 140px',
+                  padding: '10px 12px',
+                  borderRadius: 10,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                  border: selected ? '2px solid #1C1C1E' : '1px solid #E5E5E3',
+                  background: selected ? '#1C1C1E' : '#FFFFFF',
+                  color: selected ? '#FFFFFF' : '#1C1C1E',
+                  textAlign: 'left',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 2,
+                }}
+              >
+                <span style={{ fontSize: 13, fontWeight: 600 }}>{opt.label}</span>
+                <span style={{ fontSize: 11, opacity: 0.7 }}>{opt.desc}</span>
+              </button>
+            );
+          })}
+        </div>
+        <p style={{ fontSize: 11, color: '#6B6B6F', margin: 0 }}>
+          Müşterilerinizin menüyü nasıl göreceğini seçin.
         </p>
 
         {/* Menu Preview Link */}
