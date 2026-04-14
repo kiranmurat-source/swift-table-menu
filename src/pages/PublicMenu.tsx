@@ -45,7 +45,7 @@ interface Translations {
 
 interface Restaurant {
   id: string; name: string; slug: string;
-  logo_url: string | null; cover_url: string | null; cover_image_url: string | null;
+  logo_url: string | null; cover_url: string | null; cover_image_url: string | null; splash_video_url: string | null;
   address: string | null; phone: string | null; is_active: boolean;
   description_tr: string | null; tagline: string | null;
   enabled_languages: string[]; translations: Translations;
@@ -719,7 +719,34 @@ export default function PublicMenu() {
         style={{ backgroundColor: theme.bg, color: theme.text, fontFamily: bodyFont }}
       >
         {/* Background */}
-        {coverImage ? (
+        {restaurant.splash_video_url ? (
+          <>
+            {coverImage && (
+              <img src={coverImage} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            )}
+            <video
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+              poster={coverImage || undefined}
+              onError={(e) => { (e.currentTarget as HTMLVideoElement).style.display = 'none'; }}
+              className="absolute inset-0 w-full h-full object-cover"
+            >
+              <source src={restaurant.splash_video_url} type="video/mp4" />
+              <source src={restaurant.splash_video_url} type="video/webm" />
+            </video>
+            <div
+              className="absolute inset-0"
+              style={{
+                background: theme.key === 'black'
+                  ? 'linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.7) 100%)'
+                  : 'linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.55) 100%)',
+              }}
+            />
+          </>
+        ) : coverImage ? (
           <>
             <img onError={handleImageError} src={coverImage} alt="" className="absolute inset-0 w-full h-full object-cover" />
             <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.1) 100%)' }} />

@@ -124,6 +124,7 @@ type MenuItem = {
 type Restaurant = {
   id: string; name: string; slug: string; enabled_languages: string[]; current_plan: string | null;
   logo_url: string | null; cover_url: string | null; cover_image_url: string | null;
+  splash_video_url: string | null;
   address: string | null; phone: string | null; tagline: string | null;
   description_tr: string | null; theme_color: string | null;
   social_instagram: string | null; social_facebook: string | null;
@@ -465,6 +466,7 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
     social_website: restaurant.social_website || '',
     social_whatsapp: restaurant.social_whatsapp || '',
     social_google_maps: restaurant.social_google_maps || '',
+    splash_video_url: restaurant.splash_video_url || '',
     feature_waiter_calls: restaurant.feature_waiter_calls ?? true,
     feature_cart: restaurant.feature_cart ?? true,
     feature_whatsapp_order: restaurant.feature_whatsapp_order ?? true,
@@ -507,6 +509,7 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
       social_website: form.social_website || null,
       social_whatsapp: form.social_whatsapp || null,
       social_google_maps: form.social_google_maps || null,
+      splash_video_url: form.splash_video_url.trim() || null,
       working_hours: workingHours,
       feature_waiter_calls: form.feature_waiter_calls,
       feature_cart: form.feature_cart,
@@ -536,6 +539,7 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
         social_website: form.social_website || null,
         social_whatsapp: form.social_whatsapp || null,
         social_google_maps: form.social_google_maps || null,
+        splash_video_url: form.splash_video_url.trim() || null,
         working_hours: workingHours,
         feature_waiter_calls: form.feature_waiter_calls,
         feature_cart: form.feature_cart,
@@ -680,6 +684,40 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
             )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: theme.subtle, marginTop: 4 }}><Info size={14} /><span>1200×400px, yatay geniş, max 5MB</span></div>
           </div>
+        </div>
+
+        <div style={{ marginTop: 20, paddingTop: 20, borderTop: `1px solid ${theme.border}` }}>
+          <label style={{ ...S.label, marginBottom: 6 }}>Splash Video URL</label>
+          <div style={{ fontSize: 11, color: theme.subtle, marginBottom: 8 }}>MP4 veya WebM formatında video linki. Video varsa splash ekranında arka plan olarak gösterilir.</div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
+            <input
+              style={{ ...S.input, flex: 1 }}
+              type="url"
+              value={form.splash_video_url}
+              onChange={e => setForm({ ...form, splash_video_url: e.target.value })}
+              placeholder="https://example.com/video.mp4"
+            />
+            {form.splash_video_url && (
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, splash_video_url: '' })}
+                style={{ ...S.btnSm, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 4 }}
+              >
+                <Trash size={14} /> Kaldır
+              </button>
+            )}
+          </div>
+          {form.splash_video_url.trim() && (
+            <video
+              key={form.splash_video_url}
+              src={form.splash_video_url}
+              muted
+              autoPlay
+              loop
+              playsInline
+              style={{ marginTop: 10, width: 200, maxWidth: '100%', borderRadius: 8, border: `1px solid ${theme.border}`, backgroundColor: theme.pageBg }}
+            />
+          )}
         </div>
       </div>
 
