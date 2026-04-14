@@ -306,6 +306,20 @@ const UI: Record<string, Record<UiLangCode, string>> = {
     ar: '* % القيمة اليومية (بناءً على نظام 2000 سعرة)',
     zh: '* % 每日参考值（基于2000卡路里饮食）',
   },
+  energy:           { tr: 'Enerji', en: 'Energy', ar: 'الطاقة', zh: '能量' },
+  fat:              { tr: 'Yağ', en: 'Fat', ar: 'دهون', zh: '脂肪' },
+  saturates:        { tr: 'doymuş yağ', en: 'of which saturates', ar: 'منها مشبعة', zh: '其中饱和脂肪' },
+  carbs:            { tr: 'Karbonhidrat', en: 'Carbohydrate', ar: 'كربوهيدرات', zh: '碳水化合物' },
+  ofWhichSugars:    { tr: 'şekerler', en: 'of which sugars', ar: 'منها سكريات', zh: '其中糖' },
+  salt:             { tr: 'Tuz', en: 'Salt', ar: 'ملح', zh: '盐' },
+  per100g:          { tr: '100g başına', en: 'per 100g', ar: 'لكل 100 جم', zh: '每100克' },
+  perServing:       { tr: 'Porsiyon başına', en: 'per serving', ar: 'لكل حصة', zh: '每份' },
+  referenceIntakeNote: {
+    tr: '*Yetişkin referans alım değerleri (8400 kJ / 2000 kcal)',
+    en: '*Reference intake of an average adult (8400 kJ / 2000 kcal)',
+    ar: '*القيم المرجعية لبالغ متوسط (8400 kJ / 2000 سعرة)',
+    zh: '*成年人参考摄入量（8400 kJ / 2000 卡路里）',
+  },
   prepTime:         { tr: 'Hazırlanma Süresi', en: 'Prep Time', ar: 'وقت التحضير', zh: '准备时间' },
   minutes:          { tr: 'dk', en: 'min', ar: 'دقيقة', zh: '分钟' },
   // Feedback
@@ -2857,96 +2871,148 @@ function NutritionFactsTable({
   const headingFont = "'Roboto', sans-serif";
   const uiLang = toUiLang(lang);
 
-  // Helper: render a row only if value is a number (0 is allowed)
-  type RowProps = {
+  // EU RIs (adult)
+  const RI = { energyKcal: 2000, fat: 70, sat: 20, carbs: 260, sugars: 90, protein: 50, salt: 6 };
+
+  // Traffic-light thresholds per 100g (UK FSA / EU)
+  function trafficLight(kind: 'fat' | 'sat' | 'sugars' | 'salt', v: number | null | undefined): string | null {
+    if (v == null) return null;
+    const t = {
+      fat:    { low: 3,   high: 17.5 },
+      sat:    { low: 1.5, high: 5 },
+      sugars: { low: 5,   high: 22.5 },
+      salt:   { low: 0.3, high: 1.5 },
+    }[kind];
+    if (v <= t.low) return '#22C55E';
+    if (v >= t.high) return '#EF4444';
+    return '#F59E0B';
+  }
+
+  // Parse serving size as number if it's like "150g"
+  const servingG = (() => {
+    if (!nutrition.serving_size) return null;
+    const m = String(nutrition.serving_size).match(/(\d+(?:[.,]\d+)?)/);
+    if (!m) return null;
+    const n = parseFloat(m[1].replace(',', '.'));
+    return Number.isFinite(n) && n > 0 ? n : null;
+  })();
+
+  // Source values are treated as per-100g. Convert to per-serving via ratio.
+  const kcal = nutrition.calories ?? null;
+  const kJ = kcal != null ? Math.round(kcal * 4.184) : null;
+  const fat = nutrition.total_fat ?? null;
+  const sat = nutrition.saturated_fat ?? null;
+  const carbs = nutrition.total_carb ?? null;
+  const sugars = nutrition.sugars ?? null;
+  const protein = nutrition.protein ?? null;
+  const salt = nutrition.sodium != null ? Number(((nutrition.sodium * 2.5) / 1000).toFixed(2)) : null;
+
+  const perServing = (v: number | null): number | null => {
+    if (v == null || servingG == null) return null;
+    return Number(((v * servingG) / 100).toFixed(1));
+  };
+
+  type RowDef = {
     label: string;
-    value: number | undefined;
+    value: number | null;
     unit: string;
     indent?: boolean;
     bold?: boolean;
-  };
-  const Row = ({ label, value, unit, indent, bold }: RowProps) => {
-    if (typeof value !== 'number') return null;
-    return (
-      <div
-        className="flex items-baseline justify-between py-1"
-        style={{
-          color: theme.text,
-          fontWeight: bold ? 600 : 400,
-          paddingLeft: indent ? 16 : 0,
-        }}
-      >
-        <span className="text-sm">{label}</span>
-        <span className="text-sm tabular-nums" style={{ color: theme.text }}>
-          {value}
-          {unit ? ` ${unit}` : ''}
-        </span>
-      </div>
-    );
+    ri?: number;
+    tl?: string | null;
+    extra?: string; // e.g. "837 kJ"
   };
 
-  const Divider = () => (
-    <div className="my-2" style={{ height: 1, backgroundColor: theme.divider }} />
-  );
+  const energyExtra = kJ != null ? `${kJ} kJ` : undefined;
+  const rows: RowDef[] = [
+    { label: UI.energy[uiLang], value: kcal, unit: 'kcal', bold: true, ri: RI.energyKcal, extra: energyExtra },
+    { label: UI.fat[uiLang], value: fat, unit: 'g', bold: true, ri: RI.fat, tl: trafficLight('fat', fat) },
+    { label: UI.saturates[uiLang], value: sat, unit: 'g', indent: true, ri: RI.sat, tl: trafficLight('sat', sat) },
+    { label: UI.carbs[uiLang], value: carbs, unit: 'g', bold: true, ri: RI.carbs },
+    { label: UI.ofWhichSugars[uiLang], value: sugars, unit: 'g', indent: true, ri: RI.sugars, tl: trafficLight('sugars', sugars) },
+    { label: UI.protein[uiLang], value: protein, unit: 'g', bold: true, ri: RI.protein },
+    { label: UI.salt[uiLang], value: salt, unit: 'g', bold: true, ri: RI.salt, tl: trafficLight('salt', salt) },
+  ];
+
+  const visibleRows = rows.filter(r => r.value != null);
+  if (visibleRows.length === 0) return null;
+
+  const showPerServing = servingG != null;
 
   return (
-    <div
-      className="mt-5 pt-4"
-      style={{ borderTop: `1px solid ${theme.divider}` }}
-    >
+    <div className="mt-5 pt-4" style={{ borderTop: `1px solid ${theme.divider}` }}>
       <div
         className="rounded-2xl p-4"
-        style={{
-          backgroundColor: theme.cardBg,
-          border: `1px solid ${theme.cardBorder}`,
-        }}
+        style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}` }}
       >
-        <h3
-          className="text-base"
-          style={{ fontFamily: headingFont, fontWeight: 700, color: theme.text }}
-        >
+        <h3 className="text-base" style={{ fontFamily: headingFont, fontWeight: 700, color: theme.text }}>
           {UI.nutritionTitle[uiLang]}
         </h3>
-        {nutrition.serving_size && (
-          <p className="text-xs mt-1" style={{ color: theme.mutedText, fontWeight: 300 }}>
-            {UI.servingSize[uiLang]}: {nutrition.serving_size}
-          </p>
-        )}
-        <Divider />
 
-        <Row label={UI.calories[uiLang]} value={nutrition.calories} unit="kcal" bold />
-        <Row label={UI.caloriesFromFat[uiLang]} value={nutrition.calories_from_fat} unit="kcal" indent />
+        {/* Column headers */}
+        <div
+          className="grid mt-3 pb-2 text-xs"
+          style={{
+            gridTemplateColumns: showPerServing ? '1.4fr 1fr 1fr 0.6fr' : '1.6fr 1fr 0.6fr',
+            gap: 8,
+            borderBottom: `1px solid ${theme.divider}`,
+            color: theme.mutedText,
+            fontWeight: 500,
+          }}
+        >
+          <span />
+          <span style={{ textAlign: 'right' }}>{UI.per100g[uiLang]}</span>
+          {showPerServing && (
+            <span style={{ textAlign: 'right' }}>
+              {UI.perServing[uiLang]} ({servingG}g)
+            </span>
+          )}
+          <span style={{ textAlign: 'right' }}>RI%</span>
+        </div>
 
-        <Divider />
-
-        <Row label={UI.totalFat[uiLang]} value={nutrition.total_fat} unit="g" bold />
-        <Row label={UI.saturatedFat[uiLang]} value={nutrition.saturated_fat} unit="g" indent />
-        <Row label={UI.transFat[uiLang]} value={nutrition.trans_fat} unit="g" indent />
-        <Row label={UI.cholesterol[uiLang]} value={nutrition.cholesterol} unit="mg" />
-        <Row label={UI.sodium[uiLang]} value={nutrition.sodium} unit="mg" />
-
-        <Divider />
-
-        <Row label={UI.totalCarb[uiLang]} value={nutrition.total_carb} unit="g" bold />
-        <Row label={UI.dietaryFiber[uiLang]} value={nutrition.dietary_fiber} unit="g" indent />
-        <Row label={UI.sugars[uiLang]} value={nutrition.sugars} unit="g" indent />
-        <Row label={UI.protein[uiLang]} value={nutrition.protein} unit="g" bold />
-
-        {(typeof nutrition.vitamin_a === 'number' ||
-          typeof nutrition.vitamin_c === 'number' ||
-          typeof nutrition.calcium === 'number' ||
-          typeof nutrition.iron === 'number') && (
-          <>
-            <Divider />
-            <Row label={UI.vitaminA[uiLang]} value={nutrition.vitamin_a} unit="%" />
-            <Row label={UI.vitaminC[uiLang]} value={nutrition.vitamin_c} unit="%" />
-            <Row label={UI.calcium[uiLang]} value={nutrition.calcium} unit="%" />
-            <Row label={UI.iron[uiLang]} value={nutrition.iron} unit="%" />
-          </>
-        )}
+        {/* Rows */}
+        {visibleRows.map((r) => {
+          const ps = perServing(r.value);
+          const ri = r.ri && r.value != null ? Math.round((r.value / r.ri) * 100) : null;
+          return (
+            <div
+              key={r.label}
+              className="grid items-center py-1.5 text-sm tabular-nums"
+              style={{
+                gridTemplateColumns: showPerServing ? '1.4fr 1fr 1fr 0.6fr' : '1.6fr 1fr 0.6fr',
+                gap: 8,
+                color: theme.text,
+                fontWeight: r.bold ? 700 : 400,
+                paddingLeft: r.indent ? 12 : 0,
+              }}
+            >
+              <span className="flex items-center gap-2">
+                {r.tl && (
+                  <span
+                    aria-hidden
+                    style={{ width: 8, height: 8, borderRadius: '50%', background: r.tl, flexShrink: 0 }}
+                  />
+                )}
+                <span>{r.indent ? `— ${r.label}` : r.label}</span>
+              </span>
+              <span style={{ textAlign: 'right' }}>
+                {r.value} {r.unit}
+                {r.extra && <span style={{ color: theme.mutedText, fontWeight: 400 }}> / {r.extra}</span>}
+              </span>
+              {showPerServing && (
+                <span style={{ textAlign: 'right' }}>
+                  {ps != null ? `${ps} ${r.unit}` : '—'}
+                </span>
+              )}
+              <span style={{ textAlign: 'right', color: theme.mutedText, fontWeight: 400 }}>
+                {ri != null ? `${ri}%` : '—'}
+              </span>
+            </div>
+          );
+        })}
 
         <p className="text-[11px] mt-3" style={{ color: theme.mutedText, fontWeight: 300 }}>
-          {UI.dailyValue[uiLang]}
+          {UI.referenceIntakeNote[uiLang]}
         </p>
       </div>
     </div>

@@ -52,6 +52,34 @@ export default function FeedbackModal({ restaurantId, googlePlaceId, tableNumber
 
     if (!error) {
       sessionStorage.setItem('tabbled_last_feedback', String(Date.now()));
+
+      // Auto-add/update customer record (silent failure)
+      const trimmedName = name.trim();
+      if (trimmedName) {
+        try {
+          const { data: existing } = await supabase
+            .from('customers')
+            .select('id, visit_count')
+            .eq('restaurant_id', restaurantId)
+            .eq('name', trimmedName)
+            .maybeSingle();
+          if (existing) {
+            await supabase.from('customers').update({
+              last_visit: new Date().toISOString(),
+              visit_count: (existing.visit_count || 1) + 1,
+            }).eq('id', existing.id);
+          } else {
+            await supabase.from('customers').insert({
+              restaurant_id: restaurantId,
+              name: trimmedName,
+              source: 'feedback',
+            });
+          }
+        } catch (e) {
+          console.warn('Customer auto-add failed:', e);
+        }
+      }
+
       setStep('thankyou');
       if (!showGoogle) setTimeout(onClose, 3000);
     }
