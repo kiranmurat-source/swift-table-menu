@@ -448,6 +448,18 @@
   animation: sidebar-backdrop-in 0.2s ease-out;
 }
 
+/* Dark tema input placeholder */
+[data-admin-theme="dark"] input::placeholder,
+[data-admin-theme="dark"] textarea::placeholder {
+  color: #666666 !important;
+}
+
+[data-admin-theme="dark"] input,
+[data-admin-theme="dark"] textarea,
+[data-admin-theme="dark"] select {
+  color-scheme: dark;
+}
+
 /* Desktop sidebar subtle top-edge highlight */
 .sb-rail {
   position: relative;

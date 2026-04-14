@@ -9,6 +9,7 @@ import {
   type Language,
 } from '../lib/languages';
 import { Globe, CheckCircle, XCircle, Funnel, PlusCircle } from "@phosphor-icons/react";
+import { getAdminTheme, type AdminTheme } from '../lib/adminTheme';
 
 type Translations = Record<string, Record<string, string>>;
 
@@ -42,233 +43,237 @@ type Props = {
   restaurantId: string;
   enabledLanguages: string[];
   onEnabledLanguagesChange: (langs: string[]) => void;
+  theme?: 'light' | 'dark';
 };
 
 const SUPABASE_URL = 'https://qmnrawqvkwehufebbkxp.supabase.co';
 
-const S = {} as Record<string, CSSProperties> & {
-  langTab: (active: boolean) => CSSProperties;
-  progressBadge: (pct: number) => CSSProperties;
-  treeItem: (active: boolean) => CSSProperties;
-  dot: (done: boolean) => CSSProperties;
-};
-Object.assign(S, {
-  wrap: { display: 'flex', flexDirection: 'column', gap: 16 },
-  card: {
-    background: '#fff',
-    border: '1px solid #E5E5E3',
-    borderRadius: 12,
-    padding: 16,
-  },
-  title: {
-    fontFamily: "'Roboto', sans-serif",
-    fontSize: 22,
-    fontWeight: 700,
-    color: '#1C1C1E',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-  },
-  langTabs: { display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
-  langTab: (active: boolean): CSSProperties => ({
-    padding: '8px 14px',
-    borderRadius: 20,
-    border: active ? '2px solid #1C1C1E' : '1px solid #E5E5E3',
-    background: active ? '#F7F7F5' : '#fff',
-    cursor: 'pointer',
-    fontSize: 13,
-    fontWeight: 600,
-    color: active ? '#1C1C1E' : '#6B6B6F',
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 6,
-  }),
-  progressBadge: (pct: number): CSSProperties => ({
-    fontSize: 11,
-    fontWeight: 700,
-    padding: '2px 7px',
-    borderRadius: 10,
-    background: pct === 100 ? '#DCFCE7' : pct >= 50 ? '#FFF0F3' : '#FEE2E2',
-    color: pct === 100 ? '#166534' : pct >= 50 ? '#FF4F7A' : '#991B1B',
-  }),
-  addBtn: {
-    padding: '8px 14px',
-    borderRadius: 20,
-    border: '1px dashed #A0A0A0',
-    background: '#fff',
-    cursor: 'pointer',
-    fontSize: 13,
-    fontWeight: 600,
-    color: '#6B6B6F',
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 6,
-  },
-  removeX: {
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    color: '#A0A0A0',
-    padding: 0,
-    marginLeft: 2,
-    display: 'inline-flex',
-    alignItems: 'center',
-  },
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: '260px 1fr',
-    gap: 16,
-    alignItems: 'start',
-  },
-  tree: {
-    background: '#fff',
-    border: '1px solid #E5E5E3',
-    borderRadius: 12,
-    padding: 12,
-    maxHeight: 560,
-    overflowY: 'auto',
-  },
-  treeCat: {
-    padding: '8px 10px',
-    fontWeight: 700,
-    fontSize: 13,
-    color: '#1C1C1E',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderRadius: 6,
-  },
-  treeItem: (active: boolean): CSSProperties => ({
-    padding: '6px 10px 6px 22px',
-    fontSize: 13,
-    color: active ? '#1C1C1E' : '#6B6B6F',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderRadius: 6,
-    background: active ? '#F7F7F5' : 'transparent',
-    fontWeight: active ? 600 : 400,
-  }),
-  dot: (done: boolean): CSSProperties => ({
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    background: done ? '#22C55E' : '#EF4444',
-    display: 'inline-block',
-    flexShrink: 0,
-  }),
-  editor: {
-    background: '#fff',
-    border: '1px solid #E5E5E3',
-    borderRadius: 12,
-    padding: 16,
-  },
-  editorGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: 16,
-  },
-  colLabel: {
-    fontSize: 11,
-    fontWeight: 700,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    color: '#6B6B6F',
-    marginBottom: 6,
-  },
-  fieldLabel: { fontSize: 12, fontWeight: 600, color: '#2D2D2F', marginBottom: 4 },
-  readOnlyBox: {
-    padding: 10,
-    background: '#F7F7F5',
-    border: '1px solid #E5E5E3',
-    borderRadius: 8,
-    fontSize: 13,
-    color: '#2D2D2F',
-    whiteSpace: 'pre-wrap',
-    minHeight: 40,
-  },
-  input: {
-    width: '100%',
-    padding: 10,
-    border: '1px solid #E5E5E3',
-    borderRadius: 8,
-    fontSize: 13,
-    color: '#1C1C1E',
-    background: '#fff',
-    boxSizing: 'border-box',
-    outline: 'none',
-  },
-  inputEmpty: { background: '#fefce8' },
-  textarea: {
-    width: '100%',
-    padding: 10,
-    border: '1px solid #E5E5E3',
-    borderRadius: 8,
-    fontSize: 13,
-    color: '#1C1C1E',
-    background: '#fff',
-    boxSizing: 'border-box',
-    outline: 'none',
-    minHeight: 90,
-    resize: 'vertical',
-    fontFamily: 'inherit',
-  },
-  aiBtn: {
-    padding: '6px 10px',
-    fontSize: 11,
-    fontWeight: 600,
-    background: '#eef2ff',
-    color: '#4338ca',
-    border: '1px solid #c7d2fe',
-    borderRadius: 6,
-    cursor: 'pointer',
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 4,
-  },
-  saveBtn: {
-    padding: '10px 18px',
-    fontSize: 13,
-    fontWeight: 700,
-    background: '#1C1C1E',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 8,
-    cursor: 'pointer',
-  },
-  btnSecondary: {
-    padding: '10px 14px',
-    fontSize: 13,
-    fontWeight: 600,
-    background: '#fff',
-    color: '#1C1C1E',
-    border: '1px solid #E5E5E3',
-    borderRadius: 8,
-    cursor: 'pointer',
-  },
-  bottomBar: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  filterRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    fontSize: 13,
-    color: '#2D2D2F',
-  },
-  emptyState: {
-    padding: '40px 20px',
-    textAlign: 'center',
-    color: '#A0A0A0',
-    fontSize: 13,
-  },
-} satisfies Record<string, CSSProperties | ((...args: never[]) => CSSProperties)>);
+function makeStyles(t: AdminTheme) {
+  const S = {} as Record<string, CSSProperties> & {
+    langTab: (active: boolean) => CSSProperties;
+    progressBadge: (pct: number) => CSSProperties;
+    treeItem: (active: boolean) => CSSProperties;
+    dot: (done: boolean) => CSSProperties;
+  };
+  Object.assign(S, {
+    wrap: { display: 'flex', flexDirection: 'column', gap: 16 },
+    card: {
+      background: t.cardBg,
+      border: `1px solid ${t.border}`,
+      borderRadius: 12,
+      padding: 16,
+    },
+    title: {
+      fontFamily: "'Roboto', sans-serif",
+      fontSize: 22,
+      fontWeight: 700,
+      color: t.value,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+    },
+    langTabs: { display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
+    langTab: (active: boolean): CSSProperties => ({
+      padding: '8px 14px',
+      borderRadius: 20,
+      border: active ? `2px solid ${t.value}` : `1px solid ${t.border}`,
+      background: active ? t.hoverBg : t.cardBg,
+      cursor: 'pointer',
+      fontSize: 13,
+      fontWeight: 600,
+      color: active ? t.value : t.heading,
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 6,
+    }),
+    progressBadge: (pct: number): CSSProperties => ({
+      fontSize: 11,
+      fontWeight: 700,
+      padding: '2px 7px',
+      borderRadius: 10,
+      background: pct === 100 ? t.successBg : pct >= 50 ? t.warningBg : t.dangerBg,
+      color: pct === 100 ? t.success : pct >= 50 ? t.accent : t.danger,
+    }),
+    addBtn: {
+      padding: '8px 14px',
+      borderRadius: 20,
+      border: `1px dashed ${t.subtle}`,
+      background: t.cardBg,
+      cursor: 'pointer',
+      fontSize: 13,
+      fontWeight: 600,
+      color: t.heading,
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 6,
+    },
+    removeX: {
+      background: 'none',
+      border: 'none',
+      cursor: 'pointer',
+      color: t.subtle,
+      padding: 0,
+      marginLeft: 2,
+      display: 'inline-flex',
+      alignItems: 'center',
+    },
+    grid: {
+      display: 'grid',
+      gridTemplateColumns: '260px 1fr',
+      gap: 16,
+      alignItems: 'start',
+    },
+    tree: {
+      background: t.cardBg,
+      border: `1px solid ${t.border}`,
+      borderRadius: 12,
+      padding: 12,
+      maxHeight: 560,
+      overflowY: 'auto',
+    },
+    treeCat: {
+      padding: '8px 10px',
+      fontWeight: 700,
+      fontSize: 13,
+      color: t.value,
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderRadius: 6,
+    },
+    treeItem: (active: boolean): CSSProperties => ({
+      padding: '6px 10px 6px 22px',
+      fontSize: 13,
+      color: active ? t.value : t.heading,
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderRadius: 6,
+      background: active ? t.hoverBg : 'transparent',
+      fontWeight: active ? 600 : 400,
+    }),
+    dot: (done: boolean): CSSProperties => ({
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      background: done ? t.success : t.danger,
+      display: 'inline-block',
+      flexShrink: 0,
+    }),
+    editor: {
+      background: t.cardBg,
+      border: `1px solid ${t.border}`,
+      borderRadius: 12,
+      padding: 16,
+    },
+    editorGrid: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: 16,
+    },
+    colLabel: {
+      fontSize: 11,
+      fontWeight: 700,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      color: t.heading,
+      marginBottom: 6,
+    },
+    fieldLabel: { fontSize: 12, fontWeight: 600, color: t.value, marginBottom: 4 },
+    readOnlyBox: {
+      padding: 10,
+      background: t.hoverBg,
+      border: `1px solid ${t.border}`,
+      borderRadius: 8,
+      fontSize: 13,
+      color: t.value,
+      whiteSpace: 'pre-wrap',
+      minHeight: 40,
+    },
+    input: {
+      width: '100%',
+      padding: 10,
+      border: `1px solid ${t.inputBorder}`,
+      borderRadius: 8,
+      fontSize: 13,
+      color: t.inputText,
+      background: t.inputBg,
+      boxSizing: 'border-box',
+      outline: 'none',
+    },
+    inputEmpty: { background: t.key === 'dark' ? '#3A3418' : '#fefce8' },
+    textarea: {
+      width: '100%',
+      padding: 10,
+      border: `1px solid ${t.inputBorder}`,
+      borderRadius: 8,
+      fontSize: 13,
+      color: t.inputText,
+      background: t.inputBg,
+      boxSizing: 'border-box',
+      outline: 'none',
+      minHeight: 90,
+      resize: 'vertical',
+      fontFamily: 'inherit',
+    },
+    aiBtn: {
+      padding: '6px 10px',
+      fontSize: 11,
+      fontWeight: 600,
+      background: t.infoBg,
+      color: t.info,
+      border: `1px solid ${t.border}`,
+      borderRadius: 6,
+      cursor: 'pointer',
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 4,
+    },
+    saveBtn: {
+      padding: '10px 18px',
+      fontSize: 13,
+      fontWeight: 700,
+      background: t.accent,
+      color: '#fff',
+      border: 'none',
+      borderRadius: 8,
+      cursor: 'pointer',
+    },
+    btnSecondary: {
+      padding: '10px 14px',
+      fontSize: 13,
+      fontWeight: 600,
+      background: t.cardBg,
+      color: t.value,
+      border: `1px solid ${t.border}`,
+      borderRadius: 8,
+      cursor: 'pointer',
+    },
+    bottomBar: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: 8,
+      flexWrap: 'wrap',
+    },
+    filterRow: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+      fontSize: 13,
+      color: t.value,
+    },
+    emptyState: {
+      padding: '40px 20px',
+      textAlign: 'center',
+      color: t.subtle,
+      fontSize: 13,
+    },
+  } satisfies Record<string, CSSProperties | ((...args: never[]) => CSSProperties)>);
+  return S;
+}
 
 function isFieldDone(
   record: Category | MenuItem,
@@ -297,7 +302,10 @@ export default function TranslationCenter({
   restaurantId,
   enabledLanguages,
   onEnabledLanguagesChange,
+  theme,
 }: Props) {
+  const th = getAdminTheme(theme);
+  const S = useMemo(() => makeStyles(th), [th]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [items, setItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -626,8 +634,8 @@ export default function TranslationCenter({
                   top: '100%',
                   left: 0,
                   marginTop: 6,
-                  background: '#fff',
-                  border: '1px solid #E5E5E3',
+                  background: th.cardBg,
+                  border: `1px solid ${th.border}`,
                   borderRadius: 8,
                   boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
                   maxHeight: 320,
@@ -637,7 +645,7 @@ export default function TranslationCenter({
                 }}
               >
                 {addableLanguages.length === 0 && (
-                  <div style={{ padding: 12, fontSize: 12, color: '#A0A0A0' }}>
+                  <div style={{ padding: 12, fontSize: 12, color: th.subtle }}>
                     Tüm diller eklendi.
                   </div>
                 )}
@@ -653,12 +661,12 @@ export default function TranslationCenter({
                       alignItems: 'center',
                       gap: 8,
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = '#F7F7F5')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = '#fff')}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = th.hoverBg)}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = th.cardBg)}
                   >
                     <span>{l.flag}</span>
                     <span>{l.nativeName}</span>
-                    <span style={{ color: '#A0A0A0', fontSize: 11 }}>{l.code}</span>
+                    <span style={{ color: th.subtle, fontSize: 11 }}>{l.code}</span>
                   </div>
                 ))}
               </div>
@@ -673,9 +681,9 @@ export default function TranslationCenter({
               padding: '8px 12px',
               borderRadius: 8,
               fontSize: 12,
-              background: msg.kind === 'ok' ? '#DCFCE7' : '#FEE2E2',
-              color: msg.kind === 'ok' ? '#166534' : '#991B1B',
-              border: `1px solid ${msg.kind === 'ok' ? '#DCFCE7' : '#FECACA'}`,
+              background: msg.kind === 'ok' ? th.successBg : th.dangerBg,
+              color: msg.kind === 'ok' ? th.success : th.danger,
+              border: `1px solid ${msg.kind === 'ok' ? th.successBg : th.dangerBg}`,
             }}
           >
             {msg.text}
@@ -713,7 +721,7 @@ export default function TranslationCenter({
                 <div
                   style={{
                     ...S.treeCat,
-                    background: catActive ? '#F7F7F5' : 'transparent',
+                    background: catActive ? th.hoverBg : 'transparent',
                   }}
                   onClick={() => setSelection({ kind: 'category', id: cat.id })}
                 >
@@ -721,7 +729,7 @@ export default function TranslationCenter({
                     <span style={S.dot(catDone)} />
                     <span>{cat.name_tr}</span>
                   </span>
-                  {catDone && <CheckCircle size={14} color="#22C55E" />}
+                  {catDone && <CheckCircle size={14} color={th.success} />}
                 </div>
                 {children.map((it) => {
                   const itDone = isRecordDone(it, targetLang);

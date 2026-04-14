@@ -6,7 +6,7 @@
 //   - Profil    → components/profile/ProfileTab.tsx (currently inline)
 //   - Promosyon → components/promos/PromosTab.tsx (currently inline)
 // Dashboard/Analytics already lives in components/dashboard/RestaurantAnalytics.tsx.
-import { useEffect, useState, useRef, Fragment, lazy, Suspense, ReactNode, CSSProperties } from 'react';
+import { useEffect, useMemo, useState, useRef, Fragment, lazy, Suspense, ReactNode, CSSProperties } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
 import { Camera, PencilSimple, CheckCircle, XCircle, AppleLogo, Star, Globe, Pen, Rows, User, Image, Trash, Link, Package, CaretCircleDown, CaretCircleUp, CaretDown, CaretRight, PlusCircle, Clock, Grains, Timer, Info, Bell, List, SquaresFour, Tag, Palette, ChatCircle, Percent, Heart, ChartBar, ArrowsClockwise, Warning, X, VideoCamera, Users } from "@phosphor-icons/react";
@@ -17,7 +17,7 @@ import DiscountCodesPanel from '../components/DiscountCodesPanel';
 import LikesPanel from '../components/LikesPanel';
 import CustomersPanel from '../components/CustomersPanel';
 import AnalyticsPanel from '../components/AnalyticsPanel';
-import { getAdminTheme } from '../lib/adminTheme';
+import { getAdminTheme, type AdminTheme } from '../lib/adminTheme';
 import {
   DndContext,
   closestCenter,
@@ -162,96 +162,97 @@ const DIET_OPTIONS = DIET_LIST.map(a => ({ value: a.key, label: a.name_tr }));
 
 const SUPABASE_URL = 'https://qmnrawqvkwehufebbkxp.supabase.co';
 
-const S: Record<string, React.CSSProperties> = {
-  wrap: { maxWidth: 900, margin: '0 auto', padding: '32px 24px' },
-  card: { background: '#FFFFFF', border: '1px solid #E5E5E3', borderRadius: 12, padding: 20, marginBottom: 12, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' },
-  input: { width: '100%', padding: '10px 14px', fontSize: 14, border: '1px solid #E5E5E3', borderRadius: 8, outline: 'none', background: '#FFFFFF', color: '#1C1C1E', boxSizing: 'border-box' as const, transition: 'border-color 0.15s ease, box-shadow 0.15s ease' },
-  btn: { padding: '10px 24px', fontSize: 13, fontWeight: 500, color: '#FFFFFF', background: '#FF4F7A', border: 'none', borderRadius: 8, cursor: 'pointer', transition: 'background 0.15s ease' },
-  btnSm: { padding: '6px 14px', fontSize: 12, fontWeight: 500, border: '1px solid #E5E5E3', borderRadius: 6, cursor: 'pointer', background: '#FFFFFF', color: '#2D2D2F', transition: 'all 0.15s ease' },
-  btnDanger: { padding: '6px 14px', fontSize: 12, fontWeight: 500, border: '1px solid #FECACA', borderRadius: 6, cursor: 'pointer', background: '#FFFFFF', color: '#EF4444', transition: 'all 0.15s ease' },
-  label: { display: 'block', fontSize: 13, fontWeight: 500, color: '#2D2D2F', marginBottom: 6 },
-  grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 },
-  grid3: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 },
-  badge: { fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 4, display: 'inline-block', marginRight: 4 },
-  // FineDine-style accordion & compact rows
-  catAccordionRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 12,
-    padding: '12px 16px',
-    background: '#fff',
-    borderRadius: 12,
-    border: '1px solid #E5E5E3',
-    marginBottom: 8,
-    transition: 'all 0.15s',
-  },
-  subCatWrap: {
-    marginLeft: 24,
-    borderLeft: '2px solid #E5E5E3',
-    paddingLeft: 12,
-  },
-  itemRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 12,
-    padding: '8px 12px',
-    borderBottom: '1px solid #F7F7F5',
-    background: '#fff',
-    cursor: 'pointer',
-    transition: 'background 0.1s',
-  },
-  itemsContainer: {
-    background: '#F7F7F5',
-    border: '1px solid #E5E5E3',
-    borderRadius: 8,
-    margin: '4px 0 12px 36px',
-    padding: '4px 0',
-    overflow: 'hidden',
-  },
-  inlinePriceBox: {
-    width: 110,
-    padding: '6px 10px',
-    border: '1px solid #E5E5E3',
-    borderRadius: 8,
-    fontSize: 13,
-    fontWeight: 600,
-    textAlign: 'right' as const,
-    fontFamily: 'Inter, sans-serif',
-    background: '#fff',
-    outline: 'none',
-  },
-  soldOutBadge: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 3,
-    padding: '2px 8px',
-    background: '#FEE2E2',
-    color: '#EF4444',
-    borderRadius: 12,
-    fontSize: 10,
-    fontWeight: 600,
-  },
-  translationBadge: {
-    display: 'inline-flex',
-    padding: '1px 6px',
-    background: '#EEF2FF',
-    color: '#4338CA',
-    borderRadius: 4,
-    fontSize: 9,
-    fontWeight: 600,
-  },
-  missingPhotoWarning: {
-    fontSize: 11,
-    color: '#EF4444',
-    fontWeight: 500,
-  },
-  accordionActions: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    marginLeft: 'auto',
-  },
-};
+function makeStyles(t: AdminTheme): Record<string, React.CSSProperties> {
+  return {
+    wrap: { maxWidth: 900, margin: '0 auto', padding: '32px 24px' },
+    card: { background: t.cardBg, border: `1px solid ${t.border}`, borderRadius: 12, padding: 20, marginBottom: 12, boxShadow: t.cardShadow },
+    input: { width: '100%', padding: '10px 14px', fontSize: 14, border: `1px solid ${t.inputBorder}`, borderRadius: 8, outline: 'none', background: t.inputBg, color: t.inputText, boxSizing: 'border-box' as const, transition: 'border-color 0.15s ease, box-shadow 0.15s ease' },
+    btn: { padding: '10px 24px', fontSize: 13, fontWeight: 500, color: '#FFFFFF', background: t.accent, border: 'none', borderRadius: 8, cursor: 'pointer', transition: 'background 0.15s ease' },
+    btnSm: { padding: '6px 14px', fontSize: 12, fontWeight: 500, border: `1px solid ${t.border}`, borderRadius: 6, cursor: 'pointer', background: t.cardBg, color: t.value, transition: 'all 0.15s ease' },
+    btnDanger: { padding: '6px 14px', fontSize: 12, fontWeight: 500, border: `1px solid ${t.border}`, borderRadius: 6, cursor: 'pointer', background: t.cardBg, color: t.danger, transition: 'all 0.15s ease' },
+    label: { display: 'block', fontSize: 13, fontWeight: 500, color: t.value, marginBottom: 6 },
+    grid2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 },
+    grid3: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 },
+    badge: { fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 4, display: 'inline-block', marginRight: 4 },
+    catAccordionRow: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+      padding: '12px 16px',
+      background: t.cardBg,
+      borderRadius: 12,
+      border: `1px solid ${t.border}`,
+      marginBottom: 8,
+      transition: 'all 0.15s',
+    },
+    subCatWrap: {
+      marginLeft: 24,
+      borderLeft: `2px solid ${t.border}`,
+      paddingLeft: 12,
+    },
+    itemRow: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+      padding: '8px 12px',
+      borderBottom: `1px solid ${t.divider}`,
+      background: t.cardBg,
+      cursor: 'pointer',
+      transition: 'background 0.1s',
+    },
+    itemsContainer: {
+      background: t.pageBg,
+      border: `1px solid ${t.border}`,
+      borderRadius: 8,
+      margin: '4px 0 12px 36px',
+      padding: '4px 0',
+      overflow: 'hidden',
+    },
+    inlinePriceBox: {
+      width: 110,
+      padding: '6px 10px',
+      border: `1px solid ${t.inputBorder}`,
+      borderRadius: 8,
+      fontSize: 13,
+      fontWeight: 600,
+      textAlign: 'right' as const,
+      fontFamily: 'Inter, sans-serif',
+      background: t.inputBg,
+      outline: 'none',
+    },
+    soldOutBadge: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 3,
+      padding: '2px 8px',
+      background: t.dangerBg,
+      color: t.danger,
+      borderRadius: 12,
+      fontSize: 10,
+      fontWeight: 600,
+    },
+    translationBadge: {
+      display: 'inline-flex',
+      padding: '1px 6px',
+      background: t.infoBg,
+      color: t.info,
+      borderRadius: 4,
+      fontSize: 9,
+      fontWeight: 600,
+    },
+    missingPhotoWarning: {
+      fontSize: 11,
+      color: t.danger,
+      fontWeight: 500,
+    },
+    accordionActions: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+      marginLeft: 'auto',
+    },
+  };
+}
 
 // Toggle switch style helpers
 const toggleSwitchStyle = (on: boolean): React.CSSProperties => ({
@@ -446,7 +447,8 @@ async function triggerTranslation(table: string, recordId: string, languages: st
 /*  Profile Tab Component                                              */
 /* ------------------------------------------------------------------ */
 
-function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate: (r: Restaurant) => void }) {
+function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; onUpdate: (r: Restaurant) => void; theme: AdminTheme }) {
+  const S = useMemo(() => makeStyles(theme), [theme]);
   const [currentTheme, setCurrentTheme] = useState<string>(restaurant.theme_color || 'white');
   const [currentViewMode, setCurrentViewMode] = useState<string>(restaurant.menu_view_mode || 'categories');
   const [currentAdminTheme, setCurrentAdminTheme] = useState<string>(restaurant.admin_theme || 'light');
@@ -636,7 +638,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
 
       {/* Images Section */}
       <div style={S.card}>
-        <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1C1C1E', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <h4 style={{ fontSize: 14, fontWeight: 600, color: theme.value, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
           <Image size={16} /> Gorseller
         </h4>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
@@ -645,45 +647,45 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
             <input ref={logoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadImage(e.target.files[0], 'logo'); }} />
             {restaurant.logo_url ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                <img onError={handleImageError} src={getOptimizedImageUrl(restaurant.logo_url, 'card')} alt="Logo" style={{ width: 80, height: 80, borderRadius: 12, objectFit: 'cover', border: '1px solid #E5E5E3' }} />
+                <img onError={handleImageError} src={getOptimizedImageUrl(restaurant.logo_url, 'card')} alt="Logo" style={{ width: 80, height: 80, borderRadius: 12, objectFit: 'cover', border: `1px solid ${theme.border}` }} />
                 <div style={{ display: 'flex', gap: 6 }}>
                   <button type="button" onClick={() => logoRef.current?.click()} disabled={uploadingLogo} style={{ ...S.btnSm, fontSize: 11, padding: '4px 10px' }}>{uploadingLogo ? '...' : 'Degistir'}</button>
                   <button type="button" onClick={() => removeImage('logo')} style={{ ...S.btnDanger, fontSize: 11, padding: '4px 10px' }}><Trash size={12} /></button>
                 </div>
               </div>
             ) : (
-              <button type="button" onClick={() => logoRef.current?.click()} disabled={uploadingLogo} style={{ ...S.btnSm, width: '100%', padding: '20px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: '#A0A0A0' }}>
+              <button type="button" onClick={() => logoRef.current?.click()} disabled={uploadingLogo} style={{ ...S.btnSm, width: '100%', padding: '20px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: theme.subtle }}>
                 <Camera size={24} />
                 <span style={{ fontSize: 12 }}>{uploadingLogo ? 'Yukleniyor...' : 'Logo Yukle'}</span>
               </button>
             )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#A0A0A0', marginTop: 4 }}><Info size={14} /><span>500×500px, kare, şeffaf arka plan, max 2MB</span></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: theme.subtle, marginTop: 4 }}><Info size={14} /><span>500×500px, kare, şeffaf arka plan, max 2MB</span></div>
           </div>
           <div>
             <label style={{ ...S.label, marginBottom: 10 }}>Kapak Gorseli</label>
             <input ref={coverRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadImage(e.target.files[0], 'cover'); }} />
             {coverImage ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                <img onError={handleImageError} src={getOptimizedImageUrl(coverImage, 'detail')} alt="Cover" style={{ width: '100%', height: 80, borderRadius: 8, objectFit: 'cover', border: '1px solid #E5E5E3' }} />
+                <img onError={handleImageError} src={getOptimizedImageUrl(coverImage, 'detail')} alt="Cover" style={{ width: '100%', height: 80, borderRadius: 8, objectFit: 'cover', border: `1px solid ${theme.border}` }} />
                 <div style={{ display: 'flex', gap: 6 }}>
                   <button type="button" onClick={() => coverRef.current?.click()} disabled={uploadingCover} style={{ ...S.btnSm, fontSize: 11, padding: '4px 10px' }}>{uploadingCover ? '...' : 'Degistir'}</button>
                   <button type="button" onClick={() => removeImage('cover')} style={{ ...S.btnDanger, fontSize: 11, padding: '4px 10px' }}><Trash size={12} /></button>
                 </div>
               </div>
             ) : (
-              <button type="button" onClick={() => coverRef.current?.click()} disabled={uploadingCover} style={{ ...S.btnSm, width: '100%', padding: '20px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: '#A0A0A0' }}>
+              <button type="button" onClick={() => coverRef.current?.click()} disabled={uploadingCover} style={{ ...S.btnSm, width: '100%', padding: '20px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: theme.subtle }}>
                 <Camera size={24} />
                 <span style={{ fontSize: 12 }}>{uploadingCover ? 'Yukleniyor...' : 'Kapak Yukle'}</span>
               </button>
             )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#A0A0A0', marginTop: 4 }}><Info size={14} /><span>1200×400px, yatay geniş, max 5MB</span></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: theme.subtle, marginTop: 4 }}><Info size={14} /><span>1200×400px, yatay geniş, max 5MB</span></div>
           </div>
         </div>
       </div>
 
       {/* Info Form */}
       <form onSubmit={handleSave} style={{ ...S.card, display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1C1C1E', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <h4 style={{ fontSize: 14, fontWeight: 600, color: theme.value, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
           <User size={16} /> Isletme Bilgileri
         </h4>
         <div>
@@ -710,7 +712,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
         </div>
 
         {/* Social Media */}
-        <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1C1C1E', marginTop: 8, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <h4 style={{ fontSize: 14, fontWeight: 600, color: theme.value, marginTop: 8, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
           <Link size={16} /> Sosyal Medya
         </h4>
         <div style={S.grid2}>
@@ -750,22 +752,22 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
         <div style={{ marginTop: 8 }}>
           <label style={S.label}>Google Place ID</label>
           <input style={S.input} value={form.google_place_id} onChange={e => setForm({ ...form, google_place_id: e.target.value })} placeholder="ChIJ... (Google Maps'ten kopyalayın)" />
-          <div style={{ fontSize: 10, color: '#999', marginTop: 2 }}>Yüksek puanlı müşterileri Google Reviews'a yönlendirmek için gerekli</div>
+          <div style={{ fontSize: 10, color: theme.subtle, marginTop: 2 }}>Yüksek puanlı müşterileri Google Reviews'a yönlendirmek için gerekli</div>
           {form.google_place_id && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
               {googleRating ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#6B6B6F' }}>
-                  <Star size={16} weight="fill" style={{ color: '#F59E0B' }} />
-                  <span style={{ fontWeight: 600, color: '#1C1C1E' }}>{googleRating.toFixed(1)}</span>
-                  <span style={{ color: '#9CA3AF' }}>({googleReviewCount || 0} yorum)</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: theme.heading }}>
+                  <Star size={16} weight="fill" style={{ color: theme.warning }} />
+                  <span style={{ fontWeight: 600, color: theme.value }}>{googleRating.toFixed(1)}</span>
+                  <span style={{ color: theme.subtle }}>({googleReviewCount || 0} yorum)</span>
                   {googleRatingUpdatedAt && (
-                    <span style={{ color: '#D1D5DB', fontSize: 11, marginLeft: 2 }}>
+                    <span style={{ color: theme.subtle, fontSize: 11, marginLeft: 2 }}>
                       · {new Date(googleRatingUpdatedAt).toLocaleDateString('tr-TR')}
                     </span>
                   )}
                 </div>
               ) : (
-                <span style={{ fontSize: 12, color: '#9CA3AF' }}>Puan henüz çekilmedi</span>
+                <span style={{ fontSize: 12, color: theme.subtle }}>Puan henüz çekilmedi</span>
               )}
               <button
                 type="button"
@@ -803,7 +805,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
                   }
                 }}
                 disabled={ratingLoading}
-                style={{ fontSize: 12, color: '#FF4F7A', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, opacity: ratingLoading ? 0.5 : 1 }}
+                style={{ fontSize: 12, color: theme.accent, fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, opacity: ratingLoading ? 0.5 : 1 }}
               >
                 <ArrowsClockwise size={14} className={ratingLoading ? 'animate-spin' : ''} />
                 {ratingLoading ? 'Çekiliyor...' : 'Puanı Güncelle'}
@@ -813,7 +815,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
         </div>
 
         {/* Working Hours */}
-        <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1C1C1E', marginTop: 8, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <h4 style={{ fontSize: 14, fontWeight: 600, color: theme.value, marginTop: 8, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
           <Globe size={16} /> Çalışma Saatleri
         </h4>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -821,7 +823,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
             const dh = workingHours[day] || { ...DEFAULT_DAY };
             return (
               <div key={day} style={{ display: 'grid', gridTemplateColumns: '110px 1fr 1fr auto', gap: 8, alignItems: 'center' }}>
-                <span style={{ fontSize: 13, color: '#2D2D2F', fontWeight: 500 }}>{DAY_LABELS[day]}</span>
+                <span style={{ fontSize: 13, color: theme.value, fontWeight: 500 }}>{DAY_LABELS[day]}</span>
                 <input
                   type="time"
                   style={{ ...S.input, padding: '6px 10px', fontSize: 12, opacity: dh.closed ? 0.4 : 1 }}
@@ -836,7 +838,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
                   disabled={dh.closed}
                   onChange={e => setWorkingHours({ ...workingHours, [day]: { ...dh, close: e.target.value } })}
                 />
-                <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#6B6B6F', cursor: 'pointer' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: theme.heading, cursor: 'pointer' }}>
                   <input
                     type="checkbox"
                     checked={dh.closed}
@@ -850,7 +852,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
         </div>
 
         {/* Feature Toggles */}
-        <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1C1C1E', marginTop: 8, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <h4 style={{ fontSize: 14, fontWeight: 600, color: theme.value, marginTop: 8, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
           <SquaresFour size={16} /> Menü Özellikleri
         </h4>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
@@ -863,10 +865,10 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
             { key: 'feature_discount_codes' as const, label: 'İndirim Kodları', desc: 'Müşteriler sepette indirim kodu kullanabilir' },
             { key: 'feature_likes' as const, label: 'Ürün Beğeni', desc: 'Müşteriler ürünleri beğenebilir (kalp butonu)' },
           ]).map(feat => (
-            <label key={feat.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 8, border: '1px solid #E5E5E3', backgroundColor: form[feat.key] ? '#DCFCE7' : '#F7F7F5', cursor: 'pointer' }}>
+            <label key={feat.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 8, border: `1px solid ${theme.border}`, backgroundColor: form[feat.key] ? theme.successBg : theme.pageBg, cursor: 'pointer' }}>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#1C1C1E' }}>{feat.label}</div>
-                <div style={{ fontSize: 11, color: '#6B6B6F' }}>{feat.desc}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: theme.value }}>{feat.label}</div>
+                <div style={{ fontSize: 11, color: theme.heading }}>{feat.desc}</div>
               </div>
               <input
                 type="checkbox"
@@ -879,7 +881,7 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
         </div>
 
         {/* Theme Selector */}
-        <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1C1C1E', marginTop: 8, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <h4 style={{ fontSize: 14, fontWeight: 600, color: theme.value, marginTop: 8, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
           <Package size={16} /> Menü Teması
         </h4>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -915,12 +917,12 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
             );
           })}
         </div>
-        <p style={{ fontSize: 11, color: '#6B6B6F', margin: 0 }}>
+        <p style={{ fontSize: 11, color: theme.heading, margin: 0 }}>
           Tema sadece müşterilerinizin göreceği genel menü sayfasını etkiler.
         </p>
 
         {/* Menu View Mode Selector */}
-        <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1C1C1E', marginTop: 16, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <h4 style={{ fontSize: 14, fontWeight: 600, color: theme.value, marginTop: 16, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
           <Package size={16} /> Menü Görünümü
         </h4>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -956,12 +958,12 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
             );
           })}
         </div>
-        <p style={{ fontSize: 11, color: '#6B6B6F', margin: 0 }}>
+        <p style={{ fontSize: 11, color: theme.heading, margin: 0 }}>
           Müşterilerinizin menüyü nasıl göreceğini seçin.
         </p>
 
         {/* Admin Panel Theme Selector */}
-        <h4 style={{ fontSize: 14, fontWeight: 600, color: '#1C1C1E', marginTop: 16, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <h4 style={{ fontSize: 14, fontWeight: 600, color: theme.value, marginTop: 16, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
           <Palette size={16} /> Yönetim Paneli Teması
         </h4>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -993,14 +995,14 @@ function ProfileTab({ restaurant, onUpdate }: { restaurant: Restaurant; onUpdate
             );
           })}
         </div>
-        <p style={{ fontSize: 11, color: '#6B6B6F', margin: 0 }}>
+        <p style={{ fontSize: 11, color: theme.heading, margin: 0 }}>
           Yönetim panelinin görünümünü seçin (sidebar koyu kalır).
         </p>
 
         {/* Menu Preview Link */}
-        <div style={{ padding: '10px 14px', background: '#F7F7F5', borderRadius: 8, fontSize: 13, color: '#6B6B6F' }}>
+        <div style={{ padding: '10px 14px', background: theme.pageBg, borderRadius: 8, fontSize: 13, color: theme.heading }}>
           Menu linkiniz:{' '}
-          <a href={`/menu/${restaurant.slug}`} target="_blank" rel="noopener noreferrer" style={{ color: '#A8B977', fontWeight: 600 }}>
+          <a href={`/menu/${restaurant.slug}`} target="_blank" rel="noopener noreferrer" style={{ color: theme.accent, fontWeight: 600 }}>
             tabbled.com/menu/{restaurant.slug}
           </a>
         </div>
@@ -1937,9 +1939,10 @@ export default function RestaurantDashboard() {
   );
 
   const adminTheme = getAdminTheme(restaurant?.admin_theme);
+  const S = useMemo(() => makeStyles(adminTheme), [adminTheme]);
 
   return (
-    <div className="flex min-h-screen" style={{ backgroundColor: adminTheme.pageBg, color: adminTheme.value }}>
+    <div className="flex min-h-screen" data-admin-theme={restaurant?.admin_theme === 'dark' ? 'dark' : 'light'} style={{ backgroundColor: adminTheme.pageBg, color: adminTheme.value }}>
       {/* Desktop Sidebar */}
       <aside className="sb-rail hidden md:flex flex-col w-[240px] shrink-0 border-r border-[#3A3A3E] bg-[#1C1C1E] sticky top-0 self-start h-screen overflow-hidden">
         {sidebarContent}
@@ -2051,9 +2054,9 @@ export default function RestaurantDashboard() {
               theme={adminTheme}
             />
           )}
-          {activeTab === 'profile' && <ProfileTab restaurant={restaurant} onUpdate={(r) => setRestaurant(r)} />}
+          {activeTab === 'profile' && <ProfileTab restaurant={restaurant} onUpdate={(r) => setRestaurant(r)} theme={adminTheme} />}
       {activeTab === 'qr' && <QRManager restaurant={restaurant} theme={adminTheme} />}
-      {activeTab === 'promos' && <PromosTab restaurant={restaurant} />}
+      {activeTab === 'promos' && <PromosTab restaurant={restaurant} theme={adminTheme} />}
       {activeTab === 'calls' && <WaiterCallsPanel restaurantId={restaurant.id} theme={adminTheme} />}
       {activeTab === 'feedback' && <FeedbackPanel restaurantId={restaurant.id} theme={adminTheme} />}
       {activeTab === 'customers' && <CustomersPanel restaurantId={restaurant.id} theme={adminTheme} />}
@@ -2067,6 +2070,7 @@ export default function RestaurantDashboard() {
           onEnabledLanguagesChange={(langs) =>
             setRestaurant({ ...restaurant, enabled_languages: langs })
           }
+          theme={restaurant?.admin_theme === 'dark' ? 'dark' : 'light'}
         />
       )}
 
@@ -2081,7 +2085,7 @@ export default function RestaurantDashboard() {
           {msg && <div style={{ padding: '10px 14px', background: msg.includes('oluşturuldu') ? '#DCFCE7' : '#FEE2E2', border: `1px solid ${msg.includes('oluşturuldu') ? '#DCFCE7' : '#FECACA'}`, borderRadius: 8, color: msg.includes('oluşturuldu') ? '#22C55E' : '#EF4444', fontSize: 13, marginBottom: 16 }} onClick={() => setMsg('')}>{msg} <span style={{ float: 'right', cursor: 'pointer' }}>✕</span></div>}
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1C1C1E' }}>Kategoriler</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: adminTheme.value }}>Kategoriler</h3>
             <button onClick={() => setShowCatForm(!showCatForm)} style={S.btnSm}>{showCatForm ? 'İptal' : '+ Kategori'}</button>
           </div>
 
@@ -2118,15 +2122,15 @@ export default function RestaurantDashboard() {
                     <Camera size={14} /> {uploadingCatImage === 'new' ? 'Yükleniyor...' : 'Görsel Yükle'}
                   </button>
                 )}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#A0A0A0', marginTop: 4 }}><Info size={14} /><span>800×600px, yatay, max 3MB</span></div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: adminTheme.subtle, marginTop: 4 }}><Info size={14} /><span>800×600px, yatay, max 3MB</span></div>
               </div>
               <button type="submit" disabled={saving} style={{ ...S.btn, alignSelf: 'flex-start' }}>{saving ? '...' : 'Ekle'}</button>
             </form>
           )}
 
           {/* Summary line */}
-          <div style={{ fontSize: 13, color: '#6B6B6F', marginBottom: 10 }}>
-            Toplam: <b style={{ color: '#1C1C1E' }}>{items.length}</b> ürün
+          <div style={{ fontSize: 13, color: adminTheme.heading, marginBottom: 10 }}>
+            Toplam: <b style={{ color: adminTheme.value }}>{items.length}</b> ürün
             {totalMissingPhotos > 0 && <> · <span style={S.missingPhotoWarning}>{totalMissingPhotos} fotoğraf eksik</span></>}
           </div>
 
@@ -2190,7 +2194,7 @@ export default function RestaurantDashboard() {
                       <select
                         value={aiTone}
                         onChange={e => setAiTone(e.target.value as 'elegant' | 'casual' | 'descriptive')}
-                        style={{ fontSize: 11, padding: '4px 8px', borderRadius: 6, border: '1px solid #E5E5E3', backgroundColor: '#F7F7F5', color: '#6B6B6F', cursor: 'pointer' }}
+                        style={{ fontSize: 11, padding: '4px 8px', borderRadius: 6, border: `1px solid ${adminTheme.border}`, backgroundColor: adminTheme.pageBg, color: adminTheme.heading, cursor: 'pointer' }}
                       >
                         <option value="descriptive">Detaylı</option>
                         <option value="elegant">Şık</option>
@@ -2219,17 +2223,17 @@ export default function RestaurantDashboard() {
                     <div style={{ fontSize: 12, fontWeight: 600, color: '#FF4F7A', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
                       <Pen size={12} /> AI Önizleme
                     </div>
-                    <div style={{ fontSize: 13, color: '#1C1C1E', lineHeight: 1.5, marginBottom: 8 }}>
+                    <div style={{ fontSize: 13, color: adminTheme.value, lineHeight: 1.5, marginBottom: 8 }}>
                       {aiPreview}
                     </div>
                     <div style={{ display: 'flex', gap: 6 }}>
                       <button type="button" onClick={acceptAiDescription} style={{ padding: '4px 12px', fontSize: 11, fontWeight: 600, borderRadius: 6, border: 'none', backgroundColor: '#22c55e', color: '#fff', cursor: 'pointer' }}>
                         Kullan
                       </button>
-                      <button type="button" onClick={generateAIDescription} style={{ padding: '4px 12px', fontSize: 11, fontWeight: 600, borderRadius: 6, border: '1px solid #E5E5E3', backgroundColor: '#fff', color: '#666', cursor: 'pointer' }}>
+                      <button type="button" onClick={generateAIDescription} style={{ padding: '4px 12px', fontSize: 11, fontWeight: 600, borderRadius: 6, border: `1px solid ${adminTheme.border}`, backgroundColor: adminTheme.cardBg, color: adminTheme.heading, cursor: 'pointer' }}>
                         Tekrar Üret
                       </button>
-                      <button type="button" onClick={() => setAiPreview(null)} style={{ padding: '4px 12px', fontSize: 11, fontWeight: 600, borderRadius: 6, border: 'none', backgroundColor: 'transparent', color: '#999', cursor: 'pointer' }}>
+                      <button type="button" onClick={() => setAiPreview(null)} style={{ padding: '4px 12px', fontSize: 11, fontWeight: 600, borderRadius: 6, border: 'none', backgroundColor: 'transparent', color: adminTheme.subtle, cursor: 'pointer' }}>
                         İptal
                       </button>
                     </div>
@@ -2237,7 +2241,7 @@ export default function RestaurantDashboard() {
                 )}
 
                 <Suspense fallback={
-                  <div style={{ ...S.input, minHeight: 112, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#A0A0A0', fontSize: 12 }}>
+                  <div style={{ ...S.input, minHeight: 112, display: 'flex', alignItems: 'center', justifyContent: 'center', color: adminTheme.subtle, fontSize: 12, backgroundColor: adminTheme.inputBg, borderColor: adminTheme.inputBorder }}>
                     Editör yükleniyor...
                   </div>
                 }>
@@ -2977,7 +2981,7 @@ export default function RestaurantDashboard() {
                   style={{
                     ...S.itemRow,
                     opacity: faded ? 0.6 : 1,
-                    background: isActiveForm ? '#eef2ff' : hoveredItem === item.id ? '#F7F7F5' : '#fff',
+                    background: isActiveForm ? '#eef2ff' : hoveredItem === item.id ? adminTheme.hoverBg : adminTheme.cardBg,
                   }}
                   onMouseEnter={() => setHoveredItem(item.id)}
                   onMouseLeave={() => setHoveredItem(null)}
@@ -2999,13 +3003,13 @@ export default function RestaurantDashboard() {
                   {item.image_url ? (
                     <img onError={handleImageError} src={getOptimizedImageUrl(item.image_url, 'card')} alt="" style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} loading="lazy" decoding="async" />
                   ) : (
-                    <div style={{ width: 48, height: 48, borderRadius: 8, background: '#F7F7F5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#E5E5E3', flexShrink: 0 }}>
+                    <div style={{ width: 48, height: 48, borderRadius: 8, background: adminTheme.pageBg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: adminTheme.border, flexShrink: 0 }}>
                       <Camera size={20} />
                     </div>
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 14, fontWeight: 500, color: '#1C1C1E', textDecoration: item.is_sold_out ? 'line-through' : 'none' }}>{item.name_tr}</span>
+                      <span style={{ fontSize: 14, fontWeight: 500, color: adminTheme.value, textDecoration: item.is_sold_out ? 'line-through' : 'none' }}>{item.name_tr}</span>
                       {item.translations && Object.keys(item.translations).length > 0 && (
                         <span style={S.translationBadge}>EN</span>
                       )}
@@ -3183,7 +3187,7 @@ export default function RestaurantDashboard() {
                   {c.image_url ? (
                     <img onError={handleImageError} src={getOptimizedImageUrl(c.image_url, 'thumbnail')} alt="" style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
                   ) : (
-                    <div style={{ width: 40, height: 40, borderRadius: 8, background: '#F7F7F5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#E5E5E3', flexShrink: 0 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 8, background: adminTheme.pageBg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: adminTheme.border, flexShrink: 0 }}>
                       <Camera size={18} />
                     </div>
                   )}
@@ -3197,10 +3201,10 @@ export default function RestaurantDashboard() {
                     ) : (
                       <>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: opts.isSub ? 13 : 15, fontWeight: 600, color: '#1C1C1E' }}>{c.name_tr}</span>
+                          <span style={{ fontSize: opts.isSub ? 13 : 15, fontWeight: 600, color: adminTheme.value }}>{c.name_tr}</span>
                           {c.translations && Object.keys(c.translations).length > 0 && <span style={S.translationBadge}>EN</span>}
                         </div>
-                        <div style={{ fontSize: 11, color: '#6B6B6F', marginTop: 2 }}>
+                        <div style={{ fontSize: 11, color: adminTheme.heading, marginTop: 2 }}>
                           {totalInScope} ürün
                           {missing > 0 && <> · <span style={S.missingPhotoWarning}>{missing} fotoğraf eksik</span></>}
                         </div>
@@ -3235,10 +3239,10 @@ export default function RestaurantDashboard() {
             // Search mode: flat compact list
             if (searchQuery.trim()) {
               if (filteredItems.length === 0) {
-                return <div style={{ textAlign: 'center', color: '#A0A0A0', padding: 40, fontSize: 14 }}>Eşleşen ürün bulunamadı.</div>;
+                return <div style={{ textAlign: 'center', color: adminTheme.subtle, padding: 40, fontSize: 14 }}>Eşleşen ürün bulunamadı.</div>;
               }
               return (
-                <div style={{ border: '1px solid #E5E5E3', borderRadius: 12, overflow: 'hidden', background: '#fff' }}>
+                <div style={{ border: `1px solid ${adminTheme.border}`, borderRadius: 12, overflow: 'hidden', background: adminTheme.cardBg }}>
                   {filteredItems.map(item => renderItemRow(item))}
                 </div>
               );
@@ -3246,7 +3250,7 @@ export default function RestaurantDashboard() {
 
             const rootCats = categories.filter(c => !c.parent_id);
             if (rootCats.length === 0) {
-              return <div style={{ textAlign: 'center', color: '#A0A0A0', padding: 40, fontSize: 14 }}>Henüz kategori eklenmedi.</div>;
+              return <div style={{ textAlign: 'center', color: adminTheme.subtle, padding: 40, fontSize: 14 }}>Henüz kategori eklenmedi.</div>;
             }
 
             return (
@@ -3380,7 +3384,8 @@ const emptyPromoForm: PromoFormState = {
   show_once_per_session: true,
 };
 
-function PromosTab({ restaurant }: { restaurant: Restaurant }) {
+function PromosTab({ restaurant, theme }: { restaurant: Restaurant; theme: AdminTheme }) {
+  const S = useMemo(() => makeStyles(theme), [theme]);
   const [promos, setPromos] = useState<Promo[]>([]);
   const [promoCategories, setPromoCategories] = useState<Category[]>([]);
   const [form, setForm] = useState<PromoFormState>(emptyPromoForm);
