@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase';
 import { getOptimizedImageUrl, handleImageError } from '../lib/imageUtils';
 import {
   Star, AppleLogo, Thermometer, MapPin, Phone, Globe, CaretDown, CaretLeft,
-  ForkKnife, XCircle, Funnel, Timer, Tag, Heart, Clock, Play, ChatCircle,
+  ForkKnife, XCircle, Funnel, Timer, Tag, Heart, Clock, Play,
 } from "@phosphor-icons/react";
 import FeedbackModal from '../components/FeedbackModal';
 import { AllergenBadgeList } from '../components/AllergenIcon';
@@ -23,7 +23,6 @@ import CartBottomBar from '../components/CartBottomBar';
 import CartDrawer from '../components/CartDrawer';
 import { useLikes } from '../hooks/useLikes';
 import { demoRestaurant, demoCategories, demoItems } from '../data/demoMenuData';
-import ReviewsSection from '../components/public/ReviewsSection';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -308,7 +307,7 @@ const UI: Record<string, Record<UiLangCode, string>> = {
   prepTime:         { tr: 'Hazırlanma Süresi', en: 'Prep Time', ar: 'وقت التحضير', zh: '准备时间' },
   minutes:          { tr: 'dk', en: 'min', ar: 'دقيقة', zh: '分钟' },
   // Feedback
-  feedbackBtn:        { tr: 'Geri Bildirim', en: 'Feedback', ar: 'ملاحظات', zh: '反馈' },
+  feedbackBtn:        { tr: 'Değerlendir', en: 'Rate Us', ar: 'قيّمنا', zh: '评价' },
   rateExperience:     { tr: 'Deneyiminizi Değerlendirin', en: 'Rate Your Experience', ar: 'قيّم تجربتك', zh: '评价您的体验' },
   shareExperience:    { tr: 'Düşünceleriniz bizim için değerli', en: 'Your thoughts matter to us', ar: 'رأيك يهمنا', zh: '您的想法对我们很重要' },
   yourName:           { tr: 'Adınız (isteğe bağlı)', en: 'Your name (optional)', ar: 'اسمك (اختياري)', zh: '您的姓名（可选）' },
@@ -812,7 +811,7 @@ export default function PublicMenu() {
           </a>
         </div>
 
-        {/* Floating Feedback Button */}
+        {/* Floating Feedback Pill */}
         {restaurant.feature_feedback !== false && (
           <button
             type="button"
@@ -822,21 +821,25 @@ export default function PublicMenu() {
               position: 'fixed',
               bottom: 24,
               right: 24,
-              width: 48,
-              height: 48,
-              borderRadius: '50%',
-              backgroundColor: '#1C1C1E',
+              padding: '8px 16px',
+              borderRadius: 24,
+              backgroundColor: 'rgba(28,28,30,0.8)',
               color: '#FFFFFF',
               border: 'none',
               cursor: 'pointer',
-              display: 'flex',
+              display: 'inline-flex',
               alignItems: 'center',
-              justifyContent: 'center',
+              gap: 6,
+              fontSize: 13,
+              fontWeight: 500,
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
               boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
               zIndex: 50,
             }}
           >
-            <ChatCircle size={24} weight="thin" />
+            <Star size={16} weight="thin" />
+            <span>{UI.feedbackBtn[toUiLang(lang)]}</span>
           </button>
         )}
 
@@ -1622,15 +1625,6 @@ export default function PublicMenu() {
           })
         )}
 
-        {/* Customer reviews — below menu, above footer */}
-        {restaurant.feature_reviews !== false && (
-          <ReviewsSection
-            restaurantId={restaurant.id}
-            language={lang}
-            theme={theme.key as 'white' | 'black'}
-            tableNumber={table}
-          />
-        )}
       </main>
 
       {/* Bottom bars container */}

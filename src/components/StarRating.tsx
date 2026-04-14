@@ -6,15 +6,14 @@ interface Props {
   onRate?: (n: number) => void;
   size?: number;
   color?: string;
-  emptyColor?: string;
 }
 
-export default function StarRating({ rating, onRate, size = 40, color = '#FF4F7A', emptyColor = '#D1D5DB' }: Props) {
+export default function StarRating({ rating, onRate, size = 32, color = '#FF4F7A' }: Props) {
   const [hover, setHover] = useState(0);
   const interactive = !!onRate;
 
   return (
-    <div style={{ display: 'inline-flex', gap: 4 }}>
+    <div style={{ display: 'inline-flex', gap: 8 }}>
       {[1, 2, 3, 4, 5].map(n => {
         const filled = interactive ? n <= (hover || rating) : n <= rating;
         return (
@@ -30,14 +29,14 @@ export default function StarRating({ rating, onRate, size = 40, color = '#FF4F7A
               border: 'none',
               padding: 0,
               cursor: interactive ? 'pointer' : 'default',
-              color: filled ? color : emptyColor,
-              transition: 'transform 0.15s, color 0.15s',
+              color,
+              transition: 'transform 0.15s',
               transform: interactive && n === hover ? 'scale(1.15)' : 'scale(1)',
               lineHeight: 0,
             }}
             aria-label={`${n} star`}
           >
-            <Star size={size} style={{ fill: filled ? color : 'none', strokeWidth: filled ? 0 : 1 }} />
+            <Star size={size} weight={filled ? 'fill' : 'thin'} color={color} />
           </button>
         );
       })}
