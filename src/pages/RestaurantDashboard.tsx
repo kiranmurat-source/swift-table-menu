@@ -13,6 +13,8 @@ import { Camera, PencilSimple, CheckCircle, XCircle, AppleLogo, Star, Globe, Pen
 import MediaLibrary from '../components/admin/MediaLibrary';
 import MediaPickerModal, { type MediaAccept, attachMediaUsage, detachMediaUsage } from '../components/admin/MediaPickerModal';
 import MenuImport from '../components/admin/MenuImport';
+import { useAICredits } from '../hooks/useAICredits';
+import { AI_CREDIT_COSTS } from '../lib/aiCredits';
 import { NUTRI_SCORE_COLORS, NUTRI_SCORE_VALUES } from "@/lib/nutritionEU";
 import RestaurantAnalytics from "@/components/dashboard/RestaurantAnalytics";
 import TabbledLogo from '@/components/TabbledLogo';
@@ -374,7 +376,8 @@ export default function RestaurantDashboard() {
 
   const enabledLangs = (restaurant?.enabled_languages ?? []).filter(l => l !== 'tr');
   const plan = (restaurant?.current_plan || '').toLowerCase();
-  const hasAI = plan === 'pro' || plan === 'premium';
+  const hasAI = plan === 'pro' || plan === 'premium' || plan === 'basic' || plan === 'enterprise';
+  const aiCredits = useAICredits(restaurant?.id);
 
   // Smooth-scroll the inline item form into view when it opens.
   useEffect(() => {
@@ -590,8 +593,9 @@ export default function RestaurantDashboard() {
       const data = await res.json();
       if (data.success && data.description) {
         setAiPreview(data.description);
-        if (data.usage && data.limit !== 'unlimited') {
-          setMsg(`AI açıklama oluşturuldu (${data.usage}/${data.limit} kullanım)`);
+        aiCredits.refresh();
+        if (data.usage && data.limit) {
+          setMsg(`AI açıklama oluşturuldu (${data.usage}/${data.limit} kredi kullanıldı)`);
           setTimeout(() => setMsg(''), 4000);
         }
       } else {
@@ -659,6 +663,29 @@ export default function RestaurantDashboard() {
     const cat = categories.find(c => c.id === id);
     if (cat?.image_url) await detachMediaUsage(cat.image_url, { type: 'menu_category', id, field: 'image_url' });
     await supabase.from('menu_categories').update({ image_url: null }).eq('id', id);
+    loadCategories(restaurant.id);
+  }
+
+  async function setCategoryVideoFromPicker(id: string, url: string) {
+    if (!restaurant) return;
+    const cat = categories.find(c => c.id === id);
+    if (cat?.video_url && cat.video_url.includes('/menu-images/')) {
+      await detachMediaUsage(cat.video_url, { type: 'menu_category', id, field: 'video_url' });
+    }
+    await supabase.from('menu_categories').update({ video_url: url }).eq('id', id);
+    if (url.includes('/menu-images/')) {
+      await attachMediaUsage(url, { type: 'menu_category', id, field: 'video_url', label: cat?.name_tr });
+    }
+    loadCategories(restaurant.id);
+  }
+
+  async function removeCategoryVideo(id: string) {
+    if (!restaurant) return;
+    const cat = categories.find(c => c.id === id);
+    if (cat?.video_url && cat.video_url.includes('/menu-images/')) {
+      await detachMediaUsage(cat.video_url, { type: 'menu_category', id, field: 'video_url' });
+    }
+    await supabase.from('menu_categories').update({ video_url: null }).eq('id', id);
     loadCategories(restaurant.id);
   }
   async function updateCategory(id: string) {
@@ -1567,6 +1594,12 @@ export default function RestaurantDashboard() {
                     </div>
                   )}
                 </div>
+
+                {hasAI && (
+                  <div style={{ fontSize: 11, color: adminTheme.subtle, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Sparkle size={11} /> {AI_CREDIT_COSTS.menuDescription} kredi kullanılır · Kalan: {aiCredits.creditsRemaining}/{aiCredits.creditsTotal}
+                  </div>
+                )}
 
                 {/* AI Önizleme */}
                 {aiPreview && (
@@ -2621,6 +2654,17 @@ export default function RestaurantDashboard() {
                       </button>
                       {c.image_url && (
                         <button onClick={() => removeCategoryImage(c.id)} style={{ background: 'none', border: 'none', color: '#A0A0A0', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }} title="Görseli kaldır"><Trash size={14} /></button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => openPicker('video', (url) => setCategoryVideoFromPicker(c.id, url))}
+                        style={{ background: 'none', border: 'none', color: c.video_url ? '#FF4F7A' : '#A0A0A0', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }}
+                        title={c.video_url ? 'Video değiştir (kütüphaneden)' : 'Kategori videosu (kütüphaneden seç)'}
+                      >
+                        <VideoCamera size={16} weight={c.video_url ? 'fill' : 'regular'} />
+                      </button>
+                      {c.video_url && (
+                        <button onClick={() => removeCategoryVideo(c.id)} style={{ background: 'none', border: 'none', color: '#A0A0A0', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }} title="Videoyu kaldır"><X size={14} /></button>
                       )}
                       <button onClick={() => { setEditingCat(c.id); setEditCatForm({ name_tr: c.name_tr }); }} style={{ background: 'none', border: 'none', color: '#A0A0A0', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }} title="Düzenle"><PencilSimple size={16} /></button>
                       <button onClick={() => deleteCategory(c.id)} style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }} title="Sil"><Trash size={16} /></button>

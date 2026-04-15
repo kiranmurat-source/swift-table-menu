@@ -82,6 +82,8 @@ const Onboarding = () => {
           is_active: true,
           subscription_status: 'trial',
           current_plan: 'basic',
+          ai_credits_total: 60,
+          ai_credits_used: 0,
           theme_color: 'white',
         })
         .select()

@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAICredits } from '../../hooks/useAICredits';
+import { AI_CREDIT_COSTS, consumeAICredits } from '../../lib/aiCredits';
 import type { AdminTheme } from '../../lib/adminTheme';
 import {
   FileArrowUp,
@@ -67,7 +68,8 @@ export default function MenuImport({ restaurantId, theme, onImported }: Props) {
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const creditsNeeded = files.length || 1;
+  const creditsPerFile = AI_CREDIT_COSTS.menuImportPerFile;
+  const creditsNeeded = (files.length || 1) * creditsPerFile;
   const notEnoughCredits = credits.creditsRemaining < creditsNeeded;
 
   const addFiles = (fs: FileList | File[]) => {
@@ -279,19 +281,14 @@ export default function MenuImport({ restaurantId, theme, onImported }: Props) {
         importedItems += rows.length;
       }
 
-      // Kredi düş + log
-      const creditsToCharge = files.length;
-      await supabase
-        .from('restaurants')
-        .update({ ai_credits_used: credits.creditsUsed + creditsToCharge })
-        .eq('id', restaurantId);
-
-      await supabase.from('ai_usage_log').insert({
-        restaurant_id: restaurantId,
-        action_type: 'menu_import',
-        credits_used: creditsToCharge,
-        input_data: { file_count: files.length, image_names: files.map((f) => f.name) },
-        output_data: { categories: importedCats, items: importedItems, skipped },
+      // Atomik kredi düş + log
+      const creditsToCharge = files.length * AI_CREDIT_COSTS.menuImportPerFile;
+      await consumeAICredits({
+        restaurantId,
+        amount: creditsToCharge,
+        actionType: 'menu_import',
+        input: { file_count: files.length, image_names: files.map((f) => f.name) },
+        output: { categories: importedCats, items: importedItems, skipped },
       });
 
       setProgress(100);
@@ -508,9 +505,9 @@ export default function MenuImport({ restaurantId, theme, onImported }: Props) {
           >
             <Sparkle size={14} />
             {notEnoughCredits ? (
-              <span>Krediniz yetersiz. {creditsNeeded} kredi gerekli, kalan: {credits.creditsRemaining}.</span>
+              <span>Krediniz yetersiz. {creditsNeeded} kredi gerekli, kalan: {credits.creditsRemaining}/{credits.creditsTotal}.</span>
             ) : (
-              <span>{creditsNeeded} AI kredisi kullanılacak · Kalan: {credits.creditsRemaining}/{credits.creditsTotal}</span>
+              <span>Fotoğraf başına {creditsPerFile} kredi kullanılır · Kalan: {credits.creditsRemaining}/{credits.creditsTotal}</span>
             )}
           </div>
 

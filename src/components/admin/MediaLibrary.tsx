@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import { supabase } from '../../lib/supabase';
 import { getOptimizedImageUrl, handleImageError } from '../../lib/imageUtils';
 import { useAICredits } from '../../hooks/useAICredits';
+import { AI_CREDIT_COSTS, consumeAICredits } from '../../lib/aiCredits';
 import type { AdminTheme } from '../../lib/adminTheme';
 import {
   UploadSimple,
@@ -342,20 +343,17 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
       .single();
     if (insErr || !inserted) throw new Error(insErr?.message || 'Kayıt başarısız');
 
-    // Kredi düş
-    await supabase
-      .from('restaurants')
-      .update({ ai_credits_used: credits.creditsUsed + 1 })
-      .eq('id', restaurantId);
-
-    // Log
-    await supabase.from('ai_usage_log').insert({
-      restaurant_id: restaurantId,
-      action_type: 'photo_enhance',
-      credits_used: 1,
-      input_data: { source_id: source.id, source_path: source.file_path },
-      output_data: { new_id: inserted.id, new_path: path },
+    // Atomik kredi düş + log
+    const consumed = await consumeAICredits({
+      restaurantId,
+      amount: AI_CREDIT_COSTS.photoEnhance,
+      actionType: 'photo_enhance',
+      input: { source_id: source.id, source_path: source.file_path },
+      output: { new_id: inserted.id, new_path: path },
     });
+    if (!consumed) {
+      flash('Kredi düşürülemedi — yetersiz kredi olabilir.', 'warn');
+    }
 
     flash('Fotoğraf iyileştirildi ve kaydedildi.', 'ok');
     setSelected(null);

@@ -256,7 +256,9 @@ export default function SuperAdminDashboard() {
     });
     if (error) { setMsg(error.message); setSaving(false); return; }
     if (plan) {
-      await supabase.from('restaurants').update({ subscription_status: 'active', current_plan: plan.name }).eq('id', subForm.restaurant_id);
+      const planCredits: Record<string, number> = { basic: 60, premium: 150, enterprise: 300 };
+      const credits = planCredits[plan.name.toLowerCase()] ?? 60;
+      await supabase.from('restaurants').update({ subscription_status: 'active', current_plan: plan.name, ai_credits_total: credits, ai_credits_used: 0 }).eq('id', subForm.restaurant_id);
     }
     setSubForm({ restaurant_id: '', plan_id: '', start_date: '', notes: '' }); setShowSubForm(false); loadAll();
     setSaving(false);
@@ -312,7 +314,9 @@ export default function SuperAdminDashboard() {
     const plan = plans.find(p => p.id === newPlanId);
     if (!plan) return;
     await supabase.from('subscriptions').update({ plan_id: newPlanId }).eq('id', subId);
-    await supabase.from('restaurants').update({ current_plan: plan.name }).eq('id', restaurantId);
+    const planCredits: Record<string, number> = { basic: 60, premium: 150, enterprise: 300 };
+    const credits = planCredits[plan.name.toLowerCase()] ?? 60;
+    await supabase.from('restaurants').update({ current_plan: plan.name, ai_credits_total: credits }).eq('id', restaurantId);
     setChangingPlan(null);
     setNewPlanId('');
     loadAll();

@@ -130,10 +130,11 @@ serve(async (req) => {
       );
     }
 
+    const PHOTO_ENHANCE_COST = 20;
     const remaining = (rest.ai_credits_total ?? 0) - (rest.ai_credits_used ?? 0);
-    if (remaining < 1) {
+    if (remaining < PHOTO_ENHANCE_COST) {
       return new Response(
-        JSON.stringify({ error: "AI krediniz yetersiz." }),
+        JSON.stringify({ error: `Yetersiz AI kredisi. Gerekli: ${PHOTO_ENHANCE_COST}, kalan: ${remaining}.` }),
         { status: 402, headers: { "Content-Type": "application/json", ...CORS_HEADERS } },
       );
     }

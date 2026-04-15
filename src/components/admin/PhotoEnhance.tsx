@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { supabase } from '../../lib/supabase';
+import { useAICredits } from '../../hooks/useAICredits';
+import { AI_CREDIT_COSTS } from '../../lib/aiCredits';
 import type { AdminTheme } from '../../lib/adminTheme';
 import {
   Sparkle,
@@ -71,6 +73,7 @@ function base64ToBlob(base64: string, mime: string): Blob {
 }
 
 export default function PhotoEnhance({ restaurantId, originalUrl, theme, onClose, onSave }: Props) {
+  const credits = useAICredits(restaurantId);
   const [status, setStatus] = useState<'confirm' | 'loading' | 'compare' | 'saving' | 'error'>('confirm');
   const [error, setError] = useState<string | null>(null);
   const [enhanced, setEnhanced] = useState<{ base64: string; mime: string } | null>(null);
@@ -449,7 +452,7 @@ export default function PhotoEnhance({ restaurantId, originalUrl, theme, onClose
               }}
             >
               <Sparkle size={12} />
-              <span>1 kredi kullanılacak. Yemek asla değiştirilmez — sadece seçtiğiniz iyileştirmeler uygulanır.</span>
+              <span>{AI_CREDIT_COSTS.photoEnhance} kredi kullanılır · Kalan: {credits.creditsRemaining}/{credits.creditsTotal}. Yemek asla değiştirilmez — sadece seçtiğiniz iyileştirmeler uygulanır.</span>
             </div>
             <div style={{ marginTop: 14, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
               <button style={S.btnGhost} onClick={onClose}>İptal</button>
@@ -509,7 +512,7 @@ export default function PhotoEnhance({ restaurantId, originalUrl, theme, onClose
               Karşılaştırmak için sürükleyin
             </div>
             <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-              <button style={S.btnGhost} onClick={onClose}>İptal (kredi iade edilmez)</button>
+              <button style={S.btnGhost} onClick={onClose}>İptal</button>
               <button style={S.btn} onClick={save}>
                 <FloppyDisk size={14} /> Kaydet
               </button>
