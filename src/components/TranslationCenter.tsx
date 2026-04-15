@@ -8,7 +8,7 @@ import {
   isRTL,
   type Language,
 } from '../lib/languages';
-import { Globe, CheckCircle, XCircle, Funnel, PlusCircle } from "@phosphor-icons/react";
+import { Globe, CheckCircle, XCircle, Funnel, PlusCircle, CaretDown, CaretRight } from "@phosphor-icons/react";
 import { getAdminTheme, type AdminTheme } from '../lib/adminTheme';
 
 type Translations = Record<string, Record<string, string>>;
@@ -19,6 +19,7 @@ type Category = {
   name_tr: string;
   name_en: string | null;
   sort_order: number;
+  parent_id: string | null;
   translations: Translations | null;
 };
 
@@ -320,6 +321,20 @@ export default function TranslationCenter({
   const [busy, setBusy] = useState<string | null>(null);
   const [bulkProgress, setBulkProgress] = useState<{ current: number; total: number } | null>(null);
   const [onlyUntranslated, setOnlyUntranslated] = useState(false);
+  const [collapsedCats, setCollapsedCats] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem('translationCenter:collapsedCats');
+      return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+    } catch { return new Set(); }
+  });
+  const toggleCollapse = (id: string) => {
+    setCollapsedCats((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      try { localStorage.setItem('translationCenter:collapsedCats', JSON.stringify(Array.from(next))); } catch { /* noop */ }
+      return next;
+    });
+  };
   const [showAddLang, setShowAddLang] = useState(false);
   const [msg, setMsg] = useState<{ text: string; kind: 'ok' | 'err' } | null>(null);
 
@@ -547,13 +562,32 @@ export default function TranslationCenter({
     }
   }
 
-  // Next / prev navigation — flatten tree into ordered list
+  // Next / prev navigation — flatten tree into ordered list (parents → children → items)
   const flatList = useMemo(() => {
     const list: Selection[] = [];
-    for (const cat of categories) {
-      list.push({ kind: 'category', id: cat.id });
-      const children = items.filter((i) => i.category_id === cat.id);
-      for (const it of children) list.push({ kind: 'item', id: it.id });
+    const roots = categories.filter((c) => !c.parent_id).sort((a, b) => a.sort_order - b.sort_order);
+    for (const parent of roots) {
+      list.push({ kind: 'category', id: parent.id });
+      // Ürünler doğrudan parent altında
+      const directItems = items.filter((i) => i.category_id === parent.id);
+      for (const it of directItems) list.push({ kind: 'item', id: it.id });
+      // Alt kategoriler ve onların ürünleri
+      const children = categories
+        .filter((c) => c.parent_id === parent.id)
+        .sort((a, b) => a.sort_order - b.sort_order);
+      for (const child of children) {
+        list.push({ kind: 'category', id: child.id });
+        const childItems = items.filter((i) => i.category_id === child.id);
+        for (const it of childItems) list.push({ kind: 'item', id: it.id });
+      }
+    }
+    // Orphan kategoriler (parent'ı silinmiş olabilir)
+    const seen = new Set(list.filter((s): s is { kind: 'category'; id: string } => !!s && s.kind === 'category').map((s) => s.id));
+    for (const c of categories) {
+      if (!seen.has(c.id)) {
+        list.push({ kind: 'category', id: c.id });
+        for (const it of items.filter((i) => i.category_id === c.id)) list.push({ kind: 'item', id: it.id });
+      }
     }
     return list;
   }, [categories, items]);
@@ -710,49 +744,102 @@ export default function TranslationCenter({
           {!loading && categories.length === 0 && (
             <div style={S.emptyState}>Menüde henüz kategori yok.</div>
           )}
-          {categories.map((cat) => {
-            const children = items.filter((i) => i.category_id === cat.id);
-            const catDone = isRecordDone(cat, targetLang);
-            const showCat = !onlyUntranslated || !catDone || children.some((ch) => !isRecordDone(ch, targetLang));
-            if (!showCat) return null;
-            const catActive = selection?.kind === 'category' && selection.id === cat.id;
-            return (
-              <div key={cat.id} style={{ marginBottom: 4 }}>
+          {(() => {
+            const renderItem = (it: MenuItem, indent: number) => {
+              const itDone = isRecordDone(it, targetLang);
+              if (onlyUntranslated && itDone) return null;
+              const itActive = selection?.kind === 'item' && selection.id === it.id;
+              return (
                 <div
-                  style={{
-                    ...S.treeCat,
-                    background: catActive ? th.hoverBg : 'transparent',
-                  }}
-                  onClick={() => setSelection({ kind: 'category', id: cat.id })}
+                  key={it.id}
+                  style={{ ...S.treeItem(itActive), paddingLeft: indent }}
+                  onClick={() => setSelection({ kind: 'item', id: it.id })}
                 >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={S.dot(catDone)} />
-                    <span>{cat.name_tr}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
+                    <span style={{ color: th.subtle, fontSize: 11, width: 10, textAlign: 'center' }}>—</span>
+                    <span style={S.dot(itDone)} />
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {it.name_tr}
+                    </span>
                   </span>
-                  {catDone && <CheckCircle size={14} color={th.success} />}
                 </div>
-                {children.map((it) => {
-                  const itDone = isRecordDone(it, targetLang);
-                  if (onlyUntranslated && itDone) return null;
-                  const itActive = selection?.kind === 'item' && selection.id === it.id;
-                  return (
-                    <div
-                      key={it.id}
-                      style={S.treeItem(itActive)}
-                      onClick={() => setSelection({ kind: 'item', id: it.id })}
-                    >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
-                        <span style={S.dot(itDone)} />
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {it.name_tr}
-                        </span>
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
+              );
+            };
+
+            const renderCat = (cat: Category, opts: { isChild: boolean; hasChildren: boolean }) => {
+              const catItems = items.filter((i) => i.category_id === cat.id);
+              const catDone = isRecordDone(cat, targetLang);
+              const anyChildUntranslated = catItems.some((ch) => !isRecordDone(ch, targetLang));
+              const descendantUntranslated = !opts.isChild
+                ? categories
+                    .filter((c) => c.parent_id === cat.id)
+                    .some((child) => !isRecordDone(child, targetLang) || items.filter((i) => i.category_id === child.id).some((it) => !isRecordDone(it, targetLang)))
+                : false;
+              const showCat = !onlyUntranslated || !catDone || anyChildUntranslated || descendantUntranslated;
+              if (!showCat) return null;
+              const catActive = selection?.kind === 'category' && selection.id === cat.id;
+              const isCollapsed = collapsedCats.has(cat.id);
+              const childCats = !opts.isChild
+                ? categories.filter((c) => c.parent_id === cat.id).sort((a, b) => a.sort_order - b.sort_order)
+                : [];
+              const canToggle = opts.hasChildren || catItems.length > 0;
+              return (
+                <div key={cat.id} style={{ marginBottom: 2 }}>
+                  <div
+                    style={{
+                      ...S.treeCat,
+                      background: catActive ? th.hoverBg : 'transparent',
+                      paddingLeft: opts.isChild ? 16 : 8,
+                      fontWeight: opts.isChild ? 400 : 600,
+                      fontSize: opts.isChild ? 13 : 14,
+                    }}
+                    onClick={() => setSelection({ kind: 'category', id: cat.id })}
+                  >
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
+                      {canToggle ? (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); toggleCollapse(cat.id); }}
+                          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: th.subtle, display: 'inline-flex', alignItems: 'center' }}
+                          aria-label={isCollapsed ? 'Aç' : 'Kapat'}
+                        >
+                          {isCollapsed ? <CaretRight size={12} /> : <CaretDown size={12} />}
+                        </button>
+                      ) : (
+                        <span style={{ width: 12, display: 'inline-block' }} />
+                      )}
+                      <span style={S.dot(catDone)} />
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cat.name_tr}</span>
+                    </span>
+                    {catDone && <CheckCircle size={14} color={th.success} />}
+                  </div>
+                  {!isCollapsed && (
+                    <>
+                      {catItems.map((it) => renderItem(it, opts.isChild ? 48 : 32))}
+                      {childCats.map((child) => renderCat(child, { isChild: true, hasChildren: false }))}
+                    </>
+                  )}
+                </div>
+              );
+            };
+
+            const rootCats = categories.filter((c) => !c.parent_id).sort((a, b) => a.sort_order - b.sort_order);
+            const childMap = new Map<string, Category[]>();
+            for (const c of categories) {
+              if (c.parent_id) {
+                if (!childMap.has(c.parent_id)) childMap.set(c.parent_id, []);
+                childMap.get(c.parent_id)!.push(c);
+              }
+            }
+            const rendered = rootCats.map((cat) =>
+              renderCat(cat, { isChild: false, hasChildren: (childMap.get(cat.id)?.length ?? 0) > 0 }),
             );
-          })}
+            // Orphan kategoriler (parent'ı artık mevcut değilse)
+            const rootIds = new Set(rootCats.map((c) => c.id));
+            const orphans = categories.filter((c) => c.parent_id && !categories.some((p) => p.id === c.parent_id) && !rootIds.has(c.id));
+            const orphanRendered = orphans.map((cat) => renderCat(cat, { isChild: false, hasChildren: false }));
+            return <>{rendered}{orphanRendered}</>;
+          })()}
         </div>
 
         {/* Editor */}

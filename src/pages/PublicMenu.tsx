@@ -77,6 +77,7 @@ interface MenuCategory {
   id: string; restaurant_id: string; name_tr: string; description_tr: string | null;
   sort_order: number; is_active: boolean; translations: Translations;
   image_url: string | null;
+  video_url: string | null;
   parent_id: string | null;
 }
 
@@ -2034,6 +2035,10 @@ function BentoCategoryCard({
   }, []);
 
   const img = cat.image_url ? getOptimizedImageUrl(cat.image_url, 'card') : '';
+  const rawVideo = cat.video_url?.trim() || '';
+  // Bento kartta sadece doğrudan .mp4/.webm dosya URL'leri oynar (iframe autoplay kısıtlamaları)
+  const isDirectVideo = !!rawVideo && /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(rawVideo);
+  const video = isDirectVideo ? rawVideo : '';
   const name = t(cat.translations, 'name', cat.name_tr, lang);
   const desc = t(cat.translations, 'description', cat.description_tr, lang);
   const isDarkTheme = theme.cardBg !== '#FFFFFF';
@@ -2041,6 +2046,7 @@ function BentoCategoryCard({
     ? 'linear-gradient(135deg, #1C1C1E 0%, #2C2C2E 100%)'
     : 'linear-gradient(135deg, #1C1C1E 0%, #2C2C2E 100%)';
   const overlayMax = isDarkTheme ? 0.8 : 0.7;
+  const hasMedia = !!(video || img);
 
   return (
     <button
@@ -2051,7 +2057,7 @@ function BentoCategoryCard({
         width: isFull ? '100%' : 'calc(50% - 4px)',
         height: isFull ? 200 : 220,
         borderRadius: 12,
-        background: img ? '#000' : fallbackBg,
+        background: hasMedia ? '#000' : fallbackBg,
         cursor: 'pointer',
         padding: 0,
         border: 'none',
@@ -2061,7 +2067,19 @@ function BentoCategoryCard({
         transitionDelay: isVisible ? `${delay}ms` : '0ms',
       }}
     >
-      {img && (
+      {video ? (
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          poster={img || undefined}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+        >
+          <source src={video} type={video.toLowerCase().endsWith('.webm') ? 'video/webm' : 'video/mp4'} />
+        </video>
+      ) : img && (
         <img
           src={img}
           alt={name}

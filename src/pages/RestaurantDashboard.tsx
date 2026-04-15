@@ -76,7 +76,7 @@ type Translations = {
   };
 };
 
-type Category = { id: string; name_tr: string; name_en: string | null; sort_order: number; is_active: boolean; translations: Translations; image_url: string | null; parent_id: string | null; };
+type Category = { id: string; name_tr: string; name_en: string | null; sort_order: number; is_active: boolean; translations: Translations; image_url: string | null; video_url: string | null; parent_id: string | null; };
 
 type PeriodicDay = { enabled: boolean; start: string; end: string; all_day?: boolean };
 type PeriodicSchedule = Partial<Record<'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday', PeriodicDay>>;
@@ -310,7 +310,7 @@ export default function RestaurantDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showCatForm, setShowCatForm] = useState(false);
   const [showItemForm, setShowItemForm] = useState(false);
-  const [catForm, setCatForm] = useState<{ name_tr: string; image_url: string; parent_id: string | null }>({ name_tr: '', image_url: '', parent_id: null });
+  const [catForm, setCatForm] = useState<{ name_tr: string; image_url: string; video_url: string; parent_id: string | null }>({ name_tr: '', image_url: '', video_url: '', parent_id: null });
   const [uploadingCatImage, setUploadingCatImage] = useState<string | null>(null); // 'new' or category id
   const catFileRef = useRef<HTMLInputElement>(null);
   const [itemForm, setItemForm] = useState(emptyItemForm);
@@ -610,13 +610,14 @@ export default function RestaurantDashboard() {
       restaurant_id: restaurant.id,
       name_tr: catForm.name_tr,
       image_url: catForm.image_url || null,
+      video_url: catForm.video_url || null,
       parent_id: catForm.parent_id,
       sort_order: categories.filter(c => (c.parent_id ?? null) === (catForm.parent_id ?? null)).length,
       translations: {},
     }).select().single();
     if (error) { setMsg(error.message); }
     else {
-      setCatForm({ name_tr: '', image_url: '', parent_id: null }); setShowCatForm(false);
+      setCatForm({ name_tr: '', image_url: '', video_url: '', parent_id: null }); setShowCatForm(false);
       loadCategories(restaurant.id);
       if (newCat && enabledLangs.length > 0) {
         setTranslating(newCat.id);
@@ -1405,6 +1406,48 @@ export default function RestaurantDashboard() {
                   </button>
                 )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: adminTheme.subtle, marginTop: 4 }}><Info size={14} /><span>800×600px, yatay, max 3MB</span></div>
+              </div>
+              <div>
+                <label style={S.label}><VideoCamera size={14} style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle' }} /> Video URL (opsiyonel)</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input
+                    style={{ ...S.input, flex: 1 }}
+                    value={catForm.video_url}
+                    onChange={e => setCatForm({ ...catForm, video_url: e.target.value })}
+                    placeholder="https://... (.mp4, .webm veya YouTube/Vimeo linki)"
+                  />
+                  {catForm.video_url && (
+                    <button
+                      type="button"
+                      onClick={() => setCatForm({ ...catForm, video_url: '' })}
+                      style={{ ...S.btnSm, padding: '6px 10px', fontSize: 11, color: '#EF4444' }}
+                      title="Video URL'ini kaldır"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+                {catForm.video_url && (() => {
+                  const v = catForm.video_url.trim();
+                  const yt = v.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
+                  const vm = v.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+                  const isDirect = /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(v);
+                  return (
+                    <>
+                      <div style={{ marginTop: 8, borderRadius: 8, overflow: 'hidden', maxWidth: 320, border: '1px solid #E5E5E3' }}>
+                        {yt ? <iframe src={`https://www.youtube.com/embed/${yt[1]}`} style={{ width: '100%', aspectRatio: '16/9', border: 'none' }} allow="encrypted-media" />
+                          : vm ? <iframe src={`https://player.vimeo.com/video/${vm[1]}`} style={{ width: '100%', aspectRatio: '16/9', border: 'none' }} allow="encrypted-media" />
+                          : <video src={v} controls muted playsInline style={{ width: '100%', maxHeight: 240 }} />}
+                      </div>
+                      {!isDirect && (yt || vm) && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#B45309', background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 6, padding: '6px 8px', marginTop: 6 }}>
+                          <Warning size={14} /><span>Kategori kartlarında sadece .mp4/.webm dosya URL'leri desteklenir. YouTube/Vimeo linkleri bento kartta oynatılmaz.</span>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: adminTheme.subtle, marginTop: 4 }}><Info size={14} /><span>3-5 saniyelik kısa loop video önerilir</span></div>
               </div>
               <button type="submit" disabled={saving} style={{ ...S.btn, alignSelf: 'flex-start' }}>{saving ? '...' : 'Ekle'}</button>
             </form>
