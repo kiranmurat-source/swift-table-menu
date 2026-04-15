@@ -9,8 +9,9 @@
 import { useEffect, useMemo, useState, useRef, Fragment, lazy, Suspense, ReactNode, CSSProperties } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
-import { Camera, PencilSimple, CheckCircle, XCircle, AppleLogo, Star, Globe, Pen, Rows, User, Image, Trash, Link, Package, CaretCircleDown, CaretCircleUp, CaretDown, CaretRight, PlusCircle, Clock, Grains, Timer, Info, Bell, List, SquaresFour, Tag, Palette, ChatCircle, Percent, Heart, ChartBar, ArrowsClockwise, Warning, X, VideoCamera, Users, Gauge, Images } from "@phosphor-icons/react";
+import { Camera, PencilSimple, CheckCircle, XCircle, AppleLogo, Star, Globe, Pen, Rows, User, Image, Trash, Link, Package, CaretCircleDown, CaretCircleUp, CaretDown, CaretRight, PlusCircle, Clock, Grains, Timer, Info, Bell, List, SquaresFour, Tag, Palette, ChatCircle, Percent, Heart, ChartBar, ArrowsClockwise, Warning, X, VideoCamera, Users, Gauge, Images, FileArrowUp } from "@phosphor-icons/react";
 import MediaLibrary from '../components/admin/MediaLibrary';
+import MenuImport from '../components/admin/MenuImport';
 import { NUTRI_SCORE_COLORS, NUTRI_SCORE_VALUES } from "@/lib/nutritionEU";
 import RestaurantAnalytics from "@/components/dashboard/RestaurantAnalytics";
 import TabbledLogo from '@/components/TabbledLogo';
@@ -328,7 +329,7 @@ export default function RestaurantDashboard() {
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [editCatForm, setEditCatForm] = useState({ name_tr: '' });
   const [uploading, setUploading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'menu' | 'translations' | 'qr' | 'media' | 'profile' | 'promos' | 'calls' | 'feedback' | 'discounts' | 'likes' | 'customers' | 'analytics'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'menu' | 'import' | 'translations' | 'qr' | 'media' | 'profile' | 'promos' | 'calls' | 'feedback' | 'discounts' | 'likes' | 'customers' | 'analytics'>('dashboard');
   const [pendingCallCount, setPendingCallCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
@@ -1115,6 +1116,7 @@ export default function RestaurantDashboard() {
     {
       title: 'Menü Yönetimi',
       items: [
+        { key: 'import' as const, label: 'Menü İçe Aktar', icon: FileArrowUp },
         { key: 'menu' as const, label: 'Menü', icon: SquaresFour },
         { key: 'translations' as const, label: 'Çeviri Merkezi', icon: Globe },
         { key: 'qr' as const, label: 'QR Kodları', icon: Rows },
@@ -1347,6 +1349,7 @@ export default function RestaurantDashboard() {
           {activeTab === 'profile' && <ProfileTab restaurant={restaurant} onUpdate={(r) => setRestaurant(r)} theme={adminTheme} />}
       {activeTab === 'qr' && <QRManager restaurant={restaurant} theme={adminTheme} />}
       {activeTab === 'media' && <MediaLibrary restaurantId={restaurant.id} restaurantSlug={restaurant.slug} theme={adminTheme} />}
+      {activeTab === 'import' && <MenuImport restaurantId={restaurant.id} theme={adminTheme} onImported={() => loadCategories(restaurant.id)} />}
       {activeTab === 'promos' && <PromosTab restaurant={restaurant} theme={adminTheme} />}
       {activeTab === 'calls' && <WaiterCallsPanel restaurantId={restaurant.id} theme={adminTheme} />}
       {activeTab === 'feedback' && <FeedbackPanel restaurantId={restaurant.id} theme={adminTheme} />}
