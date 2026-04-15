@@ -1116,10 +1116,15 @@ export default function RestaurantDashboard() {
     {
       title: 'Menü Yönetimi',
       items: [
-        { key: 'import' as const, label: 'Menü İçe Aktar', icon: FileArrowUp },
         { key: 'menu' as const, label: 'Menü', icon: SquaresFour },
         { key: 'translations' as const, label: 'Çeviri Merkezi', icon: Globe },
         { key: 'qr' as const, label: 'QR Kodları', icon: Rows },
+      ],
+    },
+    {
+      title: 'AI Araçları',
+      items: [
+        { key: 'import' as const, label: 'Menü İçe Aktar', icon: FileArrowUp },
         { key: 'media' as const, label: 'Medya Kütüphanesi', icon: Images },
       ],
     },
@@ -1308,11 +1313,6 @@ export default function RestaurantDashboard() {
                 <span style={{ fontSize: 13, color: '#6B6B6F' }}>Henüz plan atanmadı</span>
               )}
             </div>
-            {hasAI && planName && (
-              <div style={{ fontSize: 12, color: '#6B6B6F' }}>
-                AI Kredisi: <span style={{ color: '#FF4F7A', fontWeight: 600 }}>—/{plan === 'enterprise' ? '∞' : '150'}</span>
-              </div>
-            )}
             {planName && plan !== 'enterprise' ? (
               <a
                 href="https://wa.me/905325119484?text=Plan%C4%B1m%C4%B1%20y%C3%BCkseltmek%20istiyorum"

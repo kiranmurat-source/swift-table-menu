@@ -404,7 +404,7 @@ export default function MenuImport({ restaurantId, theme, onImported }: Props) {
           </div>
         </div>
         <div style={{ fontSize: 12, color: theme.subtle, marginTop: 4 }}>
-          Menü fotoğrafından Gemini 2.5 Flash ile otomatik olarak kategori + ürün çıkarılır.
+          Menü fotoğrafından AI ile otomatik olarak kategori + ürün çıkarılır.
         </div>
 
         {error && (
