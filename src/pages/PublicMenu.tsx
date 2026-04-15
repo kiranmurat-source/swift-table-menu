@@ -1653,7 +1653,7 @@ export default function PublicMenu() {
               </div>
               <div className={viewMode === 'grid' ? 'grid grid-cols-2' : 'flex flex-col'} style={{ gap: 8 }}>
                 {catItems.map((item) => (
-                  <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} likeCount={likeCounts[item.id]} isLiked={likedItems.has(item.id)} onLike={likesEnabled ? async (id) => { const ok = await toggleLike(id, restaurant!.id); if (ok && restaurant?.google_place_id) setTimeout(() => setShowReviewPrompt(true), 800); } : undefined} />
+                  <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} likeCount={likeCounts[item.id]} isLiked={likedItems.has(item.id)} onLike={likesEnabled ? async (id) => { const ok = await toggleLike(id, restaurant!.id); if (ok && restaurant?.google_place_id) setTimeout(() => setShowReviewPrompt(true), 800); } : undefined} format={format} />
                 ))}
               </div>
               {subgroups.map((sg) => (
@@ -1769,7 +1769,7 @@ export default function PublicMenu() {
 
       {/* Item Detail Modal */}
       {selectedItem && (
-        <ItemDetailModal item={selectedItem} allItems={items} lang={lang} theme={theme} onClose={() => setSelectedItem(null)} onSelectItem={setSelectedItem} onAddToCart={cartEnabled ? handleAddToCart : undefined} likeCount={likeCounts[selectedItem.id]} isLiked={likedItems.has(selectedItem.id)} onLike={likesEnabled ? async (id) => { const ok = await toggleLike(id, restaurant!.id); if (ok && restaurant?.google_place_id) setTimeout(() => setShowReviewPrompt(true), 800); } : undefined} />
+        <ItemDetailModal item={selectedItem} allItems={items} lang={lang} theme={theme} onClose={() => setSelectedItem(null)} onSelectItem={setSelectedItem} onAddToCart={cartEnabled ? handleAddToCart : undefined} likeCount={likeCounts[selectedItem.id]} isLiked={likedItems.has(selectedItem.id)} onLike={likesEnabled ? async (id) => { const ok = await toggleLike(id, restaurant!.id); if (ok && restaurant?.google_place_id) setTimeout(() => setShowReviewPrompt(true), 800); } : undefined} format={format} />
       )}
 
       {/* Promo Popup */}
@@ -2982,7 +2982,7 @@ function ItemDetailModal({ item, allItems, lang, theme, onClose, onSelectItem, o
                         )}
                       </div>
                       <span className="tabular-nums" style={{ fontFamily: bodyFont, fontWeight: 700, fontSize: 14, color: theme.price, flexShrink: 0 }}>
-                        {formatPriceDisplay(rec, toUiLang(lang))}
+                        {formatPriceDisplay(rec, toUiLang(lang), format)}
                       </span>
                     </button>
                   );
