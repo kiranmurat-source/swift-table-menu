@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
-import { Camera, Trash, Info, Image } from "@phosphor-icons/react";
+import { Trash, Info, Image } from "@phosphor-icons/react";
 import type { AdminTheme } from '../lib/adminTheme';
 import { getOptimizedImageUrl, handleImageError } from '../lib/imageUtils';
 import type { Promo } from './PromoPopup';
 import { Restaurant, makeStyles } from './admin/dashboardShared';
+import MediaPickerModal, { attachMediaUsage, detachMediaUsage } from './admin/MediaPickerModal';
 
 type PromoCategory = { id: string; name_tr: string };
 
@@ -54,8 +55,7 @@ function PromosTab({ restaurant, theme }: { restaurant: Restaurant; theme: Admin
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
-  const [uploading, setUploading] = useState(false);
-  const promoFileRef = useRef<HTMLInputElement>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
     load();
@@ -102,16 +102,6 @@ function PromosTab({ restaurant, theme }: { restaurant: Restaurant; theme: Admin
     setShowForm(false);
   }
 
-  async function uploadImage(file: File) {
-    setUploading(true);
-    const ext = file.name.split('.').pop();
-    const fileName = `${restaurant.slug}/promos/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from('menu-images').upload(fileName, file, { upsert: true });
-    if (error) { setMsg('Görsel yükleme hatası: ' + error.message); setUploading(false); return; }
-    const { data: urlData } = supabase.storage.from('menu-images').getPublicUrl(fileName);
-    setForm(prev => ({ ...prev, image_url: urlData.publicUrl }));
-    setUploading(false);
-  }
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -133,14 +123,27 @@ function PromosTab({ restaurant, theme }: { restaurant: Restaurant; theme: Admin
       schedule_days: form.schedule_days,
       show_once_per_session: form.show_once_per_session,
     };
+    let savedId = form.id;
+    const oldPromo = form.id ? promos.find(p => p.id === form.id) : null;
     if (form.id) {
       const { error } = await supabase.from('restaurant_promos').update(payload).eq('id', form.id);
       if (error) setMsg('Hata: ' + error.message);
       else setMsg('Promo güncellendi');
     } else {
-      const { error } = await supabase.from('restaurant_promos').insert({ ...payload, sort_order: promos.length });
+      const { data: created, error } = await supabase.from('restaurant_promos').insert({ ...payload, sort_order: promos.length }).select().single();
       if (error) setMsg('Hata: ' + error.message);
-      else setMsg('Promo eklendi');
+      else {
+        setMsg('Promo eklendi');
+        if (created) savedId = created.id;
+      }
+    }
+    if (savedId) {
+      const newImg = form.image_url || null;
+      const oldImg = oldPromo?.image_url || null;
+      if (newImg !== oldImg) {
+        if (oldImg) await detachMediaUsage(oldImg, { type: 'promo', id: savedId, field: 'image_url' });
+        if (newImg) await attachMediaUsage(newImg, { type: 'promo', id: savedId, field: 'image_url', label: form.title_tr });
+      }
     }
     setSaving(false);
     resetForm();
@@ -155,6 +158,8 @@ function PromosTab({ restaurant, theme }: { restaurant: Restaurant; theme: Admin
 
   async function remove(id: string) {
     if (!confirm('Bu promo silinecek. Emin misiniz?')) return;
+    const p = promos.find(x => x.id === id);
+    if (p?.image_url) await detachMediaUsage(p.image_url, { type: 'promo', id, field: 'image_url' });
     await supabase.from('restaurant_promos').delete().eq('id', id);
     load();
   }
@@ -188,16 +193,15 @@ function PromosTab({ restaurant, theme }: { restaurant: Restaurant; theme: Admin
           {/* Image */}
           <div>
             <label style={S.label}>Promo Görseli</label>
-            <input ref={promoFileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadImage(e.target.files[0]); }} />
             {form.image_url ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <img onError={handleImageError} src={getOptimizedImageUrl(form.image_url, 'card')} alt="" style={{ width: 120, height: 72, borderRadius: 8, objectFit: 'cover', border: '1px solid #E5E5E3' }} />
-                <button type="button" onClick={() => promoFileRef.current?.click()} disabled={uploading} style={S.btnSm}>{uploading ? '...' : 'Değiştir'}</button>
+                <button type="button" onClick={() => setPickerOpen(true)} style={S.btnSm}>Değiştir</button>
                 <button type="button" onClick={() => setForm({ ...form, image_url: '' })} style={S.btnDanger}><Trash size={12} /></button>
               </div>
             ) : (
-              <button type="button" onClick={() => promoFileRef.current?.click()} disabled={uploading} style={{ ...S.btnSm, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <Camera size={14} /> {uploading ? 'Yükleniyor...' : 'Görsel Yükle'}
+              <button type="button" onClick={() => setPickerOpen(true)} style={{ ...S.btnSm, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <Image size={14} /> Kütüphaneden Seç
               </button>
             )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#A0A0A0', marginTop: 4 }}><Info size={14} /><span>1080×1080px, kare, max 5MB</span></div>
@@ -356,6 +360,19 @@ function PromosTab({ restaurant, theme }: { restaurant: Restaurant; theme: Admin
           </div>
         </div>
       ))}
+
+      <MediaPickerModal
+        isOpen={pickerOpen}
+        accept="image"
+        onClose={() => setPickerOpen(false)}
+        onSelect={({ url }) => {
+          setForm(prev => ({ ...prev, image_url: url }));
+          setPickerOpen(false);
+        }}
+        restaurantId={restaurant.id}
+        restaurantSlug={restaurant.slug}
+        theme={theme}
+      />
     </div>
   );
 }

@@ -15,10 +15,12 @@ import {
   Warning,
   CheckCircle,
   Funnel,
+  VideoCamera,
 } from '@phosphor-icons/react';
 import PhotoEnhance from './PhotoEnhance';
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
 const MAX_WIDTH = 1920;
 
 export type MediaTag = 'product' | 'category' | 'logo' | 'cover' | 'promo';
@@ -37,6 +39,7 @@ export interface MediaItem {
   used_in: Array<{ type: string; id: string; label?: string }>;
   ai_enhanced: boolean;
   original_id: string | null;
+  duration_seconds: number | null;
   created_at: string;
 }
 
@@ -66,6 +69,30 @@ async function hashFile(file: File): Promise<string> {
  * Mümkünse WebP olarak döndürür; değilse orijinal tipi korur.
  * Küçültme gerekmiyorsa orijinal File'ı geri döner.
  */
+async function probeVideoMeta(file: File): Promise<{ duration: number; width: number; height: number } | null> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    video.muted = true;
+    video.src = url;
+    const cleanup = () => URL.revokeObjectURL(url);
+    video.onloadedmetadata = () => {
+      const meta = {
+        duration: Math.round(video.duration || 0),
+        width: video.videoWidth || 0,
+        height: video.videoHeight || 0,
+      };
+      cleanup();
+      resolve(meta);
+    };
+    video.onerror = () => {
+      cleanup();
+      resolve(null);
+    };
+  });
+}
+
 async function resizeImageIfNeeded(file: File): Promise<{ file: File; width: number; height: number }> {
   const imgBitmap = await createImageBitmap(file).catch(() => null);
   if (!imgBitmap) return { file, width: 0, height: 0 };
@@ -112,7 +139,7 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
   const [msg, setMsg] = useState<{ text: string; kind: 'ok' | 'err' | 'warn' } | null>(null);
-  const [filter, setFilter] = useState<'all' | MediaTag | 'unused' | 'ai'>('all');
+  const [filter, setFilter] = useState<'all' | MediaTag | 'unused' | 'ai' | 'images' | 'videos'>('all');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<MediaItem | null>(null);
   const [enhanceTarget, setEnhanceTarget] = useState<MediaItem | null>(null);
@@ -141,7 +168,9 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
 
   const doUpload = useCallback(
     async (files: FileList | File[]) => {
-      const arr = Array.from(files).filter((f) => f.type.startsWith('image/'));
+      const arr = Array.from(files).filter(
+        (f) => f.type.startsWith('image/') || f.type.startsWith('video/'),
+      );
       if (arr.length === 0) return;
 
       // Kota kontrolü
@@ -159,8 +188,10 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
 
       for (const rawFile of arr) {
         try {
-          if (rawFile.size > MAX_FILE_SIZE) {
-            flash(`"${rawFile.name}" 5MB'den büyük — atlandı.`, 'warn');
+          const isVideo = rawFile.type.startsWith('video/');
+          const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
+          if (rawFile.size > maxSize) {
+            flash(`"${rawFile.name}" ${isVideo ? '50' : '5'}MB sınırını aşıyor — atlandı.`, 'warn');
             errors++;
             setProgress({ current: ++done, total: arr.length });
             continue;
@@ -180,14 +211,33 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
             continue;
           }
 
-          const { file: resized, width, height } = await resizeImageIfNeeded(rawFile);
+          let toUpload: File = rawFile;
+          let width = 0;
+          let height = 0;
+          let duration: number | null = null;
+          let folder = 'images';
 
-          const ext = resized.name.split('.').pop() || 'webp';
-          const path = `${restaurantSlug}/library/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+          if (isVideo) {
+            folder = 'videos';
+            const meta = await probeVideoMeta(rawFile);
+            if (meta) {
+              width = meta.width;
+              height = meta.height;
+              duration = meta.duration;
+            }
+          } else {
+            const r = await resizeImageIfNeeded(rawFile);
+            toUpload = r.file;
+            width = r.width;
+            height = r.height;
+          }
+
+          const ext = toUpload.name.split('.').pop() || (isVideo ? 'mp4' : 'webp');
+          const path = `${restaurantSlug}/${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
           const up = await supabase.storage
             .from('menu-images')
-            .upload(path, resized, { upsert: false, contentType: resized.type });
+            .upload(path, toUpload, { upsert: false, contentType: toUpload.type });
           if (up.error) {
             errors++;
             setProgress({ current: ++done, total: arr.length });
@@ -198,13 +248,14 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
             restaurant_id: restaurantId,
             file_name: rawFile.name,
             file_path: path,
-            file_size: resized.size,
-            file_type: resized.type,
-            width,
-            height,
+            file_size: toUpload.size,
+            file_type: toUpload.type,
+            width: width || null,
+            height: height || null,
             file_hash: hash,
             tags: [],
             used_in: [],
+            duration_seconds: duration,
           });
         } catch {
           errors++;
@@ -323,9 +374,12 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
   const filteredItems = useMemo(() => {
     const q = search.trim().toLowerCase();
     return items.filter((it) => {
+      const isVideo = it.file_type.startsWith('video/');
+      if (filter === 'images' && isVideo) return false;
+      if (filter === 'videos' && !isVideo) return false;
       if (filter === 'unused' && it.used_in.length > 0) return false;
       if (filter === 'ai' && !it.ai_enhanced) return false;
-      if (filter !== 'all' && filter !== 'unused' && filter !== 'ai') {
+      if (filter !== 'all' && filter !== 'unused' && filter !== 'ai' && filter !== 'images' && filter !== 'videos') {
         if (!it.tags.includes(filter)) return false;
       }
       if (q && !it.file_name.toLowerCase().includes(q)) return false;
@@ -528,12 +582,12 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
               AI Kredisi: <b style={{ color: theme.value }}>{credits.creditsRemaining}/{credits.creditsTotal}</b>
             </div>
             <button style={S.btn} onClick={() => fileRef.current?.click()} disabled={uploading}>
-              <UploadSimple size={16} /> {uploading ? 'Yükleniyor...' : 'Görsel Yükle'}
+              <UploadSimple size={16} /> {uploading ? 'Yükleniyor...' : 'Medya Yükle'}
             </button>
             <input
               ref={fileRef}
               type="file"
-              accept="image/*"
+              accept="image/*,video/*"
               multiple
               style={{ display: 'none' }}
               onChange={(e) => {
@@ -574,7 +628,7 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
             Dosyaları buraya sürükleyin veya tıklayıp seçin
           </div>
           <div style={{ fontSize: 11, color: theme.subtle, marginTop: 2 }}>
-            JPG, PNG, WebP · Max 5MB · 1920px üstü otomatik küçültülür
+            Görsel: JPG/PNG/WebP, max 5MB · Video: MP4/WebM, max 50MB
           </div>
           {progress && (
             <div style={{ marginTop: 10, fontSize: 11, color: theme.heading }}>
@@ -607,10 +661,12 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
       <div style={{ ...S.card, padding: 12 }}>
         <div style={S.filterRow}>
           <Funnel size={16} style={{ color: theme.subtle }} />
-          {(['all', 'product', 'category', 'logo', 'cover', 'promo', 'unused', 'ai'] as const).map((f) => (
+          {(['all', 'images', 'videos', 'product', 'category', 'logo', 'cover', 'promo', 'unused', 'ai'] as const).map((f) => (
             <button key={f} type="button" onClick={() => setFilter(f)} style={S.chip(filter === f)}>
               {{
                 all: 'Tümü',
+                images: 'Görseller',
+                videos: 'Videolar',
                 product: 'Ürün',
                 category: 'Kategori',
                 logo: 'Logo',
@@ -647,11 +703,21 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
             <div style={S.grid}>
               {filteredItems.map((it) => {
                 const url = getPublicUrl(it.file_path);
-                const thumb = getOptimizedImageUrl(url, 'thumbnail');
+                const isVideo = it.file_type.startsWith('video/');
                 const isUnused = it.used_in.length === 0;
                 return (
                   <div key={it.id} style={S.thumbCard} onClick={() => setSelected(it)}>
-                    <img src={thumb} alt={it.file_name} onError={handleImageError} style={S.thumbImg} loading="lazy" />
+                    {isVideo ? (
+                      <video src={url} muted playsInline preload="metadata" style={S.thumbImg} />
+                    ) : (
+                      <img src={getOptimizedImageUrl(url, 'thumbnail')} alt={it.file_name} onError={handleImageError} style={S.thumbImg} loading="lazy" />
+                    )}
+                    {isVideo && (
+                      <span style={{ position: 'absolute', top: 6, left: 6, background: 'rgba(0,0,0,0.7)', color: '#FFFFFF', borderRadius: 4, padding: '2px 5px', display: 'flex', alignItems: 'center', gap: 3, fontSize: 10 }}>
+                        <VideoCamera size={11} weight="fill" />
+                        {it.duration_seconds ? `${it.duration_seconds}s` : 'Video'}
+                      </span>
+                    )}
                     {it.ai_enhanced && (
                       <span style={S.aiBadge} title="AI ile iyileştirildi"><Sparkle size={14} /></span>
                     )}
@@ -669,7 +735,7 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
               })}
             </div>
             <div style={{ marginTop: 12, fontSize: 12, color: theme.subtle, textAlign: 'center' }}>
-              Toplam: {filteredItems.length} görsel · {formatBytes(filteredItems.reduce((s, i) => s + i.file_size, 0))}
+              Toplam: {filteredItems.length} dosya · {formatBytes(filteredItems.reduce((s, i) => s + i.file_size, 0))}
             </div>
           </>
         )}
@@ -685,17 +751,31 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
               </div>
               <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', color: theme.subtle, cursor: 'pointer' }} aria-label="Kapat"><X size={20} /></button>
             </div>
-            <img
-              src={getOptimizedImageUrl(getPublicUrl(selected.file_path), 'cover')}
-              alt={selected.file_name}
-              onError={handleImageError}
-              style={{ width: '100%', borderRadius: 8, maxHeight: 360, objectFit: 'contain', background: theme.pageBg }}
-            />
+            {selected.file_type.startsWith('video/') ? (
+              <video
+                src={getPublicUrl(selected.file_path)}
+                controls
+                autoPlay
+                muted
+                loop
+                style={{ width: '100%', borderRadius: 8, maxHeight: 360, background: '#000' }}
+              />
+            ) : (
+              <img
+                src={getOptimizedImageUrl(getPublicUrl(selected.file_path), 'cover')}
+                alt={selected.file_name}
+                onError={handleImageError}
+                style={{ width: '100%', borderRadius: 8, maxHeight: 360, objectFit: 'contain', background: theme.pageBg }}
+              />
+            )}
             <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 12, color: theme.heading }}>
               <div><b style={{ color: theme.value }}>Boyut:</b> {formatBytes(selected.file_size)}</div>
               <div><b style={{ color: theme.value }}>Tip:</b> {selected.file_type}</div>
               <div><b style={{ color: theme.value }}>Çözünürlük:</b> {selected.width && selected.height ? `${selected.width} × ${selected.height}` : '—'}</div>
               <div><b style={{ color: theme.value }}>Yüklenme:</b> {new Date(selected.created_at).toLocaleDateString('tr-TR')}</div>
+              {selected.duration_seconds != null && (
+                <div><b style={{ color: theme.value }}>Süre:</b> {selected.duration_seconds}s</div>
+              )}
             </div>
 
             {selected.tags.length > 0 && (
@@ -724,7 +804,7 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
               <button style={S.btnGhost} onClick={() => copyUrl(selected)}>
                 <Copy size={14} /> URL Kopyala
               </button>
-              {!selected.ai_enhanced && (
+              {!selected.ai_enhanced && !selected.file_type.startsWith('video/') && (
                 <button
                   style={{
                     ...S.btnGhost,

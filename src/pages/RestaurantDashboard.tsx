@@ -11,6 +11,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
 import { Camera, PencilSimple, CheckCircle, XCircle, AppleLogo, Star, Globe, Pen, Rows, User, Image, Trash, Link, Package, CaretCircleDown, CaretCircleUp, CaretDown, CaretRight, PlusCircle, Clock, Grains, Timer, Info, Bell, List, SquaresFour, Tag, Palette, ChatCircle, Percent, Heart, ChartBar, ArrowsClockwise, Warning, X, VideoCamera, Users, Gauge, Images, FileArrowUp } from "@phosphor-icons/react";
 import MediaLibrary from '../components/admin/MediaLibrary';
+import MediaPickerModal, { type MediaAccept, attachMediaUsage, detachMediaUsage } from '../components/admin/MediaPickerModal';
 import MenuImport from '../components/admin/MenuImport';
 import { NUTRI_SCORE_COLORS, NUTRI_SCORE_VALUES } from "@/lib/nutritionEU";
 import RestaurantAnalytics from "@/components/dashboard/RestaurantAnalytics";
@@ -316,8 +317,6 @@ export default function RestaurantDashboard() {
   const [showCatForm, setShowCatForm] = useState(false);
   const [showItemForm, setShowItemForm] = useState(false);
   const [catForm, setCatForm] = useState<{ name_tr: string; image_url: string; video_url: string; parent_id: string | null }>({ name_tr: '', image_url: '', video_url: '', parent_id: null });
-  const [uploadingCatImage, setUploadingCatImage] = useState<string | null>(null); // 'new' or category id
-  const catFileRef = useRef<HTMLInputElement>(null);
   const [itemForm, setItemForm] = useState(emptyItemForm);
   const [saving, setSaving] = useState(false);
   const [translating, setTranslating] = useState<string | null>(null);
@@ -328,7 +327,6 @@ export default function RestaurantDashboard() {
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [editCatForm, setEditCatForm] = useState({ name_tr: '' });
-  const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'menu' | 'import' | 'translations' | 'qr' | 'media' | 'profile' | 'promos' | 'calls' | 'feedback' | 'discounts' | 'likes' | 'customers' | 'analytics'>('dashboard');
   const [pendingCallCount, setPendingCallCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -349,8 +347,13 @@ export default function RestaurantDashboard() {
   };
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
   const [loadingData, setLoadingData] = useState(true);
-  const fileRef = useRef<HTMLInputElement>(null);
   const initialFormJsonRef = useRef<string>('');
+  const [picker, setPicker] = useState<{
+    accept: MediaAccept;
+    onPick: (url: string) => void;
+  } | null>(null);
+  const openPicker = (accept: MediaAccept, onPick: (url: string) => void) =>
+    setPicker({ accept, onPick });
   const formContainerRef = useRef<HTMLDivElement | null>(null);
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set());
   const toggleExpand = (catId: string) => {
@@ -622,6 +625,10 @@ export default function RestaurantDashboard() {
     }).select().single();
     if (error) { setMsg(error.message); }
     else {
+      if (newCat) {
+        if (catForm.image_url) await attachMediaUsage(catForm.image_url, { type: 'menu_category', id: newCat.id, field: 'image_url', label: catForm.name_tr });
+        if (catForm.video_url && catForm.video_url.includes('/menu-images/')) await attachMediaUsage(catForm.video_url, { type: 'menu_category', id: newCat.id, field: 'video_url', label: catForm.name_tr });
+      }
       setCatForm({ name_tr: '', image_url: '', video_url: '', parent_id: null }); setShowCatForm(false);
       loadCategories(restaurant.id);
       if (newCat && enabledLangs.length > 0) {
@@ -634,25 +641,23 @@ export default function RestaurantDashboard() {
     setSaving(false);
   }
 
-  async function uploadCategoryImage(file: File, target: 'new' | string) {
+  async function setCategoryImageFromPicker(target: 'new' | string, url: string) {
     if (!restaurant) return;
-    setUploadingCatImage(target);
-    const ext = file.name.split('.').pop();
-    const fileName = `${restaurant.slug}/categories/${target === 'new' ? Date.now() : target}-${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from('menu-images').upload(fileName, file, { upsert: true });
-    if (error) { setMsg('Görsel yükleme hatası: ' + error.message); setUploadingCatImage(null); return; }
-    const { data: urlData } = supabase.storage.from('menu-images').getPublicUrl(fileName);
     if (target === 'new') {
-      setCatForm(prev => ({ ...prev, image_url: urlData.publicUrl }));
+      setCatForm(prev => ({ ...prev, image_url: url }));
     } else {
-      await supabase.from('menu_categories').update({ image_url: urlData.publicUrl }).eq('id', target);
+      const cat = categories.find(c => c.id === target);
+      if (cat?.image_url) await detachMediaUsage(cat.image_url, { type: 'menu_category', id: target, field: 'image_url' });
+      await supabase.from('menu_categories').update({ image_url: url }).eq('id', target);
+      await attachMediaUsage(url, { type: 'menu_category', id: target, field: 'image_url', label: cat?.name_tr });
       loadCategories(restaurant.id);
     }
-    setUploadingCatImage(null);
   }
 
   async function removeCategoryImage(id: string) {
     if (!restaurant) return;
+    const cat = categories.find(c => c.id === id);
+    if (cat?.image_url) await detachMediaUsage(cat.image_url, { type: 'menu_category', id, field: 'image_url' });
     await supabase.from('menu_categories').update({ image_url: null }).eq('id', id);
     loadCategories(restaurant.id);
   }
@@ -675,17 +680,6 @@ export default function RestaurantDashboard() {
     if (selectedCat === id) setSelectedCat(null);
   }
 
-  async function handleImageUpload(file: File) {
-    if (!restaurant) return;
-    setUploading(true);
-    const ext = file.name.split('.').pop();
-    const fileName = `${restaurant.slug}/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from('menu-images').upload(fileName, file, { upsert: true });
-    if (error) { setMsg('Görsel yükleme hatası: ' + error.message); setUploading(false); return; }
-    const { data: urlData } = supabase.storage.from('menu-images').getPublicUrl(fileName);
-    setItemForm({ ...itemForm, image_url: urlData.publicUrl });
-    setUploading(false);
-  }
 
   async function addOrUpdateItem(e: React.FormEvent) {
     e.preventDefault();
@@ -792,6 +786,7 @@ export default function RestaurantDashboard() {
     };
 
     let savedId = editingItem;
+    const oldItem = editingItem ? items.find(i => i.id === editingItem) : null;
 
     if (editingItem) {
       const { sort_order, ...updatePayload } = payload;
@@ -799,6 +794,22 @@ export default function RestaurantDashboard() {
     } else {
       const { data: newItem } = await supabase.from('menu_items').insert({ ...payload, translations: {} }).select().single();
       if (newItem) savedId = newItem.id;
+    }
+
+    // Medya kullanım takibi (used_in)
+    if (savedId) {
+      const newImg = itemForm.image_url || null;
+      const oldImg = oldItem?.image_url || null;
+      if (newImg !== oldImg) {
+        if (oldImg) await detachMediaUsage(oldImg, { type: 'menu_item', id: savedId, field: 'image_url' });
+        if (newImg) await attachMediaUsage(newImg, { type: 'menu_item', id: savedId, field: 'image_url', label: itemForm.name_tr });
+      }
+      const newVid = itemForm.video_url || null;
+      const oldVid = oldItem?.video_url || null;
+      if (newVid !== oldVid) {
+        if (oldVid && oldVid.includes('/menu-images/')) await detachMediaUsage(oldVid, { type: 'menu_item', id: savedId, field: 'video_url' });
+        if (newVid && newVid.includes('/menu-images/')) await attachMediaUsage(newVid, { type: 'menu_item', id: savedId, field: 'video_url', label: itemForm.name_tr });
+      }
     }
 
     // Sync recommendations
@@ -1404,28 +1415,32 @@ export default function RestaurantDashboard() {
               </div>
               <div>
                 <label style={S.label}>Kategori Görseli</label>
-                <input ref={catFileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadCategoryImage(e.target.files[0], 'new'); }} />
                 {catForm.image_url ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <img onError={handleImageError} src={getOptimizedImageUrl(catForm.image_url, 'thumbnail')} alt="" style={{ width: 64, height: 64, borderRadius: 8, objectFit: 'cover', border: '1px solid #E5E5E3' }} />
-                    <button type="button" onClick={() => catFileRef.current?.click()} disabled={uploadingCatImage === 'new'} style={{ ...S.btnSm, fontSize: 11 }}>{uploadingCatImage === 'new' ? '...' : 'Değiştir'}</button>
+                    <button type="button" onClick={() => openPicker('image', (url) => setCatForm(prev => ({ ...prev, image_url: url })))} style={{ ...S.btnSm, fontSize: 11 }}>Değiştir</button>
                     <button type="button" onClick={() => setCatForm({ ...catForm, image_url: '' })} style={{ ...S.btnDanger, fontSize: 11 }}><Trash size={12} /></button>
                   </div>
                 ) : (
-                  <button type="button" onClick={() => catFileRef.current?.click()} disabled={uploadingCatImage === 'new'} style={{ ...S.btnSm, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                    <Camera size={14} /> {uploadingCatImage === 'new' ? 'Yükleniyor...' : 'Görsel Yükle'}
+                  <button type="button" onClick={() => openPicker('image', (url) => setCatForm(prev => ({ ...prev, image_url: url })))} style={{ ...S.btnSm, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <Image size={14} /> Kütüphaneden Seç
                   </button>
                 )}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: adminTheme.subtle, marginTop: 4 }}><Info size={14} /><span>800×600px, yatay, max 3MB</span></div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: adminTheme.subtle, marginTop: 4 }}><Info size={14} /><span>800×600px, yatay, max 5MB</span></div>
               </div>
               <div>
-                <label style={S.label}><VideoCamera size={14} style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle' }} /> Video URL (opsiyonel)</label>
+                <label style={S.label}><VideoCamera size={14} style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle' }} /> Video (opsiyonel)</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <button type="button" onClick={() => openPicker('video', (url) => setCatForm(prev => ({ ...prev, video_url: url })))} style={{ ...S.btnSm, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <VideoCamera size={14} /> Kütüphaneden Video Seç
+                  </button>
+                </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <input
                     style={{ ...S.input, flex: 1 }}
                     value={catForm.video_url}
                     onChange={e => setCatForm({ ...catForm, video_url: e.target.value })}
-                    placeholder="https://... (.mp4, .webm veya YouTube/Vimeo linki)"
+                    placeholder="veya https://... YouTube/Vimeo linki yapıştırın"
                   />
                   {catForm.video_url && (
                     <button
@@ -1621,27 +1636,32 @@ export default function RestaurantDashboard() {
                   </div>
                   <div>
                     <label style={S.label}>Görsel</label>
-                    <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) handleImageUpload(e.target.files[0]); }} />
                     {itemForm.image_url ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <img onError={handleImageError} src={getOptimizedImageUrl(itemForm.image_url, 'thumbnail')} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover' }} />
+                        <button type="button" onClick={() => openPicker('image', (url) => setItemForm(prev => ({ ...prev, image_url: url })))} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11 }}>Değiştir</button>
                         <button type="button" onClick={() => setItemForm({ ...itemForm, image_url: '' })} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11, color: '#EF4444' }}>Kaldır</button>
                       </div>
                     ) : (
-                      <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} style={{ ...S.btnSm, width: '100%' }}>
-                        {uploading ? 'Yükleniyor...' : <><Camera size={14} /> Görsel Seç</>}
+                      <button type="button" onClick={() => openPicker('image', (url) => setItemForm(prev => ({ ...prev, image_url: url })))} style={{ ...S.btnSm, width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                        <Image size={14} /> Kütüphaneden Seç
                       </button>
                     )}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#A0A0A0', marginTop: 4 }}><Info size={14} /><span>1200×800px, yatay, max 5MB</span></div>
                   </div>
                   <div>
                     <label style={S.label}>Video</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <button type="button" onClick={() => openPicker('video', (url) => setItemForm(prev => ({ ...prev, video_url: url })))} style={{ ...S.btnSm, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <VideoCamera size={14} /> Kütüphaneden Video Seç
+                      </button>
+                    </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <input
                         style={{ ...S.input, flex: 1 }}
                         value={itemForm.video_url}
                         onChange={e => setItemForm({ ...itemForm, video_url: e.target.value })}
-                        placeholder="https://...mp4 veya YouTube/Vimeo linki"
+                        placeholder="veya YouTube/Vimeo linki yapıştırın"
                       />
                       {itemForm.video_url && (
                         <button
@@ -1846,15 +1866,15 @@ export default function RestaurantDashboard() {
                   {/* Görsel yine gerekli */}
                   <div>
                     <label style={S.label}>Görsel</label>
-                    <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) handleImageUpload(e.target.files[0]); }} />
                     {itemForm.image_url ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <img onError={handleImageError} src={getOptimizedImageUrl(itemForm.image_url, 'thumbnail')} alt="" style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover' }} />
+                        <button type="button" onClick={() => openPicker('image', (url) => setItemForm(prev => ({ ...prev, image_url: url })))} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11 }}>Değiştir</button>
                         <button type="button" onClick={() => setItemForm({ ...itemForm, image_url: '' })} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11, color: '#EF4444' }}>Kaldır</button>
                       </div>
                     ) : (
-                      <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} style={{ ...S.btnSm }}>
-                        {uploading ? 'Yükleniyor...' : <><Camera size={14} /> Görsel Seç</>}
+                      <button type="button" onClick={() => openPicker('image', (url) => setItemForm(prev => ({ ...prev, image_url: url })))} style={{ ...S.btnSm, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <Image size={14} /> Kütüphaneden Seç
                       </button>
                     )}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#A0A0A0', marginTop: 4 }}><Info size={14} /><span>1200×800px, yatay, max 5MB</span></div>
@@ -2591,10 +2611,14 @@ export default function RestaurantDashboard() {
                   </div>
                   {!isEditing && (
                     <div style={S.accordionActions} onClick={(e) => e.stopPropagation()}>
-                      <label style={{ color: '#A0A0A0', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', padding: 4 }} title="Kategori görseli">
-                        <input type="file" accept="image/*" style={{ display: 'none' }} disabled={uploadingCatImage === c.id} onChange={e => { if (e.target.files?.[0]) uploadCategoryImage(e.target.files[0], c.id); }} />
-                        {uploadingCatImage === c.id ? <span style={{ fontSize: 10 }}>...</span> : <Camera size={16} />}
-                      </label>
+                      <button
+                        type="button"
+                        onClick={() => openPicker('image', (url) => setCategoryImageFromPicker(c.id, url))}
+                        style={{ background: 'none', border: 'none', color: '#A0A0A0', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }}
+                        title="Kategori görseli (kütüphaneden seç)"
+                      >
+                        <Image size={16} />
+                      </button>
                       {c.image_url && (
                         <button onClick={() => removeCategoryImage(c.id)} style={{ background: 'none', border: 'none', color: '#A0A0A0', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }} title="Görseli kaldır"><Trash size={14} /></button>
                       )}
@@ -2716,6 +2740,21 @@ export default function RestaurantDashboard() {
       </main>
 
       {/* Mobile bottom nav removed — replaced by hamburger sidebar drawer */}
+
+      {restaurant && (
+        <MediaPickerModal
+          isOpen={picker !== null}
+          accept={picker?.accept || 'all'}
+          onClose={() => setPicker(null)}
+          onSelect={({ url }) => {
+            picker?.onPick(url);
+            setPicker(null);
+          }}
+          restaurantId={restaurant.id}
+          restaurantSlug={restaurant.slug}
+          theme={adminTheme}
+        />
+      )}
     </div>
   );
 }

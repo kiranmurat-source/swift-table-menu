@@ -1,10 +1,11 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
-import { Camera, Star, Globe, Image, Trash, Link, Package, Info, SquaresFour, Palette, ArrowsClockwise, User, CurrencyCircleDollar } from "@phosphor-icons/react";
+import { Star, Globe, Image, Trash, Link, Package, Info, SquaresFour, Palette, ArrowsClockwise, User, CurrencyCircleDollar } from "@phosphor-icons/react";
 import type { AdminTheme } from '../lib/adminTheme';
 import { getOptimizedImageUrl, handleImageError } from '../lib/imageUtils';
 import { THEMES } from '../lib/themes';
 import { Restaurant, DAY_KEYS, DAY_LABELS, DEFAULT_DAY, makeStyles } from './admin/dashboardShared';
+import MediaPickerModal, { type MediaAccept, attachMediaUsage, detachMediaUsage } from './admin/MediaPickerModal';
 
 const SUPABASE_URL = 'https://qmnrawqvkwehufebbkxp.supabase.co';
 
@@ -45,14 +46,12 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
   });
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
-  const [uploadingLogo, setUploadingLogo] = useState(false);
-  const [uploadingCover, setUploadingCover] = useState(false);
   const [ratingLoading, setRatingLoading] = useState(false);
   const [googleRating, setGoogleRating] = useState<number | null>(restaurant.google_rating ?? null);
   const [googleReviewCount, setGoogleReviewCount] = useState<number | null>(restaurant.google_review_count ?? null);
   const [googleRatingUpdatedAt, setGoogleRatingUpdatedAt] = useState<string | null>(restaurant.google_rating_updated_at ?? null);
-  const logoRef = useRef<HTMLInputElement>(null);
-  const coverRef = useRef<HTMLInputElement>(null);
+  const [picker, setPicker] = useState<{ accept: MediaAccept; onPick: (url: string) => void } | null>(null);
+  const openPicker = (accept: MediaAccept, onPick: (url: string) => void) => setPicker({ accept, onPick });
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -118,24 +117,21 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
     setTimeout(() => setMsg(''), 3000);
   }
 
-  async function uploadImage(file: File, type: 'logo' | 'cover') {
-    const setUploading = type === 'logo' ? setUploadingLogo : setUploadingCover;
-    setUploading(true);
-    const ext = file.name.split('.').pop();
-    const fileName = `${restaurant.slug}/${type}-${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from('menu-images').upload(fileName, file, { upsert: true });
-    if (error) { setMsg('Yukleme hatasi: ' + error.message); setUploading(false); return; }
-    const { data: urlData } = supabase.storage.from('menu-images').getPublicUrl(fileName);
+  async function applyPickedImage(type: 'logo' | 'cover', url: string) {
     const field = type === 'logo' ? 'logo_url' : 'cover_url';
-    await supabase.from('restaurants').update({ [field]: urlData.publicUrl }).eq('id', restaurant.id);
-    onUpdate({ ...restaurant, [field]: urlData.publicUrl });
+    const oldUrl = type === 'logo' ? restaurant.logo_url : restaurant.cover_url;
+    if (oldUrl) await detachMediaUsage(oldUrl, { type: 'restaurant', id: restaurant.id, field });
+    await supabase.from('restaurants').update({ [field]: url }).eq('id', restaurant.id);
+    await attachMediaUsage(url, { type: 'restaurant', id: restaurant.id, field, label: restaurant.name });
+    onUpdate({ ...restaurant, [field]: url });
     setMsg(type === 'logo' ? 'Logo guncellendi' : 'Kapak gorseli guncellendi');
-    setUploading(false);
     setTimeout(() => setMsg(''), 3000);
   }
 
   async function removeImage(type: 'logo' | 'cover') {
     const field = type === 'logo' ? 'logo_url' : 'cover_url';
+    const oldUrl = type === 'logo' ? restaurant.logo_url : restaurant.cover_url;
+    if (oldUrl) await detachMediaUsage(oldUrl, { type: 'restaurant', id: restaurant.id, field });
     await supabase.from('restaurants').update({ [field]: null }).eq('id', restaurant.id);
     onUpdate({ ...restaurant, [field]: null });
     setMsg(type === 'logo' ? 'Logo kaldirildi' : 'Kapak gorseli kaldirildi');
@@ -211,38 +207,36 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
           <div>
             <label style={{ ...S.label, marginBottom: 10 }}>Logo</label>
-            <input ref={logoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadImage(e.target.files[0], 'logo'); }} />
             {restaurant.logo_url ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
                 <img onError={handleImageError} src={getOptimizedImageUrl(restaurant.logo_url, 'card')} alt="Logo" style={{ width: 80, height: 80, borderRadius: 12, objectFit: 'cover', border: `1px solid ${theme.border}` }} />
                 <div style={{ display: 'flex', gap: 6 }}>
-                  <button type="button" onClick={() => logoRef.current?.click()} disabled={uploadingLogo} style={{ ...S.btnSm, fontSize: 11, padding: '4px 10px' }}>{uploadingLogo ? '...' : 'Degistir'}</button>
+                  <button type="button" onClick={() => openPicker('image', (url) => applyPickedImage('logo', url))} style={{ ...S.btnSm, fontSize: 11, padding: '4px 10px' }}>Degistir</button>
                   <button type="button" onClick={() => removeImage('logo')} style={{ ...S.btnDanger, fontSize: 11, padding: '4px 10px' }}><Trash size={12} /></button>
                 </div>
               </div>
             ) : (
-              <button type="button" onClick={() => logoRef.current?.click()} disabled={uploadingLogo} style={{ ...S.btnSm, width: '100%', padding: '20px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: theme.subtle }}>
-                <Camera size={24} />
-                <span style={{ fontSize: 12 }}>{uploadingLogo ? 'Yukleniyor...' : 'Logo Yukle'}</span>
+              <button type="button" onClick={() => openPicker('image', (url) => applyPickedImage('logo', url))} style={{ ...S.btnSm, width: '100%', padding: '20px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: theme.subtle }}>
+                <Image size={24} />
+                <span style={{ fontSize: 12 }}>Kütüphaneden Seç</span>
               </button>
             )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: theme.subtle, marginTop: 4 }}><Info size={14} /><span>500×500px, kare, şeffaf arka plan, max 2MB</span></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: theme.subtle, marginTop: 4 }}><Info size={14} /><span>500×500px, kare, şeffaf arka plan, max 5MB</span></div>
           </div>
           <div>
             <label style={{ ...S.label, marginBottom: 10 }}>Kapak Gorseli</label>
-            <input ref={coverRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { if (e.target.files?.[0]) uploadImage(e.target.files[0], 'cover'); }} />
             {coverImage ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
                 <img onError={handleImageError} src={getOptimizedImageUrl(coverImage, 'detail')} alt="Cover" style={{ width: '100%', height: 80, borderRadius: 8, objectFit: 'cover', border: `1px solid ${theme.border}` }} />
                 <div style={{ display: 'flex', gap: 6 }}>
-                  <button type="button" onClick={() => coverRef.current?.click()} disabled={uploadingCover} style={{ ...S.btnSm, fontSize: 11, padding: '4px 10px' }}>{uploadingCover ? '...' : 'Degistir'}</button>
+                  <button type="button" onClick={() => openPicker('image', (url) => applyPickedImage('cover', url))} style={{ ...S.btnSm, fontSize: 11, padding: '4px 10px' }}>Degistir</button>
                   <button type="button" onClick={() => removeImage('cover')} style={{ ...S.btnDanger, fontSize: 11, padding: '4px 10px' }}><Trash size={12} /></button>
                 </div>
               </div>
             ) : (
-              <button type="button" onClick={() => coverRef.current?.click()} disabled={uploadingCover} style={{ ...S.btnSm, width: '100%', padding: '20px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: theme.subtle }}>
-                <Camera size={24} />
-                <span style={{ fontSize: 12 }}>{uploadingCover ? 'Yukleniyor...' : 'Kapak Yukle'}</span>
+              <button type="button" onClick={() => openPicker('image', (url) => applyPickedImage('cover', url))} style={{ ...S.btnSm, width: '100%', padding: '20px 14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, color: theme.subtle }}>
+                <Image size={24} />
+                <span style={{ fontSize: 12 }}>Kütüphaneden Seç</span>
               </button>
             )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: theme.subtle, marginTop: 4 }}><Info size={14} /><span>1200×400px, yatay geniş, max 5MB</span></div>
@@ -616,6 +610,19 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
           {saving ? 'Kaydediliyor...' : 'Kaydet'}
         </button>
       </form>
+
+      <MediaPickerModal
+        isOpen={picker !== null}
+        accept={picker?.accept || 'image'}
+        onClose={() => setPicker(null)}
+        onSelect={({ url }) => {
+          picker?.onPick(url);
+          setPicker(null);
+        }}
+        restaurantId={restaurant.id}
+        restaurantSlug={restaurant.slug}
+        theme={theme}
+      />
     </div>
   );
 }
