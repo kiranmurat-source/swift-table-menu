@@ -9,7 +9,7 @@
 import { useEffect, useMemo, useState, useRef, Fragment, lazy, Suspense, ReactNode, CSSProperties } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
-import { Camera, PencilSimple, CheckCircle, XCircle, AppleLogo, Star, Globe, Pen, Rows, User, Image, Trash, Link, Package, CaretCircleDown, CaretCircleUp, CaretDown, CaretRight, PlusCircle, Clock, Grains, Timer, Info, Bell, List, SquaresFour, Tag, Palette, ChatCircle, Percent, Heart, ChartBar, ArrowsClockwise, Warning, X, VideoCamera, Users, Gauge, Images, FileArrowUp } from "@phosphor-icons/react";
+import { Camera, PencilSimple, CheckCircle, XCircle, AppleLogo, Star, Globe, Pen, Rows, User, Image, Trash, Link, Package, CaretCircleDown, CaretCircleUp, CaretDown, CaretRight, PlusCircle, Clock, Grains, Timer, Info, Bell, List, SquaresFour, Tag, Palette, ChatCircle, Percent, Heart, ChartBar, ArrowsClockwise, Warning, X, VideoCamera, Users, Gauge, Images, FileArrowUp, Sparkle } from "@phosphor-icons/react";
 import MediaLibrary from '../components/admin/MediaLibrary';
 import MediaPickerModal, { type MediaAccept, attachMediaUsage, detachMediaUsage } from '../components/admin/MediaPickerModal';
 import MenuImport from '../components/admin/MenuImport';
@@ -839,18 +839,26 @@ export default function RestaurantDashboard() {
       }
     }
 
-    // Sync recommendations
+    // Sync recommendations (table may not exist yet — swallow errors)
     if (savedId) {
-      await supabase.from('item_recommendations').delete().eq('menu_item_id', savedId);
-      const recRows = itemForm.recommended_ids.slice(0, 5).map((rid, idx) => ({
-        menu_item_id: savedId,
-        recommended_item_id: rid,
-        reason_tr: itemForm.recommendation_reasons[rid]?.tr || null,
-        reason_en: itemForm.recommendation_reasons[rid]?.en || null,
-        sort_order: idx,
-      }));
-      if (recRows.length > 0) {
-        await supabase.from('item_recommendations').insert(recRows);
+      try {
+        const { error: delErr } = await supabase.from('item_recommendations').delete().eq('menu_item_id', savedId);
+        if (delErr && delErr.code !== 'PGRST116' && !/does not exist/i.test(delErr.message || '')) {
+          console.warn('[item_recommendations delete]', delErr.message);
+        }
+        const recRows = itemForm.recommended_ids.slice(0, 5).map((rid, idx) => ({
+          menu_item_id: savedId,
+          recommended_item_id: rid,
+          reason_tr: itemForm.recommendation_reasons[rid]?.tr || null,
+          reason_en: itemForm.recommendation_reasons[rid]?.en || null,
+          sort_order: idx,
+        }));
+        if (recRows.length > 0) {
+          const { error: insErr } = await supabase.from('item_recommendations').insert(recRows);
+          if (insErr) console.warn('[item_recommendations insert]', insErr.message);
+        }
+      } catch (e) {
+        console.warn('[item_recommendations sync skipped]', e);
       }
     }
 
@@ -923,11 +931,17 @@ export default function RestaurantDashboard() {
 
   async function startEdit(item: MenuItem) {
     setEditingItem(item.id);
-    const { data: recs } = await supabase
-      .from('item_recommendations')
-      .select('recommended_item_id, reason_tr, reason_en, sort_order')
-      .eq('menu_item_id', item.id)
-      .order('sort_order');
+    let recs: any[] | null = null;
+    try {
+      const { data } = await supabase
+        .from('item_recommendations')
+        .select('recommended_item_id, reason_tr, reason_en, sort_order')
+        .eq('menu_item_id', item.id)
+        .order('sort_order');
+      recs = data;
+    } catch (e) {
+      console.warn('[item_recommendations load skipped]', e);
+    }
     const recommended_ids = (recs ?? []).map((r: any) => r.recommended_item_id as string);
     const recommendation_reasons: Record<string, { tr: string; en: string }> = {};
     for (const r of recs ?? []) {

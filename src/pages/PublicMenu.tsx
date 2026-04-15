@@ -2603,12 +2603,16 @@ function ItemDetailModal({ item, allItems, lang, theme, onClose, onSelectItem, o
     setModalQty(1);
     let cancelled = false;
     (async () => {
-      const { data } = await supabase
-        .from('item_recommendations')
-        .select('recommended_item_id, reason_tr, reason_en, sort_order')
-        .eq('menu_item_id', item.id)
-        .order('sort_order');
-      if (!cancelled) setRecommendations((data as RecRow[]) ?? []);
+      try {
+        const { data } = await supabase
+          .from('item_recommendations')
+          .select('recommended_item_id, reason_tr, reason_en, sort_order')
+          .eq('menu_item_id', item.id)
+          .order('sort_order');
+        if (!cancelled) setRecommendations((data as RecRow[]) ?? []);
+      } catch {
+        if (!cancelled) setRecommendations([]);
+      }
     })();
     return () => { cancelled = true; };
   }, [item.id]);
