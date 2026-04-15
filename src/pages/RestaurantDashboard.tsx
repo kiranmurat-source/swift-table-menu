@@ -9,7 +9,8 @@
 import { useEffect, useMemo, useState, useRef, Fragment, lazy, Suspense, ReactNode, CSSProperties } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
-import { Camera, PencilSimple, CheckCircle, XCircle, AppleLogo, Star, Globe, Pen, Rows, User, Image, Trash, Link, Package, CaretCircleDown, CaretCircleUp, CaretDown, CaretRight, PlusCircle, Clock, Grains, Timer, Info, Bell, List, SquaresFour, Tag, Palette, ChatCircle, Percent, Heart, ChartBar, ArrowsClockwise, Warning, X, VideoCamera, Users } from "@phosphor-icons/react";
+import { Camera, PencilSimple, CheckCircle, XCircle, AppleLogo, Star, Globe, Pen, Rows, User, Image, Trash, Link, Package, CaretCircleDown, CaretCircleUp, CaretDown, CaretRight, PlusCircle, Clock, Grains, Timer, Info, Bell, List, SquaresFour, Tag, Palette, ChatCircle, Percent, Heart, ChartBar, ArrowsClockwise, Warning, X, VideoCamera, Users, Gauge } from "@phosphor-icons/react";
+import { NUTRI_SCORE_COLORS, NUTRI_SCORE_VALUES } from "@/lib/nutritionEU";
 import RestaurantAnalytics from "@/components/dashboard/RestaurantAnalytics";
 import TabbledLogo from '@/components/TabbledLogo';
 import FeedbackPanel from '../components/FeedbackPanel';
@@ -121,6 +122,7 @@ type MenuItem = {
   schedule_periodic: PeriodicSchedule;
   price_variants: PriceVariant[];
   nutrition: Nutrition | null;
+  nutri_score: 'A' | 'B' | 'C' | 'D' | 'E' | null;
   prep_time: number | null;
   translations: Translations;
 };
@@ -273,6 +275,7 @@ const emptyItemForm = {
   variants: [] as VariantDraft[],
   nutrition: emptyNutritionDraft(),
   nutritionOpen: false,
+  nutri_score: '' as '' | 'A' | 'B' | 'C' | 'D' | 'E',
   prep_time: '',
   happy_hour_active: false,
   happy_hour_price: '' as string | number,
@@ -761,6 +764,7 @@ export default function RestaurantDashboard() {
       price: priceForDb,
       price_variants: priceVariants,
       nutrition: nutritionPayload,
+      nutri_score: itemForm.nutri_score || null,
       prep_time: itemForm.prep_time && Number.isFinite(parseInt(itemForm.prep_time))
         ? Math.max(1, Math.min(999, parseInt(itemForm.prep_time)))
         : null,
@@ -952,6 +956,7 @@ export default function RestaurantDashboard() {
       variants: variantDrafts,
       nutrition: nutrDraft,
       nutritionOpen,
+      nutri_score: (item.nutri_score ?? '') as '' | 'A' | 'B' | 'C' | 'D' | 'E',
       prep_time: item.prep_time != null ? item.prep_time.toString() : '',
       happy_hour_active: (item as any).happy_hour_active || false,
       happy_hour_price: (item as any).happy_hour_price != null ? String((item as any).happy_hour_price) : '',
@@ -2162,6 +2167,48 @@ export default function RestaurantDashboard() {
                     )}
                   </div>
                 )}
+              </div>
+
+              {/* Nutri-Score */}
+              <div style={{ borderTop: '1px solid #E5E5E3', paddingTop: 12, marginTop: 4 }}>
+                <label style={{ ...S.label, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Gauge size={14} /> Nutri-Score (opsiyonel)
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <select
+                    style={{ ...S.input, flex: 1 }}
+                    value={itemForm.nutri_score}
+                    onChange={(e) => setItemForm({ ...itemForm, nutri_score: e.target.value as '' | 'A' | 'B' | 'C' | 'D' | 'E' })}
+                  >
+                    <option value="">Seçim yok</option>
+                    {NUTRI_SCORE_VALUES.map((s) => (
+                      <option key={s} value={s}>{s} — {s === 'A' ? 'Çok iyi' : s === 'B' ? 'İyi' : s === 'C' ? 'Orta' : s === 'D' ? 'Düşük' : 'Kötü'}</option>
+                    ))}
+                  </select>
+                  {itemForm.nutri_score && (
+                    <span
+                      aria-hidden
+                      style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: 6,
+                        background: NUTRI_SCORE_COLORS[itemForm.nutri_score],
+                        color: itemForm.nutri_score === 'C' ? '#1C1C1E' : '#FFFFFF',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 700,
+                        fontSize: 14,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {itemForm.nutri_score}
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#A0A0A0', marginTop: 4 }}>
+                  <Info size={14} /><span>Menüde kcal'in yanında küçük renkli etiket olarak gösterilir.</span>
+                </div>
               </div>
 
               {/* Nutrition Facts (collapsible) */}
