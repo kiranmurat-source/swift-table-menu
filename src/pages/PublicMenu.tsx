@@ -2405,10 +2405,13 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToC
               {formatPriceDisplay(item, toUiLang(lang), format)}
             </span>
           )}
-          {(displayCalories != null || prepTime != null) && (
+          {(displayCalories != null || prepTime != null || item.nutri_score) && (
             <div className="flex items-center" style={{ gap: 4, marginTop: 4 }}>
-              <span className="text-[10px]" style={{ color: theme.mutedText }}>
+              <span className="inline-flex items-center gap-1 text-[10px]" style={{ color: theme.mutedText }}>
                 {displayCalories != null && <span>{displayCalories} kcal</span>}
+                {item.nutri_score && (
+                  <NutriScoreBadge score={item.nutri_score} lang={lang} theme={theme} size={20} />
+                )}
                 {displayCalories != null && prepTime != null && <span> · </span>}
                 {prepTime != null && <span>{prepTime} {minutesLabel}</span>}
               </span>
@@ -2514,10 +2517,13 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToC
             )}
           </div>
         )}
-        {(displayCalories != null || prepTime != null || hasAllergens) && (
+        {(displayCalories != null || prepTime != null || hasAllergens || item.nutri_score) && (
           <div className="flex items-center justify-between mt-auto" style={{ paddingTop: 4 }}>
             <span className="inline-flex items-center gap-1.5 text-[11px]" style={{ color: theme.mutedText, fontWeight: 300 }}>
               {displayCalories != null && <span>{displayCalories} kcal</span>}
+              {item.nutri_score && (
+                <NutriScoreBadge score={item.nutri_score} lang={lang} theme={theme} size={20} />
+              )}
               {displayCalories != null && prepTime != null && <span aria-hidden>·</span>}
               {prepTime != null && (
                 <span className="inline-flex items-center gap-0.5">
