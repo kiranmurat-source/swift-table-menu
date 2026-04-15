@@ -53,11 +53,12 @@ CREATE OR REPLACE FUNCTION get_page_view_counts(
 RETURNS TABLE(view_date DATE, view_count BIGINT) AS $$
 BEGIN
   RETURN QUERY
-  SELECT DATE(mpv.created_at) AS view_date, COUNT(*)::BIGINT AS view_count
+  SELECT (mpv.created_at AT TIME ZONE 'Europe/Istanbul')::DATE AS view_date,
+         COUNT(*)::BIGINT AS view_count
   FROM menu_page_views mpv
   WHERE mpv.restaurant_id = p_restaurant_id
     AND mpv.created_at >= NOW() - (p_days || ' days')::INTERVAL
-  GROUP BY DATE(mpv.created_at)
+  GROUP BY (mpv.created_at AT TIME ZONE 'Europe/Istanbul')::DATE
   ORDER BY view_date;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -110,7 +111,7 @@ RETURNS TABLE(hour_of_day INTEGER, view_count BIGINT) AS $$
 BEGIN
   RETURN QUERY
   SELECT
-    EXTRACT(HOUR FROM mpv.created_at)::INTEGER AS hour_of_day,
+    EXTRACT(HOUR FROM (mpv.created_at AT TIME ZONE 'Europe/Istanbul'))::INTEGER AS hour_of_day,
     COUNT(*)::BIGINT AS view_count
   FROM menu_page_views mpv
   WHERE mpv.restaurant_id = p_restaurant_id

@@ -25,17 +25,27 @@ function cardStyle(t: AdminTheme): React.CSSProperties {
 const PINK = '#FF4F7A';
 const BLUE = '#4F7AFF';
 
+const TR_TZ = 'Europe/Istanbul';
+
+// YYYY-MM-DD in Europe/Istanbul local time.
 function dateKey(d: Date): string {
-  return d.toISOString().slice(0, 10);
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: TR_TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(d);
+  const y = parts.find(p => p.type === 'year')?.value ?? '0000';
+  const m = parts.find(p => p.type === 'month')?.value ?? '01';
+  const day = parts.find(p => p.type === 'day')?.value ?? '01';
+  return `${y}-${m}-${day}`;
 }
 
 function lastNDays(n: number): string[] {
   const out: string[] = [];
-  const now = new Date();
+  const now = Date.now();
   for (let i = n - 1; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    out.push(dateKey(d));
+    out.push(dateKey(new Date(now - i * 86400000)));
   }
   return out;
 }
@@ -89,7 +99,7 @@ export default function AnalyticsPanel({ restaurantId, theme }: { restaurantId: 
     const ivMap = new Map<string, number>();
     const ivAll = (ivRows.data as { menu_item_id: string; created_at: string }[]) ?? [];
     for (const row of ivAll) {
-      const k = row.created_at.slice(0, 10);
+      const k = dateKey(new Date(row.created_at));
       ivMap.set(k, (ivMap.get(k) ?? 0) + 1);
     }
     setItemDaily(Array.from(ivMap.entries()).map(([view_date, view_count]) => ({ view_date, view_count })));

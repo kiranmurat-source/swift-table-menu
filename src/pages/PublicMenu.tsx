@@ -511,15 +511,22 @@ export default function PublicMenu() {
     const flagKey = `tabbled_pv_${restaurant.id}`;
     try {
       if (sessionStorage.getItem(flagKey)) return;
-      sessionStorage.setItem(flagKey, '1');
     } catch { /* ignore storage errors */ }
-    void supabase.from('menu_page_views').insert({
-      restaurant_id: restaurant.id,
-      fingerprint: getFingerprint(),
-      table_number: table || null,
-      language: lang,
-      user_agent: (typeof navigator !== 'undefined' ? navigator.userAgent : '').slice(0, 200),
-    });
+    const restaurantId = restaurant.id;
+    (async () => {
+      const { error } = await supabase.from('menu_page_views').insert({
+        restaurant_id: restaurantId,
+        fingerprint: getFingerprint(),
+        table_number: table || null,
+        language: lang,
+        user_agent: (typeof navigator !== 'undefined' ? navigator.userAgent : '').slice(0, 200),
+      });
+      if (error) {
+        console.error('[Tabbled] menu_page_views insert failed:', error);
+        return;
+      }
+      try { sessionStorage.setItem(flagKey, '1'); } catch { /* ignore */ }
+    })();
   }, [restaurant?.id, table, lang]);
 
   useEffect(() => {
