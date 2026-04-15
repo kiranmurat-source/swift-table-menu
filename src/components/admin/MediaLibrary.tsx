@@ -16,6 +16,7 @@ import {
   CheckCircle,
   Funnel,
 } from '@phosphor-icons/react';
+import PhotoEnhance from './PhotoEnhance';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_WIDTH = 1920;
@@ -114,6 +115,7 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
   const [filter, setFilter] = useState<'all' | MediaTag | 'unused' | 'ai'>('all');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<MediaItem | null>(null);
+  const [enhanceTarget, setEnhanceTarget] = useState<MediaItem | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -244,6 +246,70 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
   function getPublicUrl(path: string): string {
     const { data } = supabase.storage.from('menu-images').getPublicUrl(path);
     return data.publicUrl;
+  }
+
+  /**
+   * PhotoEnhance'ten gelen iyileştirilmiş blob'u Storage'a yükler, media_library'ye
+   * ai_enhanced=true + original_id olarak yeni row ekler, kredi düşer, log yazar.
+   */
+  async function handleEnhanceSave(source: MediaItem, blob: Blob, mimeType: string) {
+    // Kota kontrolü
+    if (credits.storageUsedBytes + blob.size > credits.storageLimitMb * 1024 * 1024) {
+      flash('Storage kotası aşılacak — önce eski görseller silinmeli.', 'err');
+      throw new Error('Kota aşıldı');
+    }
+
+    const ext = mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : 'jpg';
+    const path = `${restaurantSlug}/library/enhanced-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+    const up = await supabase.storage
+      .from('menu-images')
+      .upload(path, blob, { upsert: false, contentType: mimeType });
+    if (up.error) throw new Error(`Yükleme hatası: ${up.error.message}`);
+
+    // Hash hesapla (duplicate için)
+    const hashBuf = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer());
+    const hash = Array.from(new Uint8Array(hashBuf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+
+    const { data: inserted, error: insErr } = await supabase
+      .from('media_library')
+      .insert({
+        restaurant_id: restaurantId,
+        file_name: `enhanced-${source.file_name}`,
+        file_path: path,
+        file_size: blob.size,
+        file_type: mimeType,
+        width: null,
+        height: null,
+        file_hash: hash,
+        tags: source.tags,
+        used_in: [],
+        ai_enhanced: true,
+        original_id: source.id,
+      })
+      .select()
+      .single();
+    if (insErr || !inserted) throw new Error(insErr?.message || 'Kayıt başarısız');
+
+    // Kredi düş
+    await supabase
+      .from('restaurants')
+      .update({ ai_credits_used: credits.creditsUsed + 1 })
+      .eq('id', restaurantId);
+
+    // Log
+    await supabase.from('ai_usage_log').insert({
+      restaurant_id: restaurantId,
+      action_type: 'photo_enhance',
+      credits_used: 1,
+      input_data: { source_id: source.id, source_path: source.file_path },
+      output_data: { new_id: inserted.id, new_path: path },
+    });
+
+    flash('Fotoğraf iyileştirildi ve kaydedildi.', 'ok');
+    setSelected(null);
+    loadMedia();
+    credits.refresh();
   }
 
   function copyUrl(item: MediaItem) {
@@ -658,6 +724,22 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
               <button style={S.btnGhost} onClick={() => copyUrl(selected)}>
                 <Copy size={14} /> URL Kopyala
               </button>
+              {!selected.ai_enhanced && (
+                <button
+                  style={{
+                    ...S.btnGhost,
+                    color: credits.creditsRemaining < 1 ? theme.subtle : '#A855F7',
+                    borderColor: credits.creditsRemaining < 1 ? theme.border : '#A855F7',
+                    cursor: credits.creditsRemaining < 1 ? 'not-allowed' : 'pointer',
+                    opacity: credits.creditsRemaining < 1 ? 0.6 : 1,
+                  }}
+                  disabled={credits.creditsRemaining < 1}
+                  onClick={() => setEnhanceTarget(selected)}
+                  title={credits.creditsRemaining < 1 ? 'Krediniz tükendi' : 'AI ile iyileştir (1 kredi)'}
+                >
+                  <Sparkle size={14} weight="fill" /> AI İyileştir
+                </button>
+              )}
               <button
                 style={{ ...S.btnGhost, color: '#EF4444', borderColor: '#EF4444' }}
                 onClick={() => deleteItem(selected)}
@@ -666,11 +748,25 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
               </button>
               <span style={{ flex: 1 }} />
               <span style={{ fontSize: 11, color: theme.subtle, alignSelf: 'center' }}>
-                AI İyileştirme yakında
+                {selected.ai_enhanced ? 'Bu görsel zaten AI ile iyileştirildi' : `Kalan kredi: ${credits.creditsRemaining}`}
               </span>
             </div>
           </div>
         </div>
+      )}
+
+      {/* PhotoEnhance modal */}
+      {enhanceTarget && (
+        <PhotoEnhance
+          restaurantId={restaurantId}
+          originalUrl={getPublicUrl(enhanceTarget.file_path)}
+          theme={theme}
+          onClose={() => setEnhanceTarget(null)}
+          onSave={async (blob, mime) => {
+            await handleEnhanceSave(enhanceTarget, blob, mime);
+            setEnhanceTarget(null);
+          }}
+        />
       )}
     </div>
   );
