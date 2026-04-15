@@ -8,7 +8,33 @@ import {
   Warning,
   CheckCircle,
   FloppyDisk,
+  Aperture,
+  SunDim,
+  Square,
 } from '@phosphor-icons/react';
+
+type AngleOpt = 'original' | '45' | '90';
+type LightingOpt = 'original' | 'studio' | 'natural';
+type SurfaceOpt = 'original' | 'wood' | 'light_marble' | 'dark_marble' | 'white' | 'black';
+
+const ANGLE_OPTIONS: { value: AngleOpt; label: string; desc: string }[] = [
+  { value: 'original', label: 'Orijinal', desc: 'Değiştirme' },
+  { value: '45', label: '45° Açı', desc: '3/4 yemek açısı' },
+  { value: '90', label: '90° Kuşbakışı', desc: 'Flat lay' },
+];
+const LIGHTING_OPTIONS: { value: LightingOpt; label: string; desc: string }[] = [
+  { value: 'original', label: 'Orijinal', desc: 'Sadece düzeltme' },
+  { value: 'studio', label: 'Stüdyo', desc: 'Profesyonel, gölgesiz' },
+  { value: 'natural', label: 'Doğal', desc: 'Pencere kenarı, sıcak' },
+];
+const SURFACE_OPTIONS: { value: SurfaceOpt; label: string; swatch: string }[] = [
+  { value: 'original', label: 'Orijinal', swatch: 'transparent' },
+  { value: 'wood', label: 'Ahşap', swatch: 'linear-gradient(135deg,#9B6F43,#6B4823)' },
+  { value: 'light_marble', label: 'Açık Mermer', swatch: 'linear-gradient(135deg,#F5F2EC,#D8D2C3)' },
+  { value: 'dark_marble', label: 'Koyu Mermer', swatch: 'linear-gradient(135deg,#3A3A3C,#1C1C1E)' },
+  { value: 'white', label: 'Beyaz Düz', swatch: '#FFFFFF' },
+  { value: 'black', label: 'Siyah Düz', swatch: '#111111' },
+];
 
 const SUPABASE_URL = 'https://qmnrawqvkwehufebbkxp.supabase.co';
 
@@ -49,6 +75,9 @@ export default function PhotoEnhance({ restaurantId, originalUrl, theme, onClose
   const [error, setError] = useState<string | null>(null);
   const [enhanced, setEnhanced] = useState<{ base64: string; mime: string } | null>(null);
   const [sliderPercent, setSliderPercent] = useState(50);
+  const [angle, setAngle] = useState<AngleOpt>('original');
+  const [lighting, setLighting] = useState<LightingOpt>('original');
+  const [surface, setSurface] = useState<SurfaceOpt>('original');
 
   const runEnhance = useCallback(async () => {
     setStatus('loading');
@@ -65,7 +94,11 @@ export default function PhotoEnhance({ restaurantId, originalUrl, theme, onClose
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ image: dataUrl, restaurant_id: restaurantId }),
+        body: JSON.stringify({
+          image: dataUrl,
+          restaurant_id: restaurantId,
+          options: { angle, lighting, surface },
+        }),
       });
 
       const body = await res.json();
@@ -79,7 +112,7 @@ export default function PhotoEnhance({ restaurantId, originalUrl, theme, onClose
       setError((e as Error).message);
       setStatus('error');
     }
-  }, [originalUrl, restaurantId]);
+  }, [originalUrl, restaurantId, angle, lighting, surface]);
 
   // Drag slider
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -242,6 +275,47 @@ export default function PhotoEnhance({ restaurantId, originalUrl, theme, onClose
       background: 'rgba(0,0,0,0.6)',
       backdropFilter: 'blur(4px)',
     },
+    groupLabel: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6,
+      fontSize: 12,
+      fontWeight: 600,
+      color: theme.value,
+      marginBottom: 8,
+    },
+    radioRow: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(3, 1fr)',
+      gap: 8,
+    },
+    radioCard: {
+      padding: '10px 8px',
+      borderRadius: 8,
+      border: `1px solid ${theme.border}`,
+      background: theme.pageBg,
+      cursor: 'pointer',
+      textAlign: 'center',
+      transition: 'all 0.15s',
+    },
+    radioCardActive: {
+      borderColor: theme.accent,
+      background: theme.infoBg,
+    },
+    surfaceGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(3, 1fr)',
+      gap: 8,
+    },
+    surfaceCard: {
+      padding: 8,
+      borderRadius: 8,
+      border: `1px solid ${theme.border}`,
+      background: theme.pageBg,
+      cursor: 'pointer',
+      textAlign: 'center',
+      transition: 'all 0.15s',
+    },
   };
 
   return (
@@ -262,24 +336,122 @@ export default function PhotoEnhance({ restaurantId, originalUrl, theme, onClose
 
         {status === 'confirm' && (
           <div>
-            <img src={originalUrl} alt="" style={{ width: '100%', borderRadius: 10, maxHeight: 360, objectFit: 'contain', background: theme.pageBg }} />
+            <img src={originalUrl} alt="" style={{ width: '100%', borderRadius: 10, maxHeight: 280, objectFit: 'contain', background: theme.pageBg }} />
+
+            {/* Açı */}
+            <div style={{ marginTop: 16 }}>
+              <div style={S.groupLabel}>
+                <Aperture size={14} weight="thin" /> Çekim Açısı
+              </div>
+              <div style={S.radioRow}>
+                {ANGLE_OPTIONS.map((o) => {
+                  const active = angle === o.value;
+                  return (
+                    <button
+                      key={o.value}
+                      type="button"
+                      onClick={() => setAngle(o.value)}
+                      style={{ ...S.radioCard, ...(active ? S.radioCardActive : null) }}
+                    >
+                      <div style={{ fontSize: 12, fontWeight: 600, color: active ? theme.accent : theme.value }}>
+                        {o.label}
+                      </div>
+                      <div style={{ fontSize: 10, color: theme.subtle, marginTop: 2 }}>{o.desc}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Işık */}
+            <div style={{ marginTop: 14 }}>
+              <div style={S.groupLabel}>
+                <SunDim size={14} weight="thin" /> Işıklandırma
+              </div>
+              <div style={S.radioRow}>
+                {LIGHTING_OPTIONS.map((o) => {
+                  const active = lighting === o.value;
+                  return (
+                    <button
+                      key={o.value}
+                      type="button"
+                      onClick={() => setLighting(o.value)}
+                      style={{ ...S.radioCard, ...(active ? S.radioCardActive : null) }}
+                    >
+                      <div style={{ fontSize: 12, fontWeight: 600, color: active ? theme.accent : theme.value }}>
+                        {o.label}
+                      </div>
+                      <div style={{ fontSize: 10, color: theme.subtle, marginTop: 2 }}>{o.desc}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Zemin */}
+            <div style={{ marginTop: 14 }}>
+              <div style={S.groupLabel}>
+                <Square size={14} weight="thin" /> Zemin
+              </div>
+              <div style={S.surfaceGrid}>
+                {SURFACE_OPTIONS.map((o) => {
+                  const active = surface === o.value;
+                  return (
+                    <button
+                      key={o.value}
+                      type="button"
+                      onClick={() => setSurface(o.value)}
+                      style={{ ...S.surfaceCard, ...(active ? S.radioCardActive : null) }}
+                    >
+                      <div
+                        style={{
+                          width: '100%',
+                          height: 28,
+                          borderRadius: 6,
+                          background: o.swatch,
+                          border: `1px solid ${theme.border}`,
+                          marginBottom: 6,
+                          position: 'relative',
+                        }}
+                      >
+                        {o.value === 'original' && (
+                          <div style={{
+                            position: 'absolute', inset: 0, display: 'flex', alignItems: 'center',
+                            justifyContent: 'center', fontSize: 10, color: theme.subtle,
+                          }}>—</div>
+                        )}
+                        {active && (
+                          <div style={{ position: 'absolute', top: 2, right: 2, color: theme.accent }}>
+                            <CheckCircle size={14} weight="fill" />
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: active ? theme.accent : theme.value }}>
+                        {o.label}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <div
               style={{
-                marginTop: 12,
-                padding: 12,
+                marginTop: 14,
+                padding: 10,
                 borderRadius: 8,
                 background: theme.infoBg,
                 color: theme.info,
-                fontSize: 12,
+                fontSize: 11,
                 display: 'flex',
                 alignItems: 'center',
                 gap: 6,
               }}
             >
-              <Sparkle size={14} />
-              <span>Bu görseli AI ile iyileştirmek için 1 kredi kullanılacak. Aydınlatma, renk canlılığı ve keskinlik iyileştirilir; yemek değiştirilmez.</span>
+              <Sparkle size={12} />
+              <span>1 kredi kullanılacak. Yemek asla değiştirilmez — sadece seçtiğiniz iyileştirmeler uygulanır.</span>
             </div>
-            <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+            <div style={{ marginTop: 14, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
               <button style={S.btnGhost} onClick={onClose}>İptal</button>
               <button style={S.btn} onClick={runEnhance}>
                 <Sparkle size={14} weight="fill" /> İyileştir

@@ -748,16 +748,22 @@ export default function PublicMenu() {
             <video
               autoPlay
               muted
+              defaultMuted
               loop
               playsInline
               preload="auto"
               poster={coverImage || undefined}
+              ref={(el) => {
+                if (!el) return;
+                el.muted = true;
+                const p = el.play();
+                if (p && typeof p.catch === 'function') p.catch(() => {});
+              }}
               onError={(e) => { (e.currentTarget as HTMLVideoElement).style.display = 'none'; }}
               className="absolute inset-0 w-full h-full object-cover"
-            >
-              <source src={restaurant.splash_video_url} type="video/mp4" />
-              <source src={restaurant.splash_video_url} type="video/webm" />
-            </video>
+              src={restaurant.splash_video_url}
+            />
+            {null}
             <div
               className="absolute inset-0"
               style={{
@@ -1716,7 +1722,7 @@ export default function PublicMenu() {
             <div className="flex items-center justify-center gap-2">
               <span className="text-[10px]" style={{ color: theme.mutedText }}>Powered by</span>
               <a href="https://tabbled.com" aria-label="Tabbled" className="hover:opacity-80 transition-opacity inline-flex">
-                <img src="/tabbled-logo-horizontal.png" alt="Tabbled" className="h-4 w-auto block" />
+                <img src="/tabbled-logo-horizontal.png" alt="Tabbled" className={`h-4 w-auto block ${theme.key === 'black' ? 'brightness-0 invert opacity-70' : ''}`} />
               </a>
             </div>
           </div>

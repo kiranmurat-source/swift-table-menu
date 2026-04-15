@@ -22,23 +22,71 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey",
 };
 
-const PROMPT = `Enhance this food photograph for a restaurant menu:
-- Improve lighting to be bright and appetizing
-- Correct white balance; keep colors natural
-- Increase color vibrancy slightly (do not oversaturate)
-- Clean up a distracting background gently
-- Sharpen food textures for appetizing detail
+type AngleOpt = "original" | "45" | "90";
+type LightingOpt = "original" | "studio" | "natural";
+type SurfaceOpt = "original" | "wood" | "light_marble" | "dark_marble" | "white" | "black";
 
-Critical constraints:
-- Do NOT change, add, or remove any food items
-- Do NOT alter plating, garnish, or portions
-- Keep the composition and framing identical
-- This must remain an authentic real restaurant dish photo
-Return ONLY the enhanced image, no text.`;
+interface EnhanceOptions {
+  angle?: AngleOpt;
+  lighting?: LightingOpt;
+  surface?: SurfaceOpt;
+}
 
 interface EnhanceRequest {
   image: string;
   restaurant_id: string;
+  options?: EnhanceOptions;
+}
+
+function buildPrompt(opts: EnhanceOptions = {}): string {
+  const angle = opts.angle ?? "original";
+  const lighting = opts.lighting ?? "original";
+  const surface = opts.surface ?? "original";
+
+  const lines: string[] = [
+    "Enhance this food photograph for a restaurant menu.",
+    "",
+    "Baseline enhancements (always apply):",
+    "- Correct white balance and exposure so the dish looks appetizing",
+    "- Increase color vibrancy slightly without oversaturating",
+    "- Sharpen food textures for appetizing detail",
+  ];
+
+  if (angle === "45") {
+    lines.push("- Change the camera angle to a 45-degree three-quarter view of the dish, keeping the same dish and plating");
+  } else if (angle === "90") {
+    lines.push("- Change the camera angle to a 90-degree top-down (flat lay / bird's-eye) view of the dish");
+  }
+
+  if (lighting === "studio") {
+    lines.push("- Apply professional studio lighting: soft, even, diffused, with no harsh shadows");
+  } else if (lighting === "natural") {
+    lines.push("- Apply warm natural lighting as if shot near a window: soft daylight, gentle warm tones, subtle natural shadows");
+  }
+
+  if (surface !== "original") {
+    const surfaceMap: Record<Exclude<SurfaceOpt, "original">, string> = {
+      wood: "a warm natural wood table surface",
+      light_marble: "a light/white marble countertop with subtle veining",
+      dark_marble: "a dark marble countertop with subtle veining",
+      white: "a clean plain white surface",
+      black: "a clean plain matte black surface",
+    };
+    lines.push(`- Replace the background and surface under the dish with ${surfaceMap[surface]}. Keep the dish itself unchanged.`);
+  } else {
+    lines.push("- Clean up distracting elements in the existing background gently, keep the same surface");
+  }
+
+  lines.push(
+    "",
+    "Critical constraints (never violate):",
+    "- Keep the original dish exactly the same - do not change, add, or remove any food items",
+    "- Do not alter plating, garnish, or portions",
+    "- This must remain an authentic real restaurant dish photo",
+    "Return ONLY the enhanced image, no text.",
+  );
+
+  return lines.join("\n");
 }
 
 function splitDataUrl(input: string): { mime: string; data: string } {
@@ -57,7 +105,7 @@ serve(async (req) => {
 
   try {
     const body = (await req.json()) as EnhanceRequest;
-    const { image, restaurant_id } = body;
+    const { image, restaurant_id, options } = body;
 
     if (!image || !restaurant_id) {
       return new Response(
@@ -93,7 +141,7 @@ serve(async (req) => {
     // Gemini 2.5 Flash Image çağrısı
     const { mime, data } = splitDataUrl(image);
     const url =
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${GOOGLE_AI_API_KEY}`;
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GOOGLE_AI_API_KEY}`;
 
     const geminiRes = await fetch(url, {
       method: "POST",
@@ -103,7 +151,7 @@ serve(async (req) => {
           {
             parts: [
               { inlineData: { mimeType: mime, data } },
-              { text: PROMPT },
+              { text: buildPrompt(options) },
             ],
           },
         ],
