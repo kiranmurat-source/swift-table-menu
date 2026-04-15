@@ -23,6 +23,8 @@ import QuantitySelector from '../components/QuantitySelector';
 import CartBottomBar from '../components/CartBottomBar';
 import CartDrawer from '../components/CartDrawer';
 import { useLikes } from '../hooks/useLikes';
+import { useCurrency } from '../hooks/useCurrency';
+import CurrencyDropdown from '../components/CurrencyDropdown';
 import { demoRestaurant, demoCategories, demoItems } from '../data/demoMenuData';
 
 /* ------------------------------------------------------------------ */
@@ -61,6 +63,7 @@ interface Restaurant {
   feature_discount_codes: boolean;
   feature_likes: boolean;
   feature_reviews: boolean;
+  feature_multi_currency: boolean;
   google_place_id: string | null;
   google_rating: number | null;
   google_review_count: number | null;
@@ -138,13 +141,13 @@ function minVariantPrice(item: MenuItem): number {
   return Math.min(...item.price_variants.map((v) => Number(v.price)));
 }
 
-function formatPriceDisplay(item: MenuItem, uiLang: UiLangCode): string {
+function formatPriceDisplay(item: MenuItem, uiLang: UiLangCode, format: (n: number) => string): string {
   if (hasVariants(item)) {
-    const min = minVariantPrice(item).toFixed(2);
+    const min = format(minVariantPrice(item));
     const template = UI.startingFrom[uiLang] || UI.startingFrom.en;
     return template.replace('{price}', min);
   }
-  return `${Number(item.price).toFixed(2)} ₺`;
+  return format(Number(item.price));
 }
 
 function variantDisplayName(v: PriceVariant, lang: LangCode): string {
@@ -280,7 +283,13 @@ const UI: Record<string, Record<UiLangCode, string>> = {
   itemsCount:   { tr: 'ürün', en: 'items', ar: 'عنصر', zh: '项' },
   viewMenu:     { tr: 'Menüyü Görüntüle', en: 'View Menu', ar: 'عرض القائمة', zh: '查看菜单' },
   allergens:    { tr: 'Alerjenler', en: 'Allergens', ar: 'مسببات الحساسية', zh: '过敏原' },
-  startingFrom: { tr: "{price} ₺'den başlayan", en: 'Starting from {price} ₺', ar: 'يبدأ من {price} ₺', zh: '起价 {price} ₺' },
+  startingFrom: { tr: "{price}'den başlayan", en: 'Starting from {price}', ar: 'يبدأ من {price}', zh: '起价 {price}' },
+  currencyDisclaimer: {
+    tr: '* Fiyatlar TCMB günlük kuru ile tahminidir',
+    en: '* Prices are estimated using daily TCMB exchange rates',
+    ar: '* الأسعار تقديرية وفق سعر صرف TCMB اليومي',
+    zh: '* 价格按 TCMB 每日汇率估算',
+  },
   sizeOptions:  { tr: 'Boyut Seçenekleri', en: 'Size Options', ar: 'خيارات الحجم', zh: '规格选项' },
   soldOut:      { tr: 'Tükendi', en: 'Sold Out', ar: 'نفد', zh: '售罄' },
   nutritionTitle:   { tr: 'Besin Değerleri', en: 'Nutrition Facts', ar: 'القيم الغذائية', zh: '营养成分' },
@@ -440,6 +449,8 @@ export default function PublicMenu() {
   const [demoThemeOverride, setDemoThemeOverride] = useState<string | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const cart = useCart();
+  const currency = useCurrency(restaurant?.feature_multi_currency === true);
+  const { format, formatTl } = currency;
 
   // Google Review prompt (triggered by product likes)
   const [showReviewPrompt, setShowReviewPrompt] = useState(false);
@@ -1354,27 +1365,39 @@ export default function PublicMenu() {
           </div>
 
           <div className="flex items-center justify-between gap-2 mt-4">
-            {availableLanguages.length > 1 ? (
-              <div className="flex items-center gap-2">
-                <Globe size={14} style={{ color: theme.mutedText }} />
-                <div className="flex gap-1">
-                  {availableLanguages.map((l) => (
-                    <button
-                      key={l}
-                      onClick={() => setLang(l)}
-                      className="px-2.5 py-1 rounded-md text-xs transition-all"
-                      style={{
-                        backgroundColor: lang === l ? theme.accent : theme.categoryBg,
-                        color: lang === l ? theme.categoryActiveText : theme.mutedText,
-                        fontWeight: 500,
-                      }}
-                    >
-                      {getLanguage(l)?.nativeName || l}
-                    </button>
-                  ))}
+            <div className="flex items-center gap-2 flex-wrap">
+              {availableLanguages.length > 1 && (
+                <div className="flex items-center gap-2">
+                  <Globe size={14} style={{ color: theme.mutedText }} />
+                  <div className="flex gap-1">
+                    {availableLanguages.map((l) => (
+                      <button
+                        key={l}
+                        onClick={() => setLang(l)}
+                        className="px-2.5 py-1 rounded-md text-xs transition-all"
+                        style={{
+                          backgroundColor: lang === l ? theme.accent : theme.categoryBg,
+                          color: lang === l ? theme.categoryActiveText : theme.mutedText,
+                          fontWeight: 500,
+                        }}
+                      >
+                        {getLanguage(l)?.nativeName || l}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ) : <div />}
+              )}
+              {currency.visible && (
+                <CurrencyDropdown
+                  available={currency.available}
+                  selected={currency.selected}
+                  onSelect={currency.setCurrency}
+                  lang={toUiLang(lang)}
+                  theme={theme}
+                  variant="header"
+                />
+              )}
+            </div>
 
             <button
               onClick={() => setIsFilterOpen(true)}
@@ -1529,66 +1552,23 @@ export default function PublicMenu() {
             <p className="text-sm" style={{ color: theme.mutedText }}>{UI.noItems[toUiLang(lang)]}</p>
           </div>
         ) : viewMode === 'categories' && !effectiveActiveCategory && !filterApplied && visibleCategories.length > 0 ? (
-          <div className="grid grid-cols-2" style={{ gap: 8 }}>
-            {visibleCategories.map((cat) => {
-              const count = categoryCountMap.get(cat.id) ?? 0;
-              const img = cat.image_url ? getOptimizedImageUrl(cat.image_url, 'card') : '';
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {visibleCategories.map((cat, idx) => {
+              const isFull = idx % 5 === 0;
+              const isRightInPair = !isFull && ((idx % 5) % 2 === 0);
               return (
-                <button
+                <BentoCategoryCard
                   key={cat.id}
+                  cat={cat}
+                  count={categoryCountMap.get(cat.id) ?? 0}
+                  lang={lang}
+                  theme={theme}
+                  headingFont={headingFont}
+                  isFull={isFull}
+                  delay={isRightInPair ? 100 : 0}
+                  itemsLabel={UI.itemsCount[toUiLang(lang)]}
                   onClick={() => { setActiveCategory(cat.id); setViewMode('list'); window.scrollTo({ top: 0 }); }}
-                  className="relative overflow-hidden text-left"
-                  style={{
-                    aspectRatio: '1 / 1',
-                    borderRadius: 12,
-                    border: `1px solid ${theme.cardBorder}`,
-                    background: img ? '#000' : theme.cardBg,
-                    boxShadow: theme.cardShadow,
-                    cursor: 'pointer',
-                  }}
-                >
-                  {img && (
-                    <img
-                      src={img}
-                      alt={t(cat.translations, 'name', cat.name_tr, lang)}
-                      onError={handleImageError}
-                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                  )}
-                  {img && (
-                    <div
-                      style={{
-                        position: 'absolute', inset: 0,
-                        background: 'linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,0.65) 100%)',
-                      }}
-                    />
-                  )}
-                  <span
-                    style={{
-                      position: 'absolute', top: 8, right: 8,
-                      fontSize: 11, fontWeight: 600,
-                      padding: '2px 8px', borderRadius: 999,
-                      background: img ? 'rgba(255,255,255,0.92)' : theme.badgeBg,
-                      color: img ? '#1C1C1E' : theme.badgeText,
-                    }}
-                  >
-                    {count}
-                  </span>
-                  <span
-                    style={{
-                      position: 'absolute', left: 12, right: 12, bottom: 12,
-                      fontFamily: headingFont,
-                      fontWeight: 700,
-                      fontSize: img ? 18 : 22,
-                      letterSpacing: '-0.02em',
-                      color: img ? '#FFFFFF' : theme.text,
-                      textShadow: img ? '0 1px 4px rgba(0,0,0,0.4)' : 'none',
-                      lineHeight: 1.15,
-                    }}
-                  >
-                    {t(cat.translations, 'name', cat.name_tr, lang)}
-                  </span>
-                </button>
+                />
               );
             })}
           </div>
@@ -1599,8 +1579,8 @@ export default function PublicMenu() {
               return (
                 <div className={viewMode === 'grid' ? 'grid grid-cols-2' : 'flex flex-col'} style={{ gap: 8 }}>
                   {filteredItems.map((item) => (
-                    <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} likeCount={likeCounts[item.id]} isLiked={likedItems.has(item.id)} onLike={likesEnabled ? async (id) => { const ok = await toggleLike(id, restaurant!.id); if (ok && restaurant?.google_place_id) setTimeout(() => setShowReviewPrompt(true), 800); } : undefined} />
-                  ))}
+                    <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} likeCount={likeCounts[item.id]} isLiked={likedItems.has(item.id)} onLike={likesEnabled ? async (id) => { const ok = await toggleLike(id, restaurant!.id); if (ok && restaurant?.google_place_id) setTimeout(() => setShowReviewPrompt(true), 800); } : undefined} format={format} />
+))}
                   {filteredItems.length === 0 && (
                     <p className="text-center text-sm py-8 col-span-2" style={{ color: theme.mutedText }}>{UI.noItemsInCat[toUiLang(lang)]}</p>
                   )}
@@ -1614,8 +1594,8 @@ export default function PublicMenu() {
                 {directItems.length > 0 && (
                   <div className={viewMode === 'grid' ? 'grid grid-cols-2' : 'flex flex-col'} style={{ gap: 8, marginBottom: 32 }}>
                     {directItems.map((item) => (
-                      <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} likeCount={likeCounts[item.id]} isLiked={likedItems.has(item.id)} onLike={likesEnabled ? async (id) => { const ok = await toggleLike(id, restaurant!.id); if (ok && restaurant?.google_place_id) setTimeout(() => setShowReviewPrompt(true), 800); } : undefined} />
-                    ))}
+                      <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} likeCount={likeCounts[item.id]} isLiked={likedItems.has(item.id)} onLike={likesEnabled ? async (id) => { const ok = await toggleLike(id, restaurant!.id); if (ok && restaurant?.google_place_id) setTimeout(() => setShowReviewPrompt(true), 800); } : undefined} format={format} />
+  ))}
                   </div>
                 )}
                 {activeChildren
@@ -1638,8 +1618,8 @@ export default function PublicMenu() {
                         </div>
                         <div className={viewMode === 'grid' ? 'grid grid-cols-2' : 'flex flex-col'} style={{ gap: 8 }}>
                           {childItems.map((item) => (
-                            <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} likeCount={likeCounts[item.id]} isLiked={likedItems.has(item.id)} onLike={likesEnabled ? async (id) => { const ok = await toggleLike(id, restaurant!.id); if (ok && restaurant?.google_place_id) setTimeout(() => setShowReviewPrompt(true), 800); } : undefined} />
-                          ))}
+                            <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} likeCount={likeCounts[item.id]} isLiked={likedItems.has(item.id)} onLike={likesEnabled ? async (id) => { const ok = await toggleLike(id, restaurant!.id); if (ok && restaurant?.google_place_id) setTimeout(() => setShowReviewPrompt(true), 800); } : undefined} format={format} />
+        ))}
                         </div>
                       </div>
                     );
@@ -1688,8 +1668,8 @@ export default function PublicMenu() {
                   </div>
                   <div className={viewMode === 'grid' ? 'grid grid-cols-2' : 'flex flex-col'} style={{ gap: 8 }}>
                     {sg.items.map((item) => (
-                      <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} likeCount={likeCounts[item.id]} isLiked={likedItems.has(item.id)} onLike={likesEnabled ? async (id) => { const ok = await toggleLike(id, restaurant!.id); if (ok && restaurant?.google_place_id) setTimeout(() => setShowReviewPrompt(true), 800); } : undefined} />
-                    ))}
+                      <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} likeCount={likeCounts[item.id]} isLiked={likedItems.has(item.id)} onLike={likesEnabled ? async (id) => { const ok = await toggleLike(id, restaurant!.id); if (ok && restaurant?.google_place_id) setTimeout(() => setShowReviewPrompt(true), 800); } : undefined} format={format} />
+  ))}
                   </div>
                 </div>
               ))}
@@ -1781,6 +1761,9 @@ export default function PublicMenu() {
           whatsappNumber={restaurant.feature_whatsapp_order !== false ? restaurant.social_whatsapp : null}
           tableNumber={table}
           discountEnabled={restaurant.feature_discount_codes !== false}
+          format={format}
+          currencySymbol={currency.selectedRate.symbol || '₺'}
+          currencyDisclaimer={currency.visible && !currency.isTry ? UI.currencyDisclaimer[toUiLang(lang)] : null}
         />
       )}
 
@@ -2025,6 +2008,137 @@ function FilterPanel({
 }
 
 /* ------------------------------------------------------------------ */
+/*  Bento Category Card (scroll-animated)                              */
+/* ------------------------------------------------------------------ */
+
+function BentoCategoryCard({
+  cat, count, lang, theme, headingFont, isFull, delay, itemsLabel, onClick,
+}: {
+  cat: MenuCategory;
+  count: number;
+  lang: LangCode;
+  theme: MenuTheme;
+  headingFont: string;
+  isFull: boolean;
+  delay: number;
+  itemsLabel: string;
+  onClick: () => void;
+}) {
+  const ref = useRef<HTMLButtonElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.15 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const img = cat.image_url ? getOptimizedImageUrl(cat.image_url, 'card') : '';
+  const name = t(cat.translations, 'name', cat.name_tr, lang);
+  const desc = t(cat.translations, 'description', cat.description_tr, lang);
+  const isDarkTheme = theme.cardBg !== '#FFFFFF';
+  const fallbackBg = isDarkTheme
+    ? 'linear-gradient(135deg, #1C1C1E 0%, #2C2C2E 100%)'
+    : 'linear-gradient(135deg, #1C1C1E 0%, #2C2C2E 100%)';
+  const overlayMax = isDarkTheme ? 0.8 : 0.7;
+
+  return (
+    <button
+      ref={ref}
+      onClick={onClick}
+      className="relative overflow-hidden text-left bento-cat-card"
+      style={{
+        width: isFull ? '100%' : 'calc(50% - 4px)',
+        height: isFull ? 200 : 220,
+        borderRadius: 12,
+        background: img ? '#000' : fallbackBg,
+        cursor: 'pointer',
+        padding: 0,
+        border: 'none',
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? 'scale(1)' : 'scale(0.92)',
+        transition: 'opacity 0.5s ease-out, transform 0.5s ease-out',
+        transitionDelay: isVisible ? `${delay}ms` : '0ms',
+      }}
+    >
+      {img && (
+        <img
+          src={img}
+          alt={name}
+          onError={handleImageError}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+      )}
+      <div
+        style={{
+          position: 'absolute', inset: 0,
+          background: `linear-gradient(to top, rgba(0,0,0,${overlayMax}) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0) 100%)`,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: 16, right: 16, bottom: 16,
+          display: 'flex', flexDirection: 'column', gap: 4,
+        }}
+      >
+        <span
+          style={{
+            fontFamily: headingFont,
+            fontWeight: 700,
+            fontSize: isFull ? 18 : 16,
+            letterSpacing: '-0.01em',
+            color: '#FFFFFF',
+            lineHeight: 1.2,
+          }}
+        >
+          {name}
+        </span>
+        {desc && (
+          <span
+            style={{
+              fontWeight: 300,
+              fontSize: 13,
+              color: '#FFFFFF',
+              opacity: 0.85,
+              lineHeight: 1.35,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {desc}
+          </span>
+        )}
+        <span
+          style={{
+            fontWeight: 400,
+            fontSize: 12,
+            color: '#FFFFFF',
+            opacity: 0.7,
+            marginTop: 2,
+          }}
+        >
+          {count} {itemsLabel}
+        </span>
+      </div>
+    </button>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Menu Item Card                                                     */
 /* ------------------------------------------------------------------ */
 
@@ -2032,7 +2146,7 @@ const SOLD_OUT_LABELS: Record<UiLangCode, string> = {
   tr: 'Tükendi', en: 'Sold Out', ar: 'نفد', zh: '售罄',
 };
 
-function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToCart, cartQty, likeCount, isLiked, onLike }: { item: MenuItem; lang: LangCode; theme: MenuTheme; onSelect: (item: MenuItem) => void; viewMode?: 'categories' | 'grid' | 'list'; onAddToCart?: (item: MenuItem) => void; cartQty?: number; likeCount?: number; isLiked?: boolean; onLike?: (itemId: string) => void }) {
+function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToCart, cartQty, likeCount, isLiked, onLike, format }: { item: MenuItem; lang: LangCode; theme: MenuTheme; onSelect: (item: MenuItem) => void; viewMode?: 'categories' | 'grid' | 'list'; onAddToCart?: (item: MenuItem) => void; cartQty?: number; likeCount?: number; isLiked?: boolean; onLike?: (itemId: string) => void; format: (n: number) => string }) {
   const name = t(item.translations, 'name', item.name_tr, lang);
   const description = t(item.translations, 'description', item.description_tr, lang);
   const hasBadges = item.is_popular || item.is_new || item.is_vegetarian;
@@ -2061,8 +2175,8 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToC
 
   const renderHHPrice = (originalPrice: number, hhp: number) => (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-      <span style={{ fontSize: 11, textDecoration: 'line-through', color: theme.mutedText }}>{originalPrice.toFixed(2)} ₺</span>
-      <span className="tabular-nums" style={{ fontFamily: bodyFont, fontWeight: 700, fontSize: 16, color: '#FF4F7A' }}>{hhp.toFixed(2)} ₺</span>
+      <span style={{ fontSize: 11, textDecoration: 'line-through', color: theme.mutedText }}>{format(originalPrice)}</span>
+      <span className="tabular-nums" style={{ fontFamily: bodyFont, fontWeight: 700, fontSize: 16, color: '#FF4F7A' }}>{format(hhp)}</span>
       <span style={{ fontSize: 10, color: '#22c55e', fontWeight: 600 }}>%{Math.round((1 - hhp / originalPrice) * 100)} {discountWord}</span>
     </div>
   );
@@ -2158,7 +2272,7 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToC
             </h3>
             {hhPrice != null ? renderHHPrice(Number(item.price), hhPrice) : (
               <span className="flex-shrink-0 tabular-nums" style={{ fontFamily: bodyFont, fontWeight: 700, fontSize: 16, color: theme.price, ...soldOutPriceStyle }}>
-                {formatPriceDisplay(item, toUiLang(lang))}
+                {formatPriceDisplay(item, toUiLang(lang), format)}
               </span>
             )}
           </div>
@@ -2252,7 +2366,7 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToC
           {SoldOutBadge && <div style={{ marginBottom: 4 }}>{SoldOutBadge}</div>}
           {hhPrice != null ? renderHHPrice(Number(item.price), hhPrice) : (
             <span className="tabular-nums" style={{ fontFamily: bodyFont, fontWeight: 700, fontSize: 15, color: theme.price, ...soldOutPriceStyle }}>
-              {formatPriceDisplay(item, toUiLang(lang))}
+              {formatPriceDisplay(item, toUiLang(lang), format)}
             </span>
           )}
           {(displayCalories != null || prepTime != null) && (
@@ -2326,7 +2440,7 @@ function MenuItemCard({ item, lang, theme, onSelect, viewMode = 'list', onAddToC
               className="flex-shrink-0 tabular-nums"
               style={{ fontFamily: bodyFont, fontWeight: 700, fontSize: 16, color: theme.price, ...soldOutPriceStyle }}
             >
-              {formatPriceDisplay(item, toUiLang(lang))}
+              {formatPriceDisplay(item, toUiLang(lang), format)}
             </span>
           )}
         </div>
@@ -2410,7 +2524,7 @@ function parseVideoEmbed(url: string | null | undefined): { type: 'youtube' | 'v
 
 type RecRow = { recommended_item_id: string; reason_tr: string | null; reason_en: string | null; sort_order: number };
 
-function ItemDetailModal({ item, allItems, lang, theme, onClose, onSelectItem, onAddToCart, likeCount, isLiked, onLike }: { item: MenuItem; allItems?: MenuItem[]; lang: LangCode; theme: MenuTheme; onClose: () => void; onSelectItem?: (item: MenuItem) => void; onAddToCart?: (item: MenuItem, variant?: string, price?: number) => void; likeCount?: number; isLiked?: boolean; onLike?: (itemId: string) => void }) {
+function ItemDetailModal({ item, allItems, lang, theme, onClose, onSelectItem, onAddToCart, likeCount, isLiked, onLike, format }: { item: MenuItem; allItems?: MenuItem[]; lang: LangCode; theme: MenuTheme; onClose: () => void; onSelectItem?: (item: MenuItem) => void; onAddToCart?: (item: MenuItem, variant?: string, price?: number) => void; likeCount?: number; isLiked?: boolean; onLike?: (itemId: string) => void; format: (n: number) => string }) {
   const [selectedVariant, setSelectedVariant] = useState<number | null>(hasVariants(item) ? null : 0);
   const [modalQty, setModalQty] = useState(1);
   const [showVideo, setShowVideo] = useState(false);
@@ -2591,8 +2705,8 @@ function ItemDetailModal({ item, allItems, lang, theme, onClose, onSelectItem, o
             {!hasVariants(item) && (
               hhPrice != null ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                  <span style={{ fontSize: 13, textDecoration: 'line-through', color: theme.mutedText }}>{Number(item.price).toFixed(2)} ₺</span>
-                  <span className="tabular-nums" style={{ fontFamily: bodyFont, fontWeight: 700, fontSize: 20, color: '#FF4F7A' }}>{hhPrice.toFixed(2)} ₺</span>
+                  <span style={{ fontSize: 13, textDecoration: 'line-through', color: theme.mutedText }}>{format(Number(item.price))}</span>
+                  <span className="tabular-nums" style={{ fontFamily: bodyFont, fontWeight: 700, fontSize: 20, color: '#FF4F7A' }}>{format(hhPrice)}</span>
                   <span style={{ fontSize: 11, color: '#22c55e', fontWeight: 600 }}>%{Math.round((1 - hhPrice / Number(item.price)) * 100)} {discountWord}</span>
                 </div>
               ) : (
@@ -2605,7 +2719,7 @@ function ItemDetailModal({ item, allItems, lang, theme, onClose, onSelectItem, o
                     textDecoration: item.is_sold_out ? 'line-through' : 'none',
                   }}
                 >
-                  {Number(item.price).toFixed(2)} ₺
+                  {format(Number(item.price))}
                 </span>
               )
             )}
@@ -2701,8 +2815,8 @@ function ItemDetailModal({ item, allItems, lang, theme, onClose, onSelectItem, o
                   </div>
                   {happyHour && (v as any).happy_hour_price ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                      <span style={{ fontSize: 11, textDecoration: 'line-through', color: theme.mutedText }}>{Number(v.price).toFixed(2)} ₺</span>
-                      <span className="tabular-nums" style={{ fontSize: 14, fontWeight: 700, color: '#FF4F7A' }}>{Number((v as any).happy_hour_price).toFixed(2)} ₺</span>
+                      <span style={{ fontSize: 11, textDecoration: 'line-through', color: theme.mutedText }}>{format(Number(v.price))}</span>
+                      <span className="tabular-nums" style={{ fontSize: 14, fontWeight: 700, color: '#FF4F7A' }}>{format(Number((v as any).happy_hour_price))}</span>
                     </div>
                   ) : (
                     <span
@@ -2713,7 +2827,7 @@ function ItemDetailModal({ item, allItems, lang, theme, onClose, onSelectItem, o
                         textDecoration: item.is_sold_out ? 'line-through' : 'none',
                       }}
                     >
-                      {Number(v.price).toFixed(2)} ₺
+                      {format(Number(v.price))}
                     </span>
                   )}
                 </div>
@@ -2782,7 +2896,7 @@ function ItemDetailModal({ item, allItems, lang, theme, onClose, onSelectItem, o
                         }}
                       >
                         <span style={{ fontWeight: sel ? 600 : 400 }}>{variantDisplayName(v, lang)}</span>
-                        <span style={{ fontWeight: 600, color: sel ? cartAccent : theme.price }}>{Number(v.price).toFixed(2)} ₺</span>
+                        <span style={{ fontWeight: 600, color: sel ? cartAccent : theme.price }}>{format(Number(v.price))}</span>
                       </button>
                     );
                   })}
@@ -2817,12 +2931,12 @@ function ItemDetailModal({ item, allItems, lang, theme, onClose, onSelectItem, o
                     opacity: (isVariant && selectedVariant === null) ? 0.5 : 1,
                   }}
                 >
-                  {UI.addToCart[toUiLang(lang)]} — {(
+                  {UI.addToCart[toUiLang(lang)]} — {format(
                     (isVariant && selectedVariant !== null
                       ? Number(item.price_variants[selectedVariant].price)
                       : Number(item.price)
                     ) * modalQty
-                  ).toFixed(2)} ₺
+                  )}
                 </button>
               </div>
             </div>

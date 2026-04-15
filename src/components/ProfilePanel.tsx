@@ -1,6 +1,6 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
-import { Camera, Star, Globe, Image, Trash, Link, Package, Info, SquaresFour, Palette, ArrowsClockwise, User } from "@phosphor-icons/react";
+import { Camera, Star, Globe, Image, Trash, Link, Package, Info, SquaresFour, Palette, ArrowsClockwise, User, CurrencyCircleDollar } from "@phosphor-icons/react";
 import type { AdminTheme } from '../lib/adminTheme';
 import { getOptimizedImageUrl, handleImageError } from '../lib/imageUtils';
 import { THEMES } from '../lib/themes';
@@ -34,6 +34,7 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
     feature_discount_codes: restaurant.feature_discount_codes ?? true,
     feature_likes: restaurant.feature_likes ?? true,
     feature_reviews: restaurant.feature_reviews ?? true,
+    feature_multi_currency: restaurant.feature_multi_currency ?? false,
     google_place_id: restaurant.google_place_id || '',
   });
   const [workingHours, setWorkingHours] = useState<Record<string, { open: string; close: string; closed: boolean }>>(() => {
@@ -78,6 +79,7 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
       feature_discount_codes: form.feature_discount_codes,
       feature_likes: form.feature_likes,
       feature_reviews: form.feature_reviews,
+      feature_multi_currency: form.feature_multi_currency,
       google_place_id: form.google_place_id || null,
     }).eq('id', restaurant.id);
 
@@ -108,6 +110,7 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
         feature_discount_codes: form.feature_discount_codes,
         feature_likes: form.feature_likes,
         feature_reviews: form.feature_reviews,
+        feature_multi_currency: form.feature_multi_currency,
         google_place_id: form.google_place_id || null,
       });
     }
@@ -462,10 +465,14 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
             { key: 'feature_reviews' as const, label: 'Müşteri Yorumları', desc: 'Menü sayfasında müşteri yorumları bölümü göster' },
             { key: 'feature_discount_codes' as const, label: 'İndirim Kodları', desc: 'Müşteriler sepette indirim kodu kullanabilir' },
             { key: 'feature_likes' as const, label: 'Ürün Beğeni', desc: 'Müşteriler ürünleri beğenebilir (kalp butonu)' },
+            { key: 'feature_multi_currency' as const, label: 'Çoklu Para Birimi', desc: 'Menüde TCMB günlük kuru ile döviz fiyat gösterimi' },
           ]).map(feat => (
             <label key={feat.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 8, border: `1px solid ${theme.border}`, backgroundColor: form[feat.key] ? theme.successBg : theme.pageBg, cursor: 'pointer' }}>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: theme.value }}>{feat.label}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: theme.value, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {feat.key === 'feature_multi_currency' && <CurrencyCircleDollar size={14} weight="thin" />}
+                  {feat.label}
+                </div>
                 <div style={{ fontSize: 11, color: theme.heading }}>{feat.desc}</div>
               </div>
               <input

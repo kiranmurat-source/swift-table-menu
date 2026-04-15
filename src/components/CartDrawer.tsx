@@ -59,6 +59,9 @@ interface Props {
   whatsappNumber: string | null;
   tableNumber: string | null;
   discountEnabled: boolean;
+  format?: (n: number) => string;
+  currencySymbol?: string;
+  currencyDisclaimer?: string | null;
 }
 
 function buildWhatsAppUrl(
@@ -110,7 +113,10 @@ export default function CartDrawer({
   items, note, totalAmount, totalItems, subtotal, discountAmount, appliedDiscount,
   onUpdateQuantity, onDeleteItem, onSetNote, onClearCart, onApplyDiscount, onRemoveDiscount, onClose,
   theme, lang, ui, discountUi, restaurantId, restaurantName, whatsappNumber, tableNumber, discountEnabled,
+  format, currencySymbol, currencyDisclaimer,
 }: Props) {
+  const fmt = format || ((n: number) => `${n.toFixed(2)} ₺`);
+  const sym = currencySymbol || '₺';
   const handleClear = () => {
     if (window.confirm(ui.emptyCartConfirm)) {
       onClearCart();
@@ -229,7 +235,7 @@ export default function CartDrawer({
                           theme={theme}
                         />
                         <span style={{ fontSize: 14, fontWeight: 700, color: theme.price, fontFamily: "'Roboto', sans-serif" }}>
-                          {(item.price * item.quantity).toFixed(2)} ₺
+                          {fmt(item.price * item.quantity)}
                         </span>
                       </div>
                     </div>
@@ -287,7 +293,7 @@ export default function CartDrawer({
                 onRemove={onRemoveDiscount}
                 theme={theme}
                 ui={discountUi}
-                currency="₺"
+                currency={sym}
               />
             )}
 
@@ -296,22 +302,27 @@ export default function CartDrawer({
               <div style={{ marginBottom: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: theme.mutedText, marginBottom: 4 }}>
                   <span>{ui.total}</span>
-                  <span>{subtotal.toFixed(2)} ₺</span>
+                  <span>{fmt(subtotal)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#22c55e', marginBottom: 4 }}>
                   <span>🏷 {appliedDiscount.code}</span>
-                  <span>-{discountAmount.toFixed(2)} ₺</span>
+                  <span>-{fmt(discountAmount)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 700 }}>
                   <span>{ui.total}</span>
-                  <span>{totalAmount.toFixed(2)} ₺</span>
+                  <span>{fmt(totalAmount)}</span>
                 </div>
               </div>
             ) : (
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, fontSize: 16, fontWeight: 700 }}>
                 <span>{ui.total}</span>
-                <span>{totalAmount.toFixed(2)} ₺</span>
+                <span>{fmt(totalAmount)}</span>
               </div>
+            )}
+            {currencyDisclaimer && (
+              <p style={{ fontSize: 11, color: theme.mutedText, marginBottom: 8, textAlign: 'center', lineHeight: 1.4 }}>
+                {currencyDisclaimer}
+              </p>
             )}
             {whatsappNumber ? (
               <button
@@ -335,7 +346,7 @@ export default function CartDrawer({
                 }}
               >
                 <WhatsAppIcon size={18} />
-                {ui.sendViaWhatsApp} ({totalAmount.toFixed(2)} ₺)
+                {ui.sendViaWhatsApp} ({fmt(totalAmount)})
               </button>
             ) : (
               <p style={{ textAlign: 'center', fontSize: 12, color: theme.mutedText, padding: '8px 0' }}>

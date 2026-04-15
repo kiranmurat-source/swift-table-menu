@@ -18,6 +18,7 @@ export type Restaurant = {
   feature_discount_codes: boolean;
   feature_likes: boolean;
   feature_reviews: boolean;
+  feature_multi_currency: boolean;
   google_place_id: string | null;
   google_rating: number | null;
   google_review_count: number | null;
