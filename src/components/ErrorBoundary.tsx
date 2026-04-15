@@ -38,7 +38,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
             minHeight: '100vh',
             padding: '2rem',
             textAlign: 'center',
-            fontFamily: 'Inter, sans-serif',
+            fontFamily: 'Roboto, sans-serif',
             background: '#F7F7F5',
           }}
         >

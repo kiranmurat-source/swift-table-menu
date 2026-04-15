@@ -93,7 +93,7 @@ export function makeStyles(t: AdminTheme): Record<string, React.CSSProperties> {
       fontSize: 13,
       fontWeight: 600,
       textAlign: 'right' as const,
-      fontFamily: 'Inter, sans-serif',
+      fontFamily: 'Roboto, sans-serif',
       background: t.inputBg,
       outline: 'none',
     },
