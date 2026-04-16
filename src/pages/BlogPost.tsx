@@ -154,6 +154,21 @@ export default function BlogPost() {
           </div>
         </div>
 
+        {/* Hero image */}
+        {post.image && (
+          <img
+            src={post.image}
+            alt={post.title}
+            style={{
+              width: '100%',
+              maxHeight: 420,
+              objectFit: 'cover',
+              borderRadius: 12,
+              marginBottom: 32,
+            }}
+          />
+        )}
+
         <div style={{ height: 1, backgroundColor: '#E5E7EB', marginBottom: 32 }} />
 
         {/* Content + TOC layout */}

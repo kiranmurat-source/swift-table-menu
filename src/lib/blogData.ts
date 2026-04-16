@@ -11,6 +11,7 @@ export interface BlogPost {
   publishedAt: string;
   updatedAt: string;
   readingTime: number;
+  image?: string;
   ogImage?: string;
   tags: string[];
   faq?: { question: string; answer: string }[];
@@ -27,6 +28,7 @@ export const CATEGORY_COLORS: Record<string, string> = {
 export const blogPosts: BlogPost[] = [
   {
     slug: 'qr-menu-zorunlulugu-2026',
+    image: '/blog/blog-07-qr-zorunluluk.png',
     title: '2026 QR Menü Zorunluluğu: Restoran Sahipleri İçin Tam Rehber',
     metaTitle: '2026 QR Menü Zorunluluğu — Restoran Rehberi | Tabbled',
     metaDescription: 'QR menü zorunluluğu 2026: Fiyat etiketi yönetmeliği, ceza miktarları, geçiş takvimi ve dijital menüye nasıl uyum sağlanır. Restoran sahipleri için kapsamlı rehber.',
@@ -150,6 +152,7 @@ export const blogPosts: BlogPost[] = [
   },
   {
     slug: 'qr-menu-nedir',
+    image: '/blog/blog-05-dijital-menu.png',
     title: 'QR Menü Nedir? Restoran İçin Dijital Menü Sistemi Rehberi',
     metaTitle: 'QR Menü Nedir? Dijital Menü Sistemi Rehberi | Tabbled',
     metaDescription: 'QR menü nedir, nasıl çalışır, avantajları nelerdir? Restoran, kafe ve lokantalar için dijital menü sistemi hakkında bilmeniz gereken her şey.',
@@ -281,6 +284,7 @@ export const blogPosts: BlogPost[] = [
   },
   {
     slug: 'qr-menu-fiyatlari-2026',
+    image: '/blog/blog-01-qr-menu-yonetim.png',
     title: 'QR Menü Sistemi Fiyatları 2026: Karşılaştırmalı Rehber',
     metaTitle: 'QR Menü Fiyatları 2026 — Karşılaştırma Rehberi | Tabbled',
     metaDescription: 'QR menü sistemi fiyatları 2026: Menulux, FineDine ve Tabbled karşılaştırması. Hangisi daha uygun, hangisi daha çok özellik sunuyor?',
@@ -448,6 +452,7 @@ export const blogPosts: BlogPost[] = [
   },
   {
     slug: 'restoran-dijital-donusum-rehberi-2026',
+    image: '/blog/blog-08-nasil-gecilir.png',
     title: 'Restoran İçin Dijital Dönüşüm Rehberi 2026: Adım Adım Teknoloji Geçişi',
     metaTitle: 'Restoran Dijital Dönüşüm Rehberi 2026 | Tabbled',
     metaDescription: '2026\'da restoranınızı dijitalleştirmek için adım adım rehber. QR menü, online sipariş, garson çağırma ve müşteri yönetimi teknolojileri.',
@@ -559,6 +564,7 @@ export const blogPosts: BlogPost[] = [
   },
   {
     slug: 'restoran-menu-tasarimi-stratejileri',
+    image: '/blog/blog-06-analitik.png',
     title: 'Restoran Menü Tasarımı: Satışları Artıran 10 Strateji',
     metaTitle: 'Restoran Menü Tasarımı — 10 Satış Artırıcı Strateji | Tabbled',
     metaDescription: 'Restoran menü tasarımında satışları artıran 10 kanıtlanmış strateji. Dijital menü düzeni, fotoğraf kullanımı, fiyatlandırma psikolojisi ve menü mühendisliği rehberi.',
@@ -666,6 +672,7 @@ export const blogPosts: BlogPost[] = [
   },
   {
     slug: 'restoran-alerjen-bilgilendirme-rehberi',
+    image: '/blog/blog-03-alerjen.png',
     title: 'Restoranlarda Alerjen Bilgilendirme Rehberi 2026: Yasal Zorunluluklar ve Uygulama',
     metaTitle: 'Restoran Alerjen Bilgilendirme Rehberi 2026 | Tabbled',
     metaDescription: 'Restoranlarda alerjen bilgilendirme zorunluluğu, 14 AB alerjen listesi, menüde alerjen gösterimi ve dijital çözümler. 2026 yasal rehber.',
@@ -774,6 +781,7 @@ export const blogPosts: BlogPost[] = [
   },
   {
     slug: 'restoran-musteri-deneyimi-dijital-yolculuk',
+    image: '/blog/blog-04-musteri-deneyimi.png',
     title: 'Restoran Müşteri Deneyimi 2026: QR Menüden WhatsApp Siparişe Dijital Yolculuk',
     metaTitle: 'Restoran Müşteri Deneyimi 2026 — Dijital Yolculuk | Tabbled',
     metaDescription: 'Restoranlarda müşteri deneyimini iyileştiren dijital çözümler: QR menü, garson çağırma, WhatsApp sipariş, geri bildirim ve beğeni sistemi. 2026 rehberi.',
@@ -864,6 +872,7 @@ export const blogPosts: BlogPost[] = [
   },
   {
     slug: 'restoran-seo-google-haritalar-rehberi',
+    image: '/blog/blog-02-lokal-seo.png',
     title: 'Restoran SEO ve Google Haritalar Optimizasyonu Rehberi 2026',
     metaTitle: 'Restoran SEO ve Google Haritalar Rehberi 2026 | Tabbled',
     metaDescription: 'Restoranınızı Google\'da üst sıralara çıkarın. Google İşletme Profili, yerel SEO, QR menü SEO avantajı ve müşteri yorumları optimizasyonu rehberi.',
@@ -957,6 +966,7 @@ export const blogPosts: BlogPost[] = [
   },
   {
     slug: 'cok-dilli-menu-rehberi-turist-restoran',
+    image: '/blog/blog-09-cok-dilli.png',
     title: 'Çok Dilli Menü Rehberi: Turistlere Hizmet Veren Restoranlar İçin 2026 Kılavuzu',
     metaTitle: 'Çok Dilli Menü Rehberi 2026 — Turist Restoranları | Tabbled',
     metaDescription: 'Turist müşterilere hizmet veren restoranlar için çok dilli dijital menü rehberi. Otomatik çeviri, dil seçimi ve kültürel adaptasyon ipuçları.',
@@ -1043,6 +1053,7 @@ export const blogPosts: BlogPost[] = [
   },
   {
     slug: 'restoran-acmak-teknoloji-yatirim-rehberi-2026',
+    image: '/blog/blog-10-teknoloji-yatirim.jpg',
     title: '2026\'da Restoran Açmak: Teknoloji Yatırım Rehberi ve Dijital Altyapı Kontrol Listesi',
     metaTitle: '2026 Restoran Açmak — Teknoloji Yatırım Rehberi | Tabbled',
     metaDescription: '2026\'da restoran açarken ihtiyacınız olan teknoloji yatırımları: QR menü, POS sistemi, sosyal medya, Google İşletme Profili ve dijital altyapı kontrol listesi.',

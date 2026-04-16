@@ -28,6 +28,22 @@ export default function BlogCard({ post }: { post: BlogPost }) {
         (e.currentTarget as HTMLElement).style.boxShadow = 'none';
       }}
     >
+      {/* Cover image */}
+      {post.image && (
+        <img
+          src={post.image}
+          alt={post.title}
+          style={{
+            width: 'calc(100% + 48px)',
+            height: 180,
+            objectFit: 'cover',
+            borderRadius: '12px 12px 0 0',
+            margin: '-24px -24px 16px -24px',
+            display: 'block',
+          }}
+        />
+      )}
+
       {/* Category badge */}
       <span
         style={{
