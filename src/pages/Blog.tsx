@@ -107,7 +107,7 @@ export default function Blog() {
                 <div key={post.slug} className="grid gap-x-8 gap-y-6 md:grid-cols-[.75fr_1fr] md:gap-y-4">
                   <a href={`/blog/${post.slug}`} className="w-full">
                     <img
-                      src={post.ogImage || 'https://d22po4pjz3o32e.cloudfront.net/placeholder-image-landscape.svg'}
+                      src={post.image || post.ogImage || ''}
                       alt={post.title}
                       className="aspect-square w-full object-cover"
                     />
