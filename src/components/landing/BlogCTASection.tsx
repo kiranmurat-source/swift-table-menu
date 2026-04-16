@@ -30,7 +30,7 @@ export function BlogCTASection() {
           </div>
         </div>
         <img
-          src="https://d22po4pjz3o32e.cloudfront.net/placeholder-image-landscape.svg"
+          src="/blog/blog-cta-banner.jpg"
           className="size-full object-cover"
           alt="Blog görseli"
         />
