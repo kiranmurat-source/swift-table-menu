@@ -1,7 +1,7 @@
 import React from "react";
 import { ArrowRight } from "@phosphor-icons/react";
 
-const DEMO_MENU_URL = "https://tabbled.com/r/ramada-encore-bayrampasa";
+const DEMO_MENU_URL = "https://tabbled.com/menu/ramada-encore-bayrampasa";
 
 const handleDemoClick = () => {
   if (typeof window !== 'undefined' && (window as any).gtag) {
@@ -62,17 +62,6 @@ export function WhyNowSection() {
             Canlı Demo Menüyü Gör
             <ArrowRight size={20} weight="thin" />
           </a>
-          <p
-            style={{
-              marginTop: 16,
-              color: 'rgba(255, 255, 255, 0.6)',
-              fontFamily: "'Roboto', sans-serif",
-              fontWeight: 400,
-              fontSize: 14,
-            }}
-          >
-            Ramada Encore by Wyndham İstanbul — aktif müşterimiz
-          </p>
         </div>
       </div>
     </section>
