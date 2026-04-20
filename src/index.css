@@ -300,11 +300,28 @@
 
 /* ── Admin Sidebar (light, Attio-style) ── */
 
-/* Sidebar rail — base container */
+/* Sidebar rail — base container (fixed-height flex column) */
 .sb-rail {
   background: #FFFFFF;
   border-right: 1px solid #E5E7EB;
   overflow: hidden;
+}
+
+/* Nav fills available space; footer stays pinned */
+.sb-nav {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.sb-nav::-webkit-scrollbar {
+  width: 4px;
+}
+.sb-nav::-webkit-scrollbar-thumb {
+  background: #E5E7EB;
+  border-radius: 2px;
+}
+.sb-nav::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 /* Collapsed vs expanded nav padding */
@@ -348,18 +365,12 @@
   font-weight: 500;
 }
 
+/* Active item: subtle bg + green icon only — no left bar */
 .sb-item[data-active="true"]::before {
-  content: "";
-  position: absolute;
-  left: -12px;
-  top: 6px;
-  bottom: 6px;
-  width: 2px;
-  background: #10B981;
-  border-radius: 0 2px 2px 0;
+  display: none;
 }
 
-/* Collapsed item — square 40x40, icon centered, no ::before bar */
+/* Collapsed item — square 40x40, icon centered */
 .sb-rail[data-collapsed="true"] .sb-item {
   width: 40px;
   height: 40px;
@@ -369,13 +380,8 @@
   gap: 0;
 }
 
-.sb-rail[data-collapsed="true"] .sb-item[data-active="true"]::before {
-  display: none;
-}
-
-/* When collapsed, active item uses left-bar via inset — small 2px bar on container's left */
 .sb-rail[data-collapsed="true"] .sb-item[data-active="true"] {
-  box-shadow: inset 2px 0 0 0 #10B981;
+  box-shadow: none;
 }
 
 /* Icon inside sidebar item */
@@ -386,9 +392,12 @@
   transition: color 0.15s ease;
 }
 
-.sb-item:hover .sb-icon,
-.sb-item[data-active="true"] .sb-icon {
+.sb-item:hover .sb-icon {
   color: #1C1C1E;
+}
+
+.sb-item[data-active="true"] .sb-icon {
+  color: #10B981;
 }
 
 /* Label — hidden when collapsed, fades in when expanded */
@@ -527,6 +536,94 @@
 }
 
 .sb-rail[data-collapsed="true"] .sb-footer-label {
+  display: none;
+}
+
+/* Footer wrap (pinned): public menu link + user menu */
+.sb-foot-wrap {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.sb-foot-wrap .sb-footer {
+  border-top: 1px solid #E5E7EB;
+  border-bottom: none;
+}
+
+/* User menu row */
+.sb-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px 14px;
+  border-top: 1px solid #E5E7EB;
+  min-width: 0;
+}
+
+.sb-rail[data-collapsed="true"] .sb-user {
+  justify-content: center;
+  padding: 10px 8px 14px;
+  gap: 0;
+}
+
+.sb-user-avatar {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #F3F4F6;
+  color: #1C1C1E;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #E5E7EB;
+  text-transform: uppercase;
+}
+
+.sb-user-email {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12px;
+  color: #6B7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sb-rail[data-collapsed="true"] .sb-user-email {
+  display: none;
+}
+
+.sb-user-logout {
+  flex: 0 0 auto;
+  background: transparent;
+  border: 1px solid #E5E7EB;
+  color: #6B7280;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.sb-user-logout:hover {
+  background: #F7F7F8;
+  color: #1C1C1E;
+  border-color: #D1D5DB;
+}
+
+.sb-user-logout-icon {
+  display: none;
+}
+
+.sb-rail[data-collapsed="true"] .sb-user-logout {
   display: none;
 }
 

@@ -333,7 +333,6 @@ export default function RestaurantDashboard() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'menu' | 'import' | 'translations' | 'qr' | 'media' | 'profile' | 'promos' | 'calls' | 'feedback' | 'discounts' | 'likes' | 'customers'>('dashboard');
   const [pendingCallCount, setPendingCallCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
   const [isDesktop, setIsDesktop] = useState(typeof window !== 'undefined' && window.innerWidth >= 1024);
   const [sidebarHovered, setSidebarHovered] = useState(false);
   const sidebarHoverTimerRef = useRef<number | null>(null);
@@ -518,16 +517,13 @@ export default function RestaurantDashboard() {
     checkSubscription();
   }, [restaurant?.id]);
 
-  // Responsive: track mobile + desktop breakpoints
+  // Responsive: drawer below 1024, hover-expand rail at/above 1024
   useEffect(() => {
     const handleResize = () => {
-      const w = window.innerWidth;
-      const mobile = w < 768;
-      const desktop = w >= 1024;
-      setIsMobile(mobile);
+      const desktop = window.innerWidth >= 1024;
       setIsDesktop(desktop);
-      if (!mobile) setSidebarOpen(false);
-      if (!desktop) setSidebarHovered(false);
+      if (desktop) setSidebarOpen(false);
+      else setSidebarHovered(false);
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -1306,16 +1302,35 @@ export default function RestaurantDashboard() {
         ))}
       </nav>
 
-      {/* Footer — public menu link */}
-      <a
-        href={`/menu/${restaurant.slug}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="sb-footer"
-      >
-        <Link size={13} />
-        <span className="sb-footer-label">tabbled.com/menu/{restaurant.slug}</span>
-      </a>
+      {/* Footer — public menu link + user menu */}
+      <div className="sb-foot-wrap">
+        <a
+          href={`/menu/${restaurant.slug}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="sb-footer"
+          title={`tabbled.com/menu/${restaurant.slug}`}
+        >
+          <Link size={13} />
+          <span className="sb-footer-label">tabbled.com/menu/{restaurant.slug}</span>
+        </a>
+        <div className="sb-user">
+          <div className="sb-user-avatar" aria-hidden="true">
+            {(user?.email?.[0] ?? 'U').toUpperCase()}
+          </div>
+          <span className="sb-user-email" title={user?.email ?? ''}>{user?.email ?? ''}</span>
+          <button
+            type="button"
+            onClick={async () => { await signOut(); window.location.href = '/login'; }}
+            className="sb-user-logout"
+            aria-label="Çıkış"
+            title="Çıkış"
+          >
+            <span className="sb-user-logout-label">Çıkış</span>
+            <X size={14} weight="thin" className="sb-user-logout-icon" />
+          </button>
+        </div>
+      </div>
     </>
   );
 
@@ -1323,33 +1338,47 @@ export default function RestaurantDashboard() {
   const desktopRailWidth = desktopCollapsed ? 64 : 240;
 
   return (
-    <div className="min-h-screen relative" data-admin-theme={restaurant?.admin_theme === 'dark' ? 'dark' : 'light'} style={{ backgroundColor: adminTheme.pageBg, color: adminTheme.value }}>
-      {/* Desktop Sidebar — fixed overlay rail, expands on hover */}
-      <aside
-        className="sb-rail hidden md:flex flex-col fixed left-0 top-0 h-screen z-40"
-        data-collapsed={desktopCollapsed}
-        style={{
-          width: desktopRailWidth,
-          transition: 'width 180ms ease',
-        }}
-        onMouseEnter={handleSidebarEnter}
-        onMouseLeave={handleSidebarLeave}
-      >
-        {renderSidebarContent()}
-      </aside>
+    <div className="min-h-screen relative" data-admin-theme={restaurant?.admin_theme === 'dark' ? 'dark' : 'light'} style={{ backgroundColor: '#FAFAF9', color: adminTheme.value }}>
+      {/* Desktop Sidebar — fixed overlay rail, expands on hover (>=1024) */}
+      {isDesktop && (
+        <aside
+          className="sb-rail flex flex-col"
+          data-collapsed={desktopCollapsed}
+          style={{
+            position: 'fixed',
+            left: 0,
+            top: 0,
+            height: '100vh',
+            width: desktopRailWidth,
+            zIndex: 40,
+            transition: 'width 180ms ease',
+          }}
+          onMouseEnter={handleSidebarEnter}
+          onMouseLeave={handleSidebarLeave}
+        >
+          {renderSidebarContent()}
+        </aside>
+      )}
 
-      {/* Mobile Sidebar Overlay */}
-      {isMobile && sidebarOpen && (
+      {/* Drawer (<1024) — slides in from left */}
+      {!isDesktop && sidebarOpen && (
         <div className="fixed inset-0 z-50 flex">
           <div className="sb-backdrop" onClick={() => setSidebarOpen(false)} />
-          <aside className="sb-rail relative z-10 flex flex-col w-[260px] min-h-screen shadow-2xl animate-sidebar-slide-in" data-collapsed={false}>
+          <aside className="sb-rail relative z-10 flex flex-col w-[280px] min-h-screen shadow-2xl animate-sidebar-slide-in" data-collapsed={false}>
             {renderSidebarContent()}
           </aside>
         </div>
       )}
 
       {/* Main content — padded to clear the fixed desktop rail (64px) */}
-      <main className="flex-1 min-w-0 md:pl-16">
+      <main
+        className="flex-1 min-w-0"
+        style={{
+          paddingLeft: isDesktop ? 64 : 0,
+          minHeight: '100vh',
+          background: '#FAFAF9',
+        }}
+      >
         {/* Notification bell — shared button for mobile & desktop top bars */}
         {(() => {
           const notifUnreadCount = pendingCallCount + newFeedbackCount + newReviewCount;
@@ -1399,24 +1428,47 @@ export default function RestaurantDashboard() {
           );
 
           return (
-            <>
-              {/* Mobile top bar — hamburger + section label + bell */}
-              {isMobile && (
-                <div className="sticky top-0 z-40 flex items-center gap-3 px-4 py-3 bg-white border-b border-[#E5E5E3]">
-                  <button onClick={() => setSidebarOpen(true)} className="p-1" aria-label="Menü">
-                    <List size={22} />
-                  </button>
-                  <span className="text-sm font-semibold text-[#1C1C1E]">{activeLabel}</span>
-                  <div className="ml-auto">{BellButton}</div>
-                </div>
+            <div
+              className="sticky top-0 z-30 flex items-center bg-white border-b border-[#E5E5E3]"
+              style={{
+                gap: 12,
+                padding: isDesktop ? '10px 24px' : '10px 16px',
+              }}
+            >
+              {!isDesktop && (
+                <button
+                  onClick={() => setSidebarOpen(true)}
+                  aria-label="Menü"
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 8,
+                    border: 'none',
+                    background: 'transparent',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = '#F7F7F8')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <List size={22} weight="thin" color="#1C1C1E" />
+                </button>
               )}
-
-              {/* Desktop top bar — section label + bell */}
-              <div className="hidden md:flex items-center justify-between px-6 py-3 bg-white border-b border-[#E5E5E3]">
-                <span style={{ fontSize: 14, fontWeight: 600, color: '#1C1C1E' }}>{activeLabel}</span>
+              <span style={{ fontSize: 14, fontWeight: 600, color: '#1C1C1E' }}>{activeLabel}</span>
+              <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+                {isDesktop && user?.email && (
+                  <span
+                    style={{ fontSize: 13, fontWeight: 400, color: '#6B7280', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                    title={user.email}
+                  >
+                    {user.email}
+                  </span>
+                )}
                 {BellButton}
               </div>
-            </>
+            </div>
           );
         })()}
 
@@ -1438,18 +1490,19 @@ export default function RestaurantDashboard() {
         )}
 
         <div style={S.wrap}>
-          {!premiumBannerDismissed && plan !== 'enterprise' && (
+          {!premiumBannerDismissed && plan !== 'enterprise' && isDesktop && (
             <div
-              className="hidden md:flex"
               style={{
+                display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 gap: 12,
                 marginBottom: 16,
                 background: '#FFFFFF',
-                border: '1px solid #E5E7EB',
+                border: 'none',
                 borderRadius: 10,
                 padding: '16px 20px',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
@@ -1470,17 +1523,17 @@ export default function RestaurantDashboard() {
                   style={{
                     fontSize: 13,
                     fontWeight: 500,
-                    color: '#1C1C1E',
-                    border: '1px solid #E5E7EB',
-                    padding: '8px 14px',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    padding: '8px 16px',
                     borderRadius: 6,
                     textDecoration: 'none',
-                    background: '#FFFFFF',
+                    background: '#FF4F7A',
                     fontFamily: "'Roboto', sans-serif",
                     transition: 'background 0.15s ease',
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = '#F7F7F8')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = '#FFFFFF')}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = '#E63E68')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = '#FF4F7A')}
                 >
                   {planName ? 'Yükselt' : 'İletişime Geç'}
                 </a>
