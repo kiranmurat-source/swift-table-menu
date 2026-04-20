@@ -22,7 +22,6 @@ import FeedbackPanel from '../components/FeedbackPanel';
 import DiscountCodesPanel from '../components/DiscountCodesPanel';
 import LikesPanel from '../components/LikesPanel';
 import CustomersPanel from '../components/CustomersPanel';
-import AnalyticsPanel from '../components/AnalyticsPanel';
 import { getAdminTheme, type AdminTheme } from '../lib/adminTheme';
 import {
   DndContext,
@@ -331,7 +330,7 @@ export default function RestaurantDashboard() {
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [editCatForm, setEditCatForm] = useState({ name_tr: '' });
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'menu' | 'import' | 'translations' | 'qr' | 'media' | 'profile' | 'promos' | 'calls' | 'feedback' | 'discounts' | 'likes' | 'customers' | 'analytics'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'menu' | 'import' | 'translations' | 'qr' | 'media' | 'profile' | 'promos' | 'calls' | 'feedback' | 'discounts' | 'likes' | 'customers'>('dashboard');
   const [pendingCallCount, setPendingCallCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
@@ -1164,7 +1163,6 @@ export default function RestaurantDashboard() {
       title: '',
       items: [
         { key: 'dashboard' as const, label: 'Dashboard', icon: ChartBar },
-        { key: 'analytics' as const, label: 'Analitik', icon: ChartBar },
       ],
     },
     {
@@ -1393,11 +1391,8 @@ export default function RestaurantDashboard() {
               restaurantId={restaurant.id}
               featureWaiterCalls={restaurant.feature_waiter_calls !== false}
               featureFeedback={restaurant.feature_feedback !== false}
-              featureLikes={restaurant.feature_likes !== false}
-              featureDiscountCodes={restaurant.feature_discount_codes !== false}
               featureReviews={restaurant.feature_reviews !== false}
               onNavigate={(tab) => setActiveTab(tab as typeof activeTab)}
-              theme={adminTheme}
             />
           )}
           {activeTab === 'profile' && (
@@ -1419,7 +1414,6 @@ export default function RestaurantDashboard() {
       {activeTab === 'calls' && <WaiterCallsPanel restaurantId={restaurant.id} theme={adminTheme} />}
       {activeTab === 'feedback' && <FeedbackPanel restaurantId={restaurant.id} theme={adminTheme} />}
       {activeTab === 'customers' && <CustomersPanel restaurantId={restaurant.id} theme={adminTheme} />}
-      {activeTab === 'analytics' && <AnalyticsPanel restaurantId={restaurant.id} theme={adminTheme} />}
       {activeTab === 'discounts' && <DiscountCodesPanel restaurantId={restaurant.id} theme={adminTheme} />}
       {activeTab === 'likes' && <LikesPanel restaurantId={restaurant.id} theme={adminTheme} />}
       {activeTab === 'translations' && (

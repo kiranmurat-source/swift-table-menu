@@ -1,825 +1,1182 @@
-import { useEffect, useState } from 'react';
+// src/components/dashboard/RestaurantAnalytics.tsx
+// Attio-stili Dashboard — 7 bölüm
+// 1) Page Header + date range selector
+// 2) 4 Metric cards
+// 3) Chart row (time series + top 5 items)
+// 4) Secondary row (category bars + recent activity)
+// 5) Heatmap (hourly traffic, last 7 days)
+// 6) Tutorials
+//
+// Dashboard admin tema seçiminden bağımsızdır — white bg, accent yeşil #10B981
+
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ForkKnife,
-  CheckCircle,
-  Star,
-  Heart,
+  ArrowUp,
   Bell,
-  Fire,
+  CaretDown,
   ChatCircle,
-  Percent,
-  WarningCircle,
-  ChartBar,
+  ForkKnife,
+  PlayCircle,
+  Star,
 } from '@phosphor-icons/react';
 import { supabase } from '../../lib/supabase';
-import type { AdminTheme } from '../../lib/adminTheme';
-import { getAdminTheme } from '../../lib/adminTheme';
 
-/* ---------------------------------- types --------------------------------- */
+/* ---------------------------------- Props --------------------------------- */
 
 interface Props {
   restaurantId: string;
   featureWaiterCalls: boolean;
   featureFeedback: boolean;
-  featureLikes: boolean;
-  featureDiscountCodes: boolean;
   featureReviews: boolean;
   onNavigate?: (tab: string) => void;
-  theme?: AdminTheme;
 }
 
+/* --------------------------------- Palette -------------------------------- */
+
+const C = {
+  pageBg: '#F7F7F5',
+  cardBg: '#FFFFFF',
+  cardBorder: '#E5E7EB',
+  cardBorderHover: '#D1D5DB',
+  textPrimary: '#1C1C1E',
+  textSecondary: '#6B6B6F',
+  textTertiary: '#9CA3AF',
+  accent: '#10B981',
+  accentSoft: '#A7F3D0',
+  track: '#F7F7F8',
+  divider: '#F1F3F5',
+  barNeutral: '#1C1C1E',
+  shadowNone: 'none',
+};
+
+const FONT = "'Roboto', sans-serif";
+
+/* --------------------------------- Types --------------------------------- */
+
+type DateRangeKey = 'today' | 'week' | 'month' | 'quarter';
+
+const RANGE_DAYS: Record<DateRangeKey, number> = { today: 1, week: 7, month: 30, quarter: 90 };
+const RANGE_LABELS: Record<DateRangeKey, string> = {
+  today: 'Bugün',
+  week: 'Son 7 gün',
+  month: 'Son 30 gün',
+  quarter: 'Son 90 gün',
+};
+const RANGE_NOUN: Record<DateRangeKey, string> = {
+  today: 'gün',
+  week: '7 gün',
+  month: '30 gün',
+  quarter: '90 gün',
+};
+
+interface PageViewRow {
+  fingerprint: string | null;
+  created_at: string;
+}
+interface ItemViewRow {
+  menu_item_id: string;
+  created_at: string;
+}
 interface MenuItemRow {
   id: string;
   name_tr: string;
-  is_available: boolean;
-  is_sold_out: boolean;
-  is_featured: boolean;
   image_url: string | null;
-  allergens: string[] | null;
-  category_id: string;
+  category_id: string | null;
 }
-
 interface CategoryRow {
   id: string;
-  parent_id: string | null;
+  name_tr: string;
 }
-
-interface WaiterCallRow {
+interface DailyCount {
+  view_date: string;
+  view_count: number;
+}
+interface HourlyCount {
+  hour_of_day: number;
+  view_count: number;
+}
+interface ActivityItem {
+  kind: 'feedback' | 'call' | 'review';
   id: string;
   created_at: string;
+  text: string;
+  sub?: string;
 }
-
-interface FeedbackRow {
-  id: string;
-  rating: number;
-  comment: string | null;
-  customer_name: string | null;
-  table_number: string | null;
-  created_at: string;
-}
-
-interface PendingReviewRow {
-  id: string;
-  rating: number;
-  comment: string;
-  customer_name: string | null;
-  created_at: string;
-}
-
-interface LikeRow {
-  id: string;
-  menu_item_id: string;
-  status: string;
-  created_at: string;
-}
-
-interface DiscountCodeRow {
-  id: string;
-  code: string;
-  discount_type: 'percentage' | 'fixed';
-  discount_value: number;
-  max_uses: number | null;
-  current_uses: number;
-  is_active: boolean;
-  expires_at: string | null;
-}
-
-interface AllData {
+interface DashData {
+  pageViews: PageViewRow[];
+  itemViews: ItemViewRow[];
   items: MenuItemRow[];
   categories: CategoryRow[];
-  waiterCalls: WaiterCallRow[];
-  feedback: FeedbackRow[];
-  discountCodes: DiscountCodeRow[];
-  likes: LikeRow[];
-  allFeedbackCount: number;
-  avgRating: number | null;
-  totalLikeCount: number;
-  weeklyLikeCount: number;
-  pendingReviews: PendingReviewRow[];
+  daily: DailyCount[];
+  hourly: HourlyCount[];
+  activities: ActivityItem[];
 }
 
-/* --------------------------------- styles --------------------------------- */
+/* --------------------------------- Helpers -------------------------------- */
 
-function makeStyles(t: AdminTheme) {
-  return {
-    card: {
-      background: t.cardBg,
-      border: `1px solid ${t.cardBorder}`,
-      borderRadius: 12,
-      padding: 20,
-      boxShadow: t.cardShadow,
-    } as React.CSSProperties,
-    sectionTitle: {
-      fontSize: 11,
-      fontWeight: 700,
-      color: t.heading,
-      textTransform: 'uppercase',
-      letterSpacing: '0.08em',
-      marginBottom: 14,
-      fontFamily: "'Roboto', sans-serif",
-    } as React.CSSProperties,
-    bigNumber: {
-      fontSize: 28,
-      fontWeight: 800,
-      color: t.value,
-      lineHeight: 1,
-      fontFamily: "'Roboto', sans-serif",
-      letterSpacing: '-0.02em',
-    } as React.CSSProperties,
-    subText: {
-      fontSize: 12,
-      color: t.heading,
-      marginTop: 6,
-      fontFamily: "'Roboto', sans-serif",
-    } as React.CSSProperties,
-    emptyState: {
-      fontSize: 13,
-      color: t.subtle,
-      textAlign: 'center',
-      padding: '24px 0',
-      fontFamily: "'Roboto', sans-serif",
-    } as React.CSSProperties,
-    divider: `1px solid ${t.divider}`,
-  };
-}
-type StyleMap = ReturnType<typeof makeStyles>;
+const TR_TZ = 'Europe/Istanbul';
 
-/* --------------------------------- helpers -------------------------------- */
-
-const DAY_LABELS_TR = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
-
-function timeAgo(dateStr: string): string {
-  const now = new Date();
-  const d = new Date(dateStr);
-  const diffMs = now.getTime() - d.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  const diffHour = Math.floor(diffMs / 3600000);
-  const diffDay = Math.floor(diffMs / 86400000);
-  if (diffMin < 1) return 'Az önce';
-  if (diffMin < 60) return `${diffMin} dk önce`;
-  if (diffHour < 24) return `${diffHour} saat önce`;
-  if (diffDay < 7) return `${diffDay} gün önce`;
-  return d.toLocaleDateString('tr-TR');
+function dateKey(d: Date): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: TR_TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(d);
+  const y = parts.find((p) => p.type === 'year')?.value ?? '0000';
+  const m = parts.find((p) => p.type === 'month')?.value ?? '01';
+  const dd = parts.find((p) => p.type === 'day')?.value ?? '01';
+  return `${y}-${m}-${dd}`;
 }
 
-function buildLast7Days(calls: WaiterCallRow[]): { dayLabel: string; count: number; date: string }[] {
-  const buckets: { dayLabel: string; count: number; date: string }[] = [];
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
-    buckets.push({
-      date: d.toISOString().slice(0, 10),
-      dayLabel: DAY_LABELS_TR[d.getDay()],
-      count: 0,
-    });
-  }
-  const byDate = new Map(buckets.map((b) => [b.date, b]));
-  for (const c of calls) {
-    const key = new Date(c.created_at).toISOString().slice(0, 10);
-    const bucket = byDate.get(key);
-    if (bucket) bucket.count += 1;
-  }
-  return buckets;
+function lastNDays(n: number): string[] {
+  const out: string[] = [];
+  const now = Date.now();
+  for (let i = n - 1; i >= 0; i--) out.push(dateKey(new Date(now - i * 86400000)));
+  return out;
 }
 
-/* --------------------------------- loading -------------------------------- */
-
-function SkeletonBlock({ height = 120, t, s }: { height?: number; t: AdminTheme; s: StyleMap }) {
-  const isDark = t.key === 'dark';
-  const shimmerA = isDark ? '#1F2229' : '#F3F3F1';
-  const shimmerB = isDark ? '#2A2D36' : '#FAFAF8';
-  return (
-    <div
-      style={{
-        ...s.card,
-        height,
-        background: `linear-gradient(90deg, ${shimmerA} 0%, ${shimmerB} 50%, ${shimmerA} 100%)`,
-        backgroundSize: '200% 100%',
-        animation: 'dash-shimmer 1.4s ease-in-out infinite',
-      }}
-    />
-  );
+function pctDelta(curr: number, prev: number): number | null {
+  if (prev === 0) return curr === 0 ? 0 : null;
+  return Math.round(((curr - prev) / prev) * 1000) / 10;
 }
 
-/* ------------------------------ summary cards ----------------------------- */
+const trNumber = (n: number) => new Intl.NumberFormat('tr-TR').format(n);
 
-function SummaryCards({ data, t, s }: { data: AllData; t: AdminTheme; s: StyleMap }) {
-  const total = data.items.length;
-  const inactive = data.items.filter((i) => !i.is_available).length;
-  const active = data.items.filter((i) => i.is_available && !i.is_sold_out).length;
-  const soldOut = data.items.filter((i) => i.is_sold_out).length;
+function relativeTimeTR(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  const s = Math.max(0, Math.floor(ms / 1000));
+  if (s < 60) return `${s} sn önce`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m} dk önce`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h} sa önce`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d} gün önce`;
+  const w = Math.floor(d / 7);
+  return `${w} hf önce`;
+}
 
-  const items: Array<{
-    title: string;
-    value: string;
-    sub: string;
-    icon: React.ReactNode;
-  }> = [
-    {
-      title: 'Toplam Ürün',
-      value: String(total),
-      sub: inactive > 0 ? `${inactive} pasif` : 'Tümü aktif',
-      icon: <ForkKnife size={20} color={t.icon} weight="thin" />,
-    },
-    {
-      title: 'Aktif Ürün',
-      value: String(active),
-      sub: soldOut > 0 ? `${soldOut} tükendi` : 'Tükenen yok',
-      icon: <CheckCircle size={20} color={t.icon} weight="thin" />,
-    },
-    {
-      title: 'Geri Bildirim',
-      value: data.avgRating !== null ? `★ ${data.avgRating.toFixed(1)}` : '—',
-      sub: data.allFeedbackCount > 0 ? `${data.allFeedbackCount} değerlendirme` : 'Henüz değerlendirme yok',
-      icon: <Star size={20} color={t.icon} weight="thin" />,
-    },
-    {
-      title: 'Toplam Beğeni',
-      value: String(data.totalLikeCount),
-      sub: data.weeklyLikeCount > 0 ? `bu hafta +${data.weeklyLikeCount}` : 'bu hafta 0',
-      icon: <Heart size={20} color={t.icon} weight="thin" />,
-    },
-  ];
+function shortDateTR(ymd: string): string {
+  const [, m, d] = ymd.split('-');
+  const month = Number(m);
+  const names = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+  return `${Number(d)} ${names[month - 1] ?? ''}`;
+}
+
+/* ------------------------------- Shared styles ---------------------------- */
+
+const cardStyle: React.CSSProperties = {
+  background: C.cardBg,
+  border: `1px solid ${C.cardBorder}`,
+  borderRadius: 10,
+  padding: 20,
+  boxShadow: C.shadowNone,
+};
+
+const sectionTitleStyle: React.CSSProperties = {
+  fontSize: 15,
+  fontWeight: 700,
+  color: C.textPrimary,
+  margin: 0,
+  letterSpacing: '-0.01em',
+};
+
+const skeletonBlockStyle = (h: number): React.CSSProperties => ({
+  height: h,
+  borderRadius: 6,
+  background:
+    'linear-gradient(90deg, #F1F3F5 0%, #E5E7EB 50%, #F1F3F5 100%)',
+  backgroundSize: '200% 100%',
+  animation: 'dash-shimmer 1.6s infinite linear',
+});
+
+/* -------------------------------- Sub-pieces ------------------------------ */
+
+function DateRangeSelector({
+  value,
+  onChange,
+}: {
+  value: DateRangeKey;
+  onChange: (v: DateRangeKey) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [open]);
 
   return (
-    <div
-      style={{
-        display: 'grid',
-        gap: 14,
-        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-      }}
-    >
-      {items.map((it) => (
-        <div key={it.title} style={s.card}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
-            <span style={s.sectionTitle}>{it.title}</span>
-            {it.icon}
-          </div>
-          <div style={s.bigNumber}>{it.value}</div>
-          <div style={s.subText}>{it.sub}</div>
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          padding: '6px 12px',
+          background: C.cardBg,
+          border: `1px solid ${C.cardBorder}`,
+          borderRadius: 999,
+          fontFamily: FONT,
+          fontSize: 13,
+          fontWeight: 500,
+          color: C.textPrimary,
+          cursor: 'pointer',
+        }}
+      >
+        {RANGE_LABELS[value]}
+        <CaretDown size={14} weight="thin" />
+      </button>
+      {open && (
+        <div
+          style={{
+            position: 'absolute',
+            right: 0,
+            top: 'calc(100% + 6px)',
+            zIndex: 30,
+            minWidth: 160,
+            background: C.cardBg,
+            border: `1px solid ${C.cardBorder}`,
+            borderRadius: 8,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.06)',
+            padding: 4,
+          }}
+        >
+          {(Object.keys(RANGE_LABELS) as DateRangeKey[]).map((k) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => {
+                onChange(k);
+                setOpen(false);
+              }}
+              style={{
+                display: 'block',
+                width: '100%',
+                textAlign: 'left',
+                padding: '8px 12px',
+                background: k === value ? C.track : 'transparent',
+                border: 'none',
+                borderRadius: 6,
+                fontFamily: FONT,
+                fontSize: 13,
+                fontWeight: k === value ? 600 : 400,
+                color: C.textPrimary,
+                cursor: 'pointer',
+              }}
+            >
+              {RANGE_LABELS[k]}
+            </button>
+          ))}
         </div>
-      ))}
-    </div>
-  );
-}
-
-/* -------------------------- waiter calls bar chart ------------------------ */
-
-function WaiterCallsChart({ calls, t, s }: { calls: WaiterCallRow[]; t: AdminTheme; s: StyleMap }) {
-  const buckets = buildLast7Days(calls);
-  const total = buckets.reduce((sum, b) => sum + b.count, 0);
-  const max = Math.max(...buckets.map((b) => b.count), 1);
-  const avg = total / 7;
-
-  return (
-    <div style={s.card}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-        <Bell size={16} color={t.heading} weight="thin" />
-        <span style={s.sectionTitle}>Garson Çağrıları (Son 7 Gün)</span>
-      </div>
-
-      {total === 0 ? (
-        <div style={s.emptyState}>Son 7 günde garson çağrısı yok</div>
-      ) : (
-        <>
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 140, padding: '8px 0' }}>
-            {buckets.map((b) => (
-              <div
-                key={b.date}
-                style={{
-                  flex: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: 6,
-                  height: '100%',
-                  justifyContent: 'flex-end',
-                }}
-              >
-                <span style={{ fontSize: 11, color: t.heading, fontWeight: 600 }}>{b.count}</span>
-                <div
-                  style={{
-                    width: '100%',
-                    height: `${(b.count / max) * 100}%`,
-                    minHeight: b.count > 0 ? 4 : 0,
-                    background: b.count > 0 ? t.chartBar : t.chartGrid,
-                    borderTopLeftRadius: 4,
-                    borderTopRightRadius: 4,
-                    transition: 'height 0.2s',
-                  }}
-                />
-                <span style={{ fontSize: 11, color: t.chartLabel }}>{b.dayLabel}</span>
-              </div>
-            ))}
-          </div>
-          <div style={{ marginTop: 14, fontSize: 12, color: t.heading }}>
-            Toplam: <strong style={{ color: t.value }}>{total}</strong> çağrı · Ort:{' '}
-            <strong style={{ color: t.value }}>{avg.toFixed(1)}</strong>/gün
-          </div>
-        </>
       )}
     </div>
   );
 }
 
-/* ------------------------------ popular items ----------------------------- */
+function DeltaPill({ delta }: { delta: number | null }) {
+  if (delta === null) {
+    return <span style={{ fontSize: 12, color: C.textSecondary }}>—</span>;
+  }
+  const positive = delta > 0;
+  const sign = positive ? '+' : delta < 0 ? '' : '';
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 2,
+        fontSize: 12,
+        fontWeight: 500,
+        color: positive ? C.accent : C.textSecondary,
+      }}
+    >
+      {positive && <ArrowUp size={12} weight="thin" />}
+      {sign}
+      {delta.toFixed(1)}%
+    </span>
+  );
+}
 
-function PopularItems({ items, likes, t, s }: { items: MenuItemRow[]; likes: LikeRow[]; t: AdminTheme; s: StyleMap }) {
-  const countMap = new Map<string, number>();
-  for (const l of likes) countMap.set(l.menu_item_id, (countMap.get(l.menu_item_id) || 0) + 1);
-  const itemMap = new Map(items.map((i) => [i.id, i.name_tr]));
-  const top5 = Array.from(countMap.entries())
-    .map(([id, count]) => ({ id, name: itemMap.get(id) || 'Bilinmeyen ürün', count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
+function MetricCard({
+  label,
+  value,
+  delta,
+  sub,
+  valueSize = 28,
+  valueLineHeight,
+}: {
+  label: string;
+  value: string;
+  delta?: number | null;
+  sub?: string;
+  valueSize?: number;
+  valueLineHeight?: number;
+}) {
+  return (
+    <div
+      style={{ ...cardStyle, display: 'flex', flexDirection: 'column', gap: 10, minHeight: 116 }}
+    >
+      <div
+        style={{
+          fontSize: 11,
+          fontWeight: 500,
+          textTransform: 'uppercase',
+          letterSpacing: '0.06em',
+          color: C.textTertiary,
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          fontSize: valueSize,
+          fontWeight: 700,
+          color: C.textPrimary,
+          lineHeight: valueLineHeight ?? 1.1,
+          letterSpacing: '-0.02em',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}
+      >
+        {value}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: C.textSecondary }}>
+        {delta !== undefined && <DeltaPill delta={delta} />}
+        {sub && <span>{sub}</span>}
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------------- Line chart ------------------------------ */
+
+function TimeSeriesChart({
+  series,
+  range,
+}: {
+  series: Array<{ date: string; count: number }>;
+  range: DateRangeKey;
+}) {
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+  const width = 100; // use viewBox pct
+  const height = 100;
+  const padX = 4;
+  const padY = 6;
+
+  const max = Math.max(1, ...series.map((s) => s.count));
+  const step = series.length > 1 ? (width - padX * 2) / (series.length - 1) : 0;
+  const points = series.map((s, i) => {
+    const x = padX + i * step;
+    const y = padY + (height - padY * 2) * (1 - s.count / max);
+    return { x, y, ...s };
+  });
+  const polyline = points.map((p) => `${p.x},${p.y}`).join(' ');
+
+  const yTicks = [0, 0.33, 0.66, 1].map((t) => ({
+    y: padY + (height - padY * 2) * (1 - t),
+    label: Math.round(max * t),
+  }));
+
+  const labelEvery = range === 'quarter' ? 15 : range === 'month' ? 6 : 1;
 
   return (
-    <div style={s.card}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-        <Heart size={16} color={t.accent} weight="fill" />
-        <span style={s.sectionTitle}>En Çok Beğenilen Ürünler</span>
+    <div style={{ ...cardStyle, height: 280, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <h3 style={sectionTitleStyle}>Zaman İçinde Görüntülenme</h3>
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: 12,
+            color: C.textSecondary,
+          }}
+        >
+          <span
+            style={{
+              display: 'inline-block',
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              background: C.accent,
+            }}
+          />
+          Menü görüntülemeleri
+        </span>
       </div>
-      {top5.length === 0 ? (
-        <div style={s.emptyState}>Henüz beğeni yok</div>
+
+      {series.length === 0 || max === 1 ? (
+        <EmptyState label="Henüz veri yok" height={200} />
       ) : (
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-          {top5.map((row, idx) => (
-            <li
-              key={row.id}
+        <div style={{ flex: 1, display: 'flex', gap: 12, position: 'relative' }}>
+          {/* Y-axis labels */}
+          <div
+            style={{
+              width: 36,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              paddingBottom: 18,
+              paddingTop: 2,
+              fontSize: 11,
+              color: C.textTertiary,
+              textAlign: 'right',
+            }}
+          >
+            {[...yTicks].reverse().map((t, i) => (
+              <span key={i}>{trNumber(t.label)}</span>
+            ))}
+          </div>
+          <div style={{ flex: 1, position: 'relative' }}>
+            <svg
+              viewBox={`0 0 ${width} ${height}`}
+              preserveAspectRatio="none"
+              style={{ width: '100%', height: '100%', display: 'block' }}
+            >
+              {yTicks.map((t, i) => (
+                <line
+                  key={i}
+                  x1={padX}
+                  x2={width - padX}
+                  y1={t.y}
+                  y2={t.y}
+                  stroke={C.divider}
+                  strokeWidth={0.3}
+                />
+              ))}
+              <polyline
+                fill="none"
+                stroke={C.accent}
+                strokeWidth={1.2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                points={polyline}
+                vectorEffect="non-scaling-stroke"
+              />
+              {points.map((p, i) => (
+                <g key={i}>
+                  <circle cx={p.x} cy={p.y} r={0.8} fill={C.accent} />
+                  {/* invisible hover zone */}
+                  <rect
+                    x={p.x - step / 2}
+                    y={0}
+                    width={step || 2}
+                    height={height}
+                    fill="transparent"
+                    onMouseEnter={() => setHoverIdx(i)}
+                    onMouseLeave={() => setHoverIdx((idx) => (idx === i ? null : idx))}
+                    style={{ cursor: 'default' }}
+                  />
+                </g>
+              ))}
+            </svg>
+
+            {/* X-axis labels */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginTop: 2,
+                fontSize: 11,
+                color: C.textTertiary,
+              }}
+            >
+              {series.map((s, i) => (
+                <span
+                  key={s.date}
+                  style={{
+                    flex: 1,
+                    textAlign: 'center',
+                    visibility: i % labelEvery === 0 || i === series.length - 1 ? 'visible' : 'hidden',
+                  }}
+                >
+                  {shortDateTR(s.date)}
+                </span>
+              ))}
+            </div>
+
+            {/* Tooltip */}
+            {hoverIdx !== null && points[hoverIdx] && (
+              <div
+                style={{
+                  position: 'absolute',
+                  left: `calc(${points[hoverIdx].x}% - 50px)`,
+                  top: `calc(${points[hoverIdx].y}% - 40px)`,
+                  background: C.textPrimary,
+                  color: C.cardBg,
+                  padding: '6px 10px',
+                  borderRadius: 6,
+                  fontSize: 12,
+                  whiteSpace: 'nowrap',
+                  pointerEvents: 'none',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                }}
+              >
+                {shortDateTR(series[hoverIdx].date)}: {trNumber(series[hoverIdx].count)} görüntüleme
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------ Top 5 items ------------------------------- */
+
+function TopItemsCard({
+  rows,
+}: {
+  rows: Array<{ id: string; name: string; category: string; count: number; image: string | null }>;
+}) {
+  return (
+    <div style={{ ...cardStyle, height: 280, display: 'flex', flexDirection: 'column' }}>
+      <h3 style={{ ...sectionTitleStyle, marginBottom: 14 }}>En Çok Görüntülenen 5 Ürün</h3>
+      {rows.length === 0 ? (
+        <EmptyState label="Henüz veri yok" height={200} />
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
+          {rows.map((r, i) => (
+            <div
+              key={r.id}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 12,
-                padding: '10px 0',
-                borderBottom: idx < top5.length - 1 ? s.divider : 'none',
+                gap: 10,
+                paddingTop: i === 0 ? 0 : 8,
+                paddingBottom: 8,
+                borderBottom: i < rows.length - 1 ? `1px solid ${C.cardBorder}` : 'none',
               }}
             >
-              <span
+              <div
                 style={{
-                  width: 22,
-                  fontSize: 13,
-                  color: idx === 0 ? t.accent : t.subtle,
-                  fontWeight: 700,
-                  textAlign: 'center',
+                  width: 32,
+                  height: 32,
+                  borderRadius: 6,
+                  background: C.track,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
+                  flexShrink: 0,
                 }}
               >
-                {idx + 1}.
-              </span>
-              {idx === 0 && <Fire size={16} color={t.accent} weight="fill" />}
-              <span style={{ flex: 1, fontSize: 14, color: t.value, fontWeight: idx === 0 ? 600 : 500 }}>
-                {row.name}
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: t.heading }}>
-                <Heart size={14} color={t.accent} weight="fill" />
-                <strong style={{ color: t.value }}>{row.count}</strong>
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-/* ----------------------------- recent feedback ---------------------------- */
-
-function RecentFeedback({ feedback, onSeeAll, t, s }: { feedback: FeedbackRow[]; onSeeAll?: () => void; t: AdminTheme; s: StyleMap }) {
-  const rows = feedback.slice(0, 5);
-
-  return (
-    <div style={s.card}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-        <ChatCircle size={16} color={t.heading} weight="thin" />
-        <span style={s.sectionTitle}>Son Geri Bildirimler</span>
-      </div>
-      {rows.length === 0 ? (
-        <div style={s.emptyState}>Henüz geri bildirim yok</div>
-      ) : (
-        <>
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-            {rows.map((f, idx) => {
-              const truncated = f.comment && f.comment.length > 80 ? `${f.comment.slice(0, 80)}…` : f.comment;
-              return (
-                <li
-                  key={f.id}
-                  style={{
-                    padding: '12px 0',
-                    borderBottom: idx < rows.length - 1 ? s.divider : 'none',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
-                    {[1, 2, 3, 4, 5].map((n) => (
-                      <Star
-                        key={n}
-                        size={13}
-                        color={n <= f.rating ? t.accent : t.cardBorder}
-                        weight={n <= f.rating ? 'fill' : 'regular'}
-                      />
-                    ))}
-                    {truncated && (
-                      <span style={{ marginLeft: 8, fontSize: 13, color: t.value, fontStyle: 'italic' }}>
-                        "{truncated}"
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ fontSize: 11, color: t.subtle }}>
-                    {f.customer_name || 'Anonim'} · {timeAgo(f.created_at)}
-                    {f.table_number ? ` · Masa ${f.table_number}` : ''}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-          {onSeeAll && (
-            <button
-              type="button"
-              onClick={onSeeAll}
-              style={{
-                marginTop: 12,
-                background: 'none',
-                border: 'none',
-                color: t.accent,
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-                padding: 0,
-                fontFamily: "'Roboto', sans-serif",
-              }}
-            >
-              Tümünü Gör →
-            </button>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
-
-/* ----------------------------- pending reviews --------------------------- */
-
-function PendingReviews({ reviews, onSeeAll, t, s }: { reviews: PendingReviewRow[]; onSeeAll?: () => void; t: AdminTheme; s: StyleMap }) {
-  return (
-    <div style={s.card}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-        <Star size={16} color={t.accent} weight="fill" />
-        <span style={s.sectionTitle}>Bekleyen Yorumlar</span>
-        <span
-          style={{
-            marginLeft: 'auto',
-            fontSize: 11,
-            fontWeight: 700,
-            color: t.warning,
-            backgroundColor: `${t.warning}22`,
-            padding: '3px 10px',
-            borderRadius: 999,
-          }}
-        >
-          {reviews.length}
-        </span>
-      </div>
-      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-        {reviews.map((r, idx) => {
-          const truncated = r.comment.length > 50 ? `${r.comment.slice(0, 50)}…` : r.comment;
-          return (
-            <li
-              key={r.id}
-              style={{
-                padding: '12px 0',
-                borderBottom: idx < reviews.length - 1 ? s.divider : 'none',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <Star
-                    key={n}
-                    size={13}
-                    color={n <= r.rating ? t.accent : t.cardBorder}
-                    weight={n <= r.rating ? 'fill' : 'regular'}
+                {r.image ? (
+                  <img
+                    src={r.image}
+                    alt=""
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
-                ))}
-                <span style={{ marginLeft: 8, fontSize: 13, color: t.value, fontStyle: 'italic' }}>
-                  "{truncated}"
-                </span>
+                ) : (
+                  <ForkKnife size={16} weight="thin" color={C.textTertiary} />
+                )}
               </div>
-              <div style={{ fontSize: 11, color: t.subtle }}>
-                {r.customer_name || 'Misafir'} · {timeAgo(r.created_at)}
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 500,
+                    color: C.textPrimary,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {r.name}
+                </div>
+                <div style={{ fontSize: 12, color: C.textTertiary }}>{r.category}</div>
               </div>
-            </li>
-          );
-        })}
-      </ul>
-      {onSeeAll && (
-        <button
-          type="button"
-          onClick={onSeeAll}
-          style={{
-            marginTop: 12,
-            background: 'none',
-            border: 'none',
-            color: t.accent,
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: 'pointer',
-            padding: 0,
-            fontFamily: "'Roboto', sans-serif",
-          }}
-        >
-          Tümünü Gör →
-        </button>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 14, fontWeight: 500, color: C.textPrimary }}>
+                  {trNumber(r.count)}
+                </div>
+                <div style={{ fontSize: 11, color: C.textTertiary }}>görüntüleme</div>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
 }
 
-/* --------------------------- discount codes status ------------------------ */
+/* ------------------------- Category bar performance ----------------------- */
 
-function DiscountCodesStatus({ codes, onSeeAll, t, s }: { codes: DiscountCodeRow[]; onSeeAll?: () => void; t: AdminTheme; s: StyleMap }) {
-  const now = Date.now();
-  const active = codes
-    .filter((c) => c.is_active && (!c.expires_at || new Date(c.expires_at).getTime() > now))
-    .sort((a, b) => b.current_uses - a.current_uses)
-    .slice(0, 5);
-
+function CategoryBars({ rows }: { rows: Array<{ id: string; name: string; count: number }> }) {
+  const max = Math.max(1, ...rows.map((r) => r.count));
   return (
-    <div style={s.card}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-        <Percent size={16} color={t.heading} weight="thin" />
-        <span style={s.sectionTitle}>Aktif İndirim Kodları</span>
-      </div>
-      {active.length === 0 ? (
-        <div style={s.emptyState}>Aktif indirim kodu yok</div>
+    <div style={cardStyle}>
+      <h3 style={{ ...sectionTitleStyle, marginBottom: 14 }}>Kategori Performansı</h3>
+      {rows.length === 0 ? (
+        <EmptyState label="Henüz veri yok" height={160} />
       ) : (
-        <>
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-            {active.map((c, idx) => {
-              const usage = c.max_uses ? `${c.current_uses}/${c.max_uses}` : `${c.current_uses}/∞`;
-              const warn = c.max_uses ? c.current_uses / c.max_uses >= 0.8 : false;
-              const valueLabel =
-                c.discount_type === 'percentage' ? `%${c.discount_value}` : `${c.discount_value} TL`;
-              return (
-                <li
-                  key={c.id}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {rows.map((r, i) => {
+            const pct = (r.count / max) * 100;
+            const isTop = i === 0;
+            return (
+              <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    padding: '10px 0',
-                    borderBottom: idx < active.length - 1 ? s.divider : 'none',
+                    width: 110,
+                    fontSize: 13,
+                    fontWeight: 500,
+                    color: C.textPrimary,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    flexShrink: 0,
                   }}
                 >
-                  <span
+                  {r.name}
+                </div>
+                <div
+                  style={{
+                    flex: 1,
+                    height: 8,
+                    background: C.track,
+                    borderRadius: 4,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div
                     style={{
-                      fontFamily: 'monospace',
-                      fontSize: 13,
-                      fontWeight: 700,
-                      color: t.value,
-                      minWidth: 100,
-                    }}
-                  >
-                    {c.code}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: 12,
-                      color: t.accent,
-                      fontWeight: 600,
-                      background: t.heatmapLow,
-                      padding: '2px 8px',
+                      width: `${pct}%`,
+                      height: '100%',
+                      background: isTop ? C.accent : C.barNeutral,
                       borderRadius: 4,
                     }}
-                  >
-                    {valueLabel}
-                  </span>
-                  <span style={{ flex: 1, fontSize: 12, color: t.heading, textAlign: 'right' }}>
-                    {usage} kullanım
-                  </span>
-                  {warn && <WarningCircle size={16} color={t.warning} weight="fill" />}
-                </li>
-              );
-            })}
-          </ul>
-          {onSeeAll && (
-            <button
-              type="button"
-              onClick={onSeeAll}
-              style={{
-                marginTop: 12,
-                background: 'none',
-                border: 'none',
-                color: t.accent,
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-                padding: 0,
-                fontFamily: "'Roboto', sans-serif",
-              }}
-            >
-              Tümünü Gör →
-            </button>
-          )}
-        </>
+                  />
+                </div>
+                <div
+                  style={{
+                    width: 44,
+                    textAlign: 'right',
+                    fontSize: 13,
+                    fontWeight: 500,
+                    color: C.textPrimary,
+                  }}
+                >
+                  {trNumber(r.count)}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );
 }
 
-/* -------------------------------- menu summary ---------------------------- */
+/* ---------------------------- Recent activities --------------------------- */
 
-function MenuSummary({ items, categories, t, s }: { items: MenuItemRow[]; categories: CategoryRow[]; t: AdminTheme; s: StyleMap }) {
-  const total = items.length || 1;
-  const parentCats = categories.filter((c) => !c.parent_id).length;
-  const subCats = categories.filter((c) => !!c.parent_id).length;
-  const withPhoto = items.filter((i) => !!i.image_url).length;
-  const withAllergens = items.filter((i) => Array.isArray(i.allergens) && i.allergens.length > 0).length;
-  const soldOut = items.filter((i) => i.is_sold_out).length;
-  const featured = items.filter((i) => i.is_featured).length;
-
-  const photoPct = Math.round((withPhoto / total) * 100);
-  const allergenPct = Math.round((withAllergens / total) * 100);
-
-  const rows: Array<{ label: string; value: string; warn?: boolean }> = [
-    { label: 'Kategoriler', value: String(parentCats) },
-    { label: 'Alt kategoriler', value: String(subCats) },
-    {
-      label: 'Fotoğraflı ürün',
-      value: `${withPhoto}/${items.length} (%${photoPct})`,
-      warn: items.length > 0 && photoPct < 50,
-    },
-    {
-      label: 'Alerjen bilgili',
-      value: `${withAllergens}/${items.length} (%${allergenPct})`,
-      warn: items.length > 0 && allergenPct < 50,
-    },
-    { label: 'Tükendi', value: String(soldOut) },
-    { label: 'Öne çıkan', value: String(featured) },
-  ];
-
+function ActivityFeed({
+  items,
+  onSeeAll,
+}: {
+  items: ActivityItem[];
+  onSeeAll?: () => void;
+}) {
+  const renderIcon = (kind: ActivityItem['kind']) => {
+    if (kind === 'feedback') return <ChatCircle size={14} weight="thin" color={C.textSecondary} />;
+    if (kind === 'call') return <Bell size={14} weight="thin" color={C.textSecondary} />;
+    return <Star size={14} weight="thin" color={C.textSecondary} />;
+  };
   return (
-    <div style={s.card}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-        <ChartBar size={16} color={t.heading} weight="thin" />
-        <span style={s.sectionTitle}>Menü Özeti</span>
-      </div>
-      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-        {rows.map((r, idx) => (
-          <li
-            key={r.label}
+    <div style={cardStyle}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <h3 style={sectionTitleStyle}>Son Aktiviteler</h3>
+        {onSeeAll && (
+          <button
+            type="button"
+            onClick={onSeeAll}
             style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '10px 0',
-              borderBottom: idx < rows.length - 1 ? s.divider : 'none',
-              fontSize: 13,
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: 12,
+              color: C.accent,
+              fontWeight: 500,
+              padding: 0,
             }}
           >
-            <span style={{ color: t.heading }}>{r.label}</span>
-            <span
+            Tümünü gör
+          </button>
+        )}
+      </div>
+      {items.length === 0 ? (
+        <EmptyState label="Henüz aktivite yok" height={160} />
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {items.map((a, i) => (
+            <div
+              key={`${a.kind}-${a.id}`}
               style={{
-                color: r.warn ? t.warning : t.value,
-                fontWeight: 600,
-                background: r.warn ? `${t.warning}22` : 'transparent',
-                padding: r.warn ? '2px 8px' : 0,
-                borderRadius: 4,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '10px 0',
+                borderBottom: i < items.length - 1 ? `1px solid ${C.cardBorder}` : 'none',
               }}
             >
-              {r.value}
-            </span>
-          </li>
-        ))}
-      </ul>
+              <div style={{ flexShrink: 0 }}>{renderIcon(a.kind)}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    fontSize: 13,
+                    color: C.textPrimary,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {a.text}
+                </div>
+                {a.sub && <div style={{ fontSize: 12, color: C.textTertiary }}>{a.sub}</div>}
+              </div>
+              <div style={{ fontSize: 11, color: C.textTertiary, flexShrink: 0 }}>
+                {relativeTimeTR(a.created_at)}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-/* --------------------------------- root ----------------------------------- */
+/* ---------------------------------- Heatmap ------------------------------ */
+
+function HourlyHeatmap({ hourly }: { hourly: HourlyCount[] }) {
+  const map = new Map(hourly.map((h) => [h.hour_of_day, h.view_count]));
+  const max = Math.max(1, ...hourly.map((h) => h.view_count));
+  const cells = Array.from({ length: 24 }, (_, h) => {
+    const v = map.get(h) ?? 0;
+    const ratio = v / max;
+    let bg: string;
+    let fg: string;
+    if (ratio === 0) {
+      bg = C.track;
+      fg = C.textTertiary;
+    } else if (ratio < 0.4) {
+      bg = C.accentSoft;
+      fg = C.textPrimary;
+    } else {
+      bg = C.accent;
+      fg = C.cardBg;
+    }
+    return { h, v, bg, fg };
+  });
+
+  const total = hourly.reduce((s, h) => s + h.view_count, 0);
+
+  return (
+    <div style={cardStyle}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 }}>
+        <h3 style={sectionTitleStyle}>Saat Bazlı Yoğunluk</h3>
+        <span style={{ fontSize: 12, color: C.textSecondary }}>Son 7 gün</span>
+      </div>
+      {total === 0 ? (
+        <EmptyState label="Henüz veri yok" height={120} />
+      ) : (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(24, minmax(0, 1fr))',
+            gap: 4,
+          }}
+        >
+          {cells.map((c) => (
+            <div
+              key={c.h}
+              title={`${String(c.h).padStart(2, '0')}:00 — ${trNumber(c.v)} görüntüleme`}
+              style={{
+                height: 36,
+                borderRadius: 6,
+                background: c.bg,
+                color: c.fg,
+                fontSize: 11,
+                fontWeight: 400,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {c.h}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* --------------------------------- Tutorials ------------------------------ */
+
+const TUTORIALS: Array<{ title: string; desc: string }> = [
+  { title: 'Menü oluşturmaya başlayın', desc: 'İlk ürününüzü ekleyin ve QR kodunuzu yazdırın' },
+  { title: 'AI ile ürün açıklaması', desc: 'Yapay zeka ile dakikalar içinde profesyonel açıklamalar' },
+  { title: 'Menünüzü çoklu dilde sunun', desc: '34 dile otomatik çeviri ile global müşterilere ulaşın' },
+  { title: 'Analitiği anlama', desc: 'Menü performansınızı takip edin ve iyileştirin' },
+];
+
+function Tutorials() {
+  return (
+    <div style={cardStyle}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+        <div>
+          <h3 style={sectionTitleStyle}>Eğitim Videoları ve Kılavuzlar</h3>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: C.textSecondary }}>
+            Tabbled'dan en iyi şekilde yararlanmak için
+          </p>
+        </div>
+        <button
+          type="button"
+          style={{
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: 12,
+            color: C.accent,
+            fontWeight: 500,
+            padding: 0,
+          }}
+        >
+          Kütüphaneyi gör
+        </button>
+      </div>
+      <div
+        style={{
+          display: 'grid',
+          gap: 16,
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        }}
+      >
+        {TUTORIALS.map((t) => (
+          <div
+            key={t.title}
+            style={{
+              background: C.cardBg,
+              border: `1px solid ${C.cardBorder}`,
+              borderRadius: 10,
+              overflow: 'hidden',
+              cursor: 'pointer',
+            }}
+            onClick={() => {
+              /* video modal - future */
+            }}
+          >
+            <div
+              style={{
+                aspectRatio: '16 / 9',
+                background: C.track,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <div
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: '50%',
+                  background: C.cardBg,
+                  border: `1px solid ${C.cardBorder}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <PlayCircle size={32} weight="thin" color={C.textPrimary} />
+              </div>
+            </div>
+            <div style={{ padding: 16 }}>
+              <div style={{ fontSize: 14, fontWeight: 500, color: C.textPrimary, marginBottom: 4 }}>
+                {t.title}
+              </div>
+              <div
+                style={{
+                  fontSize: 12,
+                  color: C.textSecondary,
+                  lineHeight: 1.5,
+                  display: '-webkit-box',
+                  WebkitBoxOrient: 'vertical',
+                  WebkitLineClamp: 2,
+                  overflow: 'hidden',
+                }}
+              >
+                {t.desc}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* --------------------------------- Shared UI ------------------------------ */
+
+function EmptyState({ label, height = 140 }: { label: string; height?: number }) {
+  return (
+    <div
+      style={{
+        height,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: C.textTertiary,
+        fontSize: 13,
+      }}
+    >
+      {label}
+    </div>
+  );
+}
+
+/* ------------------------------- Data loading ----------------------------- */
+
+async function loadAll(
+  restaurantId: string,
+  range: DateRangeKey,
+  features: { feedback: boolean; calls: boolean; reviews: boolean }
+): Promise<DashData> {
+  const days = RANGE_DAYS[range];
+  const now = Date.now();
+  const currentStart = new Date(now - days * 86400000).toISOString();
+  const prevStart = new Date(now - days * 2 * 86400000).toISOString();
+
+  const [pvRes, ivRes, itemsRes, catsRes, dailyRes, hourlyRes, fbRes, callsRes, revRes] =
+    await Promise.all([
+      supabase
+        .from('menu_page_views')
+        .select('fingerprint, created_at')
+        .eq('restaurant_id', restaurantId)
+        .gte('created_at', prevStart),
+      supabase
+        .from('menu_item_views')
+        .select('menu_item_id, created_at')
+        .eq('restaurant_id', restaurantId)
+        .gte('created_at', prevStart),
+      supabase
+        .from('menu_items')
+        .select('id, name_tr, image_url, category_id')
+        .eq('restaurant_id', restaurantId),
+      supabase.from('menu_categories').select('id, name_tr').eq('restaurant_id', restaurantId),
+      supabase.rpc('get_page_view_counts', { p_restaurant_id: restaurantId, p_days: days }),
+      supabase.rpc('get_hourly_page_views', { p_restaurant_id: restaurantId, p_days: 7 }),
+      features.feedback
+        ? supabase
+            .from('feedback')
+            .select('id, table_number, created_at, rating')
+            .eq('restaurant_id', restaurantId)
+            .order('created_at', { ascending: false })
+            .limit(3)
+        : Promise.resolve({ data: [] as Array<{ id: string; table_number: string | null; created_at: string; rating: number }> }),
+      features.calls
+        ? supabase
+            .from('waiter_calls')
+            .select('id, table_number, created_at')
+            .eq('restaurant_id', restaurantId)
+            .order('created_at', { ascending: false })
+            .limit(3)
+        : Promise.resolve({ data: [] as Array<{ id: string; table_number: string | null; created_at: string }> }),
+      features.reviews
+        ? supabase
+            .from('reviews')
+            .select('id, rating, created_at')
+            .eq('restaurant_id', restaurantId)
+            .order('created_at', { ascending: false })
+            .limit(2)
+        : Promise.resolve({ data: [] as Array<{ id: string; rating: number; created_at: string }> }),
+    ]);
+
+  const pageViews = (pvRes.data ?? []) as PageViewRow[];
+  const itemViews = (ivRes.data ?? []) as ItemViewRow[];
+  const items = (itemsRes.data ?? []) as MenuItemRow[];
+  const categories = (catsRes.data ?? []) as CategoryRow[];
+  const daily = (dailyRes.data ?? []) as DailyCount[];
+  const hourly = (hourlyRes.data ?? []) as HourlyCount[];
+
+  const fbRows = (fbRes.data ?? []) as Array<{ id: string; table_number: string | null; created_at: string; rating: number }>;
+  const callRows = (callsRes.data ?? []) as Array<{ id: string; table_number: string | null; created_at: string }>;
+  const revRows = (revRes.data ?? []) as Array<{ id: string; rating: number; created_at: string }>;
+
+  const activities: ActivityItem[] = [
+    ...fbRows.map<ActivityItem>((r) => ({
+      kind: 'feedback',
+      id: r.id,
+      created_at: r.created_at,
+      text: 'Yeni geri bildirim alındı',
+      sub: r.table_number ? `Masa ${r.table_number}` : undefined,
+    })),
+    ...callRows.map<ActivityItem>((r) => ({
+      kind: 'call',
+      id: r.id,
+      created_at: r.created_at,
+      text: 'Garson çağrıldı',
+      sub: r.table_number ? `Masa ${r.table_number}` : undefined,
+    })),
+    ...revRows.map<ActivityItem>((r) => ({
+      kind: 'review',
+      id: r.id,
+      created_at: r.created_at,
+      text: `Yeni değerlendirme: ${r.rating} yıldız`,
+    })),
+  ]
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 8);
+
+  return { pageViews, itemViews, items, categories, daily, hourly, activities };
+}
+
+/* ----------------------------------- Root --------------------------------- */
 
 export default function RestaurantAnalytics({
   restaurantId,
   featureWaiterCalls,
   featureFeedback,
-  featureLikes,
-  featureDiscountCodes,
   featureReviews,
   onNavigate,
-  theme,
 }: Props) {
-  const t = theme ?? getAdminTheme('light');
-  const s = makeStyles(t);
-  const [data, setData] = useState<AllData | null>(null);
+  const [range, setRange] = useState<DateRangeKey>('month');
+  const [data, setData] = useState<DashData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [errored, setErrored] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    const load = async () => {
-      setLoading(true);
-      const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
-      const ninetyDaysAgo = new Date(Date.now() - 90 * 86400000).toISOString();
-
-      const [
-        itemsRes,
-        catsRes,
-        callsRes,
-        fbRes,
-        dcRes,
-        likesRes,
-        ratingsRes,
-        weeklyLikesRes,
-        totalLikesRes,
-        pendingReviewsRes,
-      ] = await Promise.all([
-        supabase
-          .from('menu_items')
-          .select('id, name_tr, is_available, is_sold_out, is_featured, image_url, allergens, category_id')
-          .eq('restaurant_id', restaurantId),
-        supabase.from('menu_categories').select('id, parent_id').eq('restaurant_id', restaurantId),
-        featureWaiterCalls
-          ? supabase
-              .from('waiter_calls')
-              .select('id, created_at')
-              .eq('restaurant_id', restaurantId)
-              .gte('created_at', sevenDaysAgo)
-          : Promise.resolve({ data: [] as WaiterCallRow[] }),
-        featureFeedback
-          ? supabase
-              .from('feedback')
-              .select('id, rating, comment, customer_name, table_number, created_at')
-              .eq('restaurant_id', restaurantId)
-              .order('created_at', { ascending: false })
-              .limit(5)
-          : Promise.resolve({ data: [] as FeedbackRow[] }),
-        featureDiscountCodes
-          ? supabase.from('discount_codes').select('*').eq('restaurant_id', restaurantId).eq('is_active', true)
-          : Promise.resolve({ data: [] as DiscountCodeRow[] }),
-        featureLikes
-          ? supabase
-              .from('product_likes')
-              .select('id, menu_item_id, status, created_at')
-              .eq('restaurant_id', restaurantId)
-              .eq('status', 'approved')
-              .gte('created_at', ninetyDaysAgo)
-          : Promise.resolve({ data: [] as LikeRow[] }),
-        featureFeedback
-          ? supabase.from('feedback').select('rating').eq('restaurant_id', restaurantId)
-          : Promise.resolve({ data: [] as Array<{ rating: number }> }),
-        featureLikes
-          ? supabase
-              .from('product_likes')
-              .select('id', { count: 'exact', head: true })
-              .eq('restaurant_id', restaurantId)
-              .eq('status', 'approved')
-              .gte('created_at', sevenDaysAgo)
-          : Promise.resolve({ count: 0 }),
-        featureLikes
-          ? supabase
-              .from('product_likes')
-              .select('id', { count: 'exact', head: true })
-              .eq('restaurant_id', restaurantId)
-              .eq('status', 'approved')
-          : Promise.resolve({ count: 0 }),
-        featureReviews
-          ? supabase
-              .from('reviews')
-              .select('id, rating, comment, customer_name, created_at')
-              .eq('restaurant_id', restaurantId)
-              .eq('status', 'pending')
-              .order('created_at', { ascending: false })
-              .limit(5)
-          : Promise.resolve({ data: [] as PendingReviewRow[] }),
-      ]);
-
-      if (cancelled) return;
-
-      const ratings = ((ratingsRes as { data: Array<{ rating: number }> | null }).data ?? [])
-        .map((r) => r.rating)
-        .filter((r) => typeof r === 'number');
-      const avgRating = ratings.length > 0 ? ratings.reduce((s, r) => s + r, 0) / ratings.length : null;
-
-      setData({
-        items: (itemsRes.data ?? []) as MenuItemRow[],
-        categories: (catsRes.data ?? []) as CategoryRow[],
-        waiterCalls: (callsRes.data ?? []) as WaiterCallRow[],
-        feedback: (fbRes.data ?? []) as FeedbackRow[],
-        discountCodes: (dcRes.data ?? []) as DiscountCodeRow[],
-        likes: (likesRes.data ?? []) as LikeRow[],
-        allFeedbackCount: ratings.length,
-        avgRating,
-        totalLikeCount: (totalLikesRes as { count?: number }).count ?? 0,
-        weeklyLikeCount: (weeklyLikesRes as { count?: number }).count ?? 0,
-        pendingReviews: (pendingReviewsRes.data ?? []) as PendingReviewRow[],
+    setLoading(true);
+    setErrored(false);
+    loadAll(restaurantId, range, {
+      feedback: featureFeedback,
+      calls: featureWaiterCalls,
+      reviews: featureReviews,
+    })
+      .then((d) => {
+        if (cancelled) return;
+        setData(d);
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.error('Dashboard data load error:', err);
+        setErrored(true);
+        setLoading(false);
       });
-      setLoading(false);
-    };
-    load();
     return () => {
       cancelled = true;
     };
-  }, [restaurantId, featureWaiterCalls, featureFeedback, featureLikes, featureDiscountCodes, featureReviews]);
+  }, [restaurantId, range, featureFeedback, featureWaiterCalls, featureReviews]);
+
+  /* --- derived values --- */
+
+  const derived = useMemo(() => {
+    if (!data) {
+      return null;
+    }
+    const days = RANGE_DAYS[range];
+    const now = Date.now();
+    const currentStartMs = now - days * 86400000;
+    const prevStartMs = now - days * 2 * 86400000;
+
+    const pvCurrent = data.pageViews.filter((r) => new Date(r.created_at).getTime() >= currentStartMs);
+    const pvPrev = data.pageViews.filter((r) => {
+      const ms = new Date(r.created_at).getTime();
+      return ms >= prevStartMs && ms < currentStartMs;
+    });
+
+    const ivCurrent = data.itemViews.filter((r) => new Date(r.created_at).getTime() >= currentStartMs);
+    const ivPrev = data.itemViews.filter((r) => {
+      const ms = new Date(r.created_at).getTime();
+      return ms >= prevStartMs && ms < currentStartMs;
+    });
+
+    const pageViewsTotal = pvCurrent.length;
+    const pageViewsDelta = pctDelta(pvCurrent.length, pvPrev.length);
+
+    const uniqueVisitors = new Set(pvCurrent.map((r) => r.fingerprint ?? '').filter((x) => x !== '')).size;
+    const uniqueVisitorsPrev = new Set(pvPrev.map((r) => r.fingerprint ?? '').filter((x) => x !== '')).size;
+    const uniqueDelta = pctDelta(uniqueVisitors, uniqueVisitorsPrev);
+
+    const itemClicks = ivCurrent.length;
+    const itemClicksDelta = pctDelta(ivCurrent.length, ivPrev.length);
+
+    // Top item
+    const itemMap = new Map(data.items.map((i) => [i.id, i]));
+    const catMap = new Map(data.categories.map((c) => [c.id, c.name_tr]));
+    const itemCounts = new Map<string, number>();
+    for (const r of ivCurrent) {
+      itemCounts.set(r.menu_item_id, (itemCounts.get(r.menu_item_id) ?? 0) + 1);
+    }
+    const itemCountList = Array.from(itemCounts.entries())
+      .map(([id, count]) => {
+        const item = itemMap.get(id);
+        return {
+          id,
+          count,
+          name: item?.name_tr ?? '—',
+          category: (item?.category_id && catMap.get(item.category_id)) || '—',
+          image: item?.image_url ?? null,
+        };
+      })
+      .filter((r) => r.name !== '—')
+      .sort((a, b) => b.count - a.count);
+
+    const topItem = itemCountList[0] ?? null;
+    const topItemsList = itemCountList.slice(0, 5);
+
+    // Category tally
+    const catCounts = new Map<string, number>();
+    for (const r of ivCurrent) {
+      const item = itemMap.get(r.menu_item_id);
+      if (!item?.category_id) continue;
+      catCounts.set(item.category_id, (catCounts.get(item.category_id) ?? 0) + 1);
+    }
+    const categoryBars = Array.from(catCounts.entries())
+      .map(([id, count]) => ({ id, name: catMap.get(id) ?? '—', count }))
+      .filter((r) => r.name !== '—')
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6);
+
+    // Line chart series — fill missing days with 0
+    const days2 = lastNDays(days);
+    const dailyMap = new Map(data.daily.map((d) => [d.view_date, Number(d.view_count)]));
+    const chartSeries = days2.map((d) => ({ date: d, count: dailyMap.get(d) ?? 0 }));
+
+    return {
+      pageViewsTotal,
+      pageViewsDelta,
+      uniqueVisitors,
+      uniqueDelta,
+      itemClicks,
+      itemClicksDelta,
+      topItem,
+      topItemsList,
+      categoryBars,
+      chartSeries,
+    };
+  }, [data, range]);
+
+  /* --------------------------------- Render ------------------------------- */
 
   return (
-    <div style={{ padding: '4px 0 32px', fontFamily: "'Roboto', sans-serif" }}>
+    <div
+      style={{
+        padding: '4px 0 32px',
+        fontFamily: FONT,
+        background: 'transparent',
+      }}
+    >
       <style>{`
         @keyframes dash-shimmer {
           0% { background-position: 200% 0; }
@@ -827,73 +1184,185 @@ export default function RestaurantAnalytics({
         }
       `}</style>
 
-      <div style={{ marginBottom: 20 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: t.value, margin: 0, letterSpacing: '-0.01em' }}>
-          Dashboard
-        </h1>
-        <p style={{ fontSize: 13, color: t.heading, marginTop: 4 }}>İşletmenizin genel durumu</p>
+      {/* BÖLÜM 1 — Header */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          gap: 12,
+          marginBottom: 20,
+        }}
+      >
+        <div>
+          <h1
+            style={{
+              fontSize: 24,
+              fontWeight: 700,
+              color: C.textPrimary,
+              margin: 0,
+              letterSpacing: '-0.02em',
+            }}
+          >
+            Dashboard
+          </h1>
+          <p style={{ margin: '4px 0 0', fontSize: 14, color: C.textSecondary }}>
+            Menü performansınıza genel bakış
+          </p>
+        </div>
+        <DateRangeSelector value={range} onChange={setRange} />
       </div>
 
-      {loading || !data ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
-            <SkeletonBlock t={t} s={s} />
-            <SkeletonBlock t={t} s={s} />
-            <SkeletonBlock t={t} s={s} />
-            <SkeletonBlock t={t} s={s} />
-          </div>
-          <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
-            <SkeletonBlock height={220} t={t} s={s} />
-            <SkeletonBlock height={220} t={t} s={s} />
-          </div>
+      {errored ? (
+        <div style={{ ...cardStyle, color: C.textTertiary, fontSize: 13, textAlign: 'center' }}>
+          Veriler yüklenemedi
         </div>
+      ) : loading || !derived ? (
+        <DashboardSkeleton />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <SummaryCards data={data} t={t} s={s} />
-
-          {(featureWaiterCalls || featureLikes) && (
-            <div
-              style={{
-                display: 'grid',
-                gap: 16,
-                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-              }}
-            >
-              {featureWaiterCalls && <WaiterCallsChart calls={data.waiterCalls} t={t} s={s} />}
-              {featureLikes && <PopularItems items={data.items} likes={data.likes} t={t} s={s} />}
-            </div>
-          )}
-
-          {featureFeedback && (
-            <RecentFeedback feedback={data.feedback} onSeeAll={onNavigate ? () => onNavigate('feedback') : undefined} t={t} s={s} />
-          )}
-
-          {featureReviews && data.pendingReviews.length > 0 && (
-            <PendingReviews
-              reviews={data.pendingReviews}
-              onSeeAll={onNavigate ? () => onNavigate('reviews') : undefined}
-              t={t} s={s}
-            />
-          )}
-
+          {/* BÖLÜM 2 — Metric Cards */}
           <div
             style={{
               display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
               gap: 16,
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
             }}
           >
-            {featureDiscountCodes && (
-              <DiscountCodesStatus
-                codes={data.discountCodes}
-                onSeeAll={onNavigate ? () => onNavigate('discounts') : undefined}
-                t={t} s={s}
-              />
-            )}
-            <MenuSummary items={data.items} categories={data.categories} t={t} s={s} />
+            <MetricCard
+              label="MENÜ GÖRÜNTÜLEME"
+              value={trNumber(derived.pageViewsTotal)}
+              delta={derived.pageViewsDelta}
+              sub={`vs. önceki ${RANGE_NOUN[range]}`}
+            />
+            <MetricCard
+              label="TEKİL ZİYARETÇİ"
+              value={trNumber(derived.uniqueVisitors)}
+              delta={derived.uniqueDelta}
+              sub={`vs. önceki ${RANGE_NOUN[range]}`}
+            />
+            <MetricCard
+              label="EN ÇOK GÖRÜNTÜLENEN ÜRÜN"
+              value={derived.topItem?.name ?? 'Henüz veri yok'}
+              valueSize={derived.topItem ? 18 : 14}
+              valueLineHeight={1.25}
+              sub={
+                derived.topItem
+                  ? `${trNumber(derived.topItem.count)} görüntüleme`
+                  : undefined
+              }
+            />
+            <MetricCard
+              label="ÜRÜN TIKLAMA"
+              value={trNumber(derived.itemClicks)}
+              delta={derived.itemClicksDelta}
+              sub={`vs. önceki ${RANGE_NOUN[range]}`}
+            />
           </div>
+
+          {/* BÖLÜM 3 — Chart row */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)',
+              gap: 16,
+            }}
+            className="dash-chart-row"
+          >
+            <TimeSeriesChart series={derived.chartSeries} range={range} />
+            <TopItemsCard rows={derived.topItemsList} />
+          </div>
+
+          {/* BÖLÜM 4 — Secondary row */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gap: 16,
+            }}
+          >
+            <CategoryBars rows={derived.categoryBars} />
+            <ActivityFeed
+              items={data!.activities}
+              onSeeAll={onNavigate ? () => onNavigate('feedback') : undefined}
+            />
+          </div>
+
+          {/* BÖLÜM 5 — Heatmap */}
+          <HourlyHeatmap hourly={data!.hourly} />
+
+          {/* BÖLÜM 6 — Tutorials */}
+          <Tutorials />
         </div>
       )}
+
+      {/* Responsive tweak: chart row collapses on mobile */}
+      <style>{`
+        @media (max-width: 720px) {
+          .dash-chart-row {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
+
+function DashboardSkeleton() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+          gap: 16,
+        }}
+      >
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} style={cardStyle}>
+            <div style={skeletonBlockStyle(12)} />
+            <div style={{ height: 10 }} />
+            <div style={skeletonBlockStyle(28)} />
+            <div style={{ height: 10 }} />
+            <div style={skeletonBlockStyle(12)} />
+          </div>
+        ))}
+      </div>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)',
+          gap: 16,
+        }}
+      >
+        <div style={{ ...cardStyle, height: 280 }}>
+          <div style={skeletonBlockStyle(240)} />
+        </div>
+        <div style={{ ...cardStyle, height: 280 }}>
+          <div style={skeletonBlockStyle(240)} />
+        </div>
+      </div>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: 16,
+        }}
+      >
+        <div style={cardStyle}>
+          <div style={skeletonBlockStyle(160)} />
+        </div>
+        <div style={cardStyle}>
+          <div style={skeletonBlockStyle(160)} />
+        </div>
+      </div>
+      <div style={cardStyle}>
+        <div style={skeletonBlockStyle(120)} />
+      </div>
+      <div style={cardStyle}>
+        <div style={skeletonBlockStyle(180)} />
+      </div>
+    </div>
+  );
+}
+
