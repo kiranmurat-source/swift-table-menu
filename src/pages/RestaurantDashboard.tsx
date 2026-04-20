@@ -73,6 +73,7 @@ import { THEMES } from '../lib/themes';
 import type { Promo } from '../components/PromoPopup';
 import { ProfileTab } from '../components/ProfilePanel';
 import { LegalSettings } from '../components/admin/LegalSettings';
+import { PDFDownloadButton } from '../components/admin/pdf/PDFDownloadButton';
 import { PromosTab } from '../components/PromosPanel';
 import { Restaurant, makeStyles, toggleSwitchStyle, toggleKnobStyle } from '../components/admin/dashboardShared';
 
@@ -1444,7 +1445,10 @@ export default function RestaurantDashboard() {
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h3 style={{ fontSize: 16, fontWeight: 600, color: adminTheme.value }}>Kategoriler</h3>
-            <button onClick={() => setShowCatForm(!showCatForm)} style={S.btnSm}>{showCatForm ? 'İptal' : '+ Kategori'}</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <PDFDownloadButton restaurantName={restaurant?.name} />
+              <button onClick={() => setShowCatForm(!showCatForm)} style={S.btnSm}>{showCatForm ? 'İptal' : '+ Kategori'}</button>
+            </div>
           </div>
 
           {showCatForm && (
