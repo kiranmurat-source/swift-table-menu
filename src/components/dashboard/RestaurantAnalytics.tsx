@@ -359,6 +359,14 @@ function MetricCard({
 
 /* -------------------------------- Line chart ------------------------------ */
 
+/**
+ * Line chart — reference mockup şeması:
+ * - Sabit viewBox 780x240, preserveAspectRatio="none"
+ * - padL=36, padR=16, padT=16, padB=28 (Y label sol, X label alt için)
+ * - Smooth cubic path (monotone-ish), clamped
+ * - Hover tooltip: ince dashed dikey çizgi + nokta + siyah pill
+ * Kart yüksekliği sabit 320 → overflow: hidden ile taşmaz.
+ */
 function TimeSeriesChart({
   series,
   range,
@@ -367,29 +375,45 @@ function TimeSeriesChart({
   range: DateRangeKey;
 }) {
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
-  const width = 100; // use viewBox pct
-  const height = 100;
-  const padX = 4;
-  const padY = 6;
+
+  const W = 780;
+  const H = 240;
+  const padL = 36;
+  const padR = 16;
+  const padT = 16;
+  const padB = 28;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
 
   const max = Math.max(1, ...series.map((s) => s.count));
-  const step = series.length > 1 ? (width - padX * 2) / (series.length - 1) : 0;
-  const points = series.map((s, i) => {
-    const x = padX + i * step;
-    const y = padY + (height - padY * 2) * (1 - s.count / max);
-    return { x, y, ...s };
-  });
-  const polyline = points.map((p) => `${p.x},${p.y}`).join(' ');
+  const yMax = niceCeil(max);
+  const n = series.length;
+  const xAt = (i: number) => padL + (n > 1 ? (i / (n - 1)) * innerW : innerW / 2);
+  const yAt = (v: number) => padT + innerH - (v / yMax) * innerH;
 
-  const yTicks = [0, 0.33, 0.66, 1].map((t) => ({
-    y: padY + (height - padY * 2) * (1 - t),
-    label: Math.round(max * t),
-  }));
+  const pts = series.map((s, i) => ({ x: xAt(i), y: yAt(s.count) }));
+  const d = smoothPath(pts);
+  const areaD =
+    pts.length > 0
+      ? `${d} L ${pts[pts.length - 1].x.toFixed(2)} ${(padT + innerH).toFixed(2)} L ${pts[0].x.toFixed(2)} ${(padT + innerH).toFixed(2)} Z`
+      : '';
 
-  const labelEvery = range === 'quarter' ? 15 : range === 'month' ? 6 : 1;
+  const yTickValues = [0, 0.25, 0.5, 0.75, 1].map((t) => Math.round(yMax * t));
+  const labelIdxs = evenlySpacedIndexes(n, range === 'today' ? 1 : range === 'week' ? 7 : 5);
+
+  const hasData = max > 0 && n > 0;
 
   return (
-    <div style={{ ...cardStyle, height: 280, display: 'flex', flexDirection: 'column' }}>
+    <div
+      style={{
+        ...cardStyle,
+        height: 320,
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        position: 'relative',
+      }}
+    >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <h3 style={sectionTitleStyle}>Zaman İçinde Görüntülenme</h3>
         <span
@@ -414,121 +438,180 @@ function TimeSeriesChart({
         </span>
       </div>
 
-      {series.length === 0 || max === 1 ? (
-        <EmptyState label="Henüz veri yok" height={200} />
+      {!hasData ? (
+        <EmptyState label="Henüz veri yok" height={240} />
       ) : (
-        <div style={{ flex: 1, display: 'flex', gap: 12, position: 'relative' }}>
-          {/* Y-axis labels */}
-          <div
-            style={{
-              width: 36,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              paddingBottom: 18,
-              paddingTop: 2,
-              fontSize: 11,
-              color: C.textTertiary,
-              textAlign: 'right',
-            }}
+        <div style={{ position: 'relative', width: '100%', flex: 1 }}>
+          <svg
+            viewBox={`0 0 ${W} ${H}`}
+            preserveAspectRatio="none"
+            style={{ display: 'block', width: '100%', height: '100%' }}
           >
-            {[...yTicks].reverse().map((t, i) => (
-              <span key={i}>{trNumber(t.label)}</span>
-            ))}
-          </div>
-          <div style={{ flex: 1, position: 'relative' }}>
-            <svg
-              viewBox={`0 0 ${width} ${height}`}
-              preserveAspectRatio="none"
-              style={{ width: '100%', height: '100%', display: 'block' }}
-            >
-              {yTicks.map((t, i) => (
-                <line
-                  key={i}
-                  x1={padX}
-                  x2={width - padX}
-                  y1={t.y}
-                  y2={t.y}
-                  stroke={C.divider}
-                  strokeWidth={0.3}
-                />
-              ))}
-              <polyline
-                fill="none"
-                stroke={C.accent}
-                strokeWidth={1.2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                points={polyline}
-                vectorEffect="non-scaling-stroke"
-              />
-              {points.map((p, i) => (
+            <defs>
+              <linearGradient id="dash-line-fill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={C.accent} stopOpacity="0.18" />
+                <stop offset="100%" stopColor={C.accent} stopOpacity="0" />
+              </linearGradient>
+            </defs>
+
+            {/* Y gridlines + labels */}
+            {yTickValues.map((v, i) => {
+              const y = yAt(v);
+              return (
                 <g key={i}>
-                  <circle cx={p.x} cy={p.y} r={0.8} fill={C.accent} />
-                  {/* invisible hover zone */}
-                  <rect
-                    x={p.x - step / 2}
-                    y={0}
-                    width={step || 2}
-                    height={height}
-                    fill="transparent"
-                    onMouseEnter={() => setHoverIdx(i)}
-                    onMouseLeave={() => setHoverIdx((idx) => (idx === i ? null : idx))}
-                    style={{ cursor: 'default' }}
-                  />
+                  <line x1={padL} x2={W - padR} y1={y} y2={y} stroke="#F2F3F5" strokeWidth={1} />
+                  <text
+                    x={padL - 8}
+                    y={y + 4}
+                    textAnchor="end"
+                    fontFamily="Roboto"
+                    fontSize={11}
+                    fontWeight={400}
+                    fill={C.textTertiary}
+                  >
+                    {trNumber(v)}
+                  </text>
                 </g>
-              ))}
-            </svg>
+              );
+            })}
+
+            {/* Area fill */}
+            {areaD && <path d={areaD} fill="url(#dash-line-fill)" />}
+
+            {/* Line */}
+            <path d={d} fill="none" stroke={C.accent} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" />
+
+            {/* Hover guide line + point */}
+            {hoverIdx !== null && pts[hoverIdx] && (
+              <>
+                <line
+                  x1={pts[hoverIdx].x}
+                  x2={pts[hoverIdx].x}
+                  y1={padT}
+                  y2={H - padB}
+                  stroke="#E5E7EB"
+                  strokeWidth={1}
+                  strokeDasharray="3,3"
+                />
+                <circle
+                  cx={pts[hoverIdx].x}
+                  cy={pts[hoverIdx].y}
+                  r={5}
+                  fill="#FFFFFF"
+                  stroke={C.accent}
+                  strokeWidth={1.75}
+                />
+              </>
+            )}
 
             {/* X-axis labels */}
+            {labelIdxs.map((i) => (
+              <text
+                key={i}
+                x={xAt(i)}
+                y={H - 8}
+                textAnchor="middle"
+                fontFamily="Roboto"
+                fontSize={11}
+                fontWeight={400}
+                fill={C.textTertiary}
+              >
+                {shortDateTR(series[i].date)}
+              </text>
+            ))}
+
+            {/* Invisible hover zones (one wide band per point) */}
+            {pts.map((p, i) => {
+              const band = n > 1 ? innerW / (n - 1) : innerW;
+              return (
+                <rect
+                  key={i}
+                  x={p.x - band / 2}
+                  y={padT}
+                  width={band}
+                  height={innerH}
+                  fill="transparent"
+                  onMouseEnter={() => setHoverIdx(i)}
+                  onMouseLeave={() => setHoverIdx((idx) => (idx === i ? null : idx))}
+                />
+              );
+            })}
+          </svg>
+
+          {/* Tooltip (positioned absolutely over SVG using percentages relative to container) */}
+          {hoverIdx !== null && pts[hoverIdx] && (
             <div
               style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                marginTop: 2,
-                fontSize: 11,
-                color: C.textTertiary,
+                position: 'absolute',
+                left: `${(pts[hoverIdx].x / W) * 100}%`,
+                top: `calc(${(pts[hoverIdx].y / H) * 100}% - 52px)`,
+                transform: 'translateX(-50%)',
+                background: C.textPrimary,
+                color: C.cardBg,
+                padding: '7px 10px',
+                borderRadius: 6,
+                fontSize: 12,
+                whiteSpace: 'nowrap',
+                pointerEvents: 'none',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                lineHeight: 1.3,
               }}
             >
-              {series.map((s, i) => (
-                <span
-                  key={s.date}
-                  style={{
-                    flex: 1,
-                    textAlign: 'center',
-                    visibility: i % labelEvery === 0 || i === series.length - 1 ? 'visible' : 'hidden',
-                  }}
-                >
-                  {shortDateTR(s.date)}
-                </span>
-              ))}
-            </div>
-
-            {/* Tooltip */}
-            {hoverIdx !== null && points[hoverIdx] && (
-              <div
-                style={{
-                  position: 'absolute',
-                  left: `calc(${points[hoverIdx].x}% - 50px)`,
-                  top: `calc(${points[hoverIdx].y}% - 40px)`,
-                  background: C.textPrimary,
-                  color: C.cardBg,
-                  padding: '6px 10px',
-                  borderRadius: 6,
-                  fontSize: 12,
-                  whiteSpace: 'nowrap',
-                  pointerEvents: 'none',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                }}
-              >
-                {shortDateTR(series[hoverIdx].date)}: {trNumber(series[hoverIdx].count)} görüntüleme
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginBottom: 2 }}>
+                {shortDateTR(series[hoverIdx].date)}
               </div>
-            )}
-          </div>
+              <div style={{ fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>
+                {trNumber(series[hoverIdx].count)} görüntüleme
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
   );
+}
+
+/* Smooth cubic path helper (monotone-ish) — referans HTML'den uyarlandı */
+function smoothPath(pts: Array<{ x: number; y: number }>): string {
+  if (pts.length === 0) return '';
+  if (pts.length === 1) return `M ${pts[0].x.toFixed(2)} ${pts[0].y.toFixed(2)}`;
+  let out = `M ${pts[0].x.toFixed(2)} ${pts[0].y.toFixed(2)}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] || pts[i];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[i + 2] || p2;
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+    out += ` C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)}, ${cp2x.toFixed(2)} ${cp2y.toFixed(2)}, ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`;
+  }
+  return out;
+}
+
+/* Nice round ceiling — so Y-max is readable (10, 25, 50, 100, 250, ...) */
+function niceCeil(n: number): number {
+  if (n <= 1) return 1;
+  const exp = Math.pow(10, Math.floor(Math.log10(n)));
+  const mult = n / exp;
+  let nice: number;
+  if (mult <= 1) nice = 1;
+  else if (mult <= 2) nice = 2;
+  else if (mult <= 2.5) nice = 2.5;
+  else if (mult <= 5) nice = 5;
+  else nice = 10;
+  return nice * exp;
+}
+
+/* Evenly spaced index picks for x-axis labels */
+function evenlySpacedIndexes(n: number, count: number): number[] {
+  if (n <= 0) return [];
+  if (n <= count) return Array.from({ length: n }, (_, i) => i);
+  const step = (n - 1) / (count - 1);
+  const set = new Set<number>();
+  for (let k = 0; k < count; k++) set.add(Math.round(k * step));
+  return Array.from(set).sort((a, b) => a - b);
 }
 
 /* ------------------------------ Top 5 items ------------------------------- */
@@ -539,10 +622,10 @@ function TopItemsCard({
   rows: Array<{ id: string; name: string; category: string; count: number; image: string | null }>;
 }) {
   return (
-    <div style={{ ...cardStyle, height: 280, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ ...cardStyle, height: 320, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <h3 style={{ ...sectionTitleStyle, marginBottom: 14 }}>En Çok Görüntülenen 5 Ürün</h3>
       {rows.length === 0 ? (
-        <EmptyState label="Henüz veri yok" height={200} />
+        <EmptyState label="Henüz veri yok" height={240} />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
           {rows.map((r, i) => (
@@ -612,67 +695,76 @@ function TopItemsCard({
 /* ------------------------- Category bar performance ----------------------- */
 
 function CategoryBars({ rows }: { rows: Array<{ id: string; name: string; count: number }> }) {
+  if (rows.length === 0) {
+    return (
+      <div style={cardStyle}>
+        <h3 style={{ ...sectionTitleStyle, marginBottom: 14 }}>Kategori Performansı</h3>
+        <EmptyState label="Henüz veri yok" height={160} />
+      </div>
+    );
+  }
   const max = Math.max(1, ...rows.map((r) => r.count));
   return (
     <div style={cardStyle}>
       <h3 style={{ ...sectionTitleStyle, marginBottom: 14 }}>Kategori Performansı</h3>
-      {rows.length === 0 ? (
-        <EmptyState label="Henüz veri yok" height={160} />
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {rows.map((r, i) => {
-            const pct = (r.count / max) * 100;
-            const isTop = i === 0;
-            return (
-              <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div
-                  style={{
-                    width: 110,
-                    fontSize: 13,
-                    fontWeight: 500,
-                    color: C.textPrimary,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    flexShrink: 0,
-                  }}
-                >
-                  {r.name}
-                </div>
-                <div
-                  style={{
-                    flex: 1,
-                    height: 8,
-                    background: C.track,
-                    borderRadius: 4,
-                    overflow: 'hidden',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: `${pct}%`,
-                      height: '100%',
-                      background: isTop ? C.accent : C.barNeutral,
-                      borderRadius: 4,
-                    }}
-                  />
-                </div>
-                <div
-                  style={{
-                    width: 44,
-                    textAlign: 'right',
-                    fontSize: 13,
-                    fontWeight: 500,
-                    color: C.textPrimary,
-                  }}
-                >
-                  {trNumber(r.count)}
-                </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 4 }}>
+        {rows.map((r, i) => {
+          const pct = (r.count / max) * 100;
+          const isTop = i === 0;
+          return (
+            <div
+              key={r.id}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '140px 1fr 48px',
+                alignItems: 'center',
+                gap: 12,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: C.textPrimary,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {r.name}
               </div>
-            );
-          })}
-        </div>
-      )}
+              <div
+                style={{
+                  height: 6,
+                  background: C.track,
+                  borderRadius: 999,
+                  overflow: 'hidden',
+                }}
+              >
+                <div
+                  style={{
+                    width: `${pct}%`,
+                    height: '100%',
+                    background: isTop ? C.accent : C.barNeutral,
+                    borderRadius: 999,
+                  }}
+                />
+              </div>
+              <div
+                style={{
+                  textAlign: 'right',
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color: C.textPrimary,
+                  fontVariantNumeric: 'tabular-nums',
+                }}
+              >
+                {trNumber(r.count)}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -855,10 +947,11 @@ function Tutorials() {
         </button>
       </div>
       <div
+        className="dash-video-grid"
         style={{
           display: 'grid',
           gap: 16,
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
         }}
       >
         {TUTORIALS.map((t) => (
@@ -1223,9 +1316,10 @@ export default function RestaurantAnalytics({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {/* BÖLÜM 2 — Metric Cards */}
           <div
+            className="dash-row-metrics"
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+              gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
               gap: 16,
             }}
           >
@@ -1262,12 +1356,12 @@ export default function RestaurantAnalytics({
 
           {/* BÖLÜM 3 — Chart row */}
           <div
+            className="dash-row-2-1"
             style={{
               display: 'grid',
               gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)',
               gap: 16,
             }}
-            className="dash-chart-row"
           >
             <TimeSeriesChart series={derived.chartSeries} range={range} />
             <TopItemsCard rows={derived.topItemsList} />
@@ -1275,9 +1369,10 @@ export default function RestaurantAnalytics({
 
           {/* BÖLÜM 4 — Secondary row */}
           <div
+            className="dash-row-1-1"
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
               gap: 16,
             }}
           >
@@ -1296,12 +1391,20 @@ export default function RestaurantAnalytics({
         </div>
       )}
 
-      {/* Responsive tweak: chart row collapses on mobile */}
       <style>{`
+        @media (max-width: 1024px) {
+          .dash-row-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+          .dash-video-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+        }
         @media (max-width: 720px) {
-          .dash-chart-row {
+          .dash-row-2-1,
+          .dash-row-1-1 {
             grid-template-columns: 1fr !important;
           }
+        }
+        @media (max-width: 520px) {
+          .dash-row-metrics { grid-template-columns: 1fr !important; }
+          .dash-video-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </div>
@@ -1312,11 +1415,8 @@ function DashboardSkeleton() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-          gap: 16,
-        }}
+        className="dash-row-metrics"
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 16 }}
       >
         {[0, 1, 2, 3].map((i) => (
           <div key={i} style={cardStyle}>
@@ -1329,23 +1429,25 @@ function DashboardSkeleton() {
         ))}
       </div>
       <div
+        className="dash-row-2-1"
         style={{
           display: 'grid',
           gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)',
           gap: 16,
         }}
       >
-        <div style={{ ...cardStyle, height: 280 }}>
-          <div style={skeletonBlockStyle(240)} />
+        <div style={{ ...cardStyle, height: 320 }}>
+          <div style={skeletonBlockStyle(280)} />
         </div>
-        <div style={{ ...cardStyle, height: 280 }}>
-          <div style={skeletonBlockStyle(240)} />
+        <div style={{ ...cardStyle, height: 320 }}>
+          <div style={skeletonBlockStyle(280)} />
         </div>
       </div>
       <div
+        className="dash-row-1-1"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
           gap: 16,
         }}
       >

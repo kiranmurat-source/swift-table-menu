@@ -90,7 +90,7 @@ export default function Dashboard() {
               {unreadCount > 0 && (
                 <span style={{
                   position: 'absolute', top: -2, right: -2,
-                  background: '#FF4F7A', color: '#FFFFFF',
+                  background: '#10B981', color: '#FFFFFF',
                   fontSize: 10, fontWeight: 700,
                   borderRadius: 9999, minWidth: 16, height: 16,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -148,7 +148,7 @@ export default function Dashboard() {
                             )}
                           </div>
                           {!n.is_read && (
-                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#FF4F7A', flexShrink: 0, marginTop: 4 }} />
+                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981', flexShrink: 0, marginTop: 4 }} />
                           )}
                         </div>
                         <div style={{ fontSize: 11, color: '#A0A0A0', marginTop: 4 }}>

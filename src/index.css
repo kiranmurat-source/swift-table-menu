@@ -19,11 +19,11 @@
     --db-text-subtle: #6B6B6F;
     --db-text-muted: #A0A0A0;
     --db-border: #E5E5E3;
-    --db-pink: #FF4F7A;
-    --db-pink-hover: #E8456E;
-    --db-pink-pressed: #D63D62;
-    --db-pink-light: #FFF0F3;
-    --db-pink-lighter: #FFE0E8;
+    --db-accent: #10B981;
+    --db-accent-hover: #0E9F70;
+    --db-accent-pressed: #0A8961;
+    --db-accent-light: #F0FDF4;
+    --db-accent-lighter: #DCFCE7;
     --db-success: #22C55E;
     --db-warning: #F59E0B;
     --db-error: #EF4444;
@@ -331,13 +331,13 @@
   background: #333338;
 }
 
-/* Active state — strawberry left accent with subtle inner glow */
+/* Active state — green left accent with subtle inner glow */
 .sb-item[data-active="true"] {
   background: var(--db-sidebar-hover);
   color: #FFFFFF;
   font-weight: 500;
-  border-left-color: var(--db-pink);
-  box-shadow: inset 3px 0 12px -4px rgba(255, 79, 122, 0.18);
+  border-left-color: var(--db-accent);
+  box-shadow: inset 3px 0 12px -4px rgba(16, 185, 129, 0.18);
 }
 
 /* Icon inside sidebar item */
@@ -354,7 +354,7 @@
 
 .sb-item[data-active="true"] .sb-icon {
   opacity: 1;
-  color: var(--db-pink);
+  color: var(--db-accent);
 }
 
 /* Badge pill inside sidebar item */
@@ -362,19 +362,19 @@
   font-size: 10px;
   font-weight: 700;
   color: #FFFFFF;
-  background: var(--db-pink);
+  background: var(--db-accent);
   border-radius: 9999px;
   padding: 1px 6px;
   min-width: 18px;
   text-align: center;
   line-height: 16px;
-  box-shadow: 0 0 8px rgba(255, 79, 122, 0.3);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);
   animation: sb-badge-pulse 2.5s ease-in-out infinite;
 }
 
 @keyframes sb-badge-pulse {
-  0%, 100% { box-shadow: 0 0 6px rgba(255, 79, 122, 0.25); }
-  50% { box-shadow: 0 0 14px rgba(255, 79, 122, 0.45); }
+  0%, 100% { box-shadow: 0 0 6px rgba(16, 185, 129, 0.25); }
+  50% { box-shadow: 0 0 14px rgba(16, 185, 129, 0.45); }
 }
 
 /* Group title */
