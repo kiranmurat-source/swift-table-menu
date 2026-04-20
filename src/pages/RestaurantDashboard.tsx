@@ -1446,7 +1446,22 @@ export default function RestaurantDashboard() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <h3 style={{ fontSize: 16, fontWeight: 600, color: adminTheme.value }}>Kategoriler</h3>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <PDFDownloadButton restaurantName={restaurant?.name} />
+              {restaurant && (
+                <PDFDownloadButton
+                  restaurant={{
+                    id: restaurant.id,
+                    name: restaurant.name,
+                    address: restaurant.address ?? null,
+                    price_effective_date: restaurant.price_effective_date ?? null,
+                    show_vat_notice: restaurant.show_vat_notice ?? true,
+                  }}
+                  categories={categories}
+                  items={items}
+                  currency="TRY"
+                  currencySymbol="₺"
+                  defaultLangCode="tr"
+                />
+              )}
               <button onClick={() => setShowCatForm(!showCatForm)} style={S.btnSm}>{showCatForm ? 'İptal' : '+ Kategori'}</button>
             </div>
           </div>
