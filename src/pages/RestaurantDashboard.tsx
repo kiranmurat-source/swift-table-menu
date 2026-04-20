@@ -9,7 +9,7 @@
 import { useEffect, useMemo, useState, useRef, Fragment, lazy, Suspense, ReactNode, CSSProperties } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
-import { Camera, PencilSimple, CheckCircle, XCircle, AppleLogo, Star, Globe, Pen, Rows, User, Image, Trash, Link, Package, CaretCircleDown, CaretCircleUp, CaretDown, CaretRight, PlusCircle, Clock, Grains, Timer, Info, Bell, List, SquaresFour, Tag, Palette, ChatCircle, Percent, Heart, ChartBar, ArrowsClockwise, Warning, X, VideoCamera, Users, Gauge, Images, FileArrowUp, Sparkle } from "@phosphor-icons/react";
+import { Camera, PencilSimple, CheckCircle, XCircle, AppleLogo, Star, Globe, Pen, Rows, User, Image, Trash, Link, Package, CaretCircleDown, CaretCircleUp, PlusCircle, Clock, Grains, Timer, Info, Bell, List, SquaresFour, Tag, Palette, ChatCircle, Percent, Heart, ChartBar, ArrowsClockwise, Warning, X, VideoCamera, Users, Gauge, Images, FileArrowUp, Sparkle } from "@phosphor-icons/react";
 import MediaLibrary from '../components/admin/MediaLibrary';
 import MediaPickerModal, { type MediaAccept, attachMediaUsage, detachMediaUsage } from '../components/admin/MediaPickerModal';
 import MenuImport from '../components/admin/MenuImport';
@@ -333,22 +333,28 @@ export default function RestaurantDashboard() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'menu' | 'import' | 'translations' | 'qr' | 'media' | 'profile' | 'promos' | 'calls' | 'feedback' | 'discounts' | 'likes' | 'customers'>('dashboard');
   const [pendingCallCount, setPendingCallCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
-    if (typeof window === 'undefined') return {};
-    try {
-      const raw = localStorage.getItem('tabbled_sidebar_groups');
-      if (raw) return JSON.parse(raw);
-    } catch {}
-    return {};
-  });
-  const toggleGroup = (title: string) => {
-    setOpenGroups(prev => {
-      const next = { ...prev, [title]: !prev[title] };
-      try { localStorage.setItem('tabbled_sidebar_groups', JSON.stringify(next)); } catch {}
-      return next;
-    });
-  };
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
+  const [isDesktop, setIsDesktop] = useState(typeof window !== 'undefined' && window.innerWidth >= 1024);
+  const [sidebarHovered, setSidebarHovered] = useState(false);
+  const sidebarHoverTimerRef = useRef<number | null>(null);
+  const handleSidebarEnter = () => {
+    if (!isDesktop) return;
+    if (sidebarHoverTimerRef.current != null) {
+      window.clearTimeout(sidebarHoverTimerRef.current);
+      sidebarHoverTimerRef.current = null;
+    }
+    setSidebarHovered(true);
+  };
+  const handleSidebarLeave = () => {
+    if (!isDesktop) return;
+    if (sidebarHoverTimerRef.current != null) {
+      window.clearTimeout(sidebarHoverTimerRef.current);
+    }
+    sidebarHoverTimerRef.current = window.setTimeout(() => {
+      setSidebarHovered(false);
+      sidebarHoverTimerRef.current = null;
+    }, 80);
+  };
   const [loadingData, setLoadingData] = useState(true);
   const initialFormJsonRef = useRef<string>('');
   const [picker, setPicker] = useState<{
@@ -512,15 +518,23 @@ export default function RestaurantDashboard() {
     checkSubscription();
   }, [restaurant?.id]);
 
-  // Responsive: track mobile breakpoint
+  // Responsive: track mobile + desktop breakpoints
   useEffect(() => {
     const handleResize = () => {
-      const mobile = window.innerWidth < 768;
+      const w = window.innerWidth;
+      const mobile = w < 768;
+      const desktop = w >= 1024;
       setIsMobile(mobile);
+      setIsDesktop(desktop);
       if (!mobile) setSidebarOpen(false);
+      if (!desktop) setSidebarHovered(false);
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => () => {
+    if (sidebarHoverTimerRef.current != null) window.clearTimeout(sidebarHoverTimerRef.current);
   }, []);
 
   async function loadCategories(rid: string) {
@@ -1236,12 +1250,6 @@ export default function RestaurantDashboard() {
 
   const allSidebarItems = sidebarGroups.flatMap(g => g.items);
   const activeLabel = allSidebarItems.find(i => i.key === activeTab)?.label ?? 'Dashboard';
-  const activeGroupTitle = sidebarGroups.find(g => g.items.some(i => i.key === activeTab))?.title || '';
-  const isGroupOpen = (title: string) => {
-    if (!title) return true;
-    if (title in openGroups) return openGroups[title];
-    return title === activeGroupTitle;
-  };
 
   // Inline item form renderer. Assigned during render by the IIFE below so we
   // can keep the large JSX tree in-place while calling it from inside the
@@ -1253,7 +1261,7 @@ export default function RestaurantDashboard() {
     setSidebarOpen(false);
   };
 
-  const sidebarContent = (
+  const renderSidebarContent = () => (
     <>
       {/* Header — restaurant branding */}
       <div className="sb-header">
@@ -1264,81 +1272,84 @@ export default function RestaurantDashboard() {
       </div>
 
       {/* Navigation groups */}
-      <nav className="flex-1 overflow-auto py-3">
-        {sidebarGroups.map((group, gIdx) => {
-          const open = isGroupOpen(group.title);
-          return (
-            <div key={group.title || `grp-${gIdx}`} className="sb-group">
-              {group.title && (
-                <button
-                  type="button"
-                  onClick={() => toggleGroup(group.title)}
-                  className="sb-group-title"
-                  style={{ display: 'flex', alignItems: 'center', width: '100%', background: 'transparent', border: 'none', cursor: 'pointer' }}
-                  aria-expanded={open}
-                >
-                  <span style={{ flex: 1, textAlign: 'left' }}>{group.title}</span>
-                  {open ? <CaretDown size={12} weight="thin" /> : <CaretRight size={12} weight="thin" />}
-                </button>
-              )}
-              <div
-                style={{
-                  maxHeight: open ? `${group.items.length * 50}px` : 0,
-                  overflow: 'hidden',
-                  transition: 'max-height 200ms ease',
-                }}
-              >
-                {group.items.map((item, iIdx) => {
-                  const active = activeTab === item.key;
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.key}
-                      onClick={() => handleSidebarNav(item.key)}
-                      className="sb-item"
-                      data-active={active}
-                      style={{ animationDelay: `${gIdx * 40 + iIdx * 25}ms` }}
-                    >
-                      <Icon size={16} weight={active ? 'fill' : 'regular'} className="sb-icon" />
-                      <span className="flex-1 text-left">{item.label}</span>
-                      {'badge' in item && (item as any).badge > 0 && (
-                        <span className="sb-badge">{(item as any).badge}</span>
-                      )}
-                    </button>
-                  );
-                })}
+      <nav className="sb-nav flex-1 overflow-y-auto overflow-x-hidden">
+        {sidebarGroups.map((group, gIdx) => (
+          <div key={group.title || `grp-${gIdx}`} className="sb-group">
+            <div className="sb-group-divider" aria-hidden="true" />
+            {group.title && (
+              <div className="sb-group-title" role="presentation">
+                <span style={{ flex: 1, textAlign: 'left' }}>{group.title}</span>
               </div>
-            </div>
-          );
-        })}
+            )}
+            {group.items.map((item) => {
+              const active = activeTab === item.key;
+              const Icon = item.icon;
+              const badge = 'badge' in item ? (item as { badge?: number }).badge ?? 0 : 0;
+              return (
+                <button
+                  key={item.key}
+                  onClick={() => handleSidebarNav(item.key)}
+                  onFocus={handleSidebarEnter}
+                  className="sb-item"
+                  data-active={active}
+                  aria-label={item.label}
+                >
+                  <Icon size={20} weight="thin" className="sb-icon" />
+                  <span className="sb-label">{item.label}</span>
+                  {badge > 0 && <span className="sb-badge">{badge}</span>}
+                  {badge > 0 && <span className="sb-dot" aria-hidden="true" />}
+                  <span className="sb-tooltip" role="tooltip">{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       {/* Footer — public menu link */}
-      <div className="sb-footer">
-        <Link size={13} /> tabbled.com/menu/{restaurant.slug}
-      </div>
+      <a
+        href={`/menu/${restaurant.slug}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="sb-footer"
+      >
+        <Link size={13} />
+        <span className="sb-footer-label">tabbled.com/menu/{restaurant.slug}</span>
+      </a>
     </>
   );
 
+  const desktopCollapsed = !sidebarHovered;
+  const desktopRailWidth = desktopCollapsed ? 64 : 240;
+
   return (
-    <div className="flex min-h-screen" data-admin-theme={restaurant?.admin_theme === 'dark' ? 'dark' : 'light'} style={{ backgroundColor: adminTheme.pageBg, color: adminTheme.value }}>
-      {/* Desktop Sidebar */}
-      <aside className="sb-rail hidden md:flex flex-col w-[240px] shrink-0 border-r border-[#3A3A3E] bg-[#1C1C1E] sticky top-0 self-start h-screen overflow-hidden">
-        {sidebarContent}
+    <div className="min-h-screen relative" data-admin-theme={restaurant?.admin_theme === 'dark' ? 'dark' : 'light'} style={{ backgroundColor: adminTheme.pageBg, color: adminTheme.value }}>
+      {/* Desktop Sidebar — fixed overlay rail, expands on hover */}
+      <aside
+        className="sb-rail hidden md:flex flex-col fixed left-0 top-0 h-screen z-40"
+        data-collapsed={desktopCollapsed}
+        style={{
+          width: desktopRailWidth,
+          transition: 'width 180ms ease',
+        }}
+        onMouseEnter={handleSidebarEnter}
+        onMouseLeave={handleSidebarLeave}
+      >
+        {renderSidebarContent()}
       </aside>
 
       {/* Mobile Sidebar Overlay */}
       {isMobile && sidebarOpen && (
         <div className="fixed inset-0 z-50 flex">
           <div className="sb-backdrop" onClick={() => setSidebarOpen(false)} />
-          <aside className="relative z-10 flex flex-col w-[260px] bg-[#1C1C1E] min-h-screen shadow-2xl animate-sidebar-slide-in">
-            {sidebarContent}
+          <aside className="sb-rail relative z-10 flex flex-col w-[260px] min-h-screen shadow-2xl animate-sidebar-slide-in" data-collapsed={false}>
+            {renderSidebarContent()}
           </aside>
         </div>
       )}
 
-      {/* Main content */}
-      <main className="flex-1 min-w-0">
+      {/* Main content — padded to clear the fixed desktop rail (64px) */}
+      <main className="flex-1 min-w-0 md:pl-16">
         {/* Notification bell — shared button for mobile & desktop top bars */}
         {(() => {
           const notifUnreadCount = pendingCallCount + newFeedbackCount + newReviewCount;
