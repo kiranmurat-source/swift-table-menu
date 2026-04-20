@@ -3,40 +3,11 @@
 // PublicMenu.tsx'ten çıkarıldı
 
 import { XCircle } from '@phosphor-icons/react';
-import type { LangCode, UiLangCode } from '../../types/menu';
+import type { LangCode } from '../../types/menu';
 import type { MenuTheme } from '../../lib/themes';
 import { toUiLang } from '../../lib/menuHelpers';
 import { ALLERGEN_LIST } from '../../lib/allergens';
-
-const FILTER_LABELS: Record<UiLangCode, {
-  filters: string; clearAll: string; apply: string; freeFrom: string; preferences: string;
-  popular: string; new: string; vegetarian: string; vegan: string; halal: string; kosher: string; showing: string; noResults: string;
-}> = {
-  tr: {
-    filters: 'Filtreler', clearAll: 'Temizle', apply: 'Uygula',
-    freeFrom: 'Alerjen İçermeyen', preferences: 'Tercihler',
-    popular: 'Popüler', new: 'Yeni', vegetarian: 'Vejetaryen', vegan: 'Vegan', halal: 'Helal', kosher: 'Koşer',
-    showing: 'ürün gösteriliyor', noResults: 'Filtreye uygun ürün bulunamadı',
-  },
-  en: {
-    filters: 'Filters', clearAll: 'Clear All', apply: 'Apply',
-    freeFrom: 'Free From', preferences: 'Preferences',
-    popular: 'Popular', new: 'New', vegetarian: 'Vegetarian', vegan: 'Vegan', halal: 'Halal', kosher: 'Kosher',
-    showing: 'items showing', noResults: 'No items match your filters',
-  },
-  ar: {
-    filters: 'تصفية', clearAll: 'مسح الكل', apply: 'تطبيق',
-    freeFrom: 'خالي من', preferences: 'التفضيلات',
-    popular: 'شائع', new: 'جديد', vegetarian: 'نباتي', vegan: 'نباتي صرف', halal: 'حلال', kosher: 'كوشير',
-    showing: 'عنصر معروض', noResults: 'لا توجد عناصر مطابقة',
-  },
-  zh: {
-    filters: '筛选', clearAll: '清除全部', apply: '应用',
-    freeFrom: '不含', preferences: '偏好',
-    popular: '热门', new: '新品', vegetarian: '素食', vegan: '纯素', halal: '清真', kosher: '洁食',
-    showing: '个项目', noResults: '没有符合条件的项目',
-  },
-};
+import { FILTER_STRINGS as FILTER_LABELS } from '../../lib/menuI18n';
 
 export function FilterPanel({
   lang, theme, excludeAllergens, preferences,

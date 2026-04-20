@@ -3,13 +3,7 @@
 // PublicMenu.tsx'ten çıkarıldı — state'siz, React'tan bağımsız helpers
 
 import type { LangCode, UiLangCode, MenuItem, PriceVariant } from '../types/menu';
-
-const STARTING_FROM_TEMPLATES: Record<UiLangCode, string> = {
-  tr: "{price}'den başlayan",
-  en: 'Starting from {price}',
-  ar: 'يبدأ من {price}',
-  zh: '起价 {price}',
-};
+import { STARTING_FROM_TEMPLATES } from './menuI18n';
 
 // Map an arbitrary language code to the closest built-in UI language.
 // Only tr/en/ar/zh have hardcoded UI strings; everything else falls back to en.

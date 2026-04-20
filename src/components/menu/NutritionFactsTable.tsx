@@ -2,9 +2,10 @@
 // AB uyumlu besin değerleri tablosu (Enerji kJ+kcal, trafik ışığı dot'ları, RI%)
 // PublicMenu.tsx'ten çıkarıldı
 
-import type { LangCode, UiLangCode, Nutrition } from '../../types/menu';
+import type { LangCode, Nutrition } from '../../types/menu';
 import type { MenuTheme } from '../../lib/themes';
 import { toUiLang } from '../../lib/menuHelpers';
+import { NUTRITION_STRINGS as UI_STRINGS } from '../../lib/menuI18n';
 import {
   kcalToKj,
   sodiumToSalt,
@@ -13,25 +14,6 @@ import {
   TRAFFIC_LIGHT_COLORS,
   formatNutritionValue,
 } from '../../lib/nutritionEU';
-
-const UI_STRINGS: Record<string, Record<UiLangCode, string>> = {
-  nutritionTitle:      { tr: 'Besin Değerleri', en: 'Nutrition Information', ar: 'معلومات غذائية', zh: '营养信息' },
-  energy:              { tr: 'Enerji', en: 'Energy', ar: 'الطاقة', zh: '能量' },
-  fat:                 { tr: 'Yağ', en: 'Fat', ar: 'دهون', zh: '脂肪' },
-  saturates:           { tr: 'doymuş yağ', en: 'of which saturates', ar: 'منها مشبعة', zh: '其中饱和脂肪' },
-  carbs:               { tr: 'Karbonhidrat', en: 'Carbohydrate', ar: 'كربوهيدرات', zh: '碳水化合物' },
-  ofWhichSugars:       { tr: 'şekerler', en: 'of which sugars', ar: 'منها سكريات', zh: '其中糖' },
-  protein:             { tr: 'Protein', en: 'Protein', ar: 'البروتين', zh: '蛋白质' },
-  salt:                { tr: 'Tuz', en: 'Salt', ar: 'ملح', zh: '盐' },
-  per100g:             { tr: '100g başına', en: 'per 100g', ar: 'لكل 100 جم', zh: '每100克' },
-  perServing:          { tr: 'Porsiyon başına', en: 'per serving', ar: 'لكل حصة', zh: '每份' },
-  referenceIntakeNote: {
-    tr: '*Yetişkin referans alım değerleri (8400 kJ / 2000 kcal)',
-    en: '*Reference intake of an average adult (8400 kJ / 2000 kcal)',
-    ar: '*القيم المرجعية لبالغ متوسط (8400 kJ / 2000 سعرة)',
-    zh: '*成年人参考摄入量（8400 kJ / 2000 卡路里）',
-  },
-};
 
 export function NutritionFactsTable({
   nutrition,

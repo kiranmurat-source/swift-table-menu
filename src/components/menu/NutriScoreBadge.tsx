@@ -11,17 +11,10 @@ import {
   nutriScoreTextColor,
   type NutriScore,
 } from '../../lib/nutritionEU';
-import type { LangCode, UiLangCode } from '../../types/menu';
+import type { LangCode } from '../../types/menu';
 import type { MenuTheme } from '../../lib/themes';
 import { toUiLang } from '../../lib/menuHelpers';
-
-const UI_STRINGS: Record<string, Record<UiLangCode, string>> = {
-  nutriScoreTitle:  { tr: 'Nutri-Score', en: 'Nutri-Score', ar: 'Nutri-Score', zh: 'Nutri-Score' },
-  nutriScoreDesc:   { tr: 'Avrupa beslenme kalitesi skalası', en: 'European nutritional quality scale', ar: 'مقياس الجودة الغذائية الأوروبي', zh: '欧洲营养质量等级' },
-  nutriScoreHealthier:  { tr: 'Daha sağlıklı', en: 'Healthier', ar: 'أصح', zh: '更健康' },
-  nutriScoreLessHealthy: { tr: 'Daha az sağlıklı', en: 'Less healthy', ar: 'أقل صحة', zh: '不太健康' },
-  nutriScoreDeclared:   { tr: 'İşletme tarafından beyan edilmiştir.', en: 'Declared by the establishment.', ar: 'تم التصريح من قبل المنشأة.', zh: '由商家声明。' },
-};
+import { NUTRI_SCORE_STRINGS as UI_STRINGS } from '../../lib/menuI18n';
 
 export function NutriScoreBadge({
   score,
