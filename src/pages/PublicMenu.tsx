@@ -2888,17 +2888,16 @@ function ItemDetailModal({ item, allItems, lang, theme, onClose, onSelectItem, o
             </div>
           )}
 
-          {!hasVariants(item) && !(item.nutrition && item.nutrition.show_on_menu !== false) && ((item.nutrition?.calories ?? item.calories) != null || item.nutri_score) && (
+          {!hasVariants(item) && !(item.nutrition && item.nutrition.show_on_menu !== false) && (item.nutrition?.calories ?? item.calories) != null && (
             <div className="flex items-center gap-2 text-sm mb-4" style={{ color: theme.mutedText, position: 'relative' }}>
-              {(item.nutrition?.calories ?? item.calories) != null && (
-                <>
-                  <Thermometer size={16} />
-                  <span>{item.nutrition?.calories ?? item.calories} kcal</span>
-                </>
-              )}
-              {item.nutri_score && (
-                <NutriScoreBadge score={item.nutri_score} lang={lang} theme={theme} />
-              )}
+              <Thermometer size={16} />
+              <span>{item.nutrition?.calories ?? item.calories} kcal</span>
+            </div>
+          )}
+          {!hasVariants(item) && item.nutri_score && (
+            <div className="flex items-center gap-2 text-sm mb-4" style={{ color: theme.mutedText, position: 'relative' }}>
+              <NutriScoreBadge score={item.nutri_score} lang={lang} theme={theme} />
+              <span style={{ fontSize: 13 }}>Nutri-Score</span>
             </div>
           )}
 
