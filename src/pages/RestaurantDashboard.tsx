@@ -1452,6 +1452,7 @@ export default function RestaurantDashboard() {
                     id: restaurant.id,
                     name: restaurant.name,
                     address: restaurant.address ?? null,
+                    logo_url: restaurant.logo_url ?? null,
                     price_effective_date: restaurant.price_effective_date ?? null,
                     show_vat_notice: restaurant.show_vat_notice ?? true,
                   }}

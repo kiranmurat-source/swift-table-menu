@@ -2,7 +2,7 @@
 // Ana menü PDF template — kategorili, ürünlü, çok sayfalı
 // Yasal yedek menü formatında (Fiyat Etiketi Yönetmeliği uyumlu)
 
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
+import { Document, Image, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 import { registerPDFFonts } from '../../../lib/pdf/pdfSetup';
 import { getPDFStrings, localizedField } from '../../../lib/pdf/pdfLanguages';
 
@@ -38,6 +38,7 @@ export interface PDFRestaurant {
   id: string;
   name: string;
   address: string | null;
+  logo_url: string | null;
   price_effective_date: string | null; // YYYY-MM-DD
   show_vat_notice: boolean;
 }
@@ -56,6 +57,10 @@ export interface MenuPDFProps {
   };
 }
 
+// Ligature fix: Roboto TTF'te fi/fl ligature'ları "filled" → "flled" bug'ı yaratıyor.
+// Her text style'a uygulanır; type-safe değil (react-pdf destekler, TS type'ları kapsamayabilir).
+const LIG_FIX = { fontVariantLigatures: 'none' } as Record<string, unknown>;
+
 const styles = StyleSheet.create({
   page: {
     fontFamily: 'Roboto',
@@ -63,34 +68,50 @@ const styles = StyleSheet.create({
     paddingBottom: 70,
     fontSize: 11,
     color: '#1C1C1E',
+    ...LIG_FIX,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 24,
     paddingBottom: 16,
     borderBottomWidth: 2,
     borderBottomColor: '#1C1C1E',
+  },
+  headerLogo: {
+    width: 80,
+    height: 80,
+    objectFit: 'contain',
+    marginRight: 16,
+  },
+  headerText: {
+    flex: 1,
   },
   restaurantName: {
     fontSize: 22,
     fontWeight: 700,
     color: '#1C1C1E',
     marginBottom: 4,
+    ...LIG_FIX,
   },
   restaurantAddress: {
     fontSize: 11,
     fontWeight: 400,
     color: '#6B6B70',
     marginBottom: 12,
+    ...LIG_FIX,
   },
   legalInfo: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    width: '100%',
     marginTop: 6,
   },
   legalText: {
     fontSize: 10,
     fontWeight: 400,
     color: '#6B6B70',
+    ...LIG_FIX,
   },
   category: {
     marginBottom: 20,
@@ -102,6 +123,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     textTransform: 'uppercase',
     letterSpacing: 1,
+    ...LIG_FIX,
   },
   categoryDivider: {
     borderBottomWidth: 1,
@@ -124,11 +146,13 @@ const styles = StyleSheet.create({
     color: '#1C1C1E',
     flex: 1,
     marginRight: 12,
+    ...LIG_FIX,
   },
   itemPrice: {
     fontSize: 12,
     fontWeight: 700,
     color: '#1C1C1E',
+    ...LIG_FIX,
   },
   itemDescription: {
     fontSize: 10,
@@ -136,11 +160,13 @@ const styles = StyleSheet.create({
     color: '#6B6B70',
     lineHeight: 1.4,
     marginBottom: 3,
+    ...LIG_FIX,
   },
   itemMeta: {
     fontSize: 9,
     fontWeight: 400,
     color: '#6B6B70',
+    ...LIG_FIX,
   },
   itemDivider: {
     borderBottomWidth: 0.5,
@@ -153,26 +179,54 @@ const styles = StyleSheet.create({
   },
   footer: {
     position: 'absolute',
-    bottom: 30,
+    bottom: 25,
     left: 40,
     right: 40,
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     borderTopWidth: 0.5,
     borderTopColor: '#E5E5E5',
     paddingTop: 8,
   },
-  footerText: {
-    fontSize: 9,
-    fontWeight: 400,
-    color: '#9B9B9E',
+  footerLogo: {
+    width: 80,
+    height: 20,
+    objectFit: 'contain',
   },
   pageNumber: {
     fontSize: 9,
     fontWeight: 400,
     color: '#9B9B9E',
+    ...LIG_FIX,
   },
 });
+
+/**
+ * Restoran logosu için PDF-safe URL üret.
+ * Supabase storage URL'lerini render/image transform ile getir (CORS + boyut).
+ */
+function getLogoUrl(logoUrl: string | null): string | undefined {
+  if (!logoUrl) return undefined;
+  if (logoUrl.includes('/storage/v1/object/public/')) {
+    return (
+      logoUrl.replace('/object/public/', '/render/image/public/') +
+      '?width=160&height=160&resize=contain&quality=80'
+    );
+  }
+  return logoUrl;
+}
+
+/**
+ * Tabbled horizontal logosu için absolute URL.
+ * Browser'da window.location.origin; SSR fallback olarak tabbled.com.
+ */
+function getTabbledLogoUrl(): string {
+  if (typeof window !== 'undefined') {
+    return `${window.location.origin}/tabbled-logo-horizontal.png`;
+  }
+  return 'https://tabbled.com/tabbled-logo-horizontal.png';
+}
 
 function formatDate(isoDate: string | null): string {
   if (!isoDate) return '';
@@ -251,17 +305,25 @@ export function MenuPDF({
     >
       <Page size="A4" style={styles.page} wrap>
         <View style={styles.header}>
-          <Text style={styles.restaurantName}>{restaurant.name}</Text>
-          {restaurant.address && (
-            <Text style={styles.restaurantAddress}>{restaurant.address}</Text>
-          )}
-          <View style={styles.legalInfo}>
-            <Text style={styles.legalText}>
-              {strings.priceEffectiveFrom}: {formatDate(restaurant.price_effective_date)}
-            </Text>
-            {restaurant.show_vat_notice && (
-              <Text style={styles.legalText}>{strings.vatIncluded}</Text>
+          {(() => {
+            const logoSrc = getLogoUrl(restaurant.logo_url);
+            return logoSrc ? (
+              <Image src={logoSrc} style={styles.headerLogo} />
+            ) : null;
+          })()}
+          <View style={styles.headerText}>
+            <Text style={styles.restaurantName}>{restaurant.name}</Text>
+            {restaurant.address && (
+              <Text style={styles.restaurantAddress}>{restaurant.address}</Text>
             )}
+            <View style={styles.legalInfo}>
+              <Text style={styles.legalText}>
+                {strings.priceEffectiveFrom}: {formatDate(restaurant.price_effective_date)}
+              </Text>
+              {restaurant.show_vat_notice && (
+                <Text style={styles.legalText}>{strings.vatIncluded}</Text>
+              )}
+            </View>
           </View>
         </View>
 
@@ -322,9 +384,7 @@ export function MenuPDF({
         })}
 
         <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>
-            {strings.poweredBy} · tabbled.com
-          </Text>
+          <Image src={getTabbledLogoUrl()} style={styles.footerLogo} />
           <Text
             style={styles.pageNumber}
             render={({ pageNumber, totalPages }) =>
