@@ -371,6 +371,16 @@ export default function RestaurantDashboard() {
   const [trialExpired, setTrialExpired] = useState(false);
   const [trialDaysLeft, setTrialDaysLeft] = useState<number | null>(null);
   const [planName, setPlanName] = useState<string | null>(null);
+  const [premiumBannerDismissed, setPremiumBannerDismissed] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try { return localStorage.getItem('tabbled_premium_dismissed') === '1'; } catch { return false; }
+  });
+  const dismissPremiumBanner = () => {
+    setPremiumBannerDismissed(true);
+    try { localStorage.setItem('tabbled_premium_dismissed', '1'); } catch {}
+  };
+  const [newFeedbackCount, setNewFeedbackCount] = useState(0);
+  const [newReviewCount, setNewReviewCount] = useState(0);
 
   const adminTheme = useMemo(() => getAdminTheme(restaurant?.admin_theme), [restaurant?.admin_theme]);
   const S = useMemo(() => makeStyles(adminTheme), [adminTheme]);
@@ -437,6 +447,26 @@ export default function RestaurantDashboard() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
+  }, [restaurant?.id]);
+
+  // Notification counts: new feedback + pending reviews in last 24h
+  useEffect(() => {
+    if (!restaurant?.id) return;
+    const rid = restaurant.id;
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    supabase
+      .from('feedback')
+      .select('id', { count: 'exact', head: true })
+      .eq('restaurant_id', rid)
+      .gte('created_at', since)
+      .then(({ count }) => { if (count != null) setNewFeedbackCount(count); });
+    supabase
+      .from('reviews')
+      .select('id', { count: 'exact', head: true })
+      .eq('restaurant_id', rid)
+      .neq('status', 'approved')
+      .gte('created_at', since)
+      .then(({ count }) => { if (count != null) setNewReviewCount(count); });
   }, [restaurant?.id]);
 
   // Trial subscription check
@@ -1089,7 +1119,7 @@ export default function RestaurantDashboard() {
               href="/iletisim?plan=basic&source=trial_expired"
               style={{
                 display: 'block', width: '100%', padding: '11px 20px', fontSize: 14, fontWeight: 600,
-                color: '#FFFFFF', background: '#FF4F7A', border: 'none', borderRadius: 8,
+                color: '#FFFFFF', background: '#10B981', border: 'none', borderRadius: 8,
                 textAlign: 'center', textDecoration: 'none', boxSizing: 'border-box',
               }}
             >
@@ -1309,21 +1339,75 @@ export default function RestaurantDashboard() {
 
       {/* Main content */}
       <main className="flex-1 min-w-0">
-        {/* Mobile top bar — hamburger + section label */}
-        {isMobile && (
-          <div className="sticky top-0 z-40 flex items-center gap-3 px-4 py-3 bg-white border-b border-[#E5E5E3]">
-            <button onClick={() => setSidebarOpen(true)} className="p-1" aria-label="Menü">
-              <List size={22} />
+        {/* Notification bell — shared button for mobile & desktop top bars */}
+        {(() => {
+          const notifUnreadCount = pendingCallCount + newFeedbackCount + newReviewCount;
+          const goToNotifs = () => {
+            if (pendingCallCount > 0) setActiveTab('calls');
+            else if (newFeedbackCount > 0) setActiveTab('feedback');
+            else if (newReviewCount > 0) setActiveTab('feedback');
+          };
+          const BellButton = (
+            <button
+              onClick={goToNotifs}
+              aria-label="Bildirimler"
+              title={notifUnreadCount > 0 ? `${notifUnreadCount} yeni bildirim` : 'Bildirimler'}
+              style={{
+                position: 'relative',
+                width: 36,
+                height: 36,
+                borderRadius: 8,
+                border: 'none',
+                background: 'transparent',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'background 0.15s ease',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = '#F7F7F8')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+            >
+              <Bell size={20} weight="thin" color="#6B7280" />
+              {notifUnreadCount > 0 && (
+                <span
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    top: 6,
+                    right: 6,
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    background: '#10B981',
+                    boxShadow: '0 0 0 2px #FFFFFF',
+                  }}
+                />
+              )}
             </button>
-            <span className="text-sm font-semibold text-[#1C1C1E]">{activeLabel}</span>
-            {pendingCallCount > 0 && activeTab !== 'calls' && (
-              <button onClick={() => setActiveTab('calls')} className="ml-auto relative p-1">
-                <Bell size={20} className="text-[#6B6B6F]" />
-                <span className="absolute -top-0.5 -right-0.5 text-[8px] font-bold text-white rounded-full w-4 h-4 flex items-center justify-center" style={{ background: '#FF4F7A' }}>{pendingCallCount}</span>
-              </button>
-            )}
-          </div>
-        )}
+          );
+
+          return (
+            <>
+              {/* Mobile top bar — hamburger + section label + bell */}
+              {isMobile && (
+                <div className="sticky top-0 z-40 flex items-center gap-3 px-4 py-3 bg-white border-b border-[#E5E5E3]">
+                  <button onClick={() => setSidebarOpen(true)} className="p-1" aria-label="Menü">
+                    <List size={22} />
+                  </button>
+                  <span className="text-sm font-semibold text-[#1C1C1E]">{activeLabel}</span>
+                  <div className="ml-auto">{BellButton}</div>
+                </div>
+              )}
+
+              {/* Desktop top bar — section label + bell */}
+              <div className="hidden md:flex items-center justify-between px-6 py-3 bg-white border-b border-[#E5E5E3]">
+                <span style={{ fontSize: 14, fontWeight: 600, color: '#1C1C1E' }}>{activeLabel}</span>
+                {BellButton}
+              </div>
+            </>
+          );
+        })()}
 
         {trialDaysLeft !== null && trialDaysLeft <= 3 && !trialExpired && (
           <div style={{ margin: '16px 16px 0', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
@@ -1335,7 +1419,7 @@ export default function RestaurantDashboard() {
             </div>
             <a
               href="/iletisim?plan=basic&source=trial_warning"
-              style={{ fontSize: 13, fontWeight: 500, color: '#FF4F7A', textDecoration: 'none', whiteSpace: 'nowrap' }}
+              style={{ fontSize: 13, fontWeight: 500, color: '#10B981', textDecoration: 'none', whiteSpace: 'nowrap' }}
             >
               Plan Seçin →
             </a>
@@ -1343,48 +1427,70 @@ export default function RestaurantDashboard() {
         )}
 
         <div style={S.wrap}>
-          <div
-            className="hidden md:flex"
-            style={{
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 12,
-              marginBottom: 16,
-              background: planName ? 'rgba(255,79,122,0.08)' : '#F3F4F6',
-              borderLeft: `3px solid ${planName ? '#FF4F7A' : '#D1D5DB'}`,
-              borderRadius: 8,
-              padding: '10px 14px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              {planName ? (
-                <span style={{ background: '#FF4F7A', color: '#FFFFFF', fontSize: 12, fontWeight: 600, padding: '4px 12px', borderRadius: 12 }}>
-                  {planName}
+          {!premiumBannerDismissed && plan !== 'enterprise' && (
+            <div
+              className="hidden md:flex"
+              style={{
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                marginBottom: 16,
+                background: '#FFFFFF',
+                border: '1px solid #E5E7EB',
+                borderRadius: 10,
+                padding: '16px 20px',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                <span style={{ fontSize: 11, fontWeight: 500, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Roboto', sans-serif" }}>
+                  PREMIUM
                 </span>
-              ) : (
-                <span style={{ fontSize: 13, color: '#6B6B6F' }}>Henüz plan atanmadı</span>
-              )}
+                <span style={{ fontSize: 13, fontWeight: 400, color: '#6B7280', fontFamily: "'Roboto', sans-serif" }}>
+                  {planName ? "Daha fazla özellik için Premium'a geçin" : 'Plan bilgisi için iletişime geçin'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <a
+                  href={planName
+                    ? 'https://wa.me/905325119484?text=Plan%C4%B1m%C4%B1%20y%C3%BCkseltmek%20istiyorum'
+                    : 'https://wa.me/905325119484?text=Plan%20hakk%C4%B1nda%20bilgi%20almak%20istiyorum'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 500,
+                    color: '#1C1C1E',
+                    border: '1px solid #E5E7EB',
+                    padding: '8px 14px',
+                    borderRadius: 6,
+                    textDecoration: 'none',
+                    background: '#FFFFFF',
+                    fontFamily: "'Roboto', sans-serif",
+                    transition: 'background 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = '#F7F7F8')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = '#FFFFFF')}
+                >
+                  {planName ? 'Yükselt' : 'İletişime Geç'}
+                </a>
+                <button
+                  onClick={dismissPremiumBanner}
+                  aria-label="Kapat"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: 4,
+                    cursor: 'pointer',
+                    color: '#9CA3AF',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  <X size={14} weight="thin" />
+                </button>
+              </div>
             </div>
-            {planName && plan !== 'enterprise' ? (
-              <a
-                href="https://wa.me/905325119484?text=Plan%C4%B1m%C4%B1%20y%C3%BCkseltmek%20istiyorum"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ fontSize: 12, fontWeight: 600, color: '#FF4F7A', border: '1px solid #FF4F7A', padding: '4px 12px', borderRadius: 12, textDecoration: 'none' }}
-              >
-                Yükselt
-              </a>
-            ) : !planName ? (
-              <a
-                href="https://wa.me/905325119484?text=Plan%20hakk%C4%B1nda%20bilgi%20almak%20istiyorum"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ fontSize: 12, fontWeight: 600, color: '#FF4F7A', border: '1px solid #FF4F7A', padding: '4px 12px', borderRadius: 12, textDecoration: 'none' }}
-              >
-                İletişime Geç
-              </a>
-            ) : null}
-          </div>
+          )}
 
           {activeTab === 'dashboard' && (
             <RestaurantAnalytics
@@ -1622,7 +1728,7 @@ export default function RestaurantDashboard() {
                         type="button"
                         onClick={generateAIDescription}
                         disabled={generatingAI || !itemForm.name_tr}
-                        style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', fontSize: 11, fontWeight: 600, borderRadius: 6, border: 'none', backgroundColor: generatingAI ? '#E5E5E3' : '#FF4F7A', color: generatingAI ? '#999' : '#fff', cursor: generatingAI ? 'not-allowed' : 'pointer', transition: 'all 0.15s', opacity: !itemForm.name_tr ? 0.5 : 1, fontFamily: "'Roboto', sans-serif" }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', fontSize: 11, fontWeight: 600, borderRadius: 6, border: 'none', backgroundColor: generatingAI ? '#E5E5E3' : '#10B981', color: generatingAI ? '#999' : '#fff', cursor: generatingAI ? 'not-allowed' : 'pointer', transition: 'all 0.15s', opacity: !itemForm.name_tr ? 0.5 : 1, fontFamily: "'Roboto', sans-serif" }}
                         title="AI ile açıklama oluştur"
                       >
                         {generatingAI ? (
@@ -1643,8 +1749,8 @@ export default function RestaurantDashboard() {
 
                 {/* AI Önizleme */}
                 {aiPreview && (
-                  <div style={{ padding: 12, marginBottom: 8, borderRadius: 8, border: '1px solid #FF4F7A40', backgroundColor: '#FFF5F7' }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: '#FF4F7A', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <div style={{ padding: 12, marginBottom: 8, borderRadius: 8, border: '1px solid #10B98140', backgroundColor: '#ECFDF5' }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#10B981', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
                       <Pen size={12} /> AI Önizleme
                     </div>
                     <div style={{ fontSize: 13, color: adminTheme.value, lineHeight: 1.5, marginBottom: 8 }}>
@@ -1990,9 +2096,9 @@ export default function RestaurantDashboard() {
                           borderRadius: 20,
                           cursor: 'pointer',
                           transition: 'all 0.15s',
-                          border: selected ? '2px solid #FF4F7A' : '1px solid #E5E5E3',
-                          background: selected ? '#fdf2f8' : '#fff',
-                          color: selected ? '#FF4F7A' : '#2D2D2F',
+                          border: selected ? '2px solid #10B981' : '1px solid #E5E5E3',
+                          background: selected ? '#ECFDF5' : '#fff',
+                          color: selected ? '#10B981' : '#2D2D2F',
                           fontWeight: selected ? 700 : 400,
                           display: 'inline-flex',
                           alignItems: 'center',
@@ -2021,9 +2127,9 @@ export default function RestaurantDashboard() {
                           borderRadius: 20,
                           cursor: 'pointer',
                           transition: 'all 0.15s',
-                          border: selected ? '2px solid #FF4F7A' : '1px solid #E5E5E3',
-                          background: selected ? '#fdf2f8' : '#fff',
-                          color: selected ? '#FF4F7A' : '#2D2D2F',
+                          border: selected ? '2px solid #10B981' : '1px solid #E5E5E3',
+                          background: selected ? '#ECFDF5' : '#fff',
+                          color: selected ? '#10B981' : '#2D2D2F',
                           fontWeight: selected ? 700 : 400,
                           display: 'inline-flex',
                           alignItems: 'center',
@@ -2043,7 +2149,7 @@ export default function RestaurantDashboard() {
                 </label>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#2D2D2F' }}>
                   <input type="checkbox" checked={itemForm.is_featured} onChange={e => setItemForm({ ...itemForm, is_featured: e.target.checked })} />
-                  <Star size={14} style={{ color: '#FF4F7A' }} /> Öne Çıkar
+                  <Star size={14} style={{ color: '#10B981' }} /> Öne Çıkar
                 </label>
               </div>
               {/* Sold-out toggle */}
@@ -2173,7 +2279,7 @@ export default function RestaurantDashboard() {
                   onClick={() => setItemForm({ ...itemForm, happyHourOpen: !itemForm.happyHourOpen })}
                   style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#1C1C1E' }}
                 >
-                  <Tag size={16} style={{ color: '#FF4F7A' }} />
+                  <Tag size={16} style={{ color: '#10B981' }} />
                   Happy Hour
                   {itemForm.happy_hour_active && <span style={{ fontSize: 11, color: '#22c55e', fontWeight: 400 }}>(Aktif)</span>}
                   <span style={{ marginLeft: 'auto', fontSize: 12, color: '#999' }}>{itemForm.happyHourOpen ? '▲' : '▼'}</span>
@@ -2241,7 +2347,7 @@ export default function RestaurantDashboard() {
                                   const current = itemForm.happy_hour_days || [];
                                   const updated = selected ? current.filter(d => d !== day.key) : [...current, day.key];
                                   setItemForm({ ...itemForm, happy_hour_days: updated.length > 0 ? updated : null });
-                                }} style={{ padding: '4px 8px', fontSize: 11, borderRadius: 6, border: `1px solid ${selected ? '#FF4F7A' : '#E5E5E3'}`, backgroundColor: selected ? '#FF4F7A' : '#fff', color: selected ? '#fff' : '#666', cursor: 'pointer', fontWeight: selected ? 600 : 400 }}>
+                                }} style={{ padding: '4px 8px', fontSize: 11, borderRadius: 6, border: `1px solid ${selected ? '#10B981' : '#E5E5E3'}`, backgroundColor: selected ? '#10B981' : '#fff', color: selected ? '#fff' : '#666', cursor: 'pointer', fontWeight: selected ? 600 : 400 }}>
                                   {day.label}
                                 </button>
                               );
@@ -2698,7 +2804,7 @@ export default function RestaurantDashboard() {
                       <button
                         type="button"
                         onClick={() => openPicker('video', (url) => setCategoryVideoFromPicker(c.id, url))}
-                        style={{ background: 'none', border: 'none', color: c.video_url ? '#FF4F7A' : '#A0A0A0', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }}
+                        style={{ background: 'none', border: 'none', color: c.video_url ? '#10B981' : '#A0A0A0', cursor: 'pointer', padding: 4, display: 'inline-flex', alignItems: 'center' }}
                         title={c.video_url ? 'Video değiştir (kütüphaneden)' : 'Kategori videosu (kütüphaneden seç)'}
                       >
                         <VideoCamera size={16} weight={c.video_url ? 'fill' : 'regular'} />
