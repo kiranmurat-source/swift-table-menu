@@ -72,6 +72,7 @@ import { AllergenIcon } from '../components/AllergenIcon';
 import { THEMES } from '../lib/themes';
 import type { Promo } from '../components/PromoPopup';
 import { ProfileTab } from '../components/ProfilePanel';
+import { LegalSettings } from '../components/admin/LegalSettings';
 import { PromosTab } from '../components/PromosPanel';
 import { Restaurant, makeStyles, toggleSwitchStyle, toggleKnobStyle } from '../components/admin/dashboardShared';
 
@@ -1398,7 +1399,18 @@ export default function RestaurantDashboard() {
               theme={adminTheme}
             />
           )}
-          {activeTab === 'profile' && <ProfileTab restaurant={restaurant} onUpdate={(r) => setRestaurant(r)} theme={adminTheme} />}
+          {activeTab === 'profile' && (
+            <>
+              <ProfileTab restaurant={restaurant} onUpdate={(r) => setRestaurant(r)} theme={adminTheme} />
+              <div style={{ maxWidth: 900, margin: '0 auto', padding: '0 24px' }}>
+                <LegalSettings
+                  restaurantId={restaurant.id}
+                  initialPriceEffectiveDate={restaurant.price_effective_date ?? null}
+                  initialShowVatNotice={restaurant.show_vat_notice ?? true}
+                />
+              </div>
+            </>
+          )}
       {activeTab === 'qr' && <QRManager restaurant={restaurant} theme={adminTheme} />}
       {activeTab === 'media' && <MediaLibrary restaurantId={restaurant.id} restaurantSlug={restaurant.slug} theme={adminTheme} />}
       {activeTab === 'import' && <MenuImport restaurantId={restaurant.id} theme={adminTheme} onImported={() => loadCategories(restaurant.id)} />}

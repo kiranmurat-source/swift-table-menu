@@ -33,6 +33,8 @@ export interface Restaurant {
   google_review_count: number | null;
   menu_view_mode: string | null;
   admin_theme: string | null;
+  price_effective_date?: string | null;
+  show_vat_notice?: boolean;
 }
 
 export interface MenuCategory {

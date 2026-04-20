@@ -25,6 +25,8 @@ export type Restaurant = {
   google_rating_updated_at: string | null;
   menu_view_mode: string | null;
   admin_theme: string | null;
+  price_effective_date?: string | null;
+  show_vat_notice?: boolean;
 };
 
 export const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
