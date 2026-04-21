@@ -9,7 +9,7 @@
 import { useEffect, useMemo, useState, useRef, Fragment, lazy, Suspense, ReactNode, CSSProperties } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/useAuth';
-import { Camera, PencilSimple, CheckCircle, XCircle, AppleLogo, Star, Globe, Pen, Rows, User, Image, Trash, Link, Package, CaretCircleDown, CaretCircleUp, PlusCircle, Clock, Grains, Timer, Info, Bell, List, SquaresFour, Tag, Palette, ChatCircle, Percent, Heart, ChartBar, ArrowsClockwise, Warning, X, VideoCamera, Users, Gauge, Images, FileArrowUp, Sparkle } from "@phosphor-icons/react";
+import { Camera, PencilSimple, CheckCircle, XCircle, AppleLogo, Star, Globe, Pen, Rows, User, Image, Trash, Link, Package, CaretCircleDown, CaretCircleUp, PlusCircle, Clock, Grains, Timer, Info, Bell, List, SquaresFour, Tag, Palette, ChatCircle, Percent, Heart, ChartBar, ArrowsClockwise, X, VideoCamera, Users, Gauge, Images, FileArrowUp, Sparkle } from "@phosphor-icons/react";
 import MediaLibrary from '../components/admin/MediaLibrary';
 import MediaPickerModal, { type MediaAccept, attachMediaUsage, detachMediaUsage } from '../components/admin/MediaPickerModal';
 import MenuImport from '../components/admin/MenuImport';
@@ -391,15 +391,6 @@ export default function RestaurantDashboard() {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [trialExpired, setTrialExpired] = useState(false);
   const [trialDaysLeft, setTrialDaysLeft] = useState<number | null>(null);
-  const [planName, setPlanName] = useState<string | null>(null);
-  const [premiumBannerDismissed, setPremiumBannerDismissed] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    try { return localStorage.getItem('tabbled_premium_dismissed') === '1'; } catch { return false; }
-  });
-  const dismissPremiumBanner = () => {
-    setPremiumBannerDismissed(true);
-    try { localStorage.setItem('tabbled_premium_dismissed', '1'); } catch {}
-  };
 
   const adminTheme = useMemo(() => getAdminTheme(restaurant?.admin_theme), [restaurant?.admin_theme]);
   const S = useMemo(() => makeStyles(adminTheme), [adminTheme]);
@@ -475,7 +466,7 @@ export default function RestaurantDashboard() {
     const checkSubscription = async () => {
       const { data: subs } = await supabase
         .from('subscriptions')
-        .select('*, subscription_plans(name)')
+        .select('*')
         .eq('restaurant_id', restaurant.id)
         .order('end_date', { ascending: false })
         .limit(1);
@@ -484,12 +475,8 @@ export default function RestaurantDashboard() {
 
       if (!activeSub) {
         setTrialExpired(true);
-        setPlanName(null);
         return;
       }
-
-      const subPlanName = (activeSub as { subscription_plans?: { name?: string } }).subscription_plans?.name || null;
-      setPlanName(subPlanName);
 
       const endDate = new Date(activeSub.end_date);
       const now = new Date();
@@ -1375,89 +1362,75 @@ export default function RestaurantDashboard() {
         }}
       >
 
-        {trialDaysLeft !== null && trialDaysLeft <= 3 && !trialExpired && (
-          <div style={{ margin: '16px 16px 0', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Warning size={18} weight="regular" color="#D97706" />
-              <span style={{ fontSize: 13, color: '#92400E' }}>
-                Deneme süreniz {trialDaysLeft} gün sonra doluyor.
-              </span>
-            </div>
-            <a
-              href="/iletisim?plan=basic&source=trial_warning"
-              style={{ fontSize: 13, fontWeight: 500, color: '#10B981', textDecoration: 'none', whiteSpace: 'nowrap' }}
-            >
-              Plan Seçin →
-            </a>
-          </div>
-        )}
-
         <div style={S.wrap}>
-          {!premiumBannerDismissed && plan !== 'enterprise' && isDesktop && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 12,
-                marginBottom: 16,
-                background: '#FFFFFF',
-                border: 'none',
-                borderRadius: 10,
-                padding: '16px 20px',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-                <span style={{ fontSize: 11, fontWeight: 500, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: "'Roboto', sans-serif" }}>
-                  PREMIUM
-                </span>
-                <span style={{ fontSize: 13, fontWeight: 400, color: '#6B7280', fontFamily: "'Roboto', sans-serif" }}>
-                  {planName ? "Daha fazla özellik için Premium'a geçin" : 'Plan bilgisi için iletişime geçin'}
-                </span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {plan === 'basic' && !trialExpired && (() => {
+            const pillUrgent = trialDaysLeft !== null && trialDaysLeft <= 3;
+            const pillTrial = trialDaysLeft !== null;
+            const pillBg = pillUrgent ? '#FEF2F2' : pillTrial ? '#ECFDF5' : '#F3F4F6';
+            const pillColor = pillUrgent ? '#991B1B' : pillTrial ? '#065F46' : '#374151';
+            const pillText = !pillTrial
+              ? 'BASIC'
+              : trialDaysLeft === 0
+                ? 'BASIC DENEME · Bugün bitiyor'
+                : `BASIC DENEME · ${trialDaysLeft} gün kaldı`;
+            return (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 16,
+                  marginBottom: 16,
+                  background: '#FFFFFF',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: 12,
+                  padding: '12px 16px',
+                  flexWrap: 'wrap',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
+                  <span
+                    style={{
+                      background: pillBg,
+                      color: pillColor,
+                      fontSize: 11,
+                      fontWeight: 500,
+                      padding: '4px 10px',
+                      borderRadius: 999,
+                      whiteSpace: 'nowrap',
+                      letterSpacing: '0.3px',
+                      fontFamily: "'Roboto', sans-serif",
+                    }}
+                  >
+                    {pillText}
+                  </span>
+                  <span style={{ fontSize: 14, color: '#6B7280', flex: 1, minWidth: 0, fontFamily: "'Roboto', sans-serif" }}>
+                    Tüm özelliklere erişim için Premium'a yükseltin.
+                  </span>
+                </div>
                 <a
-                  href={planName
-                    ? 'https://wa.me/905325119484?text=Plan%C4%B1m%C4%B1%20y%C3%BCkseltmek%20istiyorum'
-                    : 'https://wa.me/905325119484?text=Plan%20hakk%C4%B1nda%20bilgi%20almak%20istiyorum'}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="/iletisim?plan=premium&source=upgrade_banner"
                   style={{
-                    fontSize: 13,
-                    fontWeight: 500,
-                    color: '#FFFFFF',
-                    border: 'none',
-                    padding: '8px 16px',
-                    borderRadius: 6,
-                    textDecoration: 'none',
                     background: '#FF4F7A',
+                    color: '#FFFFFF',
+                    padding: '8px 16px',
+                    borderRadius: 8,
+                    fontSize: 14,
+                    fontWeight: 500,
+                    textDecoration: 'none',
+                    whiteSpace: 'nowrap',
                     fontFamily: "'Roboto', sans-serif",
                     transition: 'background 0.15s ease',
                   }}
                   onMouseEnter={(e) => (e.currentTarget.style.background = '#E63E68')}
                   onMouseLeave={(e) => (e.currentTarget.style.background = '#FF4F7A')}
                 >
-                  {planName ? 'Yükselt' : 'İletişime Geç'}
+                  Yükselt
                 </a>
-                <button
-                  onClick={dismissPremiumBanner}
-                  aria-label="Kapat"
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    padding: 4,
-                    cursor: 'pointer',
-                    color: '#9CA3AF',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                  }}
-                >
-                  <X size={14} weight="thin" />
-                </button>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {activeTab === 'dashboard' && (
             <RestaurantAnalytics

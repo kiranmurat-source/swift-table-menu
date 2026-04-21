@@ -8,8 +8,9 @@ import {
   CheckCircle,
   DownloadSimple,
   ImageSquare,
-  VideoCamera,
+  Sparkle,
   Storefront,
+  VideoCamera,
   X,
 } from '@phosphor-icons/react';
 import { supabase } from '../lib/supabase';
@@ -204,7 +205,11 @@ export default function Onboarding() {
   const [itemName, setItemName] = useState('');
   const [itemPrice, setItemPrice] = useState('');
   const [itemImageUrl, setItemImageUrl] = useState<string | null>(null);
+  const [itemDescription, setItemDescription] = useState('');
   const [step4Error, setStep4Error] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiUsed, setAiUsed] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   // Step 5
   const [qrCreated, setQrCreated] = useState(false);
@@ -464,7 +469,8 @@ export default function Onboarding() {
     const catTrim = catName.trim();
     const itemTrim = itemName.trim();
     const priceTrim = itemPrice.trim();
-    const hasItem = Boolean(itemTrim || priceTrim || itemImageUrl);
+    const descTrim = itemDescription.trim();
+    const hasItem = Boolean(itemTrim || priceTrim || itemImageUrl || descTrim);
     if (hasItem && !catTrim) {
       setStep4Error('Önce kategori ekleyin');
       return false;
@@ -499,6 +505,7 @@ export default function Onboarding() {
           restaurant_id: restaurant.id,
           category_id: cat.id,
           name_tr: itemTrim,
+          description_tr: descTrim || null,
           price: priceNum,
           image_url: itemImageUrl,
           sort_order: 0,
@@ -520,6 +527,47 @@ export default function Onboarding() {
       }
     }
     return true;
+  };
+
+  const handleGenerateDescription = async () => {
+    if (!restaurant) return;
+    const nameTrim = itemName.trim();
+    if (!nameTrim || aiLoading || aiUsed) return;
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://qmnrawqvkwehufebbkxp.supabase.co';
+      const priceNum = itemPrice ? parseFloat(itemPrice) : 0;
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-description`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          restaurant_id: restaurant.id,
+          item_id: 'new',
+          name_tr: nameTrim,
+          category_name: catName.trim() || '',
+          price: Number.isFinite(priceNum) ? priceNum : 0,
+          allergens: [],
+          is_vegetarian: false,
+          calories: null,
+          tone: 'descriptive',
+          currentDesc: itemDescription.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.description) {
+        setItemDescription(data.description);
+        setAiUsed(true);
+      } else if (res.status === 402 && data.code === 'INSUFFICIENT_CREDITS') {
+        setAiError('AI krediniz yetersiz. Plan yükselterek daha fazla açıklama üretebilirsiniz.');
+      } else {
+        setAiError(data.error || 'AI açıklama oluşturulamadı.');
+      }
+    } catch {
+      setAiError('AI servisi bağlantı hatası.');
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const goNext = async () => {
@@ -1148,6 +1196,50 @@ export default function Onboarding() {
                       </button>
                     )}
                   </div>
+                </div>
+
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, gap: 8, flexWrap: 'wrap' }}>
+                    <label style={{ ...label, marginBottom: 0 }}>Açıklama</label>
+                    <button
+                      type="button"
+                      onClick={handleGenerateDescription}
+                      disabled={!itemName.trim() || aiLoading || aiUsed}
+                      aria-label="AI ile açıklama oluştur"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '6px 10px',
+                        background: aiUsed ? '#F3F4F6' : '#FDF2F8',
+                        color: aiUsed ? '#9CA3AF' : '#DB2777',
+                        border: `1px solid ${aiUsed ? '#E5E7EB' : '#FBCFE8'}`,
+                        borderRadius: 8,
+                        fontSize: 12,
+                        fontWeight: 500,
+                        cursor: (!itemName.trim() || aiLoading || aiUsed) ? 'not-allowed' : 'pointer',
+                        opacity: !itemName.trim() ? 0.5 : 1,
+                        fontFamily: FONT,
+                      }}
+                    >
+                      <Sparkle size={14} weight="thin" />
+                      {aiLoading ? 'Oluşturuluyor…' : aiUsed ? 'AI ile oluşturuldu' : 'AI ile oluştur'}
+                    </button>
+                  </div>
+                  <textarea
+                    value={itemDescription}
+                    onChange={(e) => setItemDescription(e.target.value)}
+                    rows={3}
+                    maxLength={300}
+                    placeholder="Ürününüzü kısaca tanıtın veya AI'ya yazdırın."
+                    style={{ ...inputBase, resize: 'none' as const }}
+                  />
+                  {aiError && <p style={errorStyle}>{aiError}</p>}
+                  {aiUsed && (
+                    <p style={{ fontSize: 12, color: C.hint, marginTop: 4 }}>
+                      Trial'da 1 AI kullanımı hakkınız vardı. Daha fazlası için Premium'a yükseltin.
+                    </p>
+                  )}
                 </div>
 
                 {step4Error && (
