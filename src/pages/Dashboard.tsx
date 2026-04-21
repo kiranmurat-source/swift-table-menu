@@ -43,11 +43,20 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (user) {
-      supabase.from('profiles').select('role, restaurant_id').eq('id', user.id).single()
+      supabase
+        .from('profiles')
+        .select('role, restaurant_id, restaurant:restaurants(onboarding_completed_at)')
+        .eq('id', user.id)
+        .single()
         .then(({ data }) => {
-          if (data && data.role !== 'super_admin' && !data.restaurant_id) {
-            navigate('/onboarding', { replace: true });
-            return;
+          if (data && data.role !== 'super_admin') {
+            const rel = (data as { restaurant?: { onboarding_completed_at?: string | null } | Array<{ onboarding_completed_at?: string | null }> | null }).restaurant;
+            const completedAt = Array.isArray(rel) ? rel[0]?.onboarding_completed_at : rel?.onboarding_completed_at;
+            const needsOnboarding = !data.restaurant_id || !completedAt;
+            if (needsOnboarding) {
+              navigate('/onboarding', { replace: true });
+              return;
+            }
           }
           setRole(data?.role ?? 'restaurant');
           setRestaurantId(data?.restaurant_id ?? null);
