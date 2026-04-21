@@ -2184,12 +2184,19 @@ function ItemDetailModal({ item, allItems, lang, theme, onClose, onSelectItem, o
     return () => {
       const duration = Math.round((Date.now() - openedAt) / 1000);
       if (duration < 2 || duration > 300) return;
-      void supabase.from('menu_item_views').insert({
-        menu_item_id: itemId,
-        restaurant_id: restaurantId,
-        fingerprint: getFingerprint(),
-        duration_seconds: duration,
-      });
+      supabase
+        .from('menu_item_views')
+        .insert({
+          menu_item_id: itemId,
+          restaurant_id: restaurantId,
+          fingerprint: getFingerprint(),
+          duration_seconds: duration,
+        })
+        .then(({ error }) => {
+          if (error) {
+            console.error('[Tabbled] menu_item_views insert failed:', error);
+          }
+        });
     };
   }, [item.id, item.restaurant_id]);
 
