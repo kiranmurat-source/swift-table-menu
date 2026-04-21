@@ -333,6 +333,12 @@ export default function RestaurantDashboard() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'menu' | 'import' | 'translations' | 'qr' | 'media' | 'profile' | 'promos' | 'calls' | 'feedback' | 'discounts' | 'likes' | 'customers'>('dashboard');
   const [pendingCallCount, setPendingCallCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    const openSidebar = () => setSidebarOpen(true);
+    window.addEventListener('tabbled:open-sidebar', openSidebar);
+    return () => window.removeEventListener('tabbled:open-sidebar', openSidebar);
+  }, []);
   const [isDesktop, setIsDesktop] = useState(typeof window !== 'undefined' && window.innerWidth >= 1024);
   const [sidebarHovered, setSidebarHovered] = useState(false);
   const sidebarHoverTimerRef = useRef<number | null>(null);
@@ -384,8 +390,6 @@ export default function RestaurantDashboard() {
     setPremiumBannerDismissed(true);
     try { localStorage.setItem('tabbled_premium_dismissed', '1'); } catch {}
   };
-  const [newFeedbackCount, setNewFeedbackCount] = useState(0);
-  const [newReviewCount, setNewReviewCount] = useState(0);
 
   const adminTheme = useMemo(() => getAdminTheme(restaurant?.admin_theme), [restaurant?.admin_theme]);
   const S = useMemo(() => makeStyles(adminTheme), [adminTheme]);
@@ -452,26 +456,6 @@ export default function RestaurantDashboard() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [restaurant?.id]);
-
-  // Notification counts: new feedback + pending reviews in last 24h
-  useEffect(() => {
-    if (!restaurant?.id) return;
-    const rid = restaurant.id;
-    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    supabase
-      .from('feedback')
-      .select('id', { count: 'exact', head: true })
-      .eq('restaurant_id', rid)
-      .gte('created_at', since)
-      .then(({ count }) => { if (count != null) setNewFeedbackCount(count); });
-    supabase
-      .from('reviews')
-      .select('id', { count: 'exact', head: true })
-      .eq('restaurant_id', rid)
-      .neq('status', 'approved')
-      .gte('created_at', since)
-      .then(({ count }) => { if (count != null) setNewReviewCount(count); });
   }, [restaurant?.id]);
 
   // Trial subscription check
@@ -1379,98 +1363,6 @@ export default function RestaurantDashboard() {
           background: '#FAFAF9',
         }}
       >
-        {/* Notification bell — shared button for mobile & desktop top bars */}
-        {(() => {
-          const notifUnreadCount = pendingCallCount + newFeedbackCount + newReviewCount;
-          const goToNotifs = () => {
-            if (pendingCallCount > 0) setActiveTab('calls');
-            else if (newFeedbackCount > 0) setActiveTab('feedback');
-            else if (newReviewCount > 0) setActiveTab('feedback');
-          };
-          const BellButton = (
-            <button
-              onClick={goToNotifs}
-              aria-label="Bildirimler"
-              title={notifUnreadCount > 0 ? `${notifUnreadCount} yeni bildirim` : 'Bildirimler'}
-              style={{
-                position: 'relative',
-                width: 36,
-                height: 36,
-                borderRadius: 8,
-                border: 'none',
-                background: 'transparent',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                transition: 'background 0.15s ease',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = '#F7F7F8')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-            >
-              <Bell size={20} weight="thin" color="#6B7280" />
-              {notifUnreadCount > 0 && (
-                <span
-                  aria-hidden="true"
-                  style={{
-                    position: 'absolute',
-                    top: 6,
-                    right: 6,
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    background: '#10B981',
-                    boxShadow: '0 0 0 2px #FFFFFF',
-                  }}
-                />
-              )}
-            </button>
-          );
-
-          return (
-            <div
-              className="sticky top-0 z-30 flex items-center bg-white border-b border-[#E5E5E3]"
-              style={{
-                gap: 12,
-                padding: isDesktop ? '10px 24px' : '10px 16px',
-              }}
-            >
-              {!isDesktop && (
-                <button
-                  onClick={() => setSidebarOpen(true)}
-                  aria-label="Menü"
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 8,
-                    border: 'none',
-                    background: 'transparent',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = '#F7F7F8')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                >
-                  <List size={22} weight="thin" color="#1C1C1E" />
-                </button>
-              )}
-              <span style={{ fontSize: 14, fontWeight: 600, color: '#1C1C1E' }}>{activeLabel}</span>
-              <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
-                {isDesktop && user?.email && (
-                  <span
-                    style={{ fontSize: 13, fontWeight: 400, color: '#6B7280', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                    title={user.email}
-                  >
-                    {user.email}
-                  </span>
-                )}
-                {BellButton}
-              </div>
-            </div>
-          );
-        })()}
 
         {trialDaysLeft !== null && trialDaysLeft <= 3 && !trialExpired && (
           <div style={{ margin: '16px 16px 0', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>

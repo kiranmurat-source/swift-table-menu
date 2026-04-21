@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import RestaurantDashboard from './RestaurantDashboard';
-import TabbledLogo from '@/components/TabbledLogo';
-import { Bell } from '@phosphor-icons/react';
+import { Bell, List } from '@phosphor-icons/react';
 
 type NotificationRow = {
   id: string;
@@ -16,12 +15,21 @@ type NotificationRow = {
 };
 
 export default function Dashboard() {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [role, setRole] = useState<string | null>(null);
   const [roleLoading, setRoleLoading] = useState(true);
   const [notifications, setNotifications] = useState<NotificationRow[]>([]);
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(
+    typeof window !== 'undefined' && window.innerWidth >= 1024,
+  );
+
+  useEffect(() => {
+    const onResize = () => setIsDesktop(window.innerWidth >= 1024);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   useEffect(() => {
     if (!loading && !user) navigate('/login');
@@ -72,24 +80,93 @@ export default function Dashboard() {
   if (loading || roleLoading) return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Roboto', sans-serif" }}>Yukleniyor...</div>;
   if (!user) return null;
 
+  const showBell = role === 'restaurant';
+
   return (
     <div style={{ minHeight: '100vh', background: '#F7F7F5', fontFamily: "'Roboto', -apple-system, sans-serif" }}>
-      <div style={{ borderBottom: '1px solid #E5E5E3', background: '#FFFFFF', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-          <TabbledLogo sizeClass="h-7" />
-          {role === 'super_admin' && <span style={{ fontSize: 11, fontWeight: 600, color: '#FFFFFF', background: '#FF4F7A', padding: '2px 8px', borderRadius: 4 }}>ADMIN</span>}
-        </span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      {/* Consolidated top bar — hamburger (mobile) / spacer (desktop) | centered logo | bell (restaurant only) */}
+      <header
+        style={{
+          height: 56,
+          background: '#FFFFFF',
+          borderBottom: '1px solid #E5E7EB',
+          display: 'grid',
+          gridTemplateColumns: isDesktop ? '64px 1fr auto' : 'auto 1fr auto',
+          alignItems: 'center',
+          position: 'sticky',
+          top: 0,
+          zIndex: 30,
+          paddingLeft: isDesktop ? 0 : 12,
+          paddingRight: 16,
+        }}
+      >
+        {/* Left: empty spacer on desktop (matches 64px rail), hamburger on mobile (restaurant only — SuperAdminDashboard has no sidebar listener) */}
+        {isDesktop || role !== 'restaurant' ? (
+          <div />
+        ) : (
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event('tabbled:open-sidebar'))}
+            aria-label="Menü"
+            style={{
+              width: 36,
+              height: 36,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'transparent',
+              border: 'none',
+              borderRadius: 8,
+              cursor: 'pointer',
+              color: '#1C1C1E',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = '#F3F4F6'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+          >
+            <List size={22} weight="thin" />
+          </button>
+        )}
+
+        {/* Center: Tabbled logo */}
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
+          <img
+            src="/tabbled-logo-horizontal.png"
+            alt="Tabbled"
+            style={{ height: 24, objectFit: 'contain' }}
+          />
+          {role === 'super_admin' && (
+            <span style={{ fontSize: 11, fontWeight: 600, color: '#FFFFFF', background: '#FF4F7A', padding: '2px 8px', borderRadius: 4 }}>
+              ADMIN
+            </span>
+          )}
+        </div>
+
+        {/* Right: Bell + dropdown (restaurant users only) */}
+        {showBell ? (
           <div style={{ position: 'relative' }}>
             <button
               onClick={() => setShowNotifDropdown(v => !v)}
-              style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center' }}
               aria-label="Bildirimler"
+              style={{
+                position: 'relative',
+                width: 36,
+                height: 36,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'transparent',
+                border: 'none',
+                borderRadius: 8,
+                cursor: 'pointer',
+                color: '#6B7280',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = '#F3F4F6'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
             >
-              <Bell size={20} color="#6B6B6F" />
+              <Bell size={20} weight="thin" />
               {unreadCount > 0 && (
                 <span style={{
-                  position: 'absolute', top: -2, right: -2,
+                  position: 'absolute', top: 4, right: 4,
                   background: '#10B981', color: '#FFFFFF',
                   fontSize: 10, fontWeight: 700,
                   borderRadius: 9999, minWidth: 16, height: 16,
@@ -161,10 +238,10 @@ export default function Dashboard() {
               </>
             )}
           </div>
-          <span style={{ fontSize: 13, color: '#6B6B6F' }}>{user.email}</span>
-          <button onClick={signOut} style={{ padding: '6px 14px', fontSize: 13, fontWeight: 500, background: 'transparent', border: '1px solid #E5E5E3', borderRadius: 8, cursor: 'pointer', color: '#2D2D2F', transition: 'all 0.15s ease' }}>Cikis</button>
-        </div>
-      </div>
+        ) : (
+          <div />
+        )}
+      </header>
       {role === 'super_admin' ? <SuperAdminDashboard /> : <RestaurantDashboard />}
     </div>
   );
