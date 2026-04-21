@@ -94,6 +94,19 @@ function t(
   return fallback ?? '';
 }
 
+const isVideoUrl = (url?: string | null): boolean => {
+  if (!url) return false;
+  const lower = url.toLowerCase().split('?')[0];
+  return lower.endsWith('.mp4') || lower.endsWith('.webm') || lower.endsWith('.mov');
+};
+
+const getVideoMimeType = (url: string): string => {
+  const lower = url.toLowerCase().split('?')[0];
+  if (lower.endsWith('.webm')) return 'video/webm';
+  if (lower.endsWith('.mov')) return 'video/quicktime';
+  return 'video/mp4';
+};
+
 const FILTER_ALLERGEN_KEYS = [
   'cereal', 'milk', 'eggs', 'fish', 'crustaceans', 'peanuts', 'soybeans', 'nuts',
   'celery', 'mustard', 'sesame', 'sulphites', 'lupin', 'molluscs',
@@ -628,7 +641,33 @@ export default function PublicMenu() {
           </>
         ) : coverImage ? (
           <>
-            <img onError={handleImageError} src={coverImage} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            {isVideoUrl(coverImageRaw) ? (
+              <video
+                key={coverImageRaw || undefined}
+                autoPlay
+                muted
+                defaultMuted
+                loop
+                playsInline
+                preload="auto"
+                disablePictureInPicture
+                controls={false}
+                poster={restaurant.logo_url || undefined}
+                className="absolute inset-0 w-full h-full object-cover"
+                style={{ pointerEvents: 'none' }}
+                onLoadedMetadata={(e) => {
+                  const v = e.currentTarget;
+                  v.muted = true;
+                  const p = v.play();
+                  if (p && typeof p.catch === 'function') p.catch(() => {});
+                }}
+                onError={(e) => { (e.currentTarget as HTMLVideoElement).style.display = 'none'; }}
+              >
+                <source src={coverImageRaw!} type={getVideoMimeType(coverImageRaw!)} />
+              </video>
+            ) : (
+              <img onError={handleImageError} src={coverImage} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            )}
             <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.1) 100%)' }} />
           </>
         ) : (
@@ -1073,7 +1112,33 @@ export default function PublicMenu() {
       {/* Cover Image */}
       {coverImage && (
         <div className="relative h-44" style={{ backgroundColor: theme.cardBg }}>
-          <img onError={handleImageError} src={coverImage} alt="" className="w-full h-full object-cover opacity-80" />
+          {isVideoUrl(coverImageRaw) ? (
+            <video
+              key={coverImageRaw || undefined}
+              autoPlay
+              muted
+              defaultMuted
+              loop
+              playsInline
+              preload="auto"
+              disablePictureInPicture
+              controls={false}
+              poster={restaurant.logo_url || undefined}
+              className="w-full h-full object-cover opacity-80"
+              style={{ pointerEvents: 'none' }}
+              onLoadedMetadata={(e) => {
+                const v = e.currentTarget;
+                v.muted = true;
+                const p = v.play();
+                if (p && typeof p.catch === 'function') p.catch(() => {});
+              }}
+              onError={(e) => { (e.currentTarget as HTMLVideoElement).style.display = 'none'; }}
+            >
+              <source src={coverImageRaw!} type={getVideoMimeType(coverImageRaw!)} />
+            </video>
+          ) : (
+            <img onError={handleImageError} src={coverImage} alt="" className="w-full h-full object-cover opacity-80" />
+          )}
           <div
             className="absolute inset-0"
             style={{ background: `linear-gradient(to top, ${theme.bg}, transparent)` }}
