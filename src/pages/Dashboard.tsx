@@ -1,16 +1,20 @@
 import { useAuth } from '../lib/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import RestaurantDashboard from './RestaurantDashboard';
 import { Bell, List } from '@phosphor-icons/react';
 
+type NotificationType = 'waiter_call' | 'feedback' | 'review';
+
 type NotificationRow = {
   id: string;
+  type: NotificationType;
   title: string;
   message?: string | null;
   is_read: boolean;
+  metadata?: Record<string, any> | null;
   created_at: string;
 };
 
@@ -18,12 +22,14 @@ export default function Dashboard() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [role, setRole] = useState<string | null>(null);
+  const [restaurantId, setRestaurantId] = useState<string | null>(null);
   const [roleLoading, setRoleLoading] = useState(true);
   const [notifications, setNotifications] = useState<NotificationRow[]>([]);
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
   const [isDesktop, setIsDesktop] = useState(
     typeof window !== 'undefined' && window.innerWidth >= 1024,
   );
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     const onResize = () => setIsDesktop(window.innerWidth >= 1024);
@@ -44,10 +50,47 @@ export default function Dashboard() {
             return;
           }
           setRole(data?.role ?? 'restaurant');
+          setRestaurantId(data?.restaurant_id ?? null);
           setRoleLoading(false);
         });
     }
   }, [user]);
+
+  // Initialize notification sound once
+  useEffect(() => {
+    audioRef.current = new Audio('/sounds/notification.mp3');
+    audioRef.current.volume = 0.6;
+    audioRef.current.preload = 'auto';
+  }, []);
+
+  // Realtime subscription — fires on notification INSERTs, refetches list
+  // and plays sound for waiter calls. Scoped to user's restaurant_id.
+  useEffect(() => {
+    if (!restaurantId) return;
+    const channel = supabase
+      .channel(`notifications-realtime-${restaurantId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `restaurant_id=eq.${restaurantId}`,
+        },
+        (payload) => {
+          const newNotif = payload.new as NotificationRow;
+          if (newNotif.type === 'waiter_call' && audioRef.current) {
+            try {
+              audioRef.current.currentTime = 0;
+              audioRef.current.play().catch(() => { /* browser autoplay block — silent */ });
+            } catch { /* ignore */ }
+          }
+          loadNotifications();
+        },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [restaurantId]);
 
   useEffect(() => {
     if (!user) return;
@@ -73,6 +116,19 @@ export default function Dashboard() {
     if (ids.length === 0) return;
     await supabase.from('notifications').update({ is_read: true }).in('id', ids);
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+  }
+
+  async function handleNotifClick(n: NotificationRow) {
+    await markAsRead(n.id);
+    setShowNotifDropdown(false);
+    const tabKey =
+      n.type === 'waiter_call' ? 'calls'
+      : n.type === 'feedback' ? 'feedback'
+      : n.type === 'review' ? 'feedback'
+      : null;
+    if (tabKey) {
+      window.dispatchEvent(new CustomEvent('tabbled:set-tab', { detail: tabKey }));
+    }
   }
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
@@ -167,12 +223,13 @@ export default function Dashboard() {
               {unreadCount > 0 && (
                 <span style={{
                   position: 'absolute', top: 4, right: 4,
-                  background: '#10B981', color: '#FFFFFF',
-                  fontSize: 10, fontWeight: 700,
-                  borderRadius: 9999, minWidth: 16, height: 16,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  minWidth: 16, height: 16,
                   padding: '0 4px',
-                }}>{unreadCount}</span>
+                  background: '#EF4444', color: '#FFFFFF',
+                  fontSize: 10, fontWeight: 600,
+                  borderRadius: 8,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>{unreadCount > 99 ? '99+' : unreadCount}</span>
               )}
             </button>
 
@@ -208,7 +265,7 @@ export default function Dashboard() {
                     notifications.map(n => (
                       <div
                         key={n.id}
-                        onClick={() => markAsRead(n.id)}
+                        onClick={() => handleNotifClick(n)}
                         style={{
                           padding: '12px 16px',
                           borderBottom: '1px solid #F7F7F5',

@@ -22,6 +22,7 @@ import FeedbackPanel from '../components/FeedbackPanel';
 import DiscountCodesPanel from '../components/DiscountCodesPanel';
 import LikesPanel from '../components/LikesPanel';
 import CustomersPanel from '../components/CustomersPanel';
+import NotificationsPanel from '../components/NotificationsPanel';
 import { getAdminTheme, type AdminTheme } from '../lib/adminTheme';
 import {
   DndContext,
@@ -330,7 +331,7 @@ export default function RestaurantDashboard() {
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [editingCat, setEditingCat] = useState<string | null>(null);
   const [editCatForm, setEditCatForm] = useState({ name_tr: '' });
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'menu' | 'import' | 'translations' | 'qr' | 'media' | 'profile' | 'promos' | 'calls' | 'feedback' | 'discounts' | 'likes' | 'customers'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'menu' | 'import' | 'translations' | 'qr' | 'media' | 'profile' | 'promos' | 'calls' | 'feedback' | 'discounts' | 'likes' | 'customers' | 'bildirimler'>('dashboard');
   const [pendingCallCount, setPendingCallCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -338,6 +339,15 @@ export default function RestaurantDashboard() {
     const openSidebar = () => setSidebarOpen(true);
     window.addEventListener('tabbled:open-sidebar', openSidebar);
     return () => window.removeEventListener('tabbled:open-sidebar', openSidebar);
+  }, []);
+
+  useEffect(() => {
+    const setTabFromEvent = (e: Event) => {
+      const key = (e as CustomEvent<string>).detail;
+      if (typeof key === 'string') setActiveTab(key as typeof activeTab);
+    };
+    window.addEventListener('tabbled:set-tab', setTabFromEvent as EventListener);
+    return () => window.removeEventListener('tabbled:set-tab', setTabFromEvent as EventListener);
   }, []);
   const [isDesktop, setIsDesktop] = useState(typeof window !== 'undefined' && window.innerWidth >= 1024);
   const [sidebarHovered, setSidebarHovered] = useState(false);
@@ -1209,6 +1219,7 @@ export default function RestaurantDashboard() {
       items: [
         { key: 'customers' as const, label: 'Müşteriler', icon: Users },
         { key: 'calls' as const, label: 'Çağrılar', icon: Bell, badge: pendingCallCount },
+        { key: 'bildirimler' as const, label: 'Bildirimler', icon: Bell },
         { key: 'feedback' as const, label: 'Geri Bildirim', icon: ChatCircle },
         { key: 'likes' as const, label: 'Beğeniler', icon: Heart },
         { key: 'promos' as const, label: 'Promosyonlar', icon: Tag },
@@ -1474,6 +1485,7 @@ export default function RestaurantDashboard() {
       {activeTab === 'import' && <MenuImport restaurantId={restaurant.id} theme={adminTheme} onImported={() => loadCategories(restaurant.id)} />}
       {activeTab === 'promos' && <PromosTab restaurant={restaurant} theme={adminTheme} />}
       {activeTab === 'calls' && <WaiterCallsPanel restaurantId={restaurant.id} theme={adminTheme} />}
+      {activeTab === 'bildirimler' && <NotificationsPanel restaurantId={restaurant.id} theme={adminTheme} />}
       {activeTab === 'feedback' && <FeedbackPanel restaurantId={restaurant.id} theme={adminTheme} />}
       {activeTab === 'customers' && <CustomersPanel restaurantId={restaurant.id} theme={adminTheme} />}
       {activeTab === 'discounts' && <DiscountCodesPanel restaurantId={restaurant.id} theme={adminTheme} />}
