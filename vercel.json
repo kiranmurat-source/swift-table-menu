@@ -1,7 +1,7 @@
 {
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "https://qmnrawqvkwehufebbkxp.supabase.co/functions/v1/sitemap" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/menu/((?!demo$).+)", "destination": "/index.html" }
   ],
   "headers": [
     {
