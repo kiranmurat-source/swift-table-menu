@@ -26,6 +26,11 @@ export function getOptimizedImageUrl(
 ): string {
   if (!url) return '';
 
+  // Video URLs bypass image transforms — browser fetches original
+  if (typeof url === 'string' && /\.(mp4|webm|mov|m4v|ogv)(\?|$)/i.test(url)) {
+    return url;
+  }
+
   // Sadece Supabase Storage URL'leri dönüştürülür
   if (!url.includes(SUPABASE_URL) || !url.includes(STORAGE_PATH)) {
     return url;
