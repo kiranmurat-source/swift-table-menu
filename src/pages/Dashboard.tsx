@@ -45,14 +45,17 @@ export default function Dashboard() {
     if (user) {
       supabase
         .from('profiles')
-        .select('role, restaurant_id, restaurant:restaurants(onboarding_completed_at)')
+        .select('role, restaurant_id, restaurant:restaurants(onboarding_completed_at, slug)')
         .eq('id', user.id)
         .single()
         .then(({ data }) => {
           if (data && data.role !== 'super_admin') {
-            const rel = (data as { restaurant?: { onboarding_completed_at?: string | null } | Array<{ onboarding_completed_at?: string | null }> | null }).restaurant;
+            const rel = (data as { restaurant?: { onboarding_completed_at?: string | null; slug?: string | null } | Array<{ onboarding_completed_at?: string | null; slug?: string | null }> | null }).restaurant;
             const completedAt = Array.isArray(rel) ? rel[0]?.onboarding_completed_at : rel?.onboarding_completed_at;
-            const needsOnboarding = !data.restaurant_id || !completedAt;
+            const slug = Array.isArray(rel) ? rel[0]?.slug : rel?.slug;
+            const needsOnboarding =
+              !data.restaurant_id ||
+              (!completedAt && slug?.startsWith('temp-'));
             if (needsOnboarding) {
               navigate('/onboarding', { replace: true });
               return;
