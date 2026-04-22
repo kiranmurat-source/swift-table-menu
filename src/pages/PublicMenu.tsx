@@ -297,10 +297,18 @@ export default function PublicMenu() {
   const table = searchParams.get('table');
   const langParam: LangCode = searchParams.get('lang') || 'tr';
 
-  const [loading, setLoading] = useState(true);
-  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
-  const [categories, setCategories] = useState<MenuCategory[]>([]);
-  const [items, setItems] = useState<MenuItem[]>([]);
+  // Demo slug hydrates synchronously so SSG captures full content in prerendered HTML.
+  const isDemo = slug === 'demo';
+  const [loading, setLoading] = useState(!isDemo);
+  const [restaurant, setRestaurant] = useState<Restaurant | null>(
+    isDemo ? (demoRestaurant as unknown as Restaurant) : null,
+  );
+  const [categories, setCategories] = useState<MenuCategory[]>(
+    isDemo ? (demoCategories as unknown as MenuCategory[]) : [],
+  );
+  const [items, setItems] = useState<MenuItem[]>(
+    isDemo ? (demoItems as unknown as MenuItem[]) : [],
+  );
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [showSplash, setShowSplash] = useState(true);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
@@ -366,7 +374,7 @@ export default function PublicMenu() {
 
   // Page view tracking — once per session per restaurant
   useEffect(() => {
-    if (!restaurant?.id) return;
+    if (!restaurant?.id || slug === 'demo') return;
     const flagKey = `tabbled_pv_${restaurant.id}`;
     try {
       if (sessionStorage.getItem(flagKey)) return;
@@ -596,6 +604,37 @@ export default function PublicMenu() {
   ].filter(s => s.url);
 
   /* ================================================================ */
+  /*  HEAD (rendered regardless of splash/main view for SSG & SEO)     */
+  /* ================================================================ */
+
+  const headCanonicalUrl = `https://tabbled.com/menu/${restaurant.slug}`;
+  const headOgImage =
+    getOptimizedImageUrl(restaurant.cover_image_url || restaurant.cover_url, 'cover') ||
+    getOptimizedImageUrl(restaurant.logo_url, 'cover') ||
+    'https://tabbled.com/tabbled-logo-horizontal.png';
+  const headMetaDescription =
+    `${restaurant.name} dijital menüsü. ${restaurant.tagline || ''} ${restaurant.address || ''}`.trim();
+
+  const pageHead = (
+    <Helmet>
+      <title>{`${restaurant.name} — Menü | Tabbled`}</title>
+      <meta name="description" content={headMetaDescription} />
+      <meta property="og:type" content="restaurant.menu" />
+      <meta property="og:title" content={`${restaurant.name} — Menü`} />
+      <meta property="og:description" content={restaurant.tagline || `${restaurant.name} dijital menüsü`} />
+      <meta property="og:image" content={headOgImage} />
+      <meta property="og:url" content={headCanonicalUrl} />
+      <meta property="og:site_name" content="Tabbled" />
+      <meta property="og:locale" content="tr_TR" />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={`${restaurant.name} — Menü`} />
+      <meta name="twitter:description" content={restaurant.tagline || `${restaurant.name} dijital menüsü`} />
+      <meta name="twitter:image" content={headOgImage} />
+      <link rel="canonical" href={headCanonicalUrl} />
+    </Helmet>
+  );
+
+  /* ================================================================ */
   /*  SPLASH SCREEN                                                    */
   /* ================================================================ */
 
@@ -605,6 +644,7 @@ export default function PublicMenu() {
         className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden"
         style={{ backgroundColor: theme.bg, color: theme.text, fontFamily: bodyFont }}
       >
+        {pageHead}
         {/* Background */}
         {restaurant.splash_video_url ? (
           <>
@@ -999,8 +1039,6 @@ export default function PublicMenu() {
     }
     handleAddToCart(menuItem);
   } : undefined;
-
-  const isDemo = slug === 'demo';
 
   return (
     <div

@@ -5,14 +5,17 @@ export interface TOCItem {
 }
 
 export const extractTOC = (htmlContent: string): TOCItem[] => {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(htmlContent, 'text/html');
-  const headings = doc.querySelectorAll('h2, h3');
-  return Array.from(headings).map((heading, index) => ({
-    id: `heading-${index}`,
-    text: heading.textContent || '',
-    level: parseInt(heading.tagName[1]),
-  }));
+  const items: TOCItem[] = [];
+  const regex = /<h([23])(?:\s[^>]*)?>([\s\S]*?)<\/h[23]>/g;
+  let match: RegExpExecArray | null;
+  let index = 0;
+  while ((match = regex.exec(htmlContent)) !== null) {
+    const level = parseInt(match[1], 10);
+    const text = match[2].replace(/<[^>]+>/g, '').trim();
+    items.push({ id: `heading-${index}`, text, level });
+    index += 1;
+  }
+  return items;
 };
 
 export const addHeadingIds = (htmlContent: string): string => {

@@ -4,7 +4,7 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
+export default defineConfig(({ mode, isSsrBuild }) => ({
   server: {
     host: "::",
     port: 8080,
@@ -21,13 +21,17 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     rollupOptions: {
-      output: {
-        manualChunks: {
-          "vendor-react": ["react", "react-dom", "react-router-dom"],
-          "vendor-supabase": ["@supabase/supabase-js"],
-          "vendor-query": ["@tanstack/react-query"],
-        },
-      },
+      // manualChunks is only valid for the client build; SSR treats
+      // React/dependencies as externals which cannot be manual-chunked.
+      output: isSsrBuild
+        ? undefined
+        : {
+            manualChunks: {
+              "vendor-react": ["react", "react-dom", "react-router-dom"],
+              "vendor-supabase": ["@supabase/supabase-js"],
+              "vendor-query": ["@tanstack/react-query"],
+            },
+          },
     },
   },
 }));

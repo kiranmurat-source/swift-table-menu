@@ -177,7 +177,12 @@ export default function BlogPost() {
           <article
             className="blog-content"
             style={{ flex: 1, minWidth: 0, maxWidth: 720 }}
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(processedContent || '') }}
+            dangerouslySetInnerHTML={{
+              __html:
+                typeof DOMPurify.sanitize === 'function'
+                  ? DOMPurify.sanitize(processedContent || '')
+                  : processedContent || '',
+            }}
           />
 
           {/* TOC sidebar — desktop only */}
