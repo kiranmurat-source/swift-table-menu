@@ -846,30 +846,46 @@ function ActivityFeed({
   );
 }
 
-/* ---------------------------------- Heatmap ------------------------------ */
+/* --------------------------------- Bar Chart ----------------------------- */
 
-function HourlyHeatmap({ hourly }: { hourly: HourlyCount[] }) {
-  const map = new Map(hourly.map((h) => [h.hour_of_day, h.view_count]));
-  const max = Math.max(1, ...hourly.map((h) => h.view_count));
-  const cells = Array.from({ length: 24 }, (_, h) => {
-    const v = map.get(h) ?? 0;
-    const ratio = v / max;
-    let bg: string;
-    let fg: string;
-    if (ratio === 0) {
-      bg = C.track;
-      fg = C.textTertiary;
-    } else if (ratio < 0.4) {
-      bg = C.accentSoft;
-      fg = C.textPrimary;
-    } else {
-      bg = C.accent;
-      fg = C.cardBg;
-    }
-    return { h, v, bg, fg };
+function HourlyBarChart({ hourly }: { hourly: HourlyCount[] }) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
+
+  const hours = Array.from({ length: 24 }, (_, h) => {
+    const found = hourly.find((d) => d.hour_of_day === h);
+    return { hour: h, count: found ? found.view_count : 0 };
   });
 
-  const total = hourly.reduce((s, h) => s + h.view_count, 0);
+  const total = hours.reduce((s, d) => s + d.count, 0);
+  const maxV = Math.max(1, ...hours.map((d) => d.count));
+  const peakHour = hours.reduce((a, b) => (b.count > a.count ? b : a)).hour;
+
+  const W = 860;
+  const H = 240;
+  const M = { top: 20, right: 20, bottom: 32, left: 36 };
+  const innerW = W - M.left - M.right;
+  const innerH = H - M.top - M.bottom;
+  const band = innerW / 24;
+  const barW = band * 0.7;
+  const barX = (i: number) => i * band + band * 0.15;
+  const centerX = (i: number) => i * band + band / 2;
+  const yScale = (v: number) => innerH - (v / maxV) * innerH;
+
+  const yTicks = [0, 1, 2, 3, 4].map((i) => ({
+    y: (innerH / 4) * i,
+    value: Math.round(maxV - (maxV / 4) * i),
+  }));
+
+  const handleHover = (e: React.MouseEvent, d: { hour: number; count: number }) => {
+    const rect = wrapRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setTooltip({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top - 36,
+      text: `${String(d.hour).padStart(2, '0')}:00 — ${trNumber(d.count)} görüntüleme`,
+    });
+  };
 
   return (
     <div style={cardStyle}>
@@ -880,32 +896,86 @@ function HourlyHeatmap({ hourly }: { hourly: HourlyCount[] }) {
       {total === 0 ? (
         <EmptyState label="Henüz veri yok" height={120} />
       ) : (
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(24, minmax(0, 1fr))',
-            gap: 4,
-          }}
-        >
-          {cells.map((c) => (
+        <div ref={wrapRef} style={{ position: 'relative', width: '100%', height: 240 }}>
+          <svg
+            viewBox={`0 0 ${W} ${H}`}
+            preserveAspectRatio="none"
+            style={{ display: 'block', width: '100%', height: '100%', overflow: 'visible' }}
+          >
+            <g transform={`translate(${M.left},${M.top})`}>
+              {yTicks.map((t) => (
+                <g key={t.y}>
+                  <line x1={0} y1={t.y} x2={innerW} y2={t.y} stroke="#F3F4F6" strokeWidth={1} />
+                  <text x={-8} y={t.y + 4} textAnchor="end" style={{ fontSize: 11, fill: '#9CA3AF' }}>
+                    {t.value}
+                  </text>
+                </g>
+              ))}
+
+              {hours.map((d, i) => {
+                if (d.count === 0) return null;
+                const y = yScale(d.count);
+                const h = innerH - y;
+                const fill = d.hour === peakHour ? C.accent : C.accentSoft;
+                return (
+                  <rect
+                    key={d.hour}
+                    x={barX(i)}
+                    y={y}
+                    width={barW}
+                    height={h}
+                    rx={3}
+                    fill={fill}
+                    style={{ cursor: 'pointer', transition: 'fill 120ms' }}
+                    onMouseEnter={(e) => handleHover(e, d)}
+                    onMouseMove={(e) => handleHover(e, d)}
+                    onMouseLeave={() => setTooltip(null)}
+                  />
+                );
+              })}
+
+              {hours.map((d, i) => {
+                if (d.hour % 3 !== 0 && d.hour !== peakHour) return null;
+                const isPeak = d.hour === peakHour;
+                return (
+                  <text
+                    key={`lbl-${d.hour}`}
+                    x={centerX(i)}
+                    y={innerH + 18}
+                    textAnchor="middle"
+                    style={{
+                      fontSize: 11,
+                      fill: isPeak ? C.accent : '#6B7280',
+                      fontWeight: isPeak ? 700 : 400,
+                    }}
+                  >
+                    {String(d.hour).padStart(2, '0')}
+                  </text>
+                );
+              })}
+            </g>
+          </svg>
+
+          {tooltip && (
             <div
-              key={c.h}
-              title={`${String(c.h).padStart(2, '0')}:00 — ${trNumber(c.v)} görüntüleme`}
               style={{
-                height: 36,
+                position: 'absolute',
+                left: tooltip.x,
+                top: tooltip.y,
+                transform: 'translateX(-50%)',
+                background: '#1C1C1E',
+                color: '#fff',
+                padding: '6px 10px',
                 borderRadius: 6,
-                background: c.bg,
-                color: c.fg,
-                fontSize: 11,
-                fontWeight: 400,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                fontSize: 12,
+                pointerEvents: 'none',
+                whiteSpace: 'nowrap',
+                zIndex: 10,
               }}
             >
-              {c.h}
+              {tooltip.text}
             </div>
-          ))}
+          )}
         </div>
       )}
     </div>
@@ -1384,7 +1454,7 @@ export default function RestaurantAnalytics({
           </div>
 
           {/* BÖLÜM 5 — Heatmap */}
-          <HourlyHeatmap hourly={data!.hourly} />
+          <HourlyBarChart hourly={data!.hourly} />
 
           {/* BÖLÜM 6 — Tutorials */}
           <Tutorials />
