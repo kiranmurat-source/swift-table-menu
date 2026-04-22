@@ -14,6 +14,7 @@ import {
   X,
 } from '@phosphor-icons/react';
 import { supabase } from '../lib/supabase';
+import { isDraftSlug } from '@/lib/slug';
 import TabbledLogo from '@/components/TabbledLogo';
 import MediaPickerModal, {
   attachMediaUsage,
@@ -264,7 +265,7 @@ export default function Onboarding() {
       const r = rest as RestaurantRow;
       setRestaurant(r);
       setName(r.name === 'İsimsiz Restoran' ? '' : r.name);
-      setSlug(r.slug.startsWith('temp-') ? '' : r.slug);
+      setSlug(isDraftSlug(r.slug) ? '' : r.slug);
       setRestaurantType(r.restaurant_type ?? '');
       setCity(r.city ?? '');
       setDistrict(r.district ?? '');

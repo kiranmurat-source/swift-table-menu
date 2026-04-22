@@ -2,6 +2,7 @@ import { useAuth } from '../lib/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { isDraftSlug } from '@/lib/slug';
 import SuperAdminDashboard from './SuperAdminDashboard';
 import RestaurantDashboard from './RestaurantDashboard';
 import { Bell, List } from '@phosphor-icons/react';
@@ -55,7 +56,7 @@ export default function Dashboard() {
             const slug = Array.isArray(rel) ? rel[0]?.slug : rel?.slug;
             const needsOnboarding =
               !data.restaurant_id ||
-              (!completedAt && slug?.startsWith('temp-'));
+              (!completedAt && isDraftSlug(slug));
             if (needsOnboarding) {
               navigate('/onboarding', { replace: true });
               return;
