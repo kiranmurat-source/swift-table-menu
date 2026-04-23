@@ -342,8 +342,11 @@ export default function PublicMenu() {
   // Google Review prompt (triggered by product likes)
   const [showReviewPrompt, setShowReviewPrompt] = useState(false);
 
-  // Profile info accordion
+  // Profile info accordion (main header + splash use independent toggles)
   const [infoOpen, setInfoOpen] = useState(false);
+  const [splashInfoOpen, setSplashInfoOpen] = useState(false);
+  // Today's working hours — computed on client to avoid SSR/client day mismatches
+  const [todayHours, setTodayHours] = useState<{ open: string; close: string; closed: boolean } | null>(null);
 
   // Product likes
   const { likeCounts, likedItems, toggleLike } = useLikes(restaurant?.id);
@@ -362,6 +365,14 @@ export default function PublicMenu() {
     }
     setViewModeInitialized(true);
   }, [restaurant, viewModeInitialized]);
+
+  useEffect(() => {
+    const hours = restaurant?.working_hours;
+    if (!hours) { setTodayHours(null); return; }
+    const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+    const today = dayKeys[new Date().getDay()];
+    setTodayHours(hours[today] ?? null);
+  }, [restaurant?.working_hours]);
 
   const lang: LangCode = useMemo(() => {
     if (langParam === 'tr') return 'tr';
@@ -647,6 +658,86 @@ export default function PublicMenu() {
   );
 
   /* ================================================================ */
+  /*  CONTACT DROPDOWN (shared by splash + main header)                 */
+  /*  Pattern 1: content always rendered in DOM so crawlers see it,     */
+  /*  visually gated via inline `display` (beats any flex class).       */
+  /* ================================================================ */
+
+  const renderContactDropdown = (
+    open: boolean,
+    toggle: () => void,
+    variant: 'main' | 'splash',
+  ) => {
+    const labelColor = variant === 'splash' ? 'rgba(255,255,255,0.75)' : theme.mutedText;
+    const bodyColor  = variant === 'splash' ? 'rgba(255,255,255,0.9)'  : theme.mutedText;
+    return (
+      <>
+        <button
+          type="button"
+          onClick={toggle}
+          aria-expanded={open}
+          className="flex items-center gap-1 mt-2 text-xs transition-colors"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: labelColor }}
+        >
+          <span>{open ? UI.hideInfo[toUiLang(lang)] : UI.showInfo[toUiLang(lang)]}</span>
+          <CaretDown
+            size={12}
+            style={{ transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+          />
+        </button>
+        <div
+          className="gap-2 mt-2 text-sm"
+          style={{ display: open ? 'flex' : 'none', flexDirection: 'column', color: bodyColor }}
+        >
+          {restaurant.address && (
+            <div className="flex items-start gap-2">
+              <MapPin size={16} className="flex-shrink-0 mt-0.5" style={{ color: bodyColor }} />
+              <span className="text-xs">{restaurant.address}</span>
+            </div>
+          )}
+          {restaurant.phone && (
+            <a
+              href={`tel:${restaurant.phone}`}
+              className="flex items-center gap-2 hover:text-[#FF4F7A] transition-colors"
+              style={{ color: bodyColor }}
+            >
+              <Phone size={16} className="flex-shrink-0" />
+              <span className="text-xs">{restaurant.phone}</span>
+            </a>
+          )}
+          {todayHours && (
+            <div className="flex items-center gap-2">
+              <Clock size={16} className="flex-shrink-0" style={{ color: bodyColor }} />
+              <span className="text-xs flex items-center gap-1.5">
+                <span className={`w-2 h-2 rounded-full ${todayHours.closed ? 'bg-red-500' : 'bg-green-500'}`} />
+                {todayHours.closed
+                  ? (lang === 'tr' ? 'Bugün kapalı' : 'Closed today')
+                  : `${todayHours.open} - ${todayHours.close}`}
+              </span>
+            </div>
+          )}
+          {socials.length > 0 && (
+            <div className="flex items-center gap-2 mt-1">
+              {socials.map(({ type, url }) => (
+                <a
+                  key={type}
+                  href={url!}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:opacity-80 transition-opacity"
+                  style={{ color: bodyColor }}
+                >
+                  <SocialIcon type={type} size={14} />
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      </>
+    );
+  };
+
+  /* ================================================================ */
   /*  SPLASH SCREEN                                                    */
   /* ================================================================ */
 
@@ -757,12 +848,17 @@ export default function PublicMenu() {
           {/* Tagline */}
           {restaurant.tagline && (
             <p
-              className="text-sm mb-6 leading-relaxed"
+              className="text-sm mb-4 leading-relaxed"
               style={{ color: 'rgba(255,255,255,0.8)', fontWeight: 300 }}
             >
               {t(restaurant.translations, 'tagline', restaurant.tagline, lang)}
             </p>
           )}
+
+          {/* Contact info accordion — content always in DOM for SEO */}
+          <div className="flex flex-col items-center mb-6">
+            {renderContactDropdown(splashInfoOpen, () => setSplashInfoOpen(!splashInfoOpen), 'splash')}
+          </div>
 
           {/* Table badge */}
           {table && (
@@ -1269,70 +1365,8 @@ export default function PublicMenu() {
                   </a>
                 </div>
               )}
-              {/* Info accordion toggle */}
-              <button
-                onClick={() => setInfoOpen(!infoOpen)}
-                className="flex items-center gap-1 mt-2 text-xs transition-colors"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: theme.mutedText }}
-              >
-                <span>{infoOpen ? (UI.hideInfo[toUiLang(lang)]) : (UI.showInfo[toUiLang(lang)])}</span>
-                <CaretDown
-                  size={12}
-                  style={{ transition: 'transform 0.2s', transform: infoOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                />
-              </button>
-              {/* Accordion content */}
-              {infoOpen && (
-                <div className="flex flex-col gap-2 mt-2 text-sm animate-fadeIn" style={{ color: theme.mutedText }}>
-                  {restaurant.address && (
-                    <div className="flex items-start gap-2">
-                      <MapPin size={16} className="flex-shrink-0 mt-0.5" style={{ color: theme.mutedText }} />
-                      <span className="text-xs">{restaurant.address}</span>
-                    </div>
-                  )}
-                  {restaurant.phone && (
-                    <a
-                      href={`tel:${restaurant.phone}`}
-                      className="flex items-center gap-2 hover:text-[#FF4F7A] transition-colors"
-                      style={{ color: theme.mutedText }}
-                    >
-                      <Phone size={16} className="flex-shrink-0" />
-                      <span className="text-xs">{restaurant.phone}</span>
-                    </a>
-                  )}
-                  {restaurant.working_hours && (() => {
-                    const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-                    const today = dayKeys[new Date().getDay()];
-                    const todayHours = restaurant.working_hours[today];
-                    if (!todayHours) return null;
-                    return (
-                      <div className="flex items-center gap-2">
-                        <Clock size={16} className="flex-shrink-0" style={{ color: theme.mutedText }} />
-                        <span className="text-xs flex items-center gap-1.5">
-                          <span className={`w-2 h-2 rounded-full ${todayHours.closed ? 'bg-red-500' : 'bg-green-500'}`} />
-                          {todayHours.closed ? (lang === 'tr' ? 'Bugün kapalı' : 'Closed today') : `${todayHours.open} - ${todayHours.close}`}
-                        </span>
-                      </div>
-                    );
-                  })()}
-                  {socials.length > 0 && (
-                    <div className="flex items-center gap-2 mt-1">
-                      {socials.map(({ type, url }) => (
-                        <a
-                          key={type}
-                          href={url!}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:opacity-80 transition-opacity"
-                          style={{ color: theme.mutedText }}
-                        >
-                          <SocialIcon type={type} size={14} />
-                        </a>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* Contact info accordion — content always in DOM for SEO */}
+              {renderContactDropdown(infoOpen, () => setInfoOpen(!infoOpen), 'main')}
             </div>
             {table && (
               <span
