@@ -3,6 +3,7 @@ import type { RouteRecord } from "vite-react-ssg";
 import App from "./App";
 import Index from "./pages/Index";
 import SpaShell from "./pages/SpaShell";
+import { blogPosts } from "./lib/blogData";
 
 const PublicMenu = lazy(() => import("./pages/PublicMenu"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
@@ -21,7 +22,11 @@ export const routes: RouteRecord[] = [
     children: [
       { index: true, Component: Index },
       { path: "blog", Component: Blog },
-      { path: "blog/:slug", Component: BlogPost },
+      {
+        path: "blog/:slug",
+        Component: BlogPost,
+        getStaticPaths: () => blogPosts.map((p) => `blog/${p.slug}`),
+      },
       { path: "privacy", Component: PrivacyPolicy },
       { path: "iletisim", Component: Contact },
       { path: "spa-shell", Component: SpaShell },
