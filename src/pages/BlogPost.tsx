@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import DOMPurify from 'dompurify';
+import DOMPurify from 'isomorphic-dompurify';
 import { CalendarBlank, Clock, User } from "@phosphor-icons/react";
 import { LandingNavbar } from '../components/landing/Navbar1';
 import { LandingFooter } from '../components/landing/LandingFooter';

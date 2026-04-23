@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Star, ChatCircle } from '@phosphor-icons/react';
-import DOMPurify from 'dompurify';
+import DOMPurify from 'isomorphic-dompurify';
 import { supabase } from '@/lib/supabase';
 import StarRating from '@/components/StarRating';
 import { getFingerprint } from '@/lib/fingerprint';
