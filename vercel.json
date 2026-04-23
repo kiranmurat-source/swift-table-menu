@@ -1,5 +1,14 @@
 {
+  "redirects": [
+    {
+      "source": "/privacy-policy",
+      "destination": "/privacy",
+      "permanent": true
+    }
+  ],
   "rewrites": [
+    { "source": "/lander", "destination": "/api/gone/lander" },
+    { "source": "/manufacture-automatization", "destination": "/api/gone/manufacture-automatization" },
     { "source": "/sitemap.xml", "destination": "https://qmnrawqvkwehufebbkxp.supabase.co/functions/v1/sitemap" },
     { "source": "/blog", "destination": "/blog.html" },
     { "source": "/blog/:slug", "destination": "/blog/:slug.html" },
@@ -14,16 +23,27 @@
   ],
   "headers": [
     {
+      "source": "/iletisim",
+      "has": [{ "type": "query", "key": "plan" }],
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, follow" }]
+    },
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "query", "key": "utm_source" }],
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, follow" }]
+    },
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "query", "key": "ref" }],
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, follow" }]
+    },
+    {
       "source": "/assets/(.*)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
-      ]
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
     },
     {
       "source": "/(.*\\.woff2)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
-      ]
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
     }
   ]
 }

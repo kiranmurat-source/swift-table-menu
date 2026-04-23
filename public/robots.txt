@@ -3,5 +3,6 @@ Allow: /
 Allow: /menu/
 Disallow: /dashboard
 Disallow: /login
+Disallow: /onboarding
 
 Sitemap: https://tabbled.com/sitemap.xml
