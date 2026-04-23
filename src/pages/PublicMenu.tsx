@@ -638,6 +638,39 @@ export default function PublicMenu() {
   const headMetaDescription =
     `${restaurant.name} dijital menüsü. ${restaurant.tagline || ''} ${restaurant.address || ''}`.trim();
 
+  // Restaurant JSON-LD (schema.org) — embedded as SSR-rendered script for rich results
+  const restaurantLd: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'Restaurant',
+    name: restaurant.name,
+    url: headCanonicalUrl,
+  };
+  const ldImage =
+    getOptimizedImageUrl(restaurant.cover_image_url || restaurant.cover_url, 'cover') ||
+    getOptimizedImageUrl(restaurant.logo_url, 'cover');
+  if (ldImage) restaurantLd.image = ldImage;
+  if (restaurant.phone) restaurantLd.telephone = restaurant.phone;
+  if (restaurant.address) {
+    restaurantLd.address = {
+      '@type': 'PostalAddress',
+      streetAddress: restaurant.address,
+      addressCountry: 'TR',
+    };
+  }
+  if (restaurant.working_hours) {
+    const dayToCode: Record<string, string> = {
+      mon: 'Mo', tue: 'Tu', wed: 'We', thu: 'Th', fri: 'Fr', sat: 'Sa', sun: 'Su',
+    };
+    const spec: string[] = [];
+    for (const [day, code] of Object.entries(dayToCode)) {
+      const h = restaurant.working_hours[day];
+      if (h && !h.closed && h.open && h.close) {
+        spec.push(`${code} ${h.open}-${h.close}`);
+      }
+    }
+    if (spec.length) restaurantLd.openingHours = spec;
+  }
+
   const pageHead = (
     <Helmet>
       <title>{`${restaurant.name} — Menü | Tabbled`}</title>
@@ -654,6 +687,7 @@ export default function PublicMenu() {
       <meta name="twitter:description" content={restaurant.tagline || `${restaurant.name} dijital menüsü`} />
       <meta name="twitter:image" content={headOgImage} />
       <link rel="canonical" href={headCanonicalUrl} />
+      <script type="application/ld+json">{JSON.stringify(restaurantLd)}</script>
     </Helmet>
   );
 
