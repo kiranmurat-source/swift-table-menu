@@ -111,8 +111,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       promos: (promosRes.data ?? []) as Promo[],
     };
 
-    const pathAndQuery = req.url ?? `/menu/${slug}`;
-    const fullUrl = `http://localhost${pathAndQuery}`;
+    // The Function is mounted at /api/menu/:slug (via vercel.json rewrite),
+    // but the React router only knows /menu/:slug. Construct the user-facing
+    // URL here so createStaticHandler.query() matches the real route instead
+    // of falling through to NotFound.
+    const fullUrl = `http://localhost/menu/${slug}`;
     const rendered = await renderPage(fullUrl, initialData);
 
     if (rendered.status !== 200) {
