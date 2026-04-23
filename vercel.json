@@ -14,7 +14,7 @@
     { "source": "/blog/:slug", "destination": "/blog/:slug.html" },
     { "source": "/iletisim", "destination": "/iletisim.html" },
     { "source": "/privacy", "destination": "/privacy.html" },
-    { "source": "/menu/demo", "destination": "/api/gone/menu-demo" },
+    { "source": "/menu/demo", "destination": "/menu/demo.html" },
     { "source": "/menu/:path*", "destination": "/index.html" },
     { "source": "/login", "destination": "/index.html" },
     { "source": "/onboarding", "destination": "/index.html" },

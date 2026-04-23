@@ -65,7 +65,7 @@ export function LandingFooter() {
                   </a>
                 </li>
                 <li className="py-2 text-sm">
-                  <a href="/menu/ramada-encore-bayrampasa" className="flex items-center gap-3">
+                  <a href="/menu/demo" className="flex items-center gap-3">
                     Demo
                   </a>
                 </li>

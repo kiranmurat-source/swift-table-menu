@@ -131,7 +131,7 @@ export default function Contact() {
                   Talebiniz Alındı!
                 </h2>
                 <p className="text-muted-foreground mb-6">En kısa sürede sizinle iletişime geçeceğiz.</p>
-                <a href="/menu/ramada-encore-bayrampasa" className="text-[#FF4F7A] font-semibold underline underline-offset-4">
+                <a href="/menu/demo" className="text-[#FF4F7A] font-semibold underline underline-offset-4">
                   Demo menüyü inceleyin →
                 </a>
               </div>

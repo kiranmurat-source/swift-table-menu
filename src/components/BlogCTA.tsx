@@ -54,7 +54,7 @@ export default function BlogCTA() {
           Ücretsiz Başla
         </a>
         <a
-          href="/menu/ramada-encore-bayrampasa"
+          href="/menu/demo"
           style={{
             display: 'inline-flex',
             alignItems: 'center',

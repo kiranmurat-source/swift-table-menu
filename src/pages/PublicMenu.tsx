@@ -40,6 +40,7 @@ import CartDrawer from '../components/CartDrawer';
 import { useLikes } from '../hooks/useLikes';
 import { useCurrency } from '../hooks/useCurrency';
 import CurrencyDropdown from '../components/CurrencyDropdown';
+import { demoRestaurant, demoCategories, demoItems } from '../data/demoMenuData';
 import type {
   LangCode,
   UiLangCode,
@@ -296,10 +297,18 @@ export default function PublicMenu() {
   const table = searchParams.get('table');
   const langParam: LangCode = searchParams.get('lang') || 'tr';
 
-  const [loading, setLoading] = useState(true);
-  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
-  const [categories, setCategories] = useState<MenuCategory[]>([]);
-  const [items, setItems] = useState<MenuItem[]>([]);
+  // Demo slug hydrates synchronously so SSG captures full content in prerendered HTML.
+  const isDemo = slug === 'demo';
+  const [loading, setLoading] = useState(!isDemo);
+  const [restaurant, setRestaurant] = useState<Restaurant | null>(
+    isDemo ? (demoRestaurant as unknown as Restaurant) : null,
+  );
+  const [categories, setCategories] = useState<MenuCategory[]>(
+    isDemo ? (demoCategories as unknown as MenuCategory[]) : [],
+  );
+  const [items, setItems] = useState<MenuItem[]>(
+    isDemo ? (demoItems as unknown as MenuItem[]) : [],
+  );
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [showSplash, setShowSplash] = useState(true);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
@@ -365,7 +374,7 @@ export default function PublicMenu() {
 
   // Page view tracking — once per session per restaurant
   useEffect(() => {
-    if (!restaurant?.id) return;
+    if (!restaurant?.id || slug === 'demo') return;
     const flagKey = `tabbled_pv_${restaurant.id}`;
     try {
       if (sessionStorage.getItem(flagKey)) return;
@@ -391,6 +400,16 @@ export default function PublicMenu() {
     if (!slug) return;
     const startTime = performance.now();
     const LOADING_MIN_MS = 500;
+
+    // Static demo bypass: /menu/demo loads hardcoded data, no Supabase calls.
+    if (slug === 'demo') {
+      setRestaurant(demoRestaurant as unknown as Restaurant);
+      setCategories(demoCategories as unknown as MenuCategory[]);
+      setItems(demoItems as unknown as MenuItem[]);
+      setPromos([]);
+      const t = setTimeout(() => setLoading(false), LOADING_MIN_MS);
+      return () => clearTimeout(t);
+    }
 
     const fetchData = async () => {
       setLoading(true);

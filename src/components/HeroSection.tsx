@@ -58,7 +58,7 @@ const HeroSection = () => {
                 14 Gün Ücretsiz Deneyin
               </a>
               <a
-                href="/menu/ramada-encore-bayrampasa"
+                href="/menu/demo"
                 className="inline-flex items-center gap-2 text-[#1C1C1E] font-medium px-8 py-3.5 rounded-lg border border-[#E5E7EB] hover:border-[#FF4F7A] hover:text-[#FF4F7A] transition-all duration-200"
               >
                 Demo Menüyü İncele
