@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { Helmet } from "react-helmet-async";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Outlet, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -31,6 +32,9 @@ const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
+        <Helmet defaultTitle="Tabbled — Restoran Dijital Menü Platformu" titleTemplate="%s">
+          <meta name="description" content="Tabbled, Türkiye'deki restoran, kafe ve oteller için QR kod tabanlı dijital menü yönetim platformudur." />
+        </Helmet>
         <Toaster />
         <Sonner />
         <CookieBanner />
