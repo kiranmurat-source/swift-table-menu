@@ -31,6 +31,7 @@ export const routes: RouteRecord[] = [
       {
         path: "menu/:slug",
         Component: PublicMenu,
+        getStaticPaths: () => ["menu/ramada-encore-bayrampasa"],
       },
       { path: "login", Component: Login },
       { path: "onboarding", Component: Onboarding },
