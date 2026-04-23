@@ -96,7 +96,7 @@ export function FeaturesSection() {
                   <p>{tab.description}</p>
                   <div className="mt-6 flex flex-wrap items-center gap-4 md:mt-8">
                     <a
-                      href="/menu/demo"
+                      href="/menu/ramada-encore-bayrampasa"
                       className="inline-flex gap-3 items-center justify-center whitespace-nowrap border border-border-primary text-text-primary bg-background-primary px-6 py-3 transition-colors hover:bg-gray-50"
                     >
                       Keşfet

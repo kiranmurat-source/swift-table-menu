@@ -31,7 +31,24 @@ export const routes: RouteRecord[] = [
       {
         path: "menu/:slug",
         Component: PublicMenu,
-        getStaticPaths: () => ["menu/demo"],
+        getStaticPaths: async () => {
+          const { createClient } = await import("@supabase/supabase-js");
+          const supabase = createClient(
+            import.meta.env.VITE_SUPABASE_URL,
+            import.meta.env.VITE_SUPABASE_ANON_KEY,
+          );
+          const { data, error } = await supabase
+            .from("restaurants")
+            .select("slug")
+            .eq("is_active", true);
+
+          if (error || !data) {
+            console.warn("[SSG] Failed to fetch active restaurants for prerender:", error);
+            return [];
+          }
+          console.log("[SSG] Prerendering", data.length, "active restaurants");
+          return data.map((r) => `menu/${r.slug}`);
+        },
       },
       { path: "login", Component: Login },
       { path: "onboarding", Component: Onboarding },
