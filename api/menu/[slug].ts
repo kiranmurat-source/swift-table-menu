@@ -2,8 +2,11 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import fs from 'node:fs';
 import path from 'node:path';
-import { renderPage } from '../../src/entry-server';
-import { transformTemplate } from '../../src/lib/ssrTemplate';
+// The SSR runtime is pre-built by `vite build --ssr` into dist-server/ so
+// that all `@/*` aliases, JSX, and any transitive CSS side-effects are
+// resolved at build time rather than at Function runtime. Vercel bundles
+// this file via `includeFiles` in vercel.json.
+import { renderPage, transformTemplate } from '../../dist-server/entry-server.js';
 import type { SSRData } from '../../src/lib/ssrContext';
 import type { Restaurant, MenuCategory, MenuItem } from '../../src/types/menu';
 import type { Promo } from '../../src/components/PromoPopup';

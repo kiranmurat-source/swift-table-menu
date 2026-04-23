@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/menu/[slug].ts": {
+      "includeFiles": "dist-server/**"
+    }
+  },
   "redirects": [
     {
       "source": "/privacy-policy",

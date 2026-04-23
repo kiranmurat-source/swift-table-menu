@@ -30,6 +30,10 @@ export default defineConfig(({ mode, isSsrBuild }) => ({
     ],
   },
   build: {
+    // Don't copy public/ into dist-server — the Vercel Function has no use
+    // for favicons/images and includeFiles would otherwise ship ~9 MB of
+    // static assets into the Function bundle.
+    copyPublicDir: !isSsrBuild,
     rollupOptions: {
       // manualChunks is only valid for the client build; SSR treats
       // React/dependencies as externals which cannot be manual-chunked.

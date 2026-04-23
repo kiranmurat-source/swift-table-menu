@@ -10,6 +10,10 @@ import {
 import { routes } from './routes';
 import { SSRDataContext, type SSRData } from './lib/ssrContext';
 
+// Re-exported so the Vercel Function can import both renderPage and
+// transformTemplate from the single pre-built SSR bundle (dist-server/).
+export { transformTemplate } from './lib/ssrTemplate';
+
 export interface RenderResult {
   appHtml: string;
   headHtml: string;
