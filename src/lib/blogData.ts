@@ -457,170 +457,417 @@ export const blogPosts: BlogPost[] = [
   {
     slug: 'qr-menu-fiyatlari-2026',
     image: '/blog/blog-01-qr-menu-yonetim.png',
-    title: 'QR Menü Sistemi Fiyatları 2026: Karşılaştırmalı Rehber',
-    metaTitle: 'QR Menü Fiyatları 2026 — Karşılaştırma Rehberi | Tabbled',
-    metaDescription: 'QR menü sistemi fiyatları 2026: Menulux, FineDine ve Tabbled karşılaştırması. Hangisi daha uygun, hangisi daha çok özellik sunuyor?',
+    title: 'QR Menü Fiyatları 2026: Türkiye\'deki 20 Sistem Karşılaştırması',
+    metaTitle: 'QR Menü Fiyatları 2026: 20 Sistem Karşılaştırması | Tabbled',
+    metaDescription: 'Türkiye\'deki QR menü sistemleri ne kadar? Menulux, FineDine, Adisyo, Tabbled ve 16 rakibin güncel fiyatları, gizli maliyetler ve işletme boyutuna göre öneri matrisi.',
     category: 'rehber',
     categoryLabel: 'Rehberler',
-    excerpt: 'Türkiye\'deki QR menü sağlayıcılarının 2026 fiyatlarını, özelliklerini ve gizli maliyetlerini karşılaştırdık. Hangi plan işletmenize uygun?',
+    excerpt: 'Türkiye\'deki QR menü sağlayıcılarının yarısı fiyatını gizliyor. 20 sistemin açıklanan fiyatları, gizli maliyetleri ve işletme boyutuna göre hangi paketin mantıklı olduğu — Tabbled da rakiplerle aynı kritik merceğin altında.',
     author: 'Murat Kıran',
+    authorUrl: 'https://tabbled.com/hakkimizda',
     publishedAt: '2026-04-14T00:00:00Z',
-    updatedAt: '2026-04-14T00:00:00Z',
-    readingTime: 8,
-    tags: ['QR menü fiyatları', 'dijital menü fiyat', 'karşılaştırma', 'Menulux', 'FineDine', 'Tabbled'],
+    updatedAt: '2026-04-23T00:00:00Z',
+    readingTime: 14,
+    tags: ['qr menü fiyatları', 'qr menü maliyeti', 'dijital menü fiyat', 'restoran yazılım fiyatları', 'qr menü karşılaştırma', 'menulux', 'finedine', 'tabbled fiyat'],
     relatedSlugs: ['qr-menu-nedir', 'qr-menu-zorunlulugu-2026'],
     faq: [
-      { question: 'En ucuz QR menü sistemi hangisi?', answer: 'Türkiye\'de en uygun fiyatlı profesyonel QR menü sistemi aylık 250-300 TL aralığında başlamaktadır. Ücretsiz çözümler de mevcut olmakla birlikte genellikle sınırlı özellik sunar ve profesyonel destek içermez.' },
-      { question: 'QR menü için yıllık ne kadar ödenir?', answer: 'Temel QR menü paketleri yıllık 3.000-3.600 TL, orta seviye paketler 7.200-8.400 TL, premium paketler ise 14.400 TL ve üzeri fiyatlandırılmaktadır. Yıllık ödeme yapıldığında genellikle %10-20 indirim uygulanır.' },
-      { question: 'FineDine neden bu kadar pahalı?', answer: 'FineDine USD bazlı fiyatlandırma yapmaktadır ve global pazara hitap eder. Aylık $39-119 aralığındaki fiyatları TL\'ye çevrildiğinde aylık 1.400-4.200 TL arasına denk gelir. Buna karşın Türkiye pazarına özel fiyatlandırma yapan alternatifler çok daha uygun fiyatlıdır.' },
-      { question: 'QR menü sisteminin gizli maliyetleri var mı?', answer: 'Bazı sağlayıcılarda kurulum ücreti, eğitim bedeli, ek kullanıcı ücreti, SMS/bildirim paketi veya ek şube ücreti olabilir. Sözleşme imzalamadan önce tüm maliyetleri netleştirmeniz önerilir.' },
+      { question: 'QR menü için ne kadar ödemeliyim?', answer: 'Küçük bir kafe için 200-450 TL/ay yeterli. Tek şubeli restoran için 500-800 TL/ay orta noktada. Butik otel veya premium casual dining için 800-1.500 TL/ay mantıklı. Çok şubeli zincirler için 1.500+ TL/ay. Bütçenizin yıllık %0.5-1\'ini aşmamalı.' },
+      { question: 'En ucuz QR menü sistemi hangisi?', answer: 'Aylık bazda Menüm.co (~200 TL) en ucuz profesyonel seçenek. Gerçek ücretsiz seçenekler de var — ancak genelde reklam, sınırlı özellik veya sipariş komisyonu içerirler. Uzun vadede gerçek ücretsiz seçenekler genelde profesyonel sistemlerden pahalıya mal olur.' },
+      { question: 'QR menü sistemi yıllık mı aylık mı ödenmeli?', answer: 'Yıllık ödeme genelde %15-25 indirim sağlar. Ancak yeni sistem deniyorsanız önce aylık başlayın, sağlayıcı batarsa paranız kaybolur, iade politikasına bakın. Tabbled yıllık ödemede Basic 549 TL/ay\'a eşdeğer, Premium 1.459 TL/ay.' },
+      { question: 'Fiyatlar KDV dahil mi?', answer: 'Türkiye\'deki çoğu sağlayıcıda hayır. Fiyatlar +KDV olarak verilir (%20 eklenir). Kıyaslama yaparken hep KDV dahil fiyata çevirin. Tabbled da dahil, fiyatlarımız +KDV olarak listelenir.' },
+      { question: 'Ücretsiz QR menü sistemleri gerçekten ücretsiz mi?', answer: 'Genelde hayır. Gizli maliyetler: reklam gösterimi, sipariş komisyonu, sınırlı özellik, yabancı sunucu (KVKK risk), 7 gün sonra ücretli geçiş. Gerçekten ücretsiz olanlar sadece çok küçük işletmeler için uygun.' },
+      { question: 'QR menü fiyatında pazarlık edebilir miyim?', answer: 'Açık fiyatı olan sağlayıcılarda (Tabbled, Menulux, Menüm.co) pazarlık yok — liste fiyatı son fiyat. Fiyat gizleyenlerde pazarlık yapılabilir, ama bu başlangıç fiyatının yüksek olduğunun sinyalidir. Şeffaf sağlayıcıyla gidip 10% indirim alamazsınız ama 30% gereksiz ücret ödemezsiniz.' },
+      { question: 'QR menü sistemi değiştirmek kolay mı?', answer: 'Değil. Menü verinizi CSV export edebiliyorsanız kolay (Tabbled veriyor). Ancak QR kodları yenilemek zorunda olabilirsiniz (yeni sistemin linkleri farklı), bu da basılı stand/sticker masraflarını yeniden çıkarır. Doğru sistemi ilk seçiminiz olarak belirlemek önemli.' },
+      { question: 'Enterprise paketler için fiyat nasıl belirlenir?', answer: 'Genelde şube sayısı, aylık işlem hacmi, özel entegrasyon ihtiyaçları ve sözleşme süresi kriterlerine göre. Her sağlayıcı farklı kriter kullanır. Tabbled Enterprise için 5+ şube veya özel entegrasyon ihtiyacı durumunda teklif verilir.' },
     ],
-    content: `<h2>QR Menü Sistemi Fiyatını Belirleyen Faktörler</h2>
+    content: `<p>QR menü fiyatları 2026'da <strong>aylık ₺200'den ₺4.000'e</strong> kadar değişiyor. Ama bu aralığın sadece %30'u gerçek fark — geri kalan %70 işletmelerin yanlış paket seçiminden kaynaklanıyor.</p>
 
-<p>QR menü sistemi fiyatları sağlayıcıdan sağlayıcıya önemli farklılıklar gösterir. Fiyatı belirleyen temel faktörler şunlardır:</p>
+<p>Bu rehberde 20 sistemin <strong>açıklanan fiyatları</strong>, <strong>gizli maliyetleri</strong> ve <strong>işletme boyutuna göre hangi paketin mantıklı olduğunu</strong> tarafsız olarak analiz ediyoruz. Tabbled olarak kendi fiyatlarımızı da listede, rakiplerle aynı kritik merceğin altına koyuyoruz.</p>
+
+<p><strong>Önemli bir nokta:</strong> Türkiye'deki QR menü sağlayıcılarının yarısı fiyatlarını gizliyor. "Teklif al" yazan sistemlerin çoğu gerçekte Tabbled-seviyesi paketlerden daha pahalıdır. Aşağıdaki tabloda sadece <strong>kamuya açık fiyatı olan sistemleri</strong> karşılaştırıyoruz.</p>
+
+<h2>1. Pazar Fiyat Haritası — 4 Segment</h2>
+
+<p>Türkiye'deki QR menü pazarı 4 farklı fiyat segmentine ayrılıyor. Her segment farklı bir işletme profiline hizmet ediyor:</p>
+
+<table>
+<thead>
+<tr><th>Segment</th><th>Aylık Fiyat</th><th>Tipik Özellikler</th><th>Kim İçin</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Giriş</strong></td><td>₺200-400</td><td>Sadece menü gösterimi, sınırlı çeviri</td><td>Küçük kafe, yeni başlayan</td></tr>
+<tr><td><strong>Orta</strong></td><td>₺400-700</td><td>QR + basit sipariş + 1-2 dil</td><td>Tek şube restoran</td></tr>
+<tr><td><strong>Üst-Orta</strong></td><td>₺700-1.600</td><td>Çok dilli, AI, versiyonlama, analitik</td><td>Otel restoranı, premium casual, 2-10 şube</td></tr>
+<tr><td><strong>Premium/Enterprise</strong></td><td>₺2.000-4.000+</td><td>Global hospitality, tam POS entegrasyonu</td><td>Zincir, lüks oteller, USD bütçeli</td></tr>
+</tbody>
+</table>
+
+<h2>2. Giriş Seviyesi (₺200-400): Sadece QR Menü</h2>
+
+<p>Bu segmentte sağlayıcılar sadece "yasal uyum + temel menü gösterimi" sunuyor. Operasyonel derinlik yok, çok dilli destek zayıf, analitik yok.</p>
+
+<table>
+<thead>
+<tr><th>Sağlayıcı</th><th>Aylık Fiyat</th><th>Öne Çıkan</th><th>Eksikler</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Menüm.co</strong></td><td>~₺200 (yıllık ₺1.190+KDV)</td><td>4.000+ müşteri, 4 tema</td><td>Çok dilli sınırlı, AI yok, sipariş komisyonu olabilir</td></tr>
+<tr><td><strong>FoodQR Standart</strong></td><td>~₺208</td><td>Agresif fiyatlı</td><td>Özel marka ekleme sınırlı</td></tr>
+<tr><td><strong>Qrako Eko</strong></td><td>₺249</td><td>Butik ekip, yerel destek</td><td>Özellik derinliği zayıf</td></tr>
+<tr><td><strong>Menulux QR</strong></td><td>₺250</td><td>Geniş ekosistem entry</td><td>Sipariş/POS = ayrı paket</td></tr>
+<tr><td><strong>KobiQR Starter</strong></td><td>~₺367</td><td>Vitrin yazılımı odaklı</td><td>QR menüden çok pazarlama aracı</td></tr>
+</tbody>
+</table>
+
+<h3>Bu segment kim için uygun?</h3>
 
 <ul>
-<li><strong>Özellik kapsamı:</strong> Temel menü görüntüleme mi, yoksa sipariş, ödeme, CRM dahil tam paket mi?</li>
-<li><strong>Şube sayısı:</strong> Tek şube ile çoklu şube arasında ciddi fiyat farkları olabilir.</li>
-<li><strong>Kullanıcı sayısı:</strong> Kaç kişi panele erişebilecek?</li>
-<li><strong>Dil desteği:</strong> Kaç dilde menü sunulabilecek?</li>
-<li><strong>Destek seviyesi:</strong> E-posta destek mi, telefon desteği mi, 7/24 mi?</li>
-<li><strong>Para birimi:</strong> TL bazlı mı, USD bazlı mı? Kur farkı büyük maliyet farkı yaratır.</li>
+<li>✅ Yeni açılmış kafe, 5-10 masalı küçük işletme</li>
+<li>✅ Menüsü 10-20 üründen oluşan basit konsept</li>
+<li>✅ Türk müşteri bazlı, turist hedeflemeyen yerler</li>
+<li>✅ Bütçesi ayda ₺500'ü geçmeyen girişimciler</li>
 </ul>
 
-<h2>Türkiye'deki QR Menü Sağlayıcıları ve Fiyatları</h2>
-
-<h3>Menulux</h3>
-
-<p>Türkiye merkezli QR menü ve restoran otomasyon çözümü. POS entegrasyonu güçlü.</p>
-
-<table>
-<thead>
-<tr><th>Kriter</th><th>Detay</th></tr>
-</thead>
-<tbody>
-<tr><td>Aylık fiyat</td><td>250 TL'den başlayan</td></tr>
-<tr><td>Yıllık fiyat</td><td>~3.000 TL</td></tr>
-<tr><td>Para birimi</td><td>TL</td></tr>
-<tr><td>Dil desteği</td><td>80+ dil, otomatik çeviri</td></tr>
-<tr><td>POS entegrasyonu</td><td>Var (kendi POS sistemi ile)</td></tr>
-<tr><td>Sipariş</td><td>Var (masa + gel-al)</td></tr>
-<tr><td>Güçlü yön</td><td>POS entegrasyonu, Türkiye odaklı</td></tr>
-<tr><td>Zayıf yön</td><td>Tek ürün, POS olmadan sınırlı</td></tr>
-</tbody>
-</table>
-
-<h3>FineDine</h3>
-
-<p>Türkiye merkezli ama global pazara hitap eden premium dijital menü platformu. Güçlü özellik seti.</p>
-
-<table>
-<thead>
-<tr><th>Plan</th><th>Aylık Fiyat (USD)</th><th>TL Karşılığı (Yaklaşık)</th></tr>
-</thead>
-<tbody>
-<tr><td>Base</td><td>$39/ay</td><td>~1.400 TL/ay</td></tr>
-<tr><td>Essentials</td><td>$79/ay</td><td>~2.800 TL/ay</td></tr>
-<tr><td>Premium</td><td>$119/ay</td><td>~4.200 TL/ay</td></tr>
-</tbody>
-</table>
-
-<p>Yıllık ödeme yapıldığında indirim uygulanır. FineDine güçlü özellikler sunar — AI menü açıklaması, POS entegrasyonu, gelişmiş analitik — ancak USD bazlı fiyatlandırma Türkiye'deki KOBİ'ler için yüksek olabilir.</p>
-
-<h3>Tabbled</h3>
-
-<p>Türkiye pazarı için özel olarak geliştirilmiş dijital menü platformu. "FineDine özellikleri, yerel fiyat" konumlandırması.</p>
-
-<table>
-<thead>
-<tr><th>Plan</th><th>Aylık Karşılığı</th><th>Yıllık Fiyat</th><th>Özellik Sayısı</th></tr>
-</thead>
-<tbody>
-<tr><td>Basic</td><td>300 TL/ay</td><td>3.600 TL/yıl</td><td>4 temel özellik</td></tr>
-<tr><td>Pro</td><td>600 TL/ay</td><td>7.200 TL/yıl</td><td>18 özellik</td></tr>
-<tr><td>Premium</td><td>1.200 TL/ay</td><td>14.400 TL/yıl</td><td>40 özellik</td></tr>
-</tbody>
-</table>
-
-<p>Tabbled sadece yıllık ödeme kabul eder. Tüm planlar TL bazlıdır, kur riski yoktur. Pro ve Premium planlarda AI menü açıklaması, çok dilli menü (34 dil), WhatsApp sipariş, garson çağırma, geri bildirim sistemi ve indirim kodları dahildir.</p>
-
-<h2>Karşılaştırma Tablosu</h2>
-
-<table>
-<thead>
-<tr><th>Özellik</th><th>Menulux</th><th>FineDine Base</th><th>Tabbled Basic</th><th>Tabbled Pro</th></tr>
-</thead>
-<tbody>
-<tr><td>Aylık maliyet</td><td>250 TL</td><td>~1.400 TL</td><td>300 TL</td><td>600 TL</td></tr>
-<tr><td>Para birimi</td><td>TL</td><td>USD</td><td>TL</td><td>TL</td></tr>
-<tr><td>QR menü</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
-<tr><td>Çok dilli</td><td>✓ (80+ dil)</td><td>✓ (22 dil)</td><td>Sadece TR</td><td>2 dil</td></tr>
-<tr><td>Alerjen bilgisi</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
-<tr><td>WhatsApp sipariş</td><td>✗</td><td>✗</td><td>✗</td><td>✓</td></tr>
-<tr><td>AI açıklama yazıcı</td><td>✗</td><td>✓ (Premium)</td><td>✗</td><td>✓</td></tr>
-<tr><td>Garson çağırma</td><td>✗</td><td>✗</td><td>✗</td><td>✓</td></tr>
-<tr><td>Geri bildirim</td><td>✗</td><td>✗</td><td>✗</td><td>✓</td></tr>
-<tr><td>Google yönlendirme</td><td>✗</td><td>✗</td><td>✗</td><td>✓</td></tr>
-<tr><td>POS entegrasyonu</td><td>✓</td><td>✓ (Premium)</td><td>✗</td><td>✗</td></tr>
-<tr><td>Türkçe destek</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
-</tbody>
-</table>
-
-<h2>Gizli Maliyetler: Nelere Dikkat Etmelisiniz?</h2>
-
-<p>QR menü sağlayıcılarının ilan ettikleri fiyat her zaman toplam maliyeti yansıtmaz. Şu kalemleri sorgulamanızı öneririz:</p>
+<h3>Bu segment neden yetersiz kalabilir?</h3>
 
 <ul>
-<li><strong>Kurulum ücreti:</strong> Bazı sağlayıcılar tek seferlik kurulum bedeli alır.</li>
-<li><strong>Eğitim ücreti:</strong> Panel eğitimi için ek ücret talep edilebilir.</li>
-<li><strong>Ek kullanıcı ücreti:</strong> Temel planlarda genellikle 1 kullanıcı dahildir, ek kullanıcılar ücretli olabilir.</li>
-<li><strong>SMS/bildirim paketi:</strong> Sipariş bildirimi için SMS paketi gerekebilir.</li>
-<li><strong>Ek şube ücreti:</strong> İkinci şubeniz için tam fiyat ödemek zorunda kalabilirsiniz.</li>
-<li><strong>QR kod basım ücreti:</strong> Profesyonel QR standları bazı sağlayıcılardan ayrıca satın alınır.</li>
-<li><strong>Kur riski:</strong> USD veya EUR bazlı fiyatlarda TL değer kaybettiğinde maliyetiniz artar.</li>
+<li>❌ Fiyat versiyonlama genelde yok → denetim riski</li>
+<li>❌ PDF export kısıtlı → fiziksel menü zorunluluğunu halledemez</li>
+<li>❌ Çok dilli destek (genelde 2-3 dil) → otel/turist kritik işletmeler için yetersiz</li>
+<li>❌ Analitik yok → hangi ürün popüler bilemezsin</li>
+<li>❌ Alerjen alanları opsiyonel → <a href="/blog/restoran-alerjen-bilgilendirme-rehberi">Tarım Bakanlığı 2026 zorunluluğu</a> için hazırlıksız</li>
 </ul>
 
-<div class="blog-cta-inline">
-<p><strong>Tabbled'da gizli maliyet yoktur.</strong></p>
-<p>TL bazlı şeffaf fiyatlandırma, kurulum ücreti yok, eğitim dahil.</p>
-<a href="/#pricing">Fiyatları İncele</a>
-</div>
+<h2>3. Orta Segment (₺400-700): QR + Temel Operasyon</h2>
 
-<h2>Hangi Plan Size Uygun?</h2>
-
-<h3>Tek şubeli küçük kafe veya lokanta</h3>
-<p>İstanbul Kadıköy'deki bir brunch kafesi veya Ankara Kızılay'daki bir ev yemekleri lokantası iseniz, aylık 250-300 TL aralığındaki temel paketler yeterli olacaktır. QR menü, fotoğraflı ürünler ve alerjen bilgisi bu paketle karşılanır.</p>
-
-<h3>Turist bölgesindeki restoran</h3>
-<p>Antalya Kaleiçi'nde, İstanbul Sultanahmet'te veya İzmir Alsancak'ta çok uluslu müşteri ağırlıyorsanız, çok dilli menü ve WhatsApp sipariş özellikleri olan orta seviye bir pakete ihtiyacınız var. Aylık 600-800 TL aralığı.</p>
-
-<h3>Zincir restoran veya çoklu şube</h3>
-<p>Birden fazla şubeniz varsa ve merkezi yönetim, analitik ve POS entegrasyonu istiyorsanız premium paketlere bakmalısınız. Aylık 1.200+ TL. POS entegrasyonu şu an sadece Menulux ve FineDine'da mevcut.</p>
-
-<h2>Kağıt Menü ile Dijital Menü Maliyet Karşılaştırması</h2>
-
-<p>Dijital menüyü bir maliyet olarak değil, tasarruf olarak düşünün:</p>
+<p>Bu segment giriş seviyesinden farkı: sipariş alma, basit POS bağlantısı, daha çok dil, temel analitik. Türkiye'de en kalabalık segment burası.</p>
 
 <table>
 <thead>
-<tr><th>Kalem</th><th>Kağıt Menü (Yıllık)</th><th>Dijital Menü (Yıllık)</th></tr>
+<tr><th>Sağlayıcı</th><th>Aylık Fiyat</th><th>Öne Çıkan</th><th>Eksikler</th></tr>
 </thead>
 <tbody>
-<tr><td>İlk basım (50 adet)</td><td>2.000-5.000 TL</td><td>0 TL</td></tr>
-<tr><td>Yıl içi güncelleme (3x)</td><td>3.000-6.000 TL</td><td>0 TL</td></tr>
-<tr><td>Laminasyon / ciltleme</td><td>500-1.500 TL</td><td>0 TL</td></tr>
-<tr><td>Dijital menü yazılım ücreti</td><td>0 TL</td><td>3.600-14.400 TL</td></tr>
-<tr><td><strong>Toplam</strong></td><td><strong>5.500-12.500 TL</strong></td><td><strong>3.600-14.400 TL</strong></td></tr>
+<tr><td><strong>MenüCebimde Paket 1</strong></td><td>₺450</td><td>Bursa merkezli yerel destek</td><td>Eski arayüz, AI yok</td></tr>
+<tr><td><strong>Menulux Mobil POS</strong></td><td>₺459</td><td>Mobil cihazdan sipariş alma</td><td>Sınırlı dil (2-3)</td></tr>
+<tr><td><strong>KobiQR Pro</strong></td><td>₺525</td><td>Vitrin + QR kombinasyonu</td><td>Yine pazarlama odaklı</td></tr>
+<tr><td><strong>QRall Standart</strong></td><td>₺546 + KDV</td><td>Yeni nesil tasarım</td><td>Yeni marka (2024), ekosistem az</td></tr>
+<tr><td><strong>MenüCebimde Paket 2</strong></td><td>₺600</td><td>Daha fazla masa limiti</td><td>Paket 1'den değerli ama yine sınırlı</td></tr>
+<tr><td><strong>Menulux Web POS</strong></td><td>₺625</td><td>Tablet üzerinden yönetim</td><td>USD'ye bakıyor olabilir</td></tr>
+<tr><td><strong>KobiQR Elite</strong></td><td>~₺667</td><td>KobiQR'ın en üst paketi</td><td>Yine vitrin-odaklı</td></tr>
 </tbody>
 </table>
 
-<p>Temel QR menü paketi (yıllık 3.600 TL) çoğu durumda kağıt menüden daha ekonomiktir. Üstelik kağıt menüde olmayan çok dilli destek, anlık güncelleme ve alerjen filtreleme gibi özellikler bonus olarak gelir.</p>
+<h3>Bu segment kim için uygun?</h3>
 
-<h2>Sonuç ve Tavsiyemiz</h2>
+<ul>
+<li>✅ Tek şube restoran, günlük 50-200 masa servisi</li>
+<li>✅ Garson çağırma, masadan sipariş almak isteyen</li>
+<li>✅ Analitik görmek isteyen (basit seviyede)</li>
+<li>✅ Türkçe + İngilizce yeterli olan, turist ağırlıklı olmayan yerler</li>
+</ul>
 
-<p>Eğer POS entegrasyonu birincil önceliğinizse Menulux, global ölçekte premium özellikler istiyorsanız ve bütçeniz uygunsa FineDine değerlendirilecek seçeneklerdir. Ancak Türkiye pazarında uygun fiyatla kapsamlı özellikler arıyorsanız — çok dilli menü, WhatsApp sipariş, AI açıklama yazıcı, garson çağırma ve geri bildirim sistemi dahil — Tabbled en dengeli seçimdir.</p>
+<h3>Dikkat edilmesi gerekenler</h3>
 
-<p>Unutmayın: en pahalı sistem en iyi sistem değildir. İşletmenizin büyüklüğüne, müşteri profilinize ve önceliklerinize göre doğru planı seçmek, hem bütçenizi hem de müşteri memnuniyetinizi koruyacaktır.</p>`,
+<ul>
+<li>⚠️ Sipariş komisyonu olabilir — "ücretsiz" deniyor ama her siparişten %5-15 kesilebiliyor</li>
+<li>⚠️ "Teklif al" yazanları atla — bu segmentte şeffaf fiyat sunmayan sistemlere girmeyin, muhtemelen sizden daha fazla istiyorlar</li>
+<li>⚠️ Sözleşme süreleri — yıllık ödeme yaparsanız aylık avantajlı ama iade yok</li>
+</ul>
+
+<h2>4. Üst-Orta Segment (₺700-1.600): Tabbled Bölgesi</h2>
+
+<p>Bu segment Tabbled'ın bulunduğu yer. Özellikler burada derinleşiyor: fiyat versiyonlama, 30+ dil, AI menü import, gelişmiş analitik, alerjen yapısal alanları.</p>
+
+<table>
+<thead>
+<tr><th>Sağlayıcı</th><th>Aylık Fiyat</th><th>Öne Çıkan</th><th>Eksikler</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>MenüCebimde Paket 3</strong></td><td>₺750</td><td>Çok şube desteği</td><td>Modern özellikler zayıf</td></tr>
+<tr><td><strong>Menulux Tablet POS</strong></td><td>₺875</td><td>Masa tablet entegrasyonu</td><td>Donanım ek maliyet</td></tr>
+<tr><td><strong>Tabbled Basic</strong></td><td>₺549+KDV</td><td>Yıllık, 34 dil dahil, fiyat versiyonlama, PDF export</td><td>1 kullanıcı, 1 şube, 8 özellik</td></tr>
+<tr><td><strong>Tabbled Premium</strong></td><td>₺1.459+KDV</td><td>Yıllık, 22 özellik: AI + ordering + analytics + 150 kredi</td><td>5 kullanıcı, 1 şube</td></tr>
+<tr><td><strong>Menulux Premium POS</strong></td><td>₺1.250</td><td>Tam POS entegrasyonu</td><td>Menulux ekosistemine kilitli</td></tr>
+<tr><td><strong>Simpra POS Başlangıç</strong></td><td>₺1.350 + KDV</td><td>Kurumsal POS sistemi</td><td>Esasen POS, QR yan özellik</td></tr>
+<tr><td><strong>QRall Pro</strong></td><td>₺1.560 + KDV</td><td>Yeni nesil tasarım</td><td>Yeni marka, ekosistem gelişiyor</td></tr>
+</tbody>
+</table>
+
+<h3>Tabbled farkı nedir?</h3>
+
+<p>Tabbled diğer üst-orta rakiplerinden şu yönleriyle ayrışıyor:</p>
+
+<ul>
+<li><strong>34 dil otomatik çeviri</strong> — rakiplerde genelde 5-10 dil (otel ve turistik yerler için kritik)</li>
+<li><strong>Fiyat versiyonlama</strong> — geçmiş fiyat değişiklikleri kayıt altında (denetim kanıtı)</li>
+<li><strong>AI menü import</strong> — PDF/fotoğraf menüden 5 dakikada ürün ekleme</li>
+<li><strong>Tam yasal uyum</strong> — PDF export, alerjen alanları, KVKK uyumlu Türkiye host</li>
+<li><strong>Şeffaf fiyat</strong> — hem Basic hem Premium site üzerinde açık</li>
+</ul>
+
+<p>Bu fiyat bandında rakiplerin çoğu fiyat gizliyor veya "teklif al" diyor. Tabbled'ın ₺549'u (Basic) bu segmentin en düşük noktalarından biri — çünkü yıllık taahhüt avantajıyla aylık birime düşüyor.</p>
+
+<h3>Bu segment kim için uygun?</h3>
+
+<ul>
+<li>✅ Butik otel restoranları (çok dilli kritik)</li>
+<li>✅ 2-10 şubeli yerel zincirler (şube standardı gerekli)</li>
+<li>✅ Premium casual dining (operasyonel zekâ ihtiyacı)</li>
+<li>✅ Yıllık 3M+ TL ciroya sahip işletmeler</li>
+<li>✅ Turistik bölge restoranları (İstanbul tarihi yarımada, Kapadokya, Antalya Kaleiçi vb.)</li>
+</ul>
+
+<h2>5. Premium/Enterprise (₺2.000+): Global Hospitality</h2>
+
+<p>Bu segment global oyuncuların ve kurumsal POS sistemlerinin bulunduğu yer. Türk pazarında fiyatlar genelde USD bazlı veya "teklif usulü."</p>
+
+<table>
+<thead>
+<tr><th>Sağlayıcı</th><th>Aylık Fiyat</th><th>Öne Çıkan</th><th>Eksikler</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>FineDine Premium</strong></td><td>~₺4.000 ($119)</td><td>64 ülke, AI menu tools, global destek</td><td>USD bazlı, kur riski, Türkçe destek zayıf</td></tr>
+<tr><td><strong>Simpra POS Pro</strong></td><td>Teklif usulü</td><td>Enterprise POS + QR</td><td>Fiyat kapalı, sözleşme bağlılığı</td></tr>
+<tr><td><strong>Adisyo Pro</strong></td><td>Açık fiyat yok</td><td>Çok şubeli POS sistemi</td><td>Sadece zincirler için satıyor</td></tr>
+<tr><td><strong>AybitPos</strong></td><td>Teklif usulü</td><td>2005 kuruluş, Kocaeli</td><td>Eski sistem, UI modern değil</td></tr>
+<tr><td><strong>Elektraweb</strong></td><td>Teklif usulü</td><td>Otel PMS + QR menü</td><td>Temelde PMS, QR yan ürün</td></tr>
+</tbody>
+</table>
+
+<h3>Premium segment kim için uygun?</h3>
+
+<ul>
+<li>✅ 5+ şubeli zincir markalar</li>
+<li>✅ Lüks oteller (Four Seasons, Hilton, Mandarin Oriental seviye)</li>
+<li>✅ Yıllık 15M+ TL ciroya sahip işletmeler</li>
+<li>✅ USD bütçesi olan, kur riskine dayanıklı işletmeler</li>
+<li>✅ Tam POS + menü + kiosk entegrasyonu isteyen</li>
+</ul>
+
+<h3>Dikkat edilmesi gerekenler</h3>
+
+<ul>
+<li>⚠️ FineDine gibi global platformlarda <strong>TRY fatura yok</strong> — her ay USD'den TL'ye çevrilir, kur yükseldikçe maliyetiniz artar</li>
+<li>⚠️ Sözleşme bağlılığı — enterprise sistemlerde genelde 2-3 yıl minimum taahhüt olur</li>
+<li>⚠️ Türkçe destek zayıf — sorun yaşadığınızda İngilizce konuşmak gerekebilir</li>
+<li>⚠️ Geçiş maliyeti yüksek — eğer beğenmediyseniz, başka sisteme geçmek 2-3 ay sürer</li>
+</ul>
+
+<h2>6. Fiyat Gizleyen Sağlayıcılar Neden Şüpheli?</h2>
+
+<p>Türkiye QR menü pazarında kritik bir istatistik: <strong>20 sağlayıcıdan 8'i fiyatını açıkça paylaşmıyor.</strong> Bu liste:</p>
+
+<ul>
+<li>Tabpad — fiyat sayfası yok</li>
+<li>MenumeBak — sadece "ücretsiz dene" var</li>
+<li>Adisyo — Lite/Std paket fiyatları tutarsız</li>
+<li>Allzin — freemium iddia ama paket fiyatları kapalı</li>
+<li>Elektraweb — teklif usulü</li>
+<li>AybitPos — teklif usulü</li>
+<li>FineDine — Türkiye TRY listesi yok</li>
+<li>Simpra — "Satış danışmanıyla görüşün" yazıyor</li>
+</ul>
+
+<h3>Fiyat neden gizlenir?</h3>
+
+<p>Birkaç olası sebep:</p>
+
+<ol>
+<li><strong>Her müşteriye farklı fiyat verilir</strong> → pazarlık odaklı satış</li>
+<li><strong>Fiyat yüksek</strong> → web sitesinde göstermek dönüşüm oranını düşürür</li>
+<li><strong>Fiyat karmaşık</strong> → paket yapısı anlaşılır değil</li>
+<li><strong>Özel indirim sunabilmek için</strong> → liste fiyat yüksek, indirimle "kıyak" izlenimi verilir</li>
+</ol>
+
+<h3>Açık fiyat sunanlar neden tercih edilmeli?</h3>
+
+<ul>
+<li>✅ Karşılaştırma yapabilirsiniz</li>
+<li>✅ Bütçe planlayabilirsiniz</li>
+<li>✅ "Pazarlık yapsam daha ucuza gelir mi?" stresinden kurtulursunuz</li>
+<li>✅ Şeffaflık = güven sinyali</li>
+</ul>
+
+<p><strong>Tabbled kararı:</strong> Tüm paketlerimizin fiyatı web sitemizde açık. Basic ₺549+KDV, Premium ₺1.459+KDV, Enterprise özel teklif (sadece çok şubeli için). Pazarlık yok, gizli maliyet yok.</p>
+
+<h2>7. Gerçek Maliyet: Abonelik Dışı Kalemler</h2>
+
+<p>"Aylık fiyat" genelde buzdağının görünen kısmı. İşletmenize toplam yılda ne kadara mal olacağını hesaplarken bu 5 gizli kalemi de dahil edin:</p>
+
+<h3>1. KDV (%20)</h3>
+
+<p>Türkiye'deki birçok sağlayıcı fiyatları "<strong>+ KDV</strong>" olarak yazıyor. Yani ₺549'luk paket gerçekte ₺658.80'e mal oluyor. Bazı sağlayıcılar ise KDV dahil fiyat veriyor (Menüm.co gibi).</p>
+
+<p><strong>İpucu:</strong> Karşılaştırma yaparken hep <strong>KDV dahil</strong> fiyata bakın.</p>
+
+<h3>2. Setup/Kurulum ücreti</h3>
+
+<p>Bazı sağlayıcılar ilk kurulum için ek ücret alır:</p>
+
+<ul>
+<li>₺500-2.000 "kurulum bedeli"</li>
+<li>₺200-500 "menü yükleme ücreti"</li>
+<li>₺100-300 "eğitim ücreti"</li>
+</ul>
+
+<p>Tabbled ve şeffaf sağlayıcıların çoğu kurulum ücreti almaz.</p>
+
+<h3>3. Donanım maliyeti</h3>
+
+<p>POS entegrasyonlu sistemler genelde donanım dayatır:</p>
+
+<ul>
+<li>Tablet POS: ₺10.000-25.000 (tek seferlik)</li>
+<li>Mutfak ekranı: ₺3.000-8.000</li>
+<li>Yazıcı: ₺2.000-5.000</li>
+<li>QR stand (akrilik/pleksi): ₺15-50 per masa</li>
+</ul>
+
+<h3>4. Sipariş komisyonu</h3>
+
+<p>Bazı "ücretsiz" veya ucuz sistemler her siparişten komisyon keser:</p>
+
+<ul>
+<li>%5 (Menulux'un bazı paketleri)</li>
+<li>%10-15 (Yemeksepeti entegrasyonu için)</li>
+<li>Allzin freemium modelinde komisyon var</li>
+</ul>
+
+<p><strong>Tabbled kararı:</strong> Tabbled'da hiçbir komisyon yok. Sipariş alsanız da almasanız da aylık ücret sabit.</p>
+
+<h3>5. Ekstra kullanıcı/şube ücreti</h3>
+
+<p>Paketler belirli kullanıcı ve şube sayısıyla gelir. Ekstra:</p>
+
+<ul>
+<li>Ekstra kullanıcı: ₺50-200/kullanıcı/ay</li>
+<li>Ekstra şube: ₺200-1.000/şube/ay</li>
+<li>API erişimi: ₺500-2.000/ay</li>
+</ul>
+
+<h3>Gerçek toplam maliyet hesabı — örnek</h3>
+
+<p>5 masalı, tek şubeli bir kafe için:</p>
+
+<table>
+<thead>
+<tr><th>Kalem</th><th>Ucuz Sistem (₺250)</th><th>Orta Sistem (₺549)</th></tr>
+</thead>
+<tbody>
+<tr><td>Aylık abonelik</td><td>₺250</td><td>₺549</td></tr>
+<tr><td>KDV (+%20)</td><td>₺50</td><td>₺110</td></tr>
+<tr><td>Kurulum (ilk ay)</td><td>₺500</td><td>₺0</td></tr>
+<tr><td>QR stand baskı (5 masa)</td><td>₺75</td><td>₺75</td></tr>
+<tr><td>Sipariş komisyonu (ay 100 sipariş)</td><td>%10 × ₺15.000 = ₺1.500</td><td>₺0</td></tr>
+<tr><td><strong>Aylık toplam</strong></td><td><strong>₺1.800</strong></td><td><strong>₺659</strong></td></tr>
+<tr><td><strong>Yıllık toplam</strong></td><td><strong>₺22.100</strong></td><td><strong>₺7.908</strong></td></tr>
+</tbody>
+</table>
+
+<p>Görüldüğü gibi "ucuz" diye başlayan bir sistem, komisyon modeli yüzünden sonunda <strong>3 kat pahalı</strong> olabiliyor. Fiyat kararı verirken toplam yıllık maliyete bakın.</p>
+
+<h2>8. İşletme Boyutuna Göre Öneri Matrisi</h2>
+
+<p>Tek cümlelik tavsiyeler:</p>
+
+<h3>Küçük kafe, 5-10 masa (₺200-450/ay bütçe)</h3>
+<p>→ <strong>Menüm.co veya Menulux QR.</strong> Ekosistem sade, başlangıç için yeterli. Profesyonelleştikçe yükseltirsiniz.</p>
+
+<h3>Tek şube restoran, 20-50 masa (₺450-700/ay bütçe)</h3>
+<p>→ <strong>Menulux Mobil POS, MenüCebimde Paket 2, veya Tabbled Basic.</strong> Tabbled Basic çok dilli destek ve yasal uyum özellikleriyle öne çıkar.</p>
+
+<h3>Butik otel restoranı (₺700-1.500/ay bütçe, çok dilli kritik)</h3>
+<p>→ <strong>Tabbled Premium veya Menulux Premium POS.</strong> Tabbled'ın 34 dil desteği otel için belirleyici. Otel misafiri birden fazla ülkeden gelir.</p>
+
+<h3>Premium casual dining, tek şube (₺700-1.500/ay bütçe)</h3>
+<p>→ <strong>Tabbled Premium.</strong> AI öneri, analitik, fiyat versiyonlama, alerjen alanları — hepsi dahil.</p>
+
+<h3>2-10 şubeli yerel zincir (₺1.000-2.500/ay bütçe)</h3>
+<p>→ <strong>Tabbled Enterprise, Adisyo, veya Simpra POS.</strong> Merkezi menü yönetimi + şube özelleştirme kritik.</p>
+
+<h3>Lüks otel, 5 yıldız (₺2.000-4.000+/ay bütçe)</h3>
+<p>→ <strong>FineDine Premium veya Tabbled Enterprise.</strong> FineDine global hospitality deneyimi, Tabbled yerel destek ve TL fiyatlandırma avantajı.</p>
+
+<h3>Çok şubeli ulusal zincir (₺4.000+/ay bütçe)</h3>
+<p>→ <strong>Adisyo Enterprise, Simpra POS, veya FineDine Enterprise.</strong> Tam POS + kiosk + delivery entegrasyonu zorunlu.</p>
+
+<h2>9. Fiyatı Etkileyen 6 Faktör</h2>
+
+<p>Aynı "QR menü" başlığı altında niye bu kadar farklı fiyatlar var? 6 ana faktör:</p>
+
+<h3>1. Dil sayısı</h3>
+
+<ul>
+<li>2-3 dil: ucuz segment</li>
+<li>10+ dil: orta/üst-orta</li>
+<li>30+ dil (Tabbled: 34): üst-orta/premium</li>
+</ul>
+
+<h3>2. AI özellikleri</h3>
+
+<ul>
+<li>AI menü import (PDF/fotoğraftan otomatik): +₺200-500 segment farkı</li>
+<li>AI öneri sistemi (kişiselleştirme): +₺300-800</li>
+<li>AI fiyat optimizasyonu: +₺500+</li>
+</ul>
+
+<h3>3. POS entegrasyonu</h3>
+
+<ul>
+<li>QR-only: ₺200-700</li>
+<li>QR + basit sipariş: ₺400-1.000</li>
+<li>QR + tam POS: ₺1.000-3.000</li>
+<li>QR + POS + kiosk + delivery: ₺2.000+</li>
+</ul>
+
+<h3>4. Destek kalitesi</h3>
+
+<ul>
+<li>E-posta only: ucuz segment</li>
+<li>Telefon destek mesai saatleri: orta</li>
+<li>7/24 canlı destek: üst-orta/premium</li>
+<li>Özel hesap yöneticisi: enterprise</li>
+</ul>
+
+<h3>5. Fiyat versiyonlama ve denetim uyumu</h3>
+
+<ul>
+<li>Yok: ucuz segment (yasal risk)</li>
+<li>Var, sınırlı geçmiş: orta</li>
+<li>Var, tam geçmiş + audit log: üst-orta/premium</li>
+</ul>
+
+<h3>6. Ülke ve sunucu</h3>
+
+<ul>
+<li>Yurt dışı host (daha ucuz): KVKK risk</li>
+<li>Türkiye host (Tabbled): KVKK uyum + biraz pahalı</li>
+<li>Özel server (enterprise): çok pahalı</li>
+</ul>
+
+<h2>Sonuç</h2>
+
+<p>QR menü fiyatı soruda "ne kadar?" cevabı yok — <strong>işletmenize ne uygun?</strong> sorusu var. 5 masalı bir kahveciye ₺4.000/ay bir FineDine gerekmiyor; aynı şekilde 50 odalı butik otele ₺250 bir Menüm.co yetmiyor.</p>
+
+<p><strong>Doğru karar için 3 adım:</strong></p>
+
+<ol>
+<li><strong>Şu an ve 2 yıl sonraki işletmenizi</strong> düşünün — bugünkü ihtiyaçla sınırlı kalmayın</li>
+<li><strong>Toplam yıllık maliyeti</strong> hesaplayın (abonelik + KDV + kurulum + komisyon)</li>
+<li><strong>14-30 gün ücretsiz deneyip</strong> karşılaştırın — tek bir paragraftan karar vermeyin</li>
+</ol>
+
+<p>Tabbled'ı değerlendirmek isterseniz <a href="/">14 gün ücretsiz denemeyi başlatın →</a> — kredi kartı gerekmiyor. AI menü import ile mevcut menünüz 5 dakikada hazır olur.</p>
+
+<p><strong>İlgili rehberler:</strong></p>
+
+<ul>
+<li><a href="/blog/restoran-dijital-donusum-rehberi-2026">Restoran Dijital Dönüşüm Rehberi 2026: Adım Adım Teknoloji Geçişi</a></li>
+<li><a href="/blog/qr-menu-zorunlulugu-2026">Restoran Fiyat Etiketi Yönetmeliği 2026: QR Menü Zorunlu Mu?</a></li>
+<li><a href="/blog/qr-menu-nedir">QR Menü Nedir? Tam Rehber</a></li>
+</ul>
+
+<p><em>Bu yazı 23 Nisan 2026 tarihinde güncellenmiştir. Fiyatlar yayım tarihinde günceldir; değişiklikler için ilgili sağlayıcı sitelerini kontrol edin. Bu yazıda belirtilen rakip fiyatları kamuya açık bilgilere dayanır; özel teklifler sağlayıcıdan alınan bilgilere göre farklılık gösterebilir.</em></p>`,
   },
   {
     slug: 'restoran-dijital-donusum-rehberi-2026',
