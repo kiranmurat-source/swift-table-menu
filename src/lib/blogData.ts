@@ -8,6 +8,7 @@ export interface BlogPost {
   excerpt: string;
   content: string;
   author: string;
+  authorUrl?: string;
   publishedAt: string;
   updatedAt: string;
   readingTime: number;
@@ -29,126 +30,297 @@ export const blogPosts: BlogPost[] = [
   {
     slug: 'qr-menu-zorunlulugu-2026',
     image: '/blog/blog-07-qr-zorunluluk.png',
-    title: '2026 QR Menü Zorunluluğu: Restoran Sahipleri İçin Tam Rehber',
-    metaTitle: '2026 QR Menü Zorunluluğu — Restoran Rehberi | Tabbled',
-    metaDescription: 'QR menü zorunluluğu 2026: Fiyat etiketi yönetmeliği, ceza miktarları, geçiş takvimi ve dijital menüye nasıl uyum sağlanır. Restoran sahipleri için kapsamlı rehber.',
+    title: 'Restoran Fiyat Etiketi Yönetmeliği 2026: QR Menü Zorunlu Mu? (Tam Rehber)',
+    metaTitle: 'Restoran Fiyat Etiketi Yönetmeliği 2026: QR Menü Zorunlu Mu?',
+    metaDescription: '11 Ekim 2025 ve 30 Ocak 2026 yönetmelikleriyle restoranlar için yeni dönem başladı. QR menü zorunlu mu, fiziksel menü kalkıyor mu, servis ücreti yasak mı? Resmi kaynaklı tam rehber.',
     category: 'yasal',
     categoryLabel: 'Yasal Düzenlemeler',
-    excerpt: '11 Ekim 2025 Resmi Gazete\'de yayımlanan Fiyat Etiketi Yönetmeliği ile QR menü dönemi resmen başladı. Restoran sahiplerinin bilmesi gereken her şey bu rehberde.',
-    author: 'Tabbled Ekibi',
+    excerpt: '11 Ekim 2025 ve 30 Ocak 2026 yönetmelikleriyle restoran sahipleri için yeni dönem başladı. QR menü gerçekten zorunlu mu? Fiziksel menü hala gerekli mi? Servis ücreti yasağı kimi kapsıyor? Resmi Gazete metnine dayalı tam rehber.',
+    author: 'Murat Kıran',
+    authorUrl: 'https://tabbled.com/hakkimizda',
     publishedAt: '2026-04-14T00:00:00Z',
-    updatedAt: '2026-04-14T00:00:00Z',
-    readingTime: 12,
-    tags: ['QR menü', 'zorunluluk', 'fiyat etiketi yönetmeliği', '2026', 'restoran', 'dijital menü'],
+    updatedAt: '2026-04-23T00:00:00Z',
+    readingTime: 15,
+    tags: ['fiyat etiketi yönetmeliği', 'qr menü zorunluluğu', 'servis ücreti yasağı', 'restoran mevzuat 2026', 'fiziksel menü', 'kuver ücreti'],
     relatedSlugs: ['qr-menu-nedir', 'qr-menu-fiyatlari-2026'],
     faq: [
-      { question: 'QR menü zorunlu mu?', answer: 'Evet. 11 Ekim 2025 tarihli Fiyat Etiketi Yönetmeliği değişikliği ile QR kodlu menü gösterimi yasal olarak tanınmıştır. 1 Ocak 2026 itibarıyla restoran, kafe, lokanta ve pastanelerin fiyat listelerini dijital ortamda erişilebilir kılması zorunludur.' },
-      { question: 'QR menü kullanmazsam ceza var mı?', answer: 'Fiyat etiketi yönetmeliğine aykırılık durumunda her bir eksik ürün için 2.172 TL idari para cezası uygulanmaktadır. Haksız fiyat artışı tespit edilirse ceza 1.860.170 TL\'ye kadar çıkabilir.' },
-      { question: 'Fiziksel menü tamamen kalkıyor mu?', answer: 'Hayır. QR kodlu dijital menü masalarda kullanılabilir ancak müşteri talep ettiğinde fiziksel menü sunmak hâlâ zorunludur. İkisi birlikte kullanılabilir.' },
-      { question: 'Servis ücreti ve kuver kalktı mı?', answer: '30 Ocak 2026 tarihli yönetmelik değişikliği ile restoran, kafe ve benzeri işletmelerde servis ücreti, masa ücreti ve kuver ücreti adı altında ilave ödeme talep edilmesi yasaklanmıştır. Tüketiciler yalnızca sipariş ettiklerinin bedelini öderler.' },
-      { question: 'Küçük işletmeler de QR menü kullanmak zorunda mı?', answer: 'Evet. Yönetmelik tüm yiyecek-içecek hizmeti sunan işletmeleri kapsamaktadır. Ancak geçiş takvimi işletme büyüklüğüne göre farklıdır: ulusal zincirler 1 Temmuz 2026, 3+ şubeli işletmeler 31 Aralık 2026, diğerleri için de aynı tarihler geçerlidir.' },
+      { question: 'QR menü zorunlu mu?', answer: 'Hayır. Yönetmelikte "QR menü zorunlu" diye bir madde yok. Zorunlu olan fiyat listesinin görünür olması. QR sadece bunu sağlamanın bir yöntemi — ve en pratik olanı.' },
+      { question: 'Sadece QR menü kullansam, fiziksel menü kalksa olur mu?', answer: 'Hayır. 11 Ekim 2025 yönetmeliği "karekodla erişim sunulması halinde liste ayrıca verilecek" diyor. Yani QR kullansanız bile fiziksel fiyat listesi (en azından PDF çıktısı) bulundurmak zorundasınız.' },
+      { question: 'Servis ücreti hâlâ alabilir miyim?', answer: 'Hayır. 30 Ocak 2026 yönetmelik değişikliğiyle servis, masa ve kuver ücreti adı altında alınan tüm ek ücretler yasaklandı. Tek istisna: 4857 sayılı İş Kanunu\'nun 51. maddesi kapsamındaki "yüzde" sistemi.' },
+      { question: 'Hangi işletmeler bu yönetmelikten etkilenir?', answer: 'Restoran, kafe, lokanta, pastane, bar, kıraathane gibi tüm yiyecek-içecek hizmeti sunan işletmeler. Seyyar satıcılar (simit arabası, döner arabası gibi) kapsam dışı. Yiyecek-içecek satan otel restoranları da kapsamda.' },
+      { question: 'Yönetmeliğe uymazsam ceza nedir?', answer: '2026 itibarıyla her aykırılık için yaklaşık 2.812 TL idari para cezası. Menü-kasa fiyat farkı için ayrıca 3.166 TL/işlem. Birden fazla ürün eksikse ceza katlanır (örnek: 3 ürün eksikse 8.436 TL).' },
+      { question: 'Karekod kullanmak yasal olarak avantaj sağlıyor mu?', answer: 'Doğrudan değil ama dolaylı olarak evet. Yönetmelik karekod kullanımını resmi olarak tanıyor. Bu da denetimde "uyum bilinci" sinyali veriyor. Ayrıca Tarım Bakanlığı\'nın alerjen/kalori zorunluluğu için QR menü çok daha pratik (her ürün için detay alanı eklemek fiziksel menüde mümkün değil).' },
+      { question: 'Ticaret Bakanlığı\'nın merkezi sistemine fiyat girmek zorunda mıyım?', answer: 'Henüz değil. Yönetmelik bu yükümlülüğü getirdi ama Bakanlık kriterleri ve sistem detaylarını henüz ilan etmedi. İlan edilince işletmelerin 3 ay süresi başlayacak.' },
+      { question: 'QR menü ne kadara mal olur?', answer: 'Türkiye pazarında ₺200/ay\'dan ₺2.000/ay\'a kadar çeşitli paketler var. Tabbled paketleri ₺549/ay\'dan başlıyor.' },
     ],
-    content: `<h2>2026'da Restoran Sektöründe Ne Değişti?</h2>
+    content: `<p><strong>Kısa cevap:</strong> Hayır, QR menü tek başına yasal zorunluluk değil. Ama restoran ve kafelerde <strong>fiyat şeffaflığı</strong> zorunluluğu var ve QR kod bunu sağlamanın en pratik yolu. Üstelik QR kullansanız bile <strong>fiziksel fiyat listesi</strong> bulundurmak hâlâ zorunlu.</p>
 
-<p>Türkiye'de yeme-içme sektörü 2025-2026 döneminde köklü bir dijital dönüşüm sürecine girdi. Ticaret Bakanlığı'nın 11 Ekim 2025 tarihinde Resmi Gazete'de yayımladığı Fiyat Etiketi Yönetmeliği değişikliği, ardından 30 Ocak 2026 tarihli servis ücreti yasağı düzenlemesi ile birlikte restoranlar için yeni bir dönem başladı.</p>
+<p>Sektördeki yaygın yanlış bilgilerin aksine, bu rehberde Resmi Gazete metnine ve Ticaret Bakanlığı resmi açıklamalarına dayalı, <strong>tam olarak ne yapmanız gerektiğini</strong> anlatıyoruz. 11 Ekim 2025 (R.G. 33044) ve 30 Ocak 2026 (R.G. 33153) tarihli iki ayrı yönetmelik değişikliği restoran sahipleri için yeni bir dönem başlattı. İşte resmi metinde gerçekten yazan her şey.</p>
 
-<p>Bu düzenlemeler İstanbul, Ankara, İzmir ve Antalya başta olmak üzere Türkiye genelindeki yüz binlerce restoran, kafe, lokanta ve pastaneyi doğrudan etkiliyor. Peki bu değişiklikler tam olarak ne getiriyor ve siz nasıl uyum sağlayabilirsiniz?</p>
+<h2>1. Fiyat Etiketi Yönetmeliği Tam Olarak Ne Diyor?</h2>
 
-<h2>Fiyat Etiketi Yönetmeliği Nedir?</h2>
+<p>Konunun kaynağı: <strong>28/6/2014 tarihli ve 29044 sayılı Resmi Gazete'de yayımlanan Fiyat Etiketi Yönetmeliği</strong>. Bu yönetmelik 11 Ekim 2025 (R.G. 33044) ve 30 Ocak 2026 (R.G. 33153) tarihli iki değişiklikle restoran ve kafeler için ciddi yenilikler getirdi.</p>
 
-<p>6502 sayılı Tüketicinin Korunması Hakkında Kanun kapsamında çıkarılan Fiyat Etiketi Yönetmeliği, işletmelerin fiyat bilgilerini tüketicilere nasıl sunacağını düzenler. 11 Ekim 2025 tarihinde yapılan değişiklik ile yiyecek-içecek sektörüne yönelik önemli yenilikler getirildi.</p>
+<h3>11 Ekim 2025 değişikliğinin özü</h3>
 
-<p>En dikkat çekici yenilik, masalarda QR kod ile fiyat listesi gösteriminin resmen yasal hale gelmesidir. Daha önce Bakanlık'ın "fiziksel menü esas, QR kod ikincil" yaklaşımı varken, artık QR kodlu dijital menü birincil gösterim yöntemi olarak kabul ediliyor.</p>
+<p>Yönetmeliğin <strong>8. maddesi</strong> restoran, kafe, lokanta ve pastanelerin fiyat listesi yükümlülüğünü düzenliyor. Resmi metnin temel kuralları:</p>
 
-<h2>İşletmeler İçin Zorunluluklar</h2>
+<blockquote>"Tarife ve fiyat listelerine ilişkin belge, levha, pano ve benzerleri (...) <strong>işyerinin giriş kapısının önüne</strong>, giriş kapısının birden fazla olması durumunda <strong>her bir kapı için ayrı ayrı</strong> olacak şekilde ve <strong>hizmet sunulan masaların üstüne</strong>, tüketiciler tarafından kolaylıkla görülebilir ve okunabilir şekilde asılır, takılır veya konulur."</blockquote>
 
-<h3>Fiyat Listesi Gösterimi</h3>
+<p>Yani üç yerde fiyat listesi olmak zorunda:</p>
 
-<p>Yönetmeliğe göre restoran, kafe, lokanta, pastane ve benzeri tüm yiyecek-içecek işletmeleri şu yükümlülüklere tabidir:</p>
+<ol>
+<li><strong>İşyerinin her giriş kapısı önünde</strong> (birden fazla giriş varsa hepsinde)</li>
+<li><strong>Her masanın üstünde</strong></li>
+<li>(Eğer karekod kullanılıyorsa) Karekodun yanında <strong>fiziksel liste de ayrıca</strong></li>
+</ol>
 
-<ul>
-<li>İşyerinin giriş kapısı önünde fiyat listesi bulundurulmalıdır. Birden fazla giriş varsa her kapıya ayrı liste konulmalıdır.</li>
-<li>Masalarda fiyat listesi sunulmalıdır — bu QR kod ile yapılabilir.</li>
-<li>Müşteri talep ettiğinde fiziksel menü verilmelidir.</li>
-<li>Fiyat listesindeki fiyatlar ile kasa fiyatları arasında fark olmamalıdır.</li>
-</ul>
+<p>Aynı yönetmelik değişikliği "<strong>Karekod</strong>" tanımını da resmi olarak getirdi:</p>
 
-<h3>Servis Ücreti ve Kuver Yasağı</h3>
+<blockquote>"Karekod: Fiyat listesine erişimi sağlayan görseli."</blockquote>
 
-<p>30 Ocak 2026 tarihli düzenleme ile restoran ve kafelerde servis ücreti, masa ücreti, kuver ücreti ve benzeri herhangi bir ad altında ilave ödeme talep edilmesi yasaklandı. Tüketiciler yalnızca sipariş ettikleri yiyecek ve içeceklerin bedelini ödeyecek; bahşiş tamamen gönüllülük esasına dayalı olacaktır.</p>
+<p>Yani QR kod artık yasal bir terim. Ama şu noktayı atlamayın: <strong>Karekod kullanmak fiziksel listeyi ortadan kaldırmıyor.</strong></p>
 
-<h3>Bakanlığa Veri Aktarımı</h3>
+<h3>Bakanlık sistemine veri aktarımı zorunluluğu</h3>
 
-<p>Yönetmeliğin getirdiği bir diğer önemli yenilik, fiyat listelerine ilişkin verilerin Ticaret Bakanlığı tarafından kurulacak elektronik sisteme aktarılması zorunluluğudur. Bu sistem henüz tam olarak devreye girmemiş olsa da, işletmelerin bu konuda hazırlıklı olması gerekmektedir.</p>
+<p>Yönetmeliğin <strong>8/5 fıkrası</strong> restoran ve kafelere ek bir yükümlülük getirdi:</p>
 
-<h2>Geçiş Takvimi</h2>
+<blockquote>"Lokanta, restoran, kafe, pastane ve benzeri yiyecek ve içecek hizmeti sunulan işyerleri, <strong>fiyat listelerine ilişkin verileri kurulacak olan sisteme aktarmakla yükümlüdür</strong>. (...) Kriterleri belirlenen işyerleri, veri aktarımına ilişkin usul ve esasların Bakanlığın resmi internet sitesinde ilan edilmesine müteakip fiyat listelerini <strong>üç ay içerisinde</strong> sisteme aktarmak zorundadır."</blockquote>
 
-<p>Yönetmelik kademeli olarak uygulanıyor:</p>
+<p><strong>Önemli:</strong> Bu sistem henüz aktif değil. Bakanlık önce kriterleri belirleyecek (hangi işletmelerin gireceği, nasıl gireceği), sonra sistem hazır olacak, sonra işletmelerin 3 ay süresi başlayacak. 23 Nisan 2026 itibarıyla bu süreç henüz başlamamış durumda.</p>
+
+<h2>2. QR Menü Zorunlu Mu? Net Cevap</h2>
+
+<p>Sektörde dolaşan "QR menü zorunlu hale geldi" söylemi yanlış. Resmi metinde "QR menü zorunlu" diye bir ifade yok. Doğru cevap şöyle:</p>
 
 <table>
 <thead>
-<tr><th>İşletme Tipi</th><th>İçerik Bilgisi Son Tarih</th><th>Kalori Bilgisi Son Tarih</th></tr>
+<tr><th>Yönetmelik diyor ki</th><th>İşletmenin yapması gereken</th></tr>
 </thead>
 <tbody>
-<tr><td>Ulusal zincir restoranlar</td><td>1 Temmuz 2026</td><td>1 Temmuz 2026</td></tr>
-<tr><td>Aynı ilde 3+ şubesi olan işletmeler</td><td>31 Aralık 2026</td><td>31 Aralık 2026</td></tr>
-<tr><td>Diğer tüm işletmeler</td><td>31 Aralık 2026</td><td>31 Aralık 2027</td></tr>
+<tr><td>Fiyat listesi giriş ve masada görünür olmalı</td><td>Bir yöntemle fiyat göster</td></tr>
+<tr><td>"Karekod" geçerli bir yöntem</td><td>QR kod kullanabilirsin</td></tr>
+<tr><td>Karekod kullanılırsa fiziksel liste de gerekli</td><td>Tek başına QR yetmez</td></tr>
+<tr><td>Müşteri talep ederse fiziksel liste verilmeli</td><td>PDF veya basılı bulundur</td></tr>
 </tbody>
 </table>
 
-<p>QR kodlu fiyat listesi gösterimi ise 11 Ekim 2025 itibarıyla tüm işletmeler için geçerlidir.</p>
+<h3>Yöntem karşılaştırması</h3>
 
-<h2>Uymazsanız Ne Olur? Ceza Miktarları</h2>
+<table>
+<thead>
+<tr><th>Yöntem</th><th>Yasal mı?</th><th>Pratik mi?</th><th>Maliyet</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Sadece fiziksel basılı menü</strong></td><td>✅ Evet</td><td>🟡 Güncelleme zor (her değişiklikte yeniden baskı)</td><td>Yüksek (yıllık baskı + laminasyon)</td></tr>
+<tr><td><strong>Sadece QR menü</strong></td><td>❌ Hayır (fiziksel zorunlu)</td><td>–</td><td>–</td></tr>
+<tr><td><strong>QR + fiziksel kombinasyon</strong></td><td>✅ Evet</td><td>🟢 En pratik</td><td>Düşük (aylık SaaS + PDF)</td></tr>
+<tr><td><strong>Dijital ekran + fiziksel</strong></td><td>✅ Evet</td><td>🟡 Donanım gerekli</td><td>Yüksek (ekran maliyeti)</td></tr>
+<tr><td><strong>Duvar tahtası + fiziksel</strong></td><td>✅ Evet</td><td>🔴 Sınırlı yer</td><td>Orta</td></tr>
+</tbody>
+</table>
 
-<p>Fiyat etiketi yönetmeliğine uyulmamasının ciddi mali sonuçları vardır:</p>
+<p><strong>Sonuç:</strong> QR menü zorunlu değil ama <strong>en pratik yöntem</strong>. Üstelik fiziksel menü zorunluluğunu QR sistemler kolayca PDF export ile çözüyor.</p>
+
+<h2>3. Fiziksel Menü Hâlâ Zorunlu — Bilinmesi Gereken Detay</h2>
+
+<p>Yönetmeliğin sıkça atlanan bir detayı: <strong>Karekod sunulması fiziksel listeyi ortadan kaldırmıyor.</strong></p>
+
+<p>Yönetmeliğin değiştirilmiş 8/3 maddesi şöyle:</p>
+
+<blockquote>"(...) masa üzerlerinde karekodla erişim imkânı sunulması halinde <strong>liste ayrıca verilecek</strong>."</blockquote>
+
+<p>Bu kuralın iki pratik sonucu var:</p>
+
+<h3>1. Her masada fiziksel fiyat listesi bulundurmak zorundasınız</h3>
+
+<p>QR kodun yanına bir basılı menü (en azından özet fiyat listesi) koymanız gerekiyor. Yaşlı müşteriler, internet erişimi olmayan turistler, telefonu olmayan müşteriler için bu yasal hak.</p>
+
+<h3>2. Müşteri talep ederse fiziksel menü vermek zorundasınız</h3>
+
+<p>Bir müşteri "Bana basılı menü verir misiniz?" derse, "Bizde sadece QR var" diyemezsiniz. Bu yönetmeliğe aykırı.</p>
+
+<h3>Tabbled bunu nasıl çözüyor?</h3>
+
+<p>Tabbled'ın <strong>PDF export</strong> özelliği bu yasal yükümlülüğü 1 tıkla halleder. Menünüzü güncellediğinizde sistem otomatik olarak PDF üretir, yazdırırsınız ve masaya koyarsınız. Hem QR hem PDF her zaman güncel kalır. Menüde fiyat değişti mi? Yeni PDF'i 1 dakikada çıkartır ve eski basılı menüleri değiştirirsiniz.</p>
+
+<h2>4. 30 Ocak 2026 Servis Ücreti Yasağı (Yeni Düzenleme)</h2>
+
+<p>11 Ekim 2025 yönetmeliğinden 3 ay sonra Ticaret Bakanlığı <strong>çok daha büyük bir değişiklik</strong> yaptı. 30 Ocak 2026 tarihli ve 33153 sayılı Resmi Gazete'de yayımlanan yeni yönetmelikle Madde 8/6 değiştirildi:</p>
+
+<blockquote>"Tarife ve fiyat listesinde gösterilen fiyatların dışında herhangi bir isim altında başka bir ücret alınması hâlinde, bunun tarife ve fiyat listesinde gösterilmesi zorunludur. Ancak lokanta, kafe, restoran, pastane ve benzeri yiyecek ve içecek hizmeti sunulan işyerlerinde, 22/5/2003 tarihli ve 4857 sayılı İş Kanununun 51 inci maddesi hükmü saklı kalmak kaydıyla; tüketiciden <strong>servis ücreti, masa ücreti, kuver ücreti</strong> ve benzeri herhangi bir isim altında <strong>ilave ödeme talep edilemez</strong>."</blockquote>
+
+<h3>Bu ne anlama geliyor?</h3>
+
+<p>Yasaklananlar:</p>
 
 <ul>
-<li>Fiyat listesinde eksik ürün bulunması: her bir aykırılık için <strong>2.172 TL</strong> idari para cezası. Örneğin tarifesinde 5 ürünün fiyatı bulunmayan bir işletmeye 5 ayrı ceza uygulanabilir.</li>
-<li>Menü fiyatı ile kasa fiyatı arasında fark: <strong>2.172 TL</strong> ve üzeri ceza.</li>
-<li>Haksız fiyat artışı (servis ücretini fiyata yedirme gibi): <strong>1.860.170 TL</strong>'ye kadar idari para cezası.</li>
+<li>❌ "Kuver ücreti" (masaya gelen ekmek, sos, örtü için alınan ücret)</li>
+<li>❌ "Servis ücreti" (hizmet karşılığı yüzde olarak eklenen tutar)</li>
+<li>❌ "Masa ücreti" (oturulan süreye veya masaya göre talep edilen bedel)</li>
+<li>❌ "Adisyon ücreti", "hizmet bedeli" gibi farklı isimler altında alınan tüm ek ücretler</li>
 </ul>
 
-<p>2026 yılında ceza miktarları bir önceki yıla göre %49 oranında artırılmıştır. Ticaret Bakanlığı denetimlerini aktif olarak sürdürmekte ve sosyal medya şikayetlerini de takip etmektedir.</p>
+<p>İzin verilenler:</p>
 
-<h2>Dijital Menüye Nasıl Geçersiniz? Adım Adım</h2>
+<ul>
+<li>✅ <strong>Bahşiş</strong> (gönüllülük esasına dayalı, müşteri kendi vermek isterse)</li>
+<li>✅ <strong>4857 sayılı İş Kanunu'nun 51. maddesi kapsamındaki "yüzde" sistemi</strong> — eğer otel veya lüks restoran "yüzde usulüyle" çalışıyor ve bu parayı tamamen çalışanlara dağıtıyorsa, belgeleyebildiği sürece devam edebilir</li>
+</ul>
 
-<p>İster İstanbul Kadıköy'deki bir kafe olun, ister Antalya'da turistik bir restoran — dijital menüye geçiş süreci aynıdır:</p>
+<h3>Pratik etkisi</h3>
+
+<p>Bugüne kadar fişin sonuna <strong>%10-15 servis ücreti</strong> ekleyen restoranlar artık bunu yapamayacak. Eğer hizmet maliyetini fiyatlara yansıtmak istiyorsanız, bunu <strong>menü fiyatına dahil etmek</strong> zorundasınız. Şeffaf olmak.</p>
+
+<p><strong>Tabbled için pratik etki:</strong> Menü değişikliği yapmak zorunda kalanlar için Tabbled'ın <strong>fiyat versiyonlama</strong> özelliği bir avantaj — eski fiyat geçmişi kayıt altında, denetim için kanıt olarak sunulabilir.</p>
+
+<h2>5. Geçiş Takvimi: Hangi İşletmeye Hangi Tarihe Kadar Süre?</h2>
+
+<p>Yönetmeliğin farklı kısımları farklı tarihlerde yürürlüğe giriyor. Aşağıdaki tabloyu işletmenizin durumuna göre kontrol edin:</p>
+
+<table>
+<thead>
+<tr><th>Yükümlülük</th><th>Yürürlük</th><th>Kimleri etkiler</th></tr>
+</thead>
+<tbody>
+<tr><td>Fiziksel fiyat listesi (giriş + masa)</td><td><strong>Aktif</strong> (1 Ocak 2024'ten beri)</td><td>Tüm restoran, kafe, lokanta, pastane</td></tr>
+<tr><td>Karekod tanımı + kullanım</td><td><strong>11 Ekim 2025</strong></td><td>Karekod kullananlar (zorunlu değil ama kullanırsa)</td></tr>
+<tr><td>Servis/masa/kuver ücreti yasağı</td><td><strong>30 Ocak 2026</strong></td><td>Tüm yiyecek-içecek işletmeleri</td></tr>
+<tr><td>Bakanlık sistemine veri aktarımı</td><td><strong>Henüz aktif değil</strong> (Bakanlık kriter belirleyecek + 3 ay süre)</td><td>Kriterleri Bakanlık belirleyecek</td></tr>
+<tr><td>Tarım Bakanlığı içerik/alerjen bilgilendirme — ulusal zincir</td><td><strong>1 Temmuz 2026</strong></td><td>Ulusal zincir restoranlar</td></tr>
+<tr><td>Tarım Bakanlığı içerik/alerjen — aynı ilde 3+ şube</td><td><strong>31 Aralık 2026</strong></td><td>Aynı ilde 3+ şubesi olan işletmeler</td></tr>
+<tr><td>Tarım Bakanlığı içerik bilgisi — diğer</td><td><strong>31 Aralık 2026</strong></td><td>Tüm diğer yiyecek-içecek işletmeleri</td></tr>
+<tr><td>Tarım Bakanlığı kalori bilgisi — diğer</td><td><strong>31 Aralık 2027</strong></td><td>Tüm diğer yiyecek-içecek işletmeleri</td></tr>
+</tbody>
+</table>
+
+<p><strong>Önemli not:</strong> Tarım ve Orman Bakanlığı'nın alerjen ve kalori bilgilendirme zorunluluğu <strong>ayrı bir yönetmelik</strong>. Bu konuyu ayrıntılı incelemek için <a href="/blog/restoran-alerjen-bilgilendirme-rehberi">Restoranlarda Alerjen Bilgilendirme Rehberi</a> yazımıza bakabilirsiniz.</p>
+
+<h2>6. Cezalar: Yasaya Uymazsam Ne Olur?</h2>
+
+<p>İdari para cezaları <strong>6502 sayılı Tüketicinin Korunması Hakkında Kanun'un 77. maddesi</strong> kapsamında uygulanıyor. Cezalar her yıl yeniden değerleme oranında artırılıyor.</p>
+
+<h3>2026 yılı ceza miktarları</h3>
+
+<p>1 Ocak 2026 itibarıyla 6502 sayılı kanun kapsamındaki idari para cezaları <strong>%29.49 oranında artırıldı</strong>. Restoran sahipleri için kritik kalemler:</p>
+
+<table>
+<thead>
+<tr><th>Aykırılık türü</th><th>2024 cezası</th><th>2026 cezası (tahmini)</th></tr>
+</thead>
+<tbody>
+<tr><td>Her bir aykırı işlem (eksik fiyat listesi, bilgi vb.)</td><td>2.172 TL</td><td>~2.812 TL</td></tr>
+<tr><td>Menü-kasa fiyat farkı</td><td>2.172 TL/işlem</td><td>~3.166 TL/işlem</td></tr>
+<tr><td>Fiyat listesi asmama</td><td>2.200-4.500 TL</td><td>~2.850-5.825 TL</td></tr>
+</tbody>
+</table>
+
+<h3>Kümülatif ceza riski — örnek</h3>
+
+<p>Bir lokanta düşünün: çorba, döner ve sütlaç sunuyor. Eğer fiyat listesinde <strong>hiçbiri</strong> yer almıyorsa:</p>
+
+<blockquote>Aykırılık sayısı = 3 ürün<br>Ceza = 3 × 2.812 TL = <strong>8.436 TL</strong> (tek bir denetimde)</blockquote>
+
+<p>Eğer denetim sonucu <strong>menü-kasa fiyat farkı</strong> da tespit edildi:</p>
+
+<blockquote>Ek ceza = etkilenen sipariş sayısı × 3.166 TL</blockquote>
+
+<p>Bu yüzden <strong>otomatik fiyat senkronizasyonu</strong> olan bir QR menü sistemi kullanmak yalnızca pratik değil, finansal risk yönetimi açısından da önemli.</p>
+
+<h3>Marka riski</h3>
+
+<p>Cezadan daha tehlikelisi: 30 Ocak 2026 sonrası bir müşterinin "Bu restoranda servis ücreti aldılar" diye sosyal medyada paylaşması. Yasal değişiklik henüz yeni, tüketici hassasiyeti yüksek. Marka itibar riski cezadan büyük olabilir.</p>
+
+<h2>7. QR Menü Neden En Pratik Yöntem?</h2>
+
+<p>Yönetmelik QR'ı zorunlu kılmıyor, ama yasal yükümlülükleri yerine getirmenin <strong>en kolay yolu</strong> olduğu açık. Diğer yöntemlerle karşılaştırma:</p>
+
+<h3>Anlık fiyat güncelleme</h3>
+
+<ul>
+<li><strong>Fiziksel menü:</strong> Her fiyat değişiminde yeniden baskı (₺500-2.000 arası işletme başına)</li>
+<li><strong>QR menü:</strong> Yönetim panelinden değiştirin, tüm masalardaki fiyat anında güncellenir</li>
+</ul>
+
+<h3>Çok dilli destek</h3>
+
+<ul>
+<li><strong>Fiziksel menü:</strong> Her dil için ayrı baskı</li>
+<li><strong>QR menü (Tabbled):</strong> 34 dil otomatik çeviri, müşterinin telefonu kendi dilini algılar</li>
+</ul>
+
+<h3>Versiyonlama (denetim için kanıt)</h3>
+
+<ul>
+<li><strong>Fiziksel menü:</strong> Hangi tarihte hangi fiyat vardı? Kanıt yok</li>
+<li><strong>QR menü (Tabbled):</strong> Tüm fiyat değişiklikleri tarih damgalı kayıt altında. Bir denetimde "30 Ocak öncesi servis ücreti yazıyordu" diye sorulduğunda elinizde kanıt var</li>
+</ul>
+
+<h3>Alerjen + kalori bilgisi (Tarım Bakanlığı zorunluluğu)</h3>
+
+<ul>
+<li><strong>Fiziksel menü:</strong> Her ürün için ek alanlar = menü çok şişer</li>
+<li><strong>QR menü:</strong> Ürün detayında alerjen ve kalori bilgisi katlanabilir alanlarda gösterilebilir</li>
+</ul>
+
+<h3>Hızlı PDF export (fiziksel menü hakkı)</h3>
+
+<ul>
+<li><strong>QR menü (Tabbled):</strong> Müşteri fiziksel menü isterse 1 dakikada PDF üret + yazdır</li>
+<li><strong>Hibrit çözüm:</strong> Hem QR hem PDF her zaman güncel ve senkronize</li>
+</ul>
+
+<h2>8. Doğru QR Menü Sistemi Nasıl Seçilir? (Uyum Checklist)</h2>
+
+<p>Pazarda 20'den fazla QR menü sağlayıcısı var. Yönetmeliğe <strong>gerçekten</strong> uyumlu olmak için sisteminizin aşağıdaki özelliklere sahip olması gerek:</p>
+
+<h3>Yasal uyum kriterleri</h3>
+
+<ul>
+<li><strong>Anlık fiyat güncelleme</strong> — yönetim panelinden değişen fiyat tüm masalarda 1 saniyede yansımalı</li>
+<li><strong>PDF export</strong> — fiziksel menü zorunluluğu için her zaman güncel PDF üretebilmeli</li>
+<li><strong>Fiyat versiyonlama</strong> — geçmiş fiyat değişiklikleri kayıt altında olmalı</li>
+<li><strong>Alerjen ve kalori alanları</strong> — Tarım Bakanlığı zorunluluğu için yapısal alanlar olmalı</li>
+<li><strong>Çok dilli destek</strong> — turist müşteri için özellikle otel/turistik bölge işletmeleri kritik</li>
+<li><strong>KVKK uyumlu</strong> — müşteri verisi toplanıyorsa Türkiye'de host edilmiş olmalı</li>
+</ul>
+
+<h3>Pratik kriterler</h3>
+
+<ul>
+<li><strong>Türkçe yerel destek</strong> — sorun yaşadığınızda ulaşabileceğiniz Türkçe konuşan ekip</li>
+<li><strong>TL fiyatlandırma</strong> — USD bazlı sistemler kur dalgalanmasıyla maliyetinizi öngörülemez kılar</li>
+<li><strong>Şeffaf fiyat sayfası</strong> — "Teklif al" yazan sistemlerden uzak durun</li>
+<li><strong>Demo + ücretsiz deneme</strong> — satın almadan önce 14 gün kullanmadan karar vermeyin</li>
+</ul>
+
+<p><a href="https://tabbled.com">Tabbled'ın 14 gün ücretsiz denemesi için tıklayın →</a></p>
+
+<h2>Sonuç</h2>
+
+<p>Restoran fiyat etiketi mevzuatı 2026 itibarıyla net bir çerçeve kazandı. Kısa özet:</p>
 
 <ol>
-<li><strong>Menü içeriğinizi hazırlayın:</strong> Kategoriler, ürünler, fiyatlar ve mümkünse profesyonel fotoğraflar.</li>
-<li><strong>QR menü platformu seçin:</strong> Fiyat, özellik ve Türkçe destek açısından karşılaştırma yapın.</li>
-<li><strong>Menüyü sisteme girin:</strong> Çoğu platform 30 dakika içinde menünüzü oluşturmanıza imkân tanır.</li>
-<li><strong>QR kodlarınızı oluşturun:</strong> Her masa için ayrı veya tek QR kod. Logo ve markanızla özelleştirin.</li>
-<li><strong>Masalara yerleştirin:</strong> Pleksi standlar veya yapışkanlı QR kodlar en yaygın yöntemlerdir.</li>
-<li><strong>Test edin:</strong> Farklı telefonlardan taratarak menünüzün doğru görüntülendiğinden emin olun.</li>
+<li><strong>Fiyat listesi</strong> giriş ve masada görünür olmak zorunda</li>
+<li><strong>QR menü</strong> zorunlu değil ama en pratik yöntem</li>
+<li><strong>Fiziksel menü</strong> her durumda gerekli (QR yetmez)</li>
+<li><strong>Servis/masa/kuver ücreti</strong> yasak (30 Ocak 2026 sonrası)</li>
+<li><strong>Bakanlık sistemine veri</strong> ileride zorunlu olacak ama henüz aktif değil</li>
 </ol>
 
-<div class="blog-cta-inline">
-<p><strong>Tabbled ile dijital menünüzü 5 dakikada oluşturun.</strong></p>
-<p>QR menü zorunluluğuna tam uyum, çok dilli menü, alerjen bilgisi ve daha fazlası.</p>
-<a href="https://wa.me/905325119484?text=Merhaba%2C%20Tabbled%20hakk%C4%B1nda%20bilgi%20almak%20istiyorum." target="_blank" rel="noopener">WhatsApp ile İletişim</a>
-</div>
+<p>Doğru sistemle bu yükümlülüklerin hepsi 1-2 saatlik bir kurulumla halledilebilir. Tabbled'ın bu yönetmelik için tasarlanmış özelliklerini görmek isterseniz <a href="https://tabbled.com">14 gün ücretsiz denemeyi başlatın</a> — kredi kartı gerekmiyor.</p>
 
-<h2>QR Menü Seçerken Nelere Dikkat Etmelisiniz?</h2>
-
-<p>Türkiye'de onlarca QR menü sağlayıcısı bulunuyor. Doğru tercih yapmak için şu kriterlere bakın:</p>
+<p><strong>Kaynaklar:</strong></p>
 
 <ul>
-<li><strong>Türkçe arayüz ve destek:</strong> Yönetim paneli ve müşteri desteğinin Türkçe olması önemlidir.</li>
-<li><strong>Çok dilli menü:</strong> Özellikle İstanbul, Antalya ve İzmir gibi turist yoğun şehirlerde İngilizce, Arapça ve diğer dillerde menü sunabilmek büyük avantajdır.</li>
-<li><strong>Alerjen bilgisi gösterimi:</strong> Tarım ve Orman Bakanlığı'nın getirdiği alerjen bilgilendirme zorunluluğuna uyum.</li>
-<li><strong>Anlık güncelleme:</strong> Fiyat veya ürün değişikliğinin saniyeler içinde menüye yansıması.</li>
-<li><strong>Uygun fiyat:</strong> Aylık 250-300 TL aralığında kaliteli çözümler mevcuttur.</li>
-<li><strong>WhatsApp sipariş:</strong> Özellikle paket servis yapan işletmeler için komisyonsuz sipariş alma imkânı.</li>
+<li><a href="https://www.mevzuat.gov.tr/mevzuat?MevzuatNo=19819&amp;MevzuatTur=7&amp;MevzuatTertip=5" target="_blank" rel="noopener noreferrer">Resmi Gazete — Fiyat Etiketi Yönetmeliği (28/6/2014, R.G. 29044)</a></li>
+<li><a href="https://www.resmigazete.gov.tr/eskiler/2025/10/20251011.htm" target="_blank" rel="noopener noreferrer">Resmi Gazete — Fiyat Etiketi Yönetmeliğinde Değişiklik (11/10/2025, R.G. 33044)</a></li>
+<li><a href="https://www.resmigazete.gov.tr/eskiler/2026/01/20260130.htm" target="_blank" rel="noopener noreferrer">Resmi Gazete — Fiyat Etiketi Yönetmeliğinde Değişiklik (30/1/2026, R.G. 33153)</a></li>
+<li><a href="https://ticaret.gov.tr/haberler/fiyat-etiketinde-yeni-donem-basliyor" target="_blank" rel="noopener noreferrer">Ticaret Bakanlığı — Fiyat Etiketinde Yeni Dönem</a></li>
+<li><a href="https://tuketici.ticaret.gov.tr/haberler/6502-sayili-tuketicinin-korunmasi-hakkinda-kanunda-ongorulen-idari-para-cezalari-yeniden-degerleme-oraninda-arttirildi" target="_blank" rel="noopener noreferrer">Ticaret Bakanlığı — İdari Para Cezaları 2026</a></li>
 </ul>
 
-<h2>Sonuç: Zorunluluk mu, Fırsat mı?</h2>
-
-<p>Fiyat Etiketi Yönetmeliği değişikliği ilk bakışta ek bir yük gibi görünebilir. Ancak doğru değerlendirildiğinde, dijital menüye geçiş aslında işletmenizi modernleştirme, müşteri deneyimini iyileştirme ve operasyonel maliyetleri düşürme fırsatıdır.</p>
-
-<p>Kağıt menü basım maliyetlerinden kurtulursunuz, fiyat güncellemelerini anında yaparsınız, yabancı turistlere kendi dillerinde menü sunarsınız ve Google'da bulunabilirliğinizi artırırsınız. Denetimlerin sıkılaştığı bu dönemde erken adapte olan işletmeler hem cezai risklerden uzak kalır hem de rekabet avantajı elde eder.</p>
-
-<p>Ankara'dan Bursa'ya, İzmir'den Trabzon'a — Türkiye'nin her yerindeki restoran sahipleri için dijital menüye geçişin tam zamanıdır.</p>`,
+<p><em>Bu yazı 23 Nisan 2026 tarihinde yayımlanmış olup, mevzuat gelişmeleri doğrultusunda güncellenmektedir. Hukuki tavsiye niteliği taşımaz; somut durumunuz için bir avukata veya muhasebeciye danışmanız önerilir.</em></p>`,
   },
   {
     slug: 'qr-menu-nedir',
@@ -159,7 +331,7 @@ export const blogPosts: BlogPost[] = [
     category: 'rehber',
     categoryLabel: 'Rehberler',
     excerpt: 'QR menü, müşterilerin akıllı telefonlarıyla karekod okutarak dijital menüye erişmesini sağlayan modern bir çözümdür. Nasıl çalışır, ne avantaj sağlar?',
-    author: 'Tabbled Ekibi',
+    author: 'Murat Kıran',
     publishedAt: '2026-04-14T00:00:00Z',
     updatedAt: '2026-04-14T00:00:00Z',
     readingTime: 10,
@@ -291,7 +463,7 @@ export const blogPosts: BlogPost[] = [
     category: 'rehber',
     categoryLabel: 'Rehberler',
     excerpt: 'Türkiye\'deki QR menü sağlayıcılarının 2026 fiyatlarını, özelliklerini ve gizli maliyetlerini karşılaştırdık. Hangi plan işletmenize uygun?',
-    author: 'Tabbled Ekibi',
+    author: 'Murat Kıran',
     publishedAt: '2026-04-14T00:00:00Z',
     updatedAt: '2026-04-14T00:00:00Z',
     readingTime: 8,
@@ -459,7 +631,7 @@ export const blogPosts: BlogPost[] = [
     category: 'rehber',
     categoryLabel: 'Rehberler',
     excerpt: 'Restoran dijital dönüşümü artık bir tercih değil, yasal ve operasyonel bir gereklilik. QR menü, online sipariş, dijital ödeme ve analitiğe adım adım geçiş rehberi.',
-    author: 'Tabbled Ekibi',
+    author: 'Murat Kıran',
     publishedAt: '2026-04-11T00:00:00Z',
     updatedAt: '2026-04-11T00:00:00Z',
     readingTime: 11,
@@ -571,7 +743,7 @@ export const blogPosts: BlogPost[] = [
     category: 'ipuclari',
     categoryLabel: 'İpuçları',
     excerpt: 'İyi tasarlanmış bir menü restoran satışlarını %15-30 artırabilir. Menü mühendisliği, fiyatlandırma psikolojisi ve görsel tasarım ilkelerini 10 stratejide topladık.',
-    author: 'Tabbled Ekibi',
+    author: 'Murat Kıran',
     publishedAt: '2026-04-11T00:00:00Z',
     updatedAt: '2026-04-11T00:00:00Z',
     readingTime: 10,
@@ -679,7 +851,7 @@ export const blogPosts: BlogPost[] = [
     category: 'yasal',
     categoryLabel: 'Yasal Düzenlemeler',
     excerpt: 'Türkiye\'de yeme-içme işletmeleri menülerinde alerjen bilgisi sunmakla yükümlüdür. 14 AB standardı alerjen, menüde gösterim yöntemleri ve dijital çözümler bu rehberde.',
-    author: 'Tabbled Ekibi',
+    author: 'Murat Kıran',
     publishedAt: '2026-04-11T00:00:00Z',
     updatedAt: '2026-04-11T00:00:00Z',
     readingTime: 10,
@@ -788,7 +960,7 @@ export const blogPosts: BlogPost[] = [
     category: 'rehber',
     categoryLabel: 'Rehberler',
     excerpt: 'Müşterinin masaya oturmasından ayrılışına kadar geçen dijital yolculuğun her adımı — QR menü, sipariş, garson çağırma, geri bildirim ve sadakat — tek rehberde.',
-    author: 'Tabbled Ekibi',
+    author: 'Murat Kıran',
     publishedAt: '2026-04-11T00:00:00Z',
     updatedAt: '2026-04-11T00:00:00Z',
     readingTime: 11,
@@ -879,7 +1051,7 @@ export const blogPosts: BlogPost[] = [
     category: 'rehber',
     categoryLabel: 'Rehberler',
     excerpt: 'Müşterilerin %70\'i restoran seçmeden önce Google\'da arama yapıyor. Google İşletme Profili, yerel SEO ve QR menü avantajlarıyla üst sıralara çıkma rehberi.',
-    author: 'Tabbled Ekibi',
+    author: 'Murat Kıran',
     publishedAt: '2026-04-11T00:00:00Z',
     updatedAt: '2026-04-11T00:00:00Z',
     readingTime: 11,
@@ -973,7 +1145,7 @@ export const blogPosts: BlogPost[] = [
     category: 'rehber',
     categoryLabel: 'Rehberler',
     excerpt: 'Türkiye yılda 50 milyonu aşkın turist ağırlıyor. Turist müşterilere hizmet veren restoranlar için bölge bazlı dil rehberi, otomatik çeviri ve kültürel adaptasyon ipuçları.',
-    author: 'Tabbled Ekibi',
+    author: 'Murat Kıran',
     publishedAt: '2026-04-11T00:00:00Z',
     updatedAt: '2026-04-11T00:00:00Z',
     readingTime: 10,
@@ -1060,7 +1232,7 @@ export const blogPosts: BlogPost[] = [
     category: 'rehber',
     categoryLabel: 'Rehberler',
     excerpt: '2026\'da restoran açarken dijital altyapı mutfak ekipmanı kadar öncelikli. QR menü, POS, Google İşletme Profili, sosyal medya ve tam bir kontrol listesi bu rehberde.',
-    author: 'Tabbled Ekibi',
+    author: 'Murat Kıran',
     publishedAt: '2026-04-11T00:00:00Z',
     updatedAt: '2026-04-11T00:00:00Z',
     readingTime: 12,

@@ -30,7 +30,11 @@ export default function BlogPost() {
     '@type': 'Article',
     headline: post.title,
     description: post.metaDescription,
-    author: { '@type': 'Organization', name: 'Tabbled', url: 'https://tabbled.com' },
+    author: {
+      '@type': 'Person',
+      name: post.author,
+      ...(post.authorUrl && { url: post.authorUrl }),
+    },
     publisher: {
       '@type': 'Organization',
       name: 'Tabbled',
@@ -39,8 +43,14 @@ export default function BlogPost() {
     },
     datePublished: post.publishedAt,
     dateModified: post.updatedAt,
-    mainEntityOfPage: `https://tabbled.com/blog/${post.slug}`,
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': `https://tabbled.com/blog/${post.slug}`,
+    },
     image: post.ogImage || 'https://tabbled.com/tabbled-logo-icon.png',
+    articleSection: post.categoryLabel,
+    keywords: post.tags,
+    inLanguage: 'tr-TR',
   };
 
   const breadcrumbSchema = {
@@ -49,7 +59,7 @@ export default function BlogPost() {
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Ana Sayfa', item: 'https://tabbled.com' },
       { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://tabbled.com/blog' },
-      { '@type': 'ListItem', position: 3, name: post.categoryLabel, item: `https://tabbled.com/blog?category=${post.category}` },
+      { '@type': 'ListItem', position: 3, name: post.title, item: `https://tabbled.com/blog/${post.slug}` },
     ],
   };
 
