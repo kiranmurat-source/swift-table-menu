@@ -57,7 +57,16 @@ export function PricingSection() {
             </div>
             <div>
               <Button title="Başla" className="w-full bg-[#FF4F7A] border-[#FF4F7A] text-white hover:bg-[#E8456E] hover:border-[#E8456E]" asChild>
-                <a href="/iletisim?plan=basic">Başla</a>
+                <a
+                  href="/iletisim"
+                  onClick={() => {
+                    try {
+                      sessionStorage.setItem("selected_plan", "basic");
+                    } catch {}
+                  }}
+                >
+                  Başla
+                </a>
               </Button>
             </div>
           </div>
@@ -107,7 +116,16 @@ export function PricingSection() {
             </div>
             <div>
               <Button title="Başla" className="w-full bg-[#FF4F7A] border-[#FF4F7A] text-white hover:bg-[#E8456E] hover:border-[#E8456E]" asChild>
-                <a href="/iletisim?plan=premium">Başla</a>
+                <a
+                  href="/iletisim"
+                  onClick={() => {
+                    try {
+                      sessionStorage.setItem("selected_plan", "premium");
+                    } catch {}
+                  }}
+                >
+                  Başla
+                </a>
               </Button>
             </div>
           </div>
@@ -153,7 +171,16 @@ export function PricingSection() {
             </div>
             <div>
               <Button title="Başla" className="w-full bg-[#FF4F7A] border-[#FF4F7A] text-white hover:bg-[#E8456E] hover:border-[#E8456E]" asChild>
-                <a href="/iletisim?plan=enterprise">Başla</a>
+                <a
+                  href="/iletisim"
+                  onClick={() => {
+                    try {
+                      sessionStorage.setItem("selected_plan", "enterprise");
+                    } catch {}
+                  }}
+                >
+                  Başla
+                </a>
               </Button>
             </div>
           </div>

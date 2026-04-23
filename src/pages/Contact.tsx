@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Helmet } from "react-helmet-async";
 import { useSearchParams } from "react-router-dom";
 import { CheckCircle, WhatsappLogo } from "@phosphor-icons/react";
@@ -8,8 +8,8 @@ import { supabase } from "@/lib/supabase";
 
 const PLAN_LABELS: Record<string, string> = {
   basic: "Basic",
-  pro: "Pro",
   premium: "Premium",
+  enterprise: "Enterprise",
 };
 
 const WA_URL = `https://wa.me/905325119484?text=${encodeURIComponent(
@@ -29,8 +29,22 @@ const EMPTY: FormState = { name: "", restaurant: "", phone: "", email: "", messa
 
 export default function Contact() {
   const [searchParams] = useSearchParams();
-  const planParam = (searchParams.get("plan") || "").toLowerCase();
-  const selectedPlan = PLAN_LABELS[planParam] ? planParam : null;
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem("selected_plan");
+      if (stored && PLAN_LABELS[stored]) {
+        setSelectedPlan(stored);
+        sessionStorage.removeItem("selected_plan");
+        return;
+      }
+    } catch {}
+    const planParam = (searchParams.get("plan") || "").toLowerCase();
+    if (PLAN_LABELS[planParam]) {
+      setSelectedPlan(planParam);
+    }
+  }, [searchParams]);
 
   const [form, setForm] = useState<FormState>(EMPTY);
   const [submitting, setSubmitting] = useState(false);
