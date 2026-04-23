@@ -2,7 +2,7 @@ export const config = {
   runtime: 'edge',
 };
 
-export function GET() {
+export default function handler(request: Request) {
   return new Response('Gone', {
     status: 410,
     headers: {
