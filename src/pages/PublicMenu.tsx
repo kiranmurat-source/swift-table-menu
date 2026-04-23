@@ -41,6 +41,7 @@ import { useLikes } from '../hooks/useLikes';
 import { useCurrency } from '../hooks/useCurrency';
 import CurrencyDropdown from '../components/CurrencyDropdown';
 import { demoRestaurant, demoCategories, demoItems } from '../data/demoMenuData';
+import { useSSRData } from '../lib/ssrContext';
 import type {
   LangCode,
   UiLangCode,
@@ -299,15 +300,24 @@ export default function PublicMenu() {
 
   // Demo slug hydrates synchronously so SSG captures full content in prerendered HTML.
   const isDemo = slug === 'demo';
-  const [loading, setLoading] = useState(!isDemo);
+  // SSR seed (from the /api/menu/[slug] function via window.__SSR_DATA__ or SSRDataContext on server).
+  const ssr = useSSRData(slug);
+  const hasSsr = !!ssr;
+  const [loading, setLoading] = useState(!isDemo && !hasSsr);
   const [restaurant, setRestaurant] = useState<Restaurant | null>(
-    isDemo ? (demoRestaurant as unknown as Restaurant) : null,
+    isDemo ? (demoRestaurant as unknown as Restaurant)
+      : hasSsr ? ssr!.restaurant
+      : null,
   );
   const [categories, setCategories] = useState<MenuCategory[]>(
-    isDemo ? (demoCategories as unknown as MenuCategory[]) : [],
+    isDemo ? (demoCategories as unknown as MenuCategory[])
+      : hasSsr ? ssr!.categories
+      : [],
   );
   const [items, setItems] = useState<MenuItem[]>(
-    isDemo ? (demoItems as unknown as MenuItem[]) : [],
+    isDemo ? (demoItems as unknown as MenuItem[])
+      : hasSsr ? ssr!.items
+      : [],
   );
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [showSplash, setShowSplash] = useState(true);
@@ -320,7 +330,7 @@ export default function PublicMenu() {
   const [scrollActiveCategory, setScrollActiveCategory] = useState<string | null>(null);
   const isScrollingToCategory = useRef(false);
   const tabBarRef = useRef<HTMLDivElement>(null);
-  const [promos, setPromos] = useState<Promo[]>([]);
+  const [promos, setPromos] = useState<Promo[]>(hasSsr ? ssr!.promos : []);
   const [activePromo, setActivePromo] = useState<Promo | null>(null);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
   const [demoThemeOverride, setDemoThemeOverride] = useState<string | null>(null);
@@ -398,6 +408,8 @@ export default function PublicMenu() {
 
   useEffect(() => {
     if (!slug) return;
+    // SSR seed: state already populated from window.__SSR_DATA__ — skip the fetch.
+    if (hasSsr) return;
     const startTime = performance.now();
     const LOADING_MIN_MS = 500;
 
