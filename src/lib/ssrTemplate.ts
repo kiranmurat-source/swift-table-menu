@@ -58,18 +58,6 @@ export function transformTemplate({ template, appHtml, headHtml, ssrDataJson }: 
     '',
   );
 
-  // Strip landing hydration-data script (bound to landing route's loaders).
-  result = result.replace(
-    /<script>\s*window\.__staticRouterHydrationData\s*=[^<]*<\/script>/g,
-    '',
-  );
-
-  // Strip loader-data manifest globals for the same reason.
-  result = result.replace(
-    /<script>\s*window\.__VITE_REACT_SSG_STATIC_LOADER(_MANIFEST|_DATA)__\s*=[^<]*<\/script>/g,
-    '',
-  );
-
   // Strip static landing-specific og:/twitter: meta + canonical from source
   // index.html. These don't carry data-rh; we match by known landing keys.
   const landingMetaKeys = [

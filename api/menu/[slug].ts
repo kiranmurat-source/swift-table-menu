@@ -141,6 +141,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // still loads on the client and the user sees a working page.
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('x-ssr-fallback', '1');
     res.status(200).send(template);
   }
 }
