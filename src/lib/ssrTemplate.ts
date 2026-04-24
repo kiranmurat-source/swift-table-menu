@@ -58,6 +58,16 @@ export function transformTemplate({ template, appHtml, headHtml, ssrDataJson }: 
     '',
   );
 
+  // Strip landing-baked JSON-LD blocks (SoftwareApplication, Organization)
+  // from the dist/index.html template. Helmet-emitted JSON-LD scripts
+  // (with data-rh="true") are preserved — those carry per-restaurant
+  // schema like Restaurant. Callback form tolerates any attribute order
+  // on the data-rh marker.
+  result = result.replace(
+    /<script[^>]*type="application\/ld\+json"[^>]*>[\s\S]*?<\/script>\s*/g,
+    (match) => (match.includes('data-rh') ? match : ''),
+  );
+
   // Strip static landing-specific og:/twitter: meta + canonical from source
   // index.html. These don't carry data-rh; we match by known landing keys.
   const landingMetaKeys = [
