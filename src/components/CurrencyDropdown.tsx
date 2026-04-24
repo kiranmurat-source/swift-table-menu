@@ -13,10 +13,10 @@ interface Props {
 }
 
 const STRINGS = {
-  tr: { search: 'Para birimi ara…', label: 'Para Birimi' },
-  en: { search: 'Search currency…', label: 'Currency' },
-  ar: { search: 'ابحث عن عملة…', label: 'العملة' },
-  zh: { search: '搜索货币…', label: '货币' },
+  tr: { search: 'Para birimi ara…', label: 'Para Birimi', baseBadge: 'Ana' },
+  en: { search: 'Search currency…', label: 'Currency', baseBadge: 'Base' },
+  ar: { search: 'ابحث عن عملة…', label: 'العملة', baseBadge: 'أساسي' },
+  zh: { search: '搜索货币…', label: '货币', baseBadge: '主要' },
 };
 
 export default function CurrencyDropdown({ available, selected, onSelect, lang, theme, variant = 'header' }: Props) {
@@ -122,6 +122,16 @@ export default function CurrencyDropdown({ available, selected, onSelect, lang, 
                     <span style={{ fontSize: 14 }}>{c.flag_emoji || '🏳'}</span>
                     <span style={{ fontWeight: 600, minWidth: 36 }}>{c.currency_code}</span>
                     <span style={{ flex: 1, color: theme.mutedText, fontWeight: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
+                    {c.isBase && (
+                      <span style={{
+                        fontSize: 9, fontWeight: 600, letterSpacing: 0.3,
+                        padding: '2px 6px', borderRadius: 9999,
+                        backgroundColor: theme.divider, color: theme.mutedText,
+                        flexShrink: 0, textTransform: 'uppercase',
+                      }}>
+                        {ui.baseBadge}
+                      </span>
+                    )}
                     {sel && <span style={{ fontSize: 10, color: theme.accent, fontWeight: 700 }}>✓</span>}
                   </button>
                 );

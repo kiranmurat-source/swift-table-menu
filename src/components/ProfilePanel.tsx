@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Star, Globe, Image, Trash, Link, Package, Info, SquaresFour, Palette, ArrowsClockwise, User, CurrencyCircleDollar } from "@phosphor-icons/react";
+import { Star, Globe, Image, Trash, Link, Package, Info, SquaresFour, Palette, ArrowsClockwise, User, CurrencyCircleDollar, Warning } from "@phosphor-icons/react";
 import type { AdminTheme } from '../lib/adminTheme';
 import { getOptimizedImageUrl, handleImageError } from '../lib/imageUtils';
 import { THEMES } from '../lib/themes';
@@ -36,8 +36,28 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
     feature_likes: restaurant.feature_likes ?? true,
     feature_reviews: restaurant.feature_reviews ?? true,
     feature_multi_currency: restaurant.feature_multi_currency ?? false,
+    base_currency: restaurant.base_currency || 'TRY',
     google_place_id: restaurant.google_place_id || '',
   });
+  type CurrencyOption = { currency_code: string; currency_name_tr: string; symbol: string; flag_emoji: string | null };
+  const TRY_OPTION_ADMIN: CurrencyOption = { currency_code: 'TRY', currency_name_tr: 'Türk Lirası', symbol: '₺', flag_emoji: '🇹🇷' };
+  const [currencyOptions, setCurrencyOptions] = useState<CurrencyOption[]>([TRY_OPTION_ADMIN]);
+  const [showBaseModal, setShowBaseModal] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from('exchange_rates')
+        .select('currency_code, currency_name_tr, symbol, flag_emoji')
+        .order('currency_code');
+      if (cancelled) return;
+      if (error || !data) return;
+      setCurrencyOptions([TRY_OPTION_ADMIN, ...(data as CurrencyOption[])]);
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [workingHours, setWorkingHours] = useState<Record<string, { open: string; close: string; closed: boolean }>>(() => {
     const wh = restaurant.working_hours || {};
     const out: Record<string, { open: string; close: string; closed: boolean }> = {};
@@ -55,6 +75,15 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
+    // base_currency changed → show confirmation modal, defer actual save to confirm handler.
+    if (form.base_currency !== (restaurant.base_currency || 'TRY')) {
+      setShowBaseModal(true);
+      return;
+    }
+    await performSave();
+  }
+
+  async function performSave() {
     setSaving(true);
     const { error } = await supabase.from('restaurants').update({
       name: form.name,
@@ -79,11 +108,16 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
       feature_likes: form.feature_likes,
       feature_reviews: form.feature_reviews,
       feature_multi_currency: form.feature_multi_currency,
+      base_currency: form.base_currency,
       google_place_id: form.google_place_id || null,
     }).eq('id', restaurant.id);
 
     if (error) {
-      setMsg('Hata: ' + error.message);
+      // Trigger raises a generic exception for invalid currency codes; surface a friendlier message.
+      const friendly = /base_currency/i.test(error.message)
+        ? 'Bu para birimi şu anda desteklenmiyor.'
+        : 'Hata: ' + error.message;
+      setMsg(friendly);
     } else {
       setMsg('Bilgiler kaydedildi');
       onUpdate({
@@ -110,6 +144,7 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
         feature_likes: form.feature_likes,
         feature_reviews: form.feature_reviews,
         feature_multi_currency: form.feature_multi_currency,
+        base_currency: form.base_currency,
         google_place_id: form.google_place_id || null,
       });
     }
@@ -446,6 +481,28 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
           })}
         </div>
 
+        {/* Base Currency — operational currency for prices, cart, orders. */}
+        <h4 style={{ fontSize: 14, fontWeight: 600, color: theme.value, marginTop: 8, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <CurrencyCircleDollar size={16} weight="thin" /> Para Birimi
+        </h4>
+        <div>
+          <select
+            style={S.input}
+            value={form.base_currency}
+            onChange={e => setForm({ ...form, base_currency: e.target.value })}
+          >
+            {currencyOptions.map(c => (
+              <option key={c.currency_code} value={c.currency_code}>
+                {(c.flag_emoji || '')} {c.currency_code} — {c.currency_name_tr}
+              </option>
+            ))}
+          </select>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 4, fontSize: 11, color: theme.subtle, marginTop: 6, lineHeight: 1.4 }}>
+            <Info size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+            <span>Fiyatlarınız bu para biriminde girilir ve gösterilir. Müşteriler farklı bir para birimi seçerek görüntüleyebilir, ancak siparişler bu para biriminde işlenir.</span>
+          </div>
+        </div>
+
         {/* Feature Toggles */}
         <h4 style={{ fontSize: 14, fontWeight: 600, color: theme.value, marginTop: 8, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
           <SquaresFour size={16} /> Menü Özellikleri
@@ -623,6 +680,46 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
         restaurantSlug={restaurant.slug}
         theme={theme}
       />
+
+      {showBaseModal && (
+        <div
+          onClick={() => setShowBaseModal(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 16 }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: theme.cardBg, borderRadius: 12, border: `1px solid ${theme.border}`, padding: 24, maxWidth: 440, width: '100%', boxShadow: '0 8px 32px rgba(0,0,0,0.2)', fontFamily: "'Roboto', sans-serif" }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <Warning size={20} weight="thin" style={{ color: theme.danger }} />
+              <h3 style={{ fontSize: 16, fontWeight: 600, color: theme.value, margin: 0 }}>Para Birimi Değişikliği</h3>
+            </div>
+            <p style={{ fontSize: 13, color: theme.heading, lineHeight: 1.5, margin: '0 0 16px' }}>
+              Para birimini <strong style={{ color: theme.value }}>{restaurant.base_currency || 'TRY'}</strong> → <strong style={{ color: theme.value }}>{form.base_currency}</strong> olarak değiştiriyorsunuz.
+              Bu işlem <strong style={{ color: theme.value }}>mevcut menü fiyatlarınızı otomatik olarak dönüştürmez</strong>. Değişikliği onayladıktan sonra tüm ürün fiyatlarınızı yeni para biriminde manuel olarak kontrol etmeniz gerekir.
+            </p>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setShowBaseModal(false)}
+                style={{ ...S.btnSm, padding: '8px 16px' }}
+              >
+                İptal
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  setShowBaseModal(false);
+                  await performSave();
+                }}
+                style={{ ...S.btn, background: theme.danger, padding: '8px 16px' }}
+              >
+                Onayla ve Kaydet
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { PlusCircle, XCircle, PencilSimple, Trash, Percent } from "@phosphor-ico
 import { supabase } from '../lib/supabase';
 import type { AdminTheme } from '../lib/adminTheme';
 import { getAdminTheme } from '../lib/adminTheme';
+import { useBaseCurrencySymbol } from '../lib/currencySymbols';
 
 interface DiscountCode {
   id: string;
@@ -38,9 +39,10 @@ function generateCode(): string {
   return Math.random().toString(36).substring(2, 10).toUpperCase();
 }
 
-export default function DiscountCodesPanel({ restaurantId, theme }: { restaurantId: string; theme?: AdminTheme }) {
+export default function DiscountCodesPanel({ restaurantId, baseCurrency, theme }: { restaurantId: string; baseCurrency?: string; theme?: AdminTheme }) {
   const t = theme ?? getAdminTheme('light');
   const S = makeStyles(t);
+  const baseSymbol = useBaseCurrencySymbol(baseCurrency);
   const [codes, setCodes] = useState<DiscountCode[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -212,7 +214,7 @@ export default function DiscountCodesPanel({ restaurantId, theme }: { restaurant
                       checked={form.discount_type === dt}
                       onChange={() => setForm({ ...form, discount_type: dt })}
                     />
-                    {dt === 'percentage' ? 'Yüzde (%)' : 'Sabit Tutar (₺)'}
+                    {dt === 'percentage' ? 'Yüzde (%)' : `Sabit Tutar (${baseSymbol})`}
                   </label>
                 ))}
               </div>
@@ -231,7 +233,7 @@ export default function DiscountCodesPanel({ restaurantId, theme }: { restaurant
                   min={1}
                   max={form.discount_type === 'percentage' ? 100 : 10000}
                 />
-                <span style={{ fontSize: 13, color: t.heading }}>{form.discount_type === 'percentage' ? '%' : '₺'}</span>
+                <span style={{ fontSize: 13, color: t.heading }}>{form.discount_type === 'percentage' ? '%' : baseSymbol}</span>
               </div>
             </div>
 
@@ -247,7 +249,7 @@ export default function DiscountCodesPanel({ restaurantId, theme }: { restaurant
                   placeholder="0"
                   min={0}
                 />
-                <span style={{ fontSize: 13, color: t.heading }}>₺</span>
+                <span style={{ fontSize: 13, color: t.heading }}>{baseSymbol}</span>
               </div>
             </div>
 
@@ -355,7 +357,7 @@ export default function DiscountCodesPanel({ restaurantId, theme }: { restaurant
                     {c.code}
                   </span>
                   <span style={{ fontSize: 12, color: t.heading }}>
-                    {c.discount_type === 'percentage' ? `%${c.discount_value}` : `${Number(c.discount_value).toFixed(2)} ₺`} İndirim
+                    {c.discount_type === 'percentage' ? `%${c.discount_value}` : `${Number(c.discount_value).toFixed(2)} ${baseSymbol}`} İndirim
                   </span>
                 </div>
                 <button
@@ -371,7 +373,7 @@ export default function DiscountCodesPanel({ restaurantId, theme }: { restaurant
                 </button>
               </div>
               <div style={{ fontSize: 11, color: t.heading, display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 4 }}>
-                <span>Min: {Number(c.min_order_amount) > 0 ? `${Number(c.min_order_amount).toFixed(0)} ₺` : 'Yok'}</span>
+                <span>Min: {Number(c.min_order_amount) > 0 ? `${Number(c.min_order_amount).toFixed(0)} ${baseSymbol}` : 'Yok'}</span>
                 <span>Kullanım: {c.current_uses}/{c.max_uses ?? '∞'}</span>
                 <span>
                   Son: {c.expires_at

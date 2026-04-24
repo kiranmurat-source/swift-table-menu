@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { useAICredits } from '../../hooks/useAICredits';
 import { AI_CREDIT_COSTS, consumeAICredits } from '../../lib/aiCredits';
 import type { AdminTheme } from '../../lib/adminTheme';
+import { useBaseCurrencySymbol } from '../../lib/currencySymbols';
 import {
   FileArrowUp,
   UploadSimple,
@@ -40,6 +41,7 @@ interface DraftCategory {
 
 interface Props {
   restaurantId: string;
+  baseCurrency?: string;
   theme: AdminTheme;
   onImported?: () => void;
 }
@@ -57,8 +59,9 @@ async function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
-export default function MenuImport({ restaurantId, theme, onImported }: Props) {
+export default function MenuImport({ restaurantId, baseCurrency, theme, onImported }: Props) {
   const credits = useAICredits(restaurantId);
+  const baseSymbol = useBaseCurrencySymbol(baseCurrency);
   const [step, setStep] = useState<Step>('upload');
   const [files, setFiles] = useState<File[]>([]);
   const [progress, setProgress] = useState(0); // fake progress (0-100)
@@ -640,7 +643,7 @@ export default function MenuImport({ restaurantId, theme, onImported }: Props) {
                                 const v = e.target.value;
                                 updateItem(cat.id, it.id, { price: v === '' ? null : Number(v) });
                               }}
-                              placeholder={it.price == null ? 'Fiyat giriniz' : 'TL'}
+                              placeholder={it.price == null ? 'Fiyat giriniz' : baseSymbol}
                             />
                           </div>
                         ))}

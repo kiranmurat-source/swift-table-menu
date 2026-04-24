@@ -336,8 +336,11 @@ export default function PublicMenu() {
   const [demoThemeOverride, setDemoThemeOverride] = useState<string | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const cart = useCart();
-  const currency = useCurrency(restaurant?.feature_multi_currency === true);
-  const { format, formatTl } = currency;
+  const currency = useCurrency(
+    restaurant?.feature_multi_currency === true,
+    restaurant?.base_currency ?? 'TRY',
+  );
+  const { format, formatBase } = currency;
 
   // Google Review prompt (triggered by product likes)
   const [showReviewPrompt, setShowReviewPrompt] = useState(false);
@@ -1814,8 +1817,9 @@ export default function PublicMenu() {
           tableNumber={table}
           discountEnabled={restaurant.feature_discount_codes !== false}
           format={format}
+          formatBase={formatBase}
           currencySymbol={currency.selectedRate.symbol || '₺'}
-          currencyDisclaimer={currency.visible && !currency.isTry ? UI.currencyDisclaimer[toUiLang(lang)] : null}
+          currencyDisclaimer={currency.visible && !currency.isBase ? UI.currencyDisclaimer[toUiLang(lang)] : null}
         />
       )}
 

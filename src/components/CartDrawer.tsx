@@ -60,6 +60,8 @@ interface Props {
   tableNumber: string | null;
   discountEnabled: boolean;
   format?: (n: number) => string;
+  /** Always formats in restaurant base currency; used for WhatsApp order messages. */
+  formatBase?: (n: number) => string;
   currencySymbol?: string;
   currencyDisclaimer?: string | null;
 }
@@ -75,6 +77,7 @@ function buildWhatsAppUrl(
   note: string,
   tableNumber: string | null,
   lang: string,
+  fmtBase: (n: number) => string,
 ): string {
   const t = WA_TEMPLATES[lang] || WA_TEMPLATES.en;
   const cleanNumber = number.replace(/[^0-9]/g, '');
@@ -85,7 +88,7 @@ function buildWhatsAppUrl(
 
   const lines = displayItems.map(i => {
     const variantPart = i.variant ? ` (${i.variant})` : '';
-    return `• ${i.quantity}x ${i.name}${variantPart} — ${(i.price * i.quantity).toFixed(2)} ₺`;
+    return `• ${i.quantity}x ${i.name}${variantPart} — ${fmtBase(i.price * i.quantity)}`;
   });
   if (remaining > 0) lines.push(`... +${remaining}`);
 
@@ -96,11 +99,11 @@ function buildWhatsAppUrl(
   msg += `\n━━━━━━━━━━━━━━━━\n\n`;
 
   if (appliedDiscount && discountAmount > 0) {
-    msg += `💰 ${t.subtotal}: ${subtotal.toFixed(2)} ₺\n`;
-    msg += `🏷 ${t.discount} (${appliedDiscount.code}): -${discountAmount.toFixed(2)} ₺\n`;
-    msg += `💰 *${t.total}: ${totalAmount.toFixed(2)} ₺*\n`;
+    msg += `💰 ${t.subtotal}: ${fmtBase(subtotal)}\n`;
+    msg += `🏷 ${t.discount} (${appliedDiscount.code}): -${fmtBase(discountAmount)}\n`;
+    msg += `💰 *${t.total}: ${fmtBase(totalAmount)}*\n`;
   } else {
-    msg += `💰 *${t.total}: ${totalAmount.toFixed(2)} ₺*\n`;
+    msg += `💰 *${t.total}: ${fmtBase(totalAmount)}*\n`;
   }
 
   if (note.trim()) msg += `\n📝 ${t.note}: ${note}\n`;
@@ -113,9 +116,10 @@ export default function CartDrawer({
   items, note, totalAmount, totalItems, subtotal, discountAmount, appliedDiscount,
   onUpdateQuantity, onDeleteItem, onSetNote, onClearCart, onApplyDiscount, onRemoveDiscount, onClose,
   theme, lang, ui, discountUi, restaurantId, restaurantName, whatsappNumber, tableNumber, discountEnabled,
-  format, currencySymbol, currencyDisclaimer,
+  format, formatBase, currencySymbol, currencyDisclaimer,
 }: Props) {
   const fmt = format || ((n: number) => `${n.toFixed(2)} ₺`);
+  const fmtBase = formatBase || fmt;
   const sym = currencySymbol || '₺';
   const handleClear = () => {
     if (window.confirm(ui.emptyCartConfirm)) {
@@ -135,7 +139,7 @@ export default function CartDrawer({
       });
     }
 
-    const url = buildWhatsAppUrl(whatsappNumber, restaurantName, items, subtotal, discountAmount, totalAmount, appliedDiscount, note, tableNumber, lang);
+    const url = buildWhatsAppUrl(whatsappNumber, restaurantName, items, subtotal, discountAmount, totalAmount, appliedDiscount, note, tableNumber, lang, fmtBase);
     window.open(url, '_blank');
     onClose();
   };

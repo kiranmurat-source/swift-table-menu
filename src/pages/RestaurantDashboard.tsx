@@ -71,6 +71,7 @@ import { ALLERGEN_LIST, DIET_LIST, getAllergenInfo } from '../lib/allergens';
 import { AllergenIcon } from '../components/AllergenIcon';
 import { THEMES } from '../lib/themes';
 import type { Promo } from '../components/PromoPopup';
+import { useBaseCurrencySymbol } from '../lib/currencySymbols';
 import { ProfileTab } from '../components/ProfilePanel';
 import { LegalSettings } from '../components/admin/LegalSettings';
 import { PDFDownloadButton } from '../components/admin/pdf/PDFDownloadButton';
@@ -158,7 +159,7 @@ const defaultPeriodicSchedule = (): Record<PeriodicDayKey, { enabled: boolean; s
   sunday:    { enabled: false, start: '09:00', end: '17:00', all_day: false },
 });
 
-function InlinePrice({ value, isSoldOut, onSave }: { value: number; isSoldOut: boolean; onSave: (n: number) => Promise<void> }) {
+function InlinePrice({ value, isSoldOut, onSave, symbol = '₺' }: { value: number; isSoldOut: boolean; onSave: (n: number) => Promise<void>; symbol?: string }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value.toString());
   const [saving, setSaving] = useState(false);
@@ -190,7 +191,7 @@ function InlinePrice({ value, isSoldOut, onSave }: { value: number; isSoldOut: b
           }}
           style={{ width: 80, padding: '4px 8px', fontSize: 14, fontWeight: 700, border: '1px solid #1C1C1E', borderRadius: 6, outline: 'none' }}
         />
-        <span style={{ fontSize: 14, color: '#1C1C1E', fontWeight: 700 }}>₺</span>
+        <span style={{ fontSize: 14, color: '#1C1C1E', fontWeight: 700 }}>{symbol}</span>
         {saving && <span style={{ fontSize: 10, color: '#6B6B6F' }}>...</span>}
       </span>
     );
@@ -214,7 +215,7 @@ function InlinePrice({ value, isSoldOut, onSave }: { value: number; isSoldOut: b
       onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'transparent')}
       title="Düzenlemek için tıkla"
     >
-      ₺{Number(value).toFixed(2)}
+      {Number(value).toFixed(2)} {symbol}
     </button>
   );
 }
@@ -314,6 +315,7 @@ async function triggerTranslation(table: string, recordId: string, languages: st
 export default function RestaurantDashboard() {
   const { user, signOut } = useAuth();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
+  const baseSymbol = useBaseCurrencySymbol(restaurant?.base_currency);
   const [categories, setCategories] = useState<Category[]>([]);
   const [items, setItems] = useState<MenuItem[]>([]);
   const [selectedCat, setSelectedCat] = useState<string | null>(null);
@@ -1455,13 +1457,13 @@ export default function RestaurantDashboard() {
           )}
       {activeTab === 'qr' && <QRManager restaurant={restaurant} theme={adminTheme} />}
       {activeTab === 'media' && <MediaLibrary restaurantId={restaurant.id} restaurantSlug={restaurant.slug} theme={adminTheme} />}
-      {activeTab === 'import' && <MenuImport restaurantId={restaurant.id} theme={adminTheme} onImported={() => loadCategories(restaurant.id)} />}
+      {activeTab === 'import' && <MenuImport restaurantId={restaurant.id} baseCurrency={restaurant.base_currency} theme={adminTheme} onImported={() => loadCategories(restaurant.id)} />}
       {activeTab === 'promos' && <PromosTab restaurant={restaurant} theme={adminTheme} />}
       {activeTab === 'calls' && <WaiterCallsPanel restaurantId={restaurant.id} theme={adminTheme} />}
       {activeTab === 'bildirimler' && <NotificationsPanel restaurantId={restaurant.id} theme={adminTheme} />}
       {activeTab === 'feedback' && <FeedbackPanel restaurantId={restaurant.id} theme={adminTheme} />}
       {activeTab === 'customers' && <CustomersPanel restaurantId={restaurant.id} theme={adminTheme} />}
-      {activeTab === 'discounts' && <DiscountCodesPanel restaurantId={restaurant.id} theme={adminTheme} />}
+      {activeTab === 'discounts' && <DiscountCodesPanel restaurantId={restaurant.id} baseCurrency={restaurant.base_currency} theme={adminTheme} />}
       {activeTab === 'likes' && <LikesPanel restaurantId={restaurant.id} theme={adminTheme} />}
       {activeTab === 'translations' && (
         <TranslationCenter
@@ -1499,8 +1501,8 @@ export default function RestaurantDashboard() {
                   }}
                   categories={categories}
                   items={items}
-                  currency="TRY"
-                  currencySymbol="₺"
+                  currency={restaurant.base_currency || 'TRY'}
+                  currencySymbol={baseSymbol}
                   defaultLangCode="tr"
                 />
               )}
@@ -1728,7 +1730,7 @@ export default function RestaurantDashboard() {
               {itemForm.variants.length === 0 ? (
                 <div style={S.grid2}>
                   <div>
-                    <label style={S.label}>Fiyat (₺) *</label>
+                    <label style={S.label}>Fiyat ({baseSymbol}) *</label>
                     <input
                       type="number"
                       step="0.01"
@@ -1943,7 +1945,7 @@ export default function RestaurantDashboard() {
                       </div>
                       <div style={{ ...S.grid2, marginTop: 6 }}>
                         <div>
-                          <label style={{ ...S.label, fontSize: 11 }}>Fiyat (₺) *</label>
+                          <label style={{ ...S.label, fontSize: 11 }}>Fiyat ({baseSymbol}) *</label>
                           <input
                             type="number"
                             step="0.01"
@@ -2246,9 +2248,9 @@ export default function RestaurantDashboard() {
                         {/* Price — single price mode */}
                         {itemForm.variants.length === 0 && (
                           <div>
-                            <label style={{ fontSize: 12, color: '#666', marginBottom: 4, display: 'block' }}>İndirimli Fiyat (₺)</label>
+                            <label style={{ fontSize: 12, color: '#666', marginBottom: 4, display: 'block' }}>İndirimli Fiyat ({baseSymbol})</label>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <span style={{ fontSize: 12, color: '#999', textDecoration: 'line-through' }}>{itemForm.price} ₺</span>
+                              <span style={{ fontSize: 12, color: '#999', textDecoration: 'line-through' }}>{itemForm.price} {baseSymbol}</span>
                               <span style={{ fontSize: 12, color: '#999' }}>→</span>
                               <input type="number" step="0.01" min="0" value={itemForm.happy_hour_price || ''} onChange={e => setItemForm({ ...itemForm, happy_hour_price: e.target.value })} placeholder="0.00" style={{ ...S.input, width: 100, fontSize: 13 }} />
                               <span style={{ fontSize: 12, color: '#22c55e', fontWeight: 600 }}>
@@ -2265,7 +2267,7 @@ export default function RestaurantDashboard() {
                             {itemForm.variants.map((v, idx) => (
                               <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                                 <span style={{ fontSize: 12, color: '#666', minWidth: 80 }}>{v.name_tr}</span>
-                                <span style={{ fontSize: 12, color: '#999', textDecoration: 'line-through' }}>{v.price} ₺</span>
+                                <span style={{ fontSize: 12, color: '#999', textDecoration: 'line-through' }}>{v.price} {baseSymbol}</span>
                                 <span style={{ fontSize: 12, color: '#999' }}>→</span>
                                 <input type="number" step="0.01" min="0" value={(v as any).happy_hour_price || ''} onChange={e => {
                                   const updated = [...itemForm.variants];
@@ -2577,16 +2579,16 @@ export default function RestaurantDashboard() {
                             }}
                           >
                             <Package size={13} />
-                            {min.toFixed(0)} ₺ – {max.toFixed(0)} ₺
+                            {min.toFixed(0)} {baseSymbol} – {max.toFixed(0)} {baseSymbol}
                           </button>
                         );
                       })()
                     ) : isActiveForm ? (
                       <span style={{ fontSize: 13, fontWeight: 600, color: '#A0A0A0', padding: '4px 8px' }}>
-                        {Number(item.price).toFixed(2)} ₺
+                        {Number(item.price).toFixed(2)} {baseSymbol}
                       </span>
                     ) : (
-                      <InlinePrice value={Number(item.price)} isSoldOut={item.is_sold_out} onSave={(n) => updateItemPrice(item.id, n)} />
+                      <InlinePrice value={Number(item.price)} isSoldOut={item.is_sold_out} onSave={(n) => updateItemPrice(item.id, n)} symbol={baseSymbol} />
                     )}
                   </div>
                   <button

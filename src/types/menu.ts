@@ -28,6 +28,7 @@ export interface Restaurant {
   feature_likes: boolean;
   feature_reviews: boolean;
   feature_multi_currency: boolean;
+  base_currency: string;
   google_place_id: string | null;
   google_rating: number | null;
   google_review_count: number | null;
