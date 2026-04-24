@@ -307,6 +307,7 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
               autoPlay
               loop
               playsInline
+              preload="metadata"
               style={{ marginTop: 10, width: 200, maxWidth: '100%', borderRadius: 8, border: `1px solid ${theme.border}`, backgroundColor: theme.pageBg }}
             />
           )}

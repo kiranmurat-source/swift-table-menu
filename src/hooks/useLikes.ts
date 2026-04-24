@@ -9,7 +9,7 @@ interface UseLikesReturn {
   loading: boolean;
 }
 
-export function useLikes(restaurantId: string | undefined): UseLikesReturn {
+export function useLikes(restaurantId: string | undefined, featureLikes: boolean = true): UseLikesReturn {
   const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
   const [likedItems, setLikedItems] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -17,6 +17,9 @@ export function useLikes(restaurantId: string | undefined): UseLikesReturn {
 
   useEffect(() => {
     if (!restaurantId) return;
+    // Likes feature disabled → skip the 2 Supabase round-trips (RPC + select).
+    // Still clear loading so consumers don't hang in an indeterminate state.
+    if (!featureLikes) { setLoading(false); return; }
 
     const fetchLikes = async () => {
       // 1. Total like counts via RPC
@@ -47,7 +50,7 @@ export function useLikes(restaurantId: string | undefined): UseLikesReturn {
     };
 
     fetchLikes();
-  }, [restaurantId, fingerprint]);
+  }, [restaurantId, fingerprint, featureLikes]);
 
   const toggleLike = useCallback(async (itemId: string, restaurantId: string): Promise<boolean> => {
     if (likedItems.has(itemId)) return false;

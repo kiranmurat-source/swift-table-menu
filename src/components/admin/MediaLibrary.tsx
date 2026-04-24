@@ -756,6 +756,7 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
                 autoPlay
                 muted
                 loop
+                preload="metadata"
                 style={{ width: '100%', borderRadius: 8, maxHeight: 360, background: '#000' }}
               />
             ) : (

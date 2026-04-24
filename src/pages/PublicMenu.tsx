@@ -351,9 +351,9 @@ export default function PublicMenu() {
   // Today's working hours — computed on client to avoid SSR/client day mismatches
   const [todayHours, setTodayHours] = useState<{ open: string; close: string; closed: boolean } | null>(null);
 
-  // Product likes
-  const { likeCounts, likedItems, toggleLike } = useLikes(restaurant?.id);
+  // Product likes — hook skips its Supabase calls when the feature is disabled.
   const likesEnabled = restaurant?.feature_likes !== false;
+  const { likeCounts, likedItems, toggleLike } = useLikes(restaurant?.id, likesEnabled);
 
   const theme = useMemo<MenuTheme>(
     () => getTheme(demoThemeOverride ?? restaurant?.theme_color),
@@ -797,7 +797,7 @@ export default function PublicMenu() {
               defaultMuted
               loop
               playsInline
-              preload="auto"
+              preload="metadata"
               poster={coverImage || undefined}
               ref={(el) => {
                 if (!el) return;
@@ -829,7 +829,7 @@ export default function PublicMenu() {
                 defaultMuted
                 loop
                 playsInline
-                preload="auto"
+                preload="metadata"
                 disablePictureInPicture
                 controls={false}
                 poster={restaurant.logo_url || undefined}
@@ -1303,7 +1303,7 @@ export default function PublicMenu() {
               defaultMuted
               loop
               playsInline
-              preload="auto"
+              preload="metadata"
               disablePictureInPicture
               controls={false}
               poster={restaurant.logo_url || undefined}
@@ -2396,7 +2396,7 @@ function ItemDetailModal({ item, allItems, lang, theme, onClose, onSelectItem, o
         {video && showVideo ? (
           <div className="w-full rounded-t-3xl overflow-hidden" style={{ background: '#000' }}>
             {video.type === 'direct' ? (
-              <video src={video.src} controls autoPlay style={{ width: '100%', maxHeight: 240, display: 'block' }} />
+              <video src={video.src} controls autoPlay preload="metadata" style={{ width: '100%', maxHeight: 240, display: 'block' }} />
             ) : (
               <iframe
                 src={video.src}

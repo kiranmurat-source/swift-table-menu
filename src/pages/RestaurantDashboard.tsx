@@ -1579,7 +1579,7 @@ export default function RestaurantDashboard() {
                       <div style={{ marginTop: 8, borderRadius: 8, overflow: 'hidden', maxWidth: 320, border: '1px solid #E5E5E3' }}>
                         {yt ? <iframe src={`https://www.youtube.com/embed/${yt[1]}`} style={{ width: '100%', aspectRatio: '16/9', border: 'none' }} allow="encrypted-media" />
                           : vm ? <iframe src={`https://player.vimeo.com/video/${vm[1]}`} style={{ width: '100%', aspectRatio: '16/9', border: 'none' }} allow="encrypted-media" />
-                          : <video src={v} controls muted playsInline style={{ width: '100%', maxHeight: 240 }} />}
+                          : <video src={v} controls muted playsInline preload="metadata" style={{ width: '100%', maxHeight: 240 }} />}
                       </div>
                       {!isDirect && (yt || vm) && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#B45309', background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: 6, padding: '6px 8px', marginTop: 6 }}>
@@ -1804,7 +1804,7 @@ export default function RestaurantDashboard() {
                           const vm = v.match(/vimeo\.com\/(?:video\/)?(\d+)/);
                           if (yt) return <iframe src={`https://www.youtube.com/embed/${yt[1]}`} style={{ width: '100%', aspectRatio: '16/9', border: 'none' }} allow="encrypted-media" />;
                           if (vm) return <iframe src={`https://player.vimeo.com/video/${vm[1]}`} style={{ width: '100%', aspectRatio: '16/9', border: 'none' }} allow="encrypted-media" />;
-                          return <video src={v} controls style={{ width: '100%', maxHeight: 240 }} />;
+                          return <video src={v} controls preload="metadata" style={{ width: '100%', maxHeight: 240 }} />;
                         })()}
                       </div>
                     )}

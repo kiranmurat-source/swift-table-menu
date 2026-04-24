@@ -1,9 +1,9 @@
 import { lazy } from "react";
 import type { RouteRecord } from "vite-react-ssg";
 import App from "./App";
-import Index from "./pages/Index";
 import { blogPosts } from "./lib/blogData";
 
+const Index = lazy(() => import("./pages/Index"));
 const PublicMenu = lazy(() => import("./pages/PublicMenu"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Contact = lazy(() => import("./pages/Contact"));
