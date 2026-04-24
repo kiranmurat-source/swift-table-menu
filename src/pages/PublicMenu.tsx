@@ -2374,9 +2374,20 @@ function ItemDetailModal({ item, allItems, lang, theme, onClose, onSelectItem, o
         onClick={(e) => e.stopPropagation()}
         style={{ backgroundColor: theme.modalBg, color: theme.text, fontFamily: bodyFont, animation: 'modalSlideUp 0.3s ease-out forwards' }}
       >
+        {/* Sticky hero — close button + all hero variants stay pinned at the top
+            of the scroll panel so the image/video remains visible while the
+            user scrolls the description, nutrition table, recommendations. */}
+        <div
+          className="sticky top-0 z-20"
+          style={{
+            backgroundColor: theme.modalBg,
+            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.08)',
+          }}
+        >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+          aria-label="Kapat"
+          className="absolute top-4 right-4 z-30 w-8 h-8 rounded-full flex items-center justify-center transition-colors"
           style={{ backgroundColor: 'rgba(0,0,0,0.4)', color: '#FFFFFF' }}
         >
           <XCircle size={20} />
@@ -2442,6 +2453,7 @@ function ItemDetailModal({ item, allItems, lang, theme, onClose, onSelectItem, o
             </span>
           </div>
         )}
+        </div>
 
         <div className="p-5">
           {(item.is_popular || item.is_new || item.is_vegetarian) && (
