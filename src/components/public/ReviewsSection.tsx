@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Star, ChatCircle } from '@phosphor-icons/react';
-import DOMPurify from 'dompurify';
+import { sanitize } from '@/lib/sanitize';
 import { supabase } from '@/lib/supabase';
 import StarRating from '@/components/StarRating';
 import { getFingerprint } from '@/lib/fingerprint';
@@ -233,7 +233,7 @@ export default function ReviewsSection({ restaurantId, language, theme, tableNum
       setFormError(t.rateFirst);
       return;
     }
-    const sanitizedComment = DOMPurify.sanitize(comment.trim(), { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+    const sanitizedComment = sanitize(comment.trim(), { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
     if (sanitizedComment.length < 10) {
       setFormError(t.minChars);
       return;
@@ -252,7 +252,7 @@ export default function ReviewsSection({ restaurantId, language, theme, tableNum
       }
 
       setSubmitting(true);
-      const sanitizedName = DOMPurify.sanitize(name.trim().slice(0, 50), { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+      const sanitizedName = sanitize(name.trim().slice(0, 50), { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
       const { error } = await supabase.from('reviews').insert({
         restaurant_id: restaurantId,
         customer_name: sanitizedName || t.anonymous,

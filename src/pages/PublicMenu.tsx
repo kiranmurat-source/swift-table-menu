@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import DOMPurify from 'dompurify';
+import { sanitize } from '../lib/sanitize';
 import { supabase } from '../lib/supabase';
 import { getOptimizedImageUrl, handleImageError } from '../lib/imageUtils';
 import {
@@ -41,6 +41,7 @@ import { useLikes } from '../hooks/useLikes';
 import { useCurrency } from '../hooks/useCurrency';
 import CurrencyDropdown from '../components/CurrencyDropdown';
 import { demoRestaurant, demoCategories, demoItems } from '../data/demoMenuData';
+import { useSSRData } from '../lib/ssrContext';
 import type {
   LangCode,
   UiLangCode,
@@ -299,15 +300,24 @@ export default function PublicMenu() {
 
   // Demo slug hydrates synchronously so SSG captures full content in prerendered HTML.
   const isDemo = slug === 'demo';
-  const [loading, setLoading] = useState(!isDemo);
+  // SSR seed (from the /api/menu/[slug] function via window.__SSR_DATA__ or SSRDataContext on server).
+  const ssr = useSSRData(slug);
+  const hasSsr = !!ssr;
+  const [loading, setLoading] = useState(!isDemo && !hasSsr);
   const [restaurant, setRestaurant] = useState<Restaurant | null>(
-    isDemo ? (demoRestaurant as unknown as Restaurant) : null,
+    isDemo ? (demoRestaurant as unknown as Restaurant)
+      : hasSsr ? ssr!.restaurant
+      : null,
   );
   const [categories, setCategories] = useState<MenuCategory[]>(
-    isDemo ? (demoCategories as unknown as MenuCategory[]) : [],
+    isDemo ? (demoCategories as unknown as MenuCategory[])
+      : hasSsr ? ssr!.categories
+      : [],
   );
   const [items, setItems] = useState<MenuItem[]>(
-    isDemo ? (demoItems as unknown as MenuItem[]) : [],
+    isDemo ? (demoItems as unknown as MenuItem[])
+      : hasSsr ? ssr!.items
+      : [],
   );
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [showSplash, setShowSplash] = useState(true);
@@ -320,7 +330,7 @@ export default function PublicMenu() {
   const [scrollActiveCategory, setScrollActiveCategory] = useState<string | null>(null);
   const isScrollingToCategory = useRef(false);
   const tabBarRef = useRef<HTMLDivElement>(null);
-  const [promos, setPromos] = useState<Promo[]>([]);
+  const [promos, setPromos] = useState<Promo[]>(hasSsr ? ssr!.promos : []);
   const [activePromo, setActivePromo] = useState<Promo | null>(null);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
   const [demoThemeOverride, setDemoThemeOverride] = useState<string | null>(null);
@@ -332,8 +342,11 @@ export default function PublicMenu() {
   // Google Review prompt (triggered by product likes)
   const [showReviewPrompt, setShowReviewPrompt] = useState(false);
 
-  // Profile info accordion
+  // Profile info accordion (main header + splash use independent toggles)
   const [infoOpen, setInfoOpen] = useState(false);
+  const [splashInfoOpen, setSplashInfoOpen] = useState(false);
+  // Today's working hours — computed on client to avoid SSR/client day mismatches
+  const [todayHours, setTodayHours] = useState<{ open: string; close: string; closed: boolean } | null>(null);
 
   // Product likes
   const { likeCounts, likedItems, toggleLike } = useLikes(restaurant?.id);
@@ -352,6 +365,14 @@ export default function PublicMenu() {
     }
     setViewModeInitialized(true);
   }, [restaurant, viewModeInitialized]);
+
+  useEffect(() => {
+    const hours = restaurant?.working_hours;
+    if (!hours) { setTodayHours(null); return; }
+    const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+    const today = dayKeys[new Date().getDay()];
+    setTodayHours(hours[today] ?? null);
+  }, [restaurant?.working_hours]);
 
   const lang: LangCode = useMemo(() => {
     if (langParam === 'tr') return 'tr';
@@ -398,6 +419,8 @@ export default function PublicMenu() {
 
   useEffect(() => {
     if (!slug) return;
+    // SSR seed: state already populated from window.__SSR_DATA__ — skip the fetch.
+    if (hasSsr) return;
     const startTime = performance.now();
     const LOADING_MIN_MS = 500;
 
@@ -615,6 +638,39 @@ export default function PublicMenu() {
   const headMetaDescription =
     `${restaurant.name} dijital menüsü. ${restaurant.tagline || ''} ${restaurant.address || ''}`.trim();
 
+  // Restaurant JSON-LD (schema.org) — embedded as SSR-rendered script for rich results
+  const restaurantLd: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'Restaurant',
+    name: restaurant.name,
+    url: headCanonicalUrl,
+  };
+  const ldImage =
+    getOptimizedImageUrl(restaurant.cover_image_url || restaurant.cover_url, 'cover') ||
+    getOptimizedImageUrl(restaurant.logo_url, 'cover');
+  if (ldImage) restaurantLd.image = ldImage;
+  if (restaurant.phone) restaurantLd.telephone = restaurant.phone;
+  if (restaurant.address) {
+    restaurantLd.address = {
+      '@type': 'PostalAddress',
+      streetAddress: restaurant.address,
+      addressCountry: 'TR',
+    };
+  }
+  if (restaurant.working_hours) {
+    const dayToCode: Record<string, string> = {
+      mon: 'Mo', tue: 'Tu', wed: 'We', thu: 'Th', fri: 'Fr', sat: 'Sa', sun: 'Su',
+    };
+    const spec: string[] = [];
+    for (const [day, code] of Object.entries(dayToCode)) {
+      const h = restaurant.working_hours[day];
+      if (h && !h.closed && h.open && h.close) {
+        spec.push(`${code} ${h.open}-${h.close}`);
+      }
+    }
+    if (spec.length) restaurantLd.openingHours = spec;
+  }
+
   const pageHead = (
     <Helmet>
       <title>{`${restaurant.name} — Menü | Tabbled`}</title>
@@ -631,8 +687,89 @@ export default function PublicMenu() {
       <meta name="twitter:description" content={restaurant.tagline || `${restaurant.name} dijital menüsü`} />
       <meta name="twitter:image" content={headOgImage} />
       <link rel="canonical" href={headCanonicalUrl} />
+      <script type="application/ld+json">{JSON.stringify(restaurantLd)}</script>
     </Helmet>
   );
+
+  /* ================================================================ */
+  /*  CONTACT DROPDOWN (shared by splash + main header)                 */
+  /*  Pattern 1: content always rendered in DOM so crawlers see it,     */
+  /*  visually gated via inline `display` (beats any flex class).       */
+  /* ================================================================ */
+
+  const renderContactDropdown = (
+    open: boolean,
+    toggle: () => void,
+    variant: 'main' | 'splash',
+  ) => {
+    const labelColor = variant === 'splash' ? 'rgba(255,255,255,0.75)' : theme.mutedText;
+    const bodyColor  = variant === 'splash' ? 'rgba(255,255,255,0.9)'  : theme.mutedText;
+    return (
+      <>
+        <button
+          type="button"
+          onClick={toggle}
+          aria-expanded={open}
+          className="flex items-center gap-1 mt-2 text-xs transition-colors"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: labelColor }}
+        >
+          <span>{open ? UI.hideInfo[toUiLang(lang)] : UI.showInfo[toUiLang(lang)]}</span>
+          <CaretDown
+            size={12}
+            style={{ transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+          />
+        </button>
+        <div
+          className="gap-2 mt-2 text-sm"
+          style={{ display: open ? 'flex' : 'none', flexDirection: 'column', color: bodyColor }}
+        >
+          {restaurant.address && (
+            <div className="flex items-start gap-2">
+              <MapPin size={16} className="flex-shrink-0 mt-0.5" style={{ color: bodyColor }} />
+              <span className="text-xs">{restaurant.address}</span>
+            </div>
+          )}
+          {restaurant.phone && (
+            <a
+              href={`tel:${restaurant.phone}`}
+              className="flex items-center gap-2 hover:text-[#FF4F7A] transition-colors"
+              style={{ color: bodyColor }}
+            >
+              <Phone size={16} className="flex-shrink-0" />
+              <span className="text-xs">{restaurant.phone}</span>
+            </a>
+          )}
+          {todayHours && (
+            <div className="flex items-center gap-2">
+              <Clock size={16} className="flex-shrink-0" style={{ color: bodyColor }} />
+              <span className="text-xs flex items-center gap-1.5">
+                <span className={`w-2 h-2 rounded-full ${todayHours.closed ? 'bg-red-500' : 'bg-green-500'}`} />
+                {todayHours.closed
+                  ? (lang === 'tr' ? 'Bugün kapalı' : 'Closed today')
+                  : `${todayHours.open} - ${todayHours.close}`}
+              </span>
+            </div>
+          )}
+          {socials.length > 0 && (
+            <div className="flex items-center gap-2 mt-1">
+              {socials.map(({ type, url }) => (
+                <a
+                  key={type}
+                  href={url!}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:opacity-80 transition-opacity"
+                  style={{ color: bodyColor }}
+                >
+                  <SocialIcon type={type} size={14} />
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      </>
+    );
+  };
 
   /* ================================================================ */
   /*  SPLASH SCREEN                                                    */
@@ -745,12 +882,17 @@ export default function PublicMenu() {
           {/* Tagline */}
           {restaurant.tagline && (
             <p
-              className="text-sm mb-6 leading-relaxed"
+              className="text-sm mb-4 leading-relaxed"
               style={{ color: 'rgba(255,255,255,0.8)', fontWeight: 300 }}
             >
               {t(restaurant.translations, 'tagline', restaurant.tagline, lang)}
             </p>
           )}
+
+          {/* Contact info accordion — content always in DOM for SEO */}
+          <div className="flex flex-col items-center mb-6">
+            {renderContactDropdown(splashInfoOpen, () => setSplashInfoOpen(!splashInfoOpen), 'splash')}
+          </div>
 
           {/* Table badge */}
           {table && (
@@ -1257,70 +1399,8 @@ export default function PublicMenu() {
                   </a>
                 </div>
               )}
-              {/* Info accordion toggle */}
-              <button
-                onClick={() => setInfoOpen(!infoOpen)}
-                className="flex items-center gap-1 mt-2 text-xs transition-colors"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: theme.mutedText }}
-              >
-                <span>{infoOpen ? (UI.hideInfo[toUiLang(lang)]) : (UI.showInfo[toUiLang(lang)])}</span>
-                <CaretDown
-                  size={12}
-                  style={{ transition: 'transform 0.2s', transform: infoOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                />
-              </button>
-              {/* Accordion content */}
-              {infoOpen && (
-                <div className="flex flex-col gap-2 mt-2 text-sm animate-fadeIn" style={{ color: theme.mutedText }}>
-                  {restaurant.address && (
-                    <div className="flex items-start gap-2">
-                      <MapPin size={16} className="flex-shrink-0 mt-0.5" style={{ color: theme.mutedText }} />
-                      <span className="text-xs">{restaurant.address}</span>
-                    </div>
-                  )}
-                  {restaurant.phone && (
-                    <a
-                      href={`tel:${restaurant.phone}`}
-                      className="flex items-center gap-2 hover:text-[#FF4F7A] transition-colors"
-                      style={{ color: theme.mutedText }}
-                    >
-                      <Phone size={16} className="flex-shrink-0" />
-                      <span className="text-xs">{restaurant.phone}</span>
-                    </a>
-                  )}
-                  {restaurant.working_hours && (() => {
-                    const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-                    const today = dayKeys[new Date().getDay()];
-                    const todayHours = restaurant.working_hours[today];
-                    if (!todayHours) return null;
-                    return (
-                      <div className="flex items-center gap-2">
-                        <Clock size={16} className="flex-shrink-0" style={{ color: theme.mutedText }} />
-                        <span className="text-xs flex items-center gap-1.5">
-                          <span className={`w-2 h-2 rounded-full ${todayHours.closed ? 'bg-red-500' : 'bg-green-500'}`} />
-                          {todayHours.closed ? (lang === 'tr' ? 'Bugün kapalı' : 'Closed today') : `${todayHours.open} - ${todayHours.close}`}
-                        </span>
-                      </div>
-                    );
-                  })()}
-                  {socials.length > 0 && (
-                    <div className="flex items-center gap-2 mt-1">
-                      {socials.map(({ type, url }) => (
-                        <a
-                          key={type}
-                          href={url!}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:opacity-80 transition-opacity"
-                          style={{ color: theme.mutedText }}
-                        >
-                          <SocialIcon type={type} size={14} />
-                        </a>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* Contact info accordion — content always in DOM for SEO */}
+              {renderContactDropdown(infoOpen, () => setInfoOpen(!infoOpen), 'main')}
             </div>
             {table && (
               <span
@@ -2466,7 +2546,7 @@ function ItemDetailModal({ item, allItems, lang, theme, onClose, onSelectItem, o
             <div
               className="rich-text text-sm leading-relaxed mb-4"
               style={{ color: theme.mutedText, fontWeight: 300 }}
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(description || '') }}
+              dangerouslySetInnerHTML={{ __html: sanitize(description || '') }}
             />
           )}
 

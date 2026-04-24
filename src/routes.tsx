@@ -2,7 +2,6 @@ import { lazy } from "react";
 import type { RouteRecord } from "vite-react-ssg";
 import App from "./App";
 import Index from "./pages/Index";
-import SpaShell from "./pages/SpaShell";
 import { blogPosts } from "./lib/blogData";
 
 const PublicMenu = lazy(() => import("./pages/PublicMenu"));
@@ -29,7 +28,6 @@ export const routes: RouteRecord[] = [
       },
       { path: "privacy", Component: PrivacyPolicy },
       { path: "iletisim", Component: Contact },
-      { path: "spa-shell", Component: SpaShell },
       { path: "menu/:slug", Component: PublicMenu },
       { path: "login", Component: Login },
       { path: "onboarding", Component: Onboarding },

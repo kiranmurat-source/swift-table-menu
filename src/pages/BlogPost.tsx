@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import DOMPurify from 'dompurify';
+import { useSanitize } from '../lib/sanitize';
 import { CalendarBlank, Clock, User } from "@phosphor-icons/react";
 import { LandingNavbar } from '../components/landing/Navbar1';
 import { LandingFooter } from '../components/landing/LandingFooter';
@@ -20,6 +20,7 @@ export default function BlogPost() {
   const tocItems = useMemo(() => (post ? extractTOC(post.content) : []), [post]);
   const processedContent = useMemo(() => (post ? addHeadingIds(post.content) : ''), [post]);
   const relatedPosts = useMemo(() => (post ? getRelatedPosts(post) : []), [post]);
+  const sanitizedContent = useSanitize(processedContent);
 
   if (!post) return <Navigate to="/404" replace />;
 
@@ -187,12 +188,7 @@ export default function BlogPost() {
           <article
             className="blog-content"
             style={{ flex: 1, minWidth: 0, maxWidth: 720 }}
-            dangerouslySetInnerHTML={{
-              __html:
-                typeof DOMPurify.sanitize === 'function'
-                  ? DOMPurify.sanitize(processedContent || '')
-                  : processedContent || '',
-            }}
+            dangerouslySetInnerHTML={{ __html: sanitizedContent }}
           />
 
           {/* TOC sidebar — desktop only */}
