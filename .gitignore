@@ -28,3 +28,7 @@ dist-server
 .env
 .env.*
 !.env.example
+.vercel
+
+# Local SSR debugging notes (kept locally, not committed)
+docs/ssr-debug/
