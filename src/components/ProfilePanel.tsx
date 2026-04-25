@@ -75,6 +75,8 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
   const [googleRating, setGoogleRating] = useState<number | null>(restaurant.google_rating ?? null);
   const [googleReviewCount, setGoogleReviewCount] = useState<number | null>(restaurant.google_review_count ?? null);
   const [googleRatingUpdatedAt, setGoogleRatingUpdatedAt] = useState<string | null>(restaurant.google_rating_updated_at ?? null);
+  const [latitude, setLatitude] = useState<number | null>(restaurant.latitude ?? null);
+  const [longitude, setLongitude] = useState<number | null>(restaurant.longitude ?? null);
   const [picker, setPicker] = useState<{ accept: MediaAccept; onPick: (url: string) => void } | null>(null);
   const openPicker = (accept: MediaAccept, onPick: (url: string) => void) => setPicker({ accept, onPick });
 
@@ -389,65 +391,92 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
           <label style={S.label}>Google Place ID</label>
           <input style={S.input} value={form.google_place_id} onChange={e => setForm({ ...form, google_place_id: e.target.value })} placeholder="ChIJ... (Google Maps'ten kopyalayın)" />
           <div style={{ fontSize: 10, color: theme.subtle, marginTop: 2 }}>Yüksek puanlı müşterileri Google Reviews'a yönlendirmek için gerekli</div>
-          {form.google_place_id && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
-              {googleRating ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: theme.heading }}>
-                  <Star size={16} weight="fill" style={{ color: theme.warning }} />
-                  <span style={{ fontWeight: 600, color: theme.value }}>{googleRating.toFixed(1)}</span>
-                  <span style={{ color: theme.subtle }}>({googleReviewCount || 0} yorum)</span>
-                  {googleRatingUpdatedAt && (
-                    <span style={{ color: theme.subtle, fontSize: 11, marginLeft: 2 }}>
-                      · {new Date(googleRatingUpdatedAt).toLocaleDateString('tr-TR')}
-                    </span>
+          {form.google_place_id && (() => {
+            const COOLDOWN_MS = 72 * 60 * 60 * 1000;
+            const lastFetchedMs = googleRatingUpdatedAt ? new Date(googleRatingUpdatedAt).getTime() : null;
+            const cooldownEndsAt = lastFetchedMs ? lastFetchedMs + COOLDOWN_MS : null;
+            const cooldownActive = cooldownEndsAt !== null && cooldownEndsAt > Date.now();
+            const remainingHours = cooldownActive && cooldownEndsAt
+              ? Math.ceil((cooldownEndsAt - Date.now()) / (60 * 60 * 1000))
+              : 0;
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  {googleRating ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: theme.heading }}>
+                      <Star size={16} weight="fill" style={{ color: theme.warning }} />
+                      <span style={{ fontWeight: 600, color: theme.value }}>{googleRating.toFixed(1)}</span>
+                      <span style={{ color: theme.subtle }}>({googleReviewCount || 0} yorum)</span>
+                      {googleRatingUpdatedAt && (
+                        <span style={{ color: theme.subtle, fontSize: 11, marginLeft: 2 }}>
+                          · {new Date(googleRatingUpdatedAt).toLocaleDateString('tr-TR')}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <span style={{ fontSize: 12, color: theme.subtle }}>Puan henüz çekilmedi</span>
                   )}
-                </div>
-              ) : (
-                <span style={{ fontSize: 12, color: theme.subtle }}>Puan henüz çekilmedi</span>
-              )}
-              <button
-                type="button"
-                onClick={async () => {
-                  setRatingLoading(true);
-                  try {
-                    const { data: { session } } = await supabase.auth.getSession();
-                    const res = await fetch(
-                      `${SUPABASE_URL}/functions/v1/fetch-google-rating`,
-                      {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                          'Authorization': `Bearer ${session?.access_token}`,
-                        },
-                        body: JSON.stringify({
-                          restaurant_id: restaurant.id,
-                          google_place_id: form.google_place_id,
-                        }),
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setRatingLoading(true);
+                      try {
+                        const { data: { session } } = await supabase.auth.getSession();
+                        const res = await fetch(
+                          `${SUPABASE_URL}/functions/v1/fetch-google-rating`,
+                          {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                              'Authorization': `Bearer ${session?.access_token}`,
+                            },
+                            body: JSON.stringify({
+                              restaurant_id: restaurant.id,
+                              google_place_id: form.google_place_id,
+                            }),
+                          }
+                        );
+                        const result = await res.json();
+                        if (res.status === 429 && result.error === 'cooldown_active') {
+                          setGoogleRatingUpdatedAt(
+                            new Date(new Date(result.next_available_at).getTime() - COOLDOWN_MS).toISOString()
+                          );
+                          setMsg(`${result.remaining_hours} saat sonra tekrar güncellenebilir`);
+                        } else if (result.success) {
+                          setGoogleRating(result.rating);
+                          setGoogleReviewCount(result.review_count);
+                          setLatitude(result.latitude ?? null);
+                          setLongitude(result.longitude ?? null);
+                          setGoogleRatingUpdatedAt(new Date().toISOString());
+                          setMsg('Google bilgileri güncellendi');
+                        } else {
+                          setMsg(result.error || 'Puan çekilemedi');
+                        }
+                      } catch {
+                        setMsg('Bağlantı hatası');
+                      } finally {
+                        setRatingLoading(false);
                       }
-                    );
-                    const result = await res.json();
-                    if (result.success) {
-                      setGoogleRating(result.rating);
-                      setGoogleReviewCount(result.review_count);
-                      setGoogleRatingUpdatedAt(new Date().toISOString());
-                      setMsg('Google puanı güncellendi');
-                    } else {
-                      setMsg(result.error || 'Puan çekilemedi');
-                    }
-                  } catch {
-                    setMsg('Bağlantı hatası');
-                  } finally {
-                    setRatingLoading(false);
-                  }
-                }}
-                disabled={ratingLoading}
-                style={{ fontSize: 12, color: theme.accent, fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, opacity: ratingLoading ? 0.5 : 1 }}
-              >
-                <ArrowsClockwise size={14} className={ratingLoading ? 'animate-spin' : ''} />
-                {ratingLoading ? 'Çekiliyor...' : 'Puanı Güncelle'}
-              </button>
-            </div>
-          )}
+                    }}
+                    disabled={ratingLoading || cooldownActive}
+                    style={{ fontSize: 12, color: cooldownActive ? theme.subtle : theme.accent, fontWeight: 500, background: 'none', border: 'none', cursor: cooldownActive || ratingLoading ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: 4, opacity: ratingLoading ? 0.5 : 1 }}
+                  >
+                    <ArrowsClockwise size={14} className={ratingLoading ? 'animate-spin' : ''} />
+                    {ratingLoading
+                      ? 'Çekiliyor...'
+                      : cooldownActive
+                        ? `${remainingHours} saat sonra güncellenebilir`
+                        : 'Google Bilgilerini Güncelle'}
+                  </button>
+                </div>
+                {latitude !== null && longitude !== null && (
+                  <div style={{ fontSize: 11, color: theme.subtle }}>
+                    ✓ Konum bilgisi alındı (lat: {latitude.toFixed(4)}, lng: {longitude.toFixed(4)})
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Working Hours */}

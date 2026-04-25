@@ -7,6 +7,8 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+const COOLDOWN_MS = 72 * 60 * 60 * 1000; // 72 hours
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -30,14 +32,51 @@ serve(async (req) => {
       );
     }
 
-    // Places API (New) — sadece rating ve review count çek
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // 72-hour cooldown — defense in depth (UI also enforces, but check here so direct API hits can't bypass)
+    const { data: existing, error: fetchExistingError } = await supabase
+      .from("restaurants")
+      .select("google_rating_updated_at")
+      .eq("id", restaurant_id)
+      .single();
+
+    if (fetchExistingError) {
+      console.error("Failed to read restaurant for cooldown check:", fetchExistingError);
+      return new Response(
+        JSON.stringify({ error: "Restoran bulunamadı" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (existing?.google_rating_updated_at) {
+      const lastFetched = new Date(existing.google_rating_updated_at).getTime();
+      const elapsedMs = Date.now() - lastFetched;
+
+      if (elapsedMs < COOLDOWN_MS) {
+        const remainingMs = COOLDOWN_MS - elapsedMs;
+        const remainingHours = Math.ceil(remainingMs / (60 * 60 * 1000));
+        return new Response(
+          JSON.stringify({
+            error: "cooldown_active",
+            remaining_hours: remainingHours,
+            next_available_at: new Date(lastFetched + COOLDOWN_MS).toISOString(),
+          }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // Places API (New) — rating, review count + location (lat/lng)
     const placesUrl = `https://places.googleapis.com/v1/places/${google_place_id}`;
     const placesResponse = await fetch(placesUrl, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": GOOGLE_PLACES_API_KEY,
-        "X-Goog-FieldMask": "rating,userRatingCount",
+        "X-Goog-FieldMask": "rating,userRatingCount,location",
       },
     });
 
@@ -51,19 +90,18 @@ serve(async (req) => {
     }
 
     const placesData = await placesResponse.json();
-    const rating = placesData.rating || null;
-    const reviewCount = placesData.userRatingCount || 0;
-
-    // Supabase'e kaydet
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const rating = placesData.rating ?? null;
+    const reviewCount = placesData.userRatingCount ?? 0;
+    const latitude = placesData.location?.latitude ?? null;
+    const longitude = placesData.location?.longitude ?? null;
 
     const { error: updateError } = await supabase
       .from("restaurants")
       .update({
         google_rating: rating,
         google_review_count: reviewCount,
+        latitude,
+        longitude,
         google_rating_updated_at: new Date().toISOString(),
       })
       .eq("id", restaurant_id);
@@ -81,6 +119,8 @@ serve(async (req) => {
         success: true,
         rating,
         review_count: reviewCount,
+        latitude,
+        longitude,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

@@ -8,9 +8,8 @@ import {
   Star, AppleLogo, Thermometer, MapPin, Phone, Globe, CaretDown, CaretLeft,
   ForkKnife, XCircle, Funnel, Timer, Tag, Heart, Clock, Play,
   InstagramLogo, FacebookLogo, XLogo, TiktokLogo, YoutubeLogo, LinkedinLogo,
-  WhatsappLogo,
+  WhatsappLogo, ChatCircle, NavigationArrow, X,
 } from "@phosphor-icons/react";
-import FeedbackModal from '../components/FeedbackModal';
 import { getFingerprint } from '../lib/fingerprint';
 import { AllergenBadgeList } from '../components/AllergenIcon';
 import { getTheme, type MenuTheme } from '../lib/themes';
@@ -216,6 +215,16 @@ const UI: Record<string, Record<UiLangCode, string>> = {
   minutes:          { tr: 'dk', en: 'min', ar: 'دقيقة', zh: '分钟' },
   // Feedback
   feedbackBtn:        { tr: 'Değerlendir', en: 'Rate Us', ar: 'قيّمنا', zh: '评价' },
+  bildirBtn:          { tr: 'Bildir', en: 'Notify', ar: 'إبلاغ', zh: '反馈' },
+  bildirTitle:        { tr: 'Bildir', en: 'Notify Us', ar: 'إبلاغ', zh: '反馈' },
+  bildirMessage:      { tr: 'Mesajınız', en: 'Your message', ar: 'رسالتك', zh: '您的留言' },
+  bildirMessagePh:    { tr: 'Bize iletmek istediğiniz...', en: 'What would you like to share...', ar: 'ما الذي تود إخبارنا به...', zh: '您想告诉我们...' },
+  bildirNameOpt:      { tr: 'Adınız (opsiyonel)', en: 'Your name (optional)', ar: 'اسمك (اختياري)', zh: '您的姓名（可选）' },
+  bildirPhoneOpt:     { tr: 'Telefon (opsiyonel)', en: 'Phone (optional)', ar: 'الهاتف (اختياري)', zh: '电话（可选）' },
+  bildirSubmit:       { tr: 'Gönder', en: 'Submit', ar: 'إرسال', zh: '提交' },
+  bildirSent:         { tr: 'Mesajınız iletildi, teşekkürler', en: 'Your message has been sent, thanks', ar: 'تم إرسال رسالتك، شكراً', zh: '您的留言已发送，谢谢' },
+  directionsBtn:      { tr: 'Yol Tarifi', en: 'Directions', ar: 'الاتجاهات', zh: '路线' },
+  rateOnGoogleLink:   { tr: "Google'da Değerlendir", en: 'Rate on Google', ar: 'قيّم على جوجل', zh: '在Google上评价' },
   rateExperience:     { tr: 'Deneyiminizi Değerlendirin', en: 'Rate Your Experience', ar: 'قيّم تجربتك', zh: '评价您的体验' },
   shareExperience:    { tr: 'Düşünceleriniz bizim için değerli', en: 'Your thoughts matter to us', ar: 'رأيك يهمنا', zh: '您的想法对我们很重要' },
   yourName:           { tr: 'Adınız (isteğe bağlı)', en: 'Your name (optional)', ar: 'اسمك (اختياري)', zh: '您的姓名（可选）' },
@@ -250,12 +259,7 @@ const UI: Record<string, Record<UiLangCode, string>> = {
   // Like & Review
   like:              { tr: 'Beğen', en: 'Like', ar: 'إعجاب', zh: '点赞' },
   liked:             { tr: 'Beğendiniz', en: 'Liked', ar: 'أعجبك', zh: '已点赞' },
-  reviewPromptTitle: { tr: 'Teşekkürler!', en: 'Thank you!', ar: '!شكراً', zh: '谢谢！' },
-  reviewPromptText:  { tr: "Google Maps'te de yorum bırakmak ister misiniz?", en: 'Would you like to leave a review on Google Maps?', ar: 'هل ترغب في ترك تعليق على خرائط جوجل؟', zh: '您想在Google地图上留下评论吗？' },
-  reviewButton:      { tr: "Google'da Yorum Yap", en: 'Review on Google', ar: 'تقييم على جوجل', zh: '在Google上评价' },
-  notNow:            { tr: 'Şimdi değil', en: 'Not now', ar: 'ليس الآن', zh: '以后再说' },
   reviews:           { tr: 'yorum', en: 'reviews', ar: 'تعليق', zh: '评论' },
-  writeReview:       { tr: 'Yorum Yaz', en: 'Write a Review', ar: 'اكتب تعليقاً', zh: '撰写评论' },
   // Discount
   enterDiscountCode:  { tr: 'İndirim kodu girin...', en: 'Enter discount code...', ar: '...أدخل رمز الخصم', zh: '请输入折扣码...' },
   applyCode:          { tr: 'Uygula', en: 'Apply', ar: 'تطبيق', zh: '应用' },
@@ -335,16 +339,18 @@ export default function PublicMenu() {
   const [activePromo, setActivePromo] = useState<Promo | null>(null);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
   const [demoThemeOverride, setDemoThemeOverride] = useState<string | null>(null);
-  const [showFeedback, setShowFeedback] = useState(false);
+  const [showBildir, setShowBildir] = useState(false);
+  const [bildirMessage, setBildirMessage] = useState('');
+  const [bildirName, setBildirName] = useState('');
+  const [bildirPhone, setBildirPhone] = useState('');
+  const [bildirSubmitting, setBildirSubmitting] = useState(false);
+  const [bildirToast, setBildirToast] = useState<string | null>(null);
   const cart = useCart();
   const currency = useCurrency(
     hasFeature(restaurant, 'multi_currency'),
     restaurant?.base_currency ?? 'TRY',
   );
   const { format, formatBase } = currency;
-
-  // Google Review prompt (triggered by product likes)
-  const [showReviewPrompt, setShowReviewPrompt] = useState(false);
 
   // Profile info accordion (main header + splash use independent toggles)
   const [infoOpen, setInfoOpen] = useState(false);
@@ -674,6 +680,23 @@ export default function PublicMenu() {
     }
     if (spec.length) restaurantLd.openingHours = spec;
   }
+  if (restaurant.latitude !== null && restaurant.latitude !== undefined &&
+      restaurant.longitude !== null && restaurant.longitude !== undefined) {
+    restaurantLd.geo = {
+      '@type': 'GeoCoordinates',
+      latitude: restaurant.latitude,
+      longitude: restaurant.longitude,
+    };
+  }
+  if (restaurant.google_rating && restaurant.google_review_count && restaurant.google_review_count > 0) {
+    restaurantLd.aggregateRating = {
+      '@type': 'AggregateRating',
+      ratingValue: restaurant.google_rating,
+      reviewCount: restaurant.google_review_count,
+      bestRating: 5,
+      worstRating: 1,
+    };
+  }
 
   const pageHead = (
     <Helmet>
@@ -708,6 +731,23 @@ export default function PublicMenu() {
   ) => {
     const labelColor = variant === 'splash' ? 'rgba(255,255,255,0.75)' : theme.mutedText;
     const bodyColor  = variant === 'splash' ? 'rgba(255,255,255,0.9)'  : theme.mutedText;
+    const isSplash = variant === 'splash';
+    const lat = restaurant.latitude;
+    const lng = restaurant.longitude;
+    const directionsUrl = (lat !== null && lng !== null && lat !== undefined && lng !== undefined)
+      ? `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
+      : null;
+    const reviewUrl = restaurant.google_place_id
+      ? `https://search.google.com/local/writereview?placeid=${restaurant.google_place_id}`
+      : null;
+    const panelStyle: React.CSSProperties = isSplash && open
+      ? {
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          border: '0.5px solid rgba(255,255,255,0.15)',
+          borderRadius: 12,
+          padding: 12,
+        }
+      : {};
     return (
       <>
         <button
@@ -725,12 +765,53 @@ export default function PublicMenu() {
         </button>
         <div
           className="gap-2 mt-2 text-sm"
-          style={{ display: open ? 'flex' : 'none', flexDirection: 'column', color: bodyColor }}
+          style={{ display: open ? 'flex' : 'none', flexDirection: 'column', color: bodyColor, ...panelStyle }}
         >
+          {isSplash && restaurant.google_rating && reviewUrl && (
+            <a
+              href={reviewUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              style={{ textDecoration: 'none', color: bodyColor, cursor: 'pointer' }}
+            >
+              <Star size={16} weight="fill" className="flex-shrink-0" style={{ color: '#FFC107' }} />
+              <span className="text-xs">
+                <span style={{ fontWeight: 600 }}>{restaurant.google_rating.toFixed(1)}</span>
+                {restaurant.google_review_count != null && (
+                  <span style={{ opacity: 0.8 }}> · {restaurant.google_review_count} {UI.reviews[toUiLang(lang)]}</span>
+                )}
+              </span>
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="rgba(255,255,255,0.5)"
+                strokeWidth="2"
+                style={{ marginLeft: 'auto', flexShrink: 0 }}
+              >
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
+            </a>
+          )}
           {restaurant.address && (
-            <div className="flex items-start gap-2">
+            <div className="flex items-start gap-2 flex-wrap">
               <MapPin size={16} className="flex-shrink-0 mt-0.5" style={{ color: bodyColor }} />
-              <span className="text-xs">{restaurant.address}</span>
+              <span className="text-xs" style={{ color: bodyColor }}>{restaurant.address}</span>
+              {isSplash && directionsUrl && (
+                <a
+                  href={directionsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs underline hover:opacity-80 transition-opacity"
+                  style={{ color: bodyColor }}
+                >
+                  {UI.directionsBtn[toUiLang(lang)]}
+                </a>
+              )}
             </div>
           )}
           {restaurant.phone && (
@@ -772,6 +853,234 @@ export default function PublicMenu() {
           )}
         </div>
       </>
+    );
+  };
+
+  /* ================================================================ */
+  /*  BILDIR — minimal report form, sticky across splash + menu views  */
+  /* ================================================================ */
+
+  const submitBildir = async () => {
+    if (!restaurant || !bildirMessage.trim() || bildirSubmitting) return;
+    setBildirSubmitting(true);
+    try {
+      const { error } = await supabase.from('feedback').insert({
+        restaurant_id: restaurant.id,
+        rating: null,
+        comment: bildirMessage.trim(),
+        customer_name: bildirName.trim() || null,
+        customer_phone: bildirPhone.trim() || null,
+        table_number: table || null,
+        language: lang,
+        source: 'bildir',
+      });
+      if (error) throw error;
+      setShowBildir(false);
+      setBildirMessage('');
+      setBildirName('');
+      setBildirPhone('');
+      setBildirToast(UI.bildirSent[toUiLang(lang)]);
+      setTimeout(() => setBildirToast(null), 3000);
+    } catch {
+      setBildirToast(lang === 'tr' ? 'Bir hata oluştu' : 'Something went wrong');
+      setTimeout(() => setBildirToast(null), 3000);
+    } finally {
+      setBildirSubmitting(false);
+    }
+  };
+
+  const renderBildirFab = (variant: 'splash' | 'main') => {
+    if (!hasFeature(restaurant, 'feedback')) return null;
+    const onSplash = variant === 'splash';
+    return (
+      <button
+        type="button"
+        onClick={() => setShowBildir(true)}
+        aria-label={UI.bildirBtn[toUiLang(lang)]}
+        style={{
+          position: 'fixed',
+          bottom: 24,
+          right: 24,
+          padding: '8px 16px',
+          borderRadius: 24,
+          backgroundColor: 'transparent',
+          color: onSplash ? '#FFFFFF' : theme.text,
+          border: onSplash
+            ? '0.5px solid rgba(255,255,255,0.6)'
+            : `0.5px solid ${theme.text}80`,
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          cursor: 'pointer',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          fontSize: 13,
+          fontWeight: 500,
+          zIndex: 50,
+        }}
+      >
+        <ChatCircle size={16} weight="regular" />
+        <span>{UI.bildirBtn[toUiLang(lang)]}</span>
+      </button>
+    );
+  };
+
+  const renderBildirModal = () => {
+    if (!showBildir) return null;
+    return (
+      <div
+        role="dialog"
+        aria-modal="true"
+        onClick={() => setShowBildir(false)}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0,0,0,0.6)',
+          zIndex: 100,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 16,
+        }}
+      >
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            backgroundColor: theme.bg,
+            color: theme.text,
+            borderRadius: 16,
+            padding: 20,
+            width: '100%',
+            maxWidth: 420,
+            boxShadow: '0 12px 32px rgba(0,0,0,0.3)',
+            fontFamily: bodyFont,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <h3 style={{ fontSize: 18, fontWeight: 600, margin: 0 }}>{UI.bildirTitle[toUiLang(lang)]}</h3>
+            <button
+              type="button"
+              onClick={() => setShowBildir(false)}
+              aria-label="Close"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: theme.text, padding: 4 }}
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 500, display: 'block', marginBottom: 4 }}>
+                {UI.bildirMessage[toUiLang(lang)]} <span style={{ color: '#FF4F7A' }}>*</span>
+              </label>
+              <textarea
+                value={bildirMessage}
+                onChange={(e) => setBildirMessage(e.target.value)}
+                placeholder={UI.bildirMessagePh[toUiLang(lang)]}
+                rows={4}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: 8,
+                  border: `1px solid ${theme.text}33`,
+                  backgroundColor: 'transparent',
+                  color: theme.text,
+                  fontSize: 14,
+                  fontFamily: bodyFont,
+                  resize: 'vertical',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 500, display: 'block', marginBottom: 4 }}>
+                {UI.bildirNameOpt[toUiLang(lang)]}
+              </label>
+              <input
+                type="text"
+                value={bildirName}
+                onChange={(e) => setBildirName(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  borderRadius: 8,
+                  border: `1px solid ${theme.text}33`,
+                  backgroundColor: 'transparent',
+                  color: theme.text,
+                  fontSize: 14,
+                  fontFamily: bodyFont,
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 500, display: 'block', marginBottom: 4 }}>
+                {UI.bildirPhoneOpt[toUiLang(lang)]}
+              </label>
+              <input
+                type="tel"
+                value={bildirPhone}
+                onChange={(e) => setBildirPhone(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  borderRadius: 8,
+                  border: `1px solid ${theme.text}33`,
+                  backgroundColor: 'transparent',
+                  color: theme.text,
+                  fontSize: 14,
+                  fontFamily: bodyFont,
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={submitBildir}
+              disabled={!bildirMessage.trim() || bildirSubmitting}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                borderRadius: 10,
+                backgroundColor: '#FF4F7A',
+                color: '#FFFFFF',
+                border: 'none',
+                cursor: bildirMessage.trim() && !bildirSubmitting ? 'pointer' : 'not-allowed',
+                opacity: bildirMessage.trim() && !bildirSubmitting ? 1 : 0.5,
+                fontSize: 15,
+                fontWeight: 600,
+                marginTop: 4,
+                fontFamily: bodyFont,
+              }}
+            >
+              {bildirSubmitting ? '…' : UI.bildirSubmit[toUiLang(lang)]}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderBildirToast = () => {
+    if (!bildirToast) return null;
+    return (
+      <div
+        style={{
+          position: 'fixed',
+          bottom: 80,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          backgroundColor: 'rgba(28,28,30,0.92)',
+          color: '#FFFFFF',
+          padding: '10px 18px',
+          borderRadius: 24,
+          fontSize: 13,
+          fontWeight: 500,
+          zIndex: 110,
+          boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+        }}
+      >
+        {bildirToast}
+      </div>
     );
   };
 
@@ -997,62 +1306,9 @@ export default function PublicMenu() {
           </a>
         </div>
 
-        {/* Floating Feedback Pill */}
-        {hasFeature(restaurant, 'feedback') && (
-          <button
-            type="button"
-            onClick={() => setShowFeedback(true)}
-            aria-label={UI.feedbackBtn[toUiLang(lang)]}
-            style={{
-              position: 'fixed',
-              bottom: 24,
-              right: 24,
-              padding: '8px 16px',
-              borderRadius: 24,
-              backgroundColor: 'rgba(28,28,30,0.8)',
-              color: '#FFFFFF',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              fontSize: 13,
-              fontWeight: 500,
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
-              zIndex: 50,
-            }}
-          >
-            <Star size={16} weight="thin" />
-            <span>{UI.feedbackBtn[toUiLang(lang)]}</span>
-          </button>
-        )}
-
-        {showFeedback && (
-          <FeedbackModal
-            restaurantId={restaurant.id}
-            googlePlaceId={restaurant.google_place_id}
-            tableNumber={table}
-            lang={lang}
-            theme={theme}
-            ui={{
-              rateExperience: UI.rateExperience[toUiLang(lang)],
-              shareExperience: UI.shareExperience[toUiLang(lang)],
-              yourName: UI.yourName[toUiLang(lang)],
-              submit: UI.fbSubmit[toUiLang(lang)],
-              thankYou: UI.thankYou[toUiLang(lang)],
-              feedbackReceived: UI.feedbackReceived[toUiLang(lang)],
-              feedbackReceivedLow: UI.feedbackReceivedLow[toUiLang(lang)],
-              rateOnGoogle: UI.rateOnGoogle[toUiLang(lang)],
-              googleHelps: UI.googleHelps[toUiLang(lang)],
-              rateOnGoogleBtn: UI.rateOnGoogleBtn[toUiLang(lang)],
-              noThanks: UI.noThanks[toUiLang(lang)],
-              ok: UI.ok[toUiLang(lang)],
-            }}
-            onClose={() => setShowFeedback(false)}
-          />
-        )}
+        {renderBildirFab('splash')}
+        {renderBildirModal()}
+        {renderBildirToast()}
       </div>
     );
   }
@@ -1291,6 +1547,23 @@ export default function PublicMenu() {
                 sameAs: restaurant.google_place_id
                   ? [`https://www.google.com/maps/place/?q=place_id:${restaurant.google_place_id}`]
                   : undefined,
+                geo: (restaurant.latitude !== null && restaurant.latitude !== undefined &&
+                      restaurant.longitude !== null && restaurant.longitude !== undefined)
+                  ? {
+                      '@type': 'GeoCoordinates',
+                      latitude: restaurant.latitude,
+                      longitude: restaurant.longitude,
+                    }
+                  : undefined,
+                aggregateRating: (restaurant.google_rating && restaurant.google_review_count && restaurant.google_review_count > 0)
+                  ? {
+                      '@type': 'AggregateRating',
+                      ratingValue: restaurant.google_rating,
+                      reviewCount: restaurant.google_review_count,
+                      bestRating: 5,
+                      worstRating: 1,
+                    }
+                  : undefined,
                 potentialAction: {
                   '@type': 'ViewAction',
                   target: canonicalUrl,
@@ -1370,46 +1643,6 @@ export default function PublicMenu() {
                 <p className="text-xs mt-1 leading-relaxed" style={{ color: theme.mutedText, fontWeight: 300 }}>
                   {t(restaurant.translations, 'tagline', restaurant.tagline, lang)}
                 </p>
-              )}
-              {/* Google Rating — always visible */}
-              {restaurant.google_rating && restaurant.google_place_id && (
-                <div className="flex flex-col items-start gap-2 mt-3">
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-0.5">
-                      {[1, 2, 3, 4, 5].map((s) => (
-                        <Star
-                          key={s}
-                          size={18}
-                          weight={restaurant.google_rating! >= s ? "fill" : "regular"}
-                          style={{ color: restaurant.google_rating! >= s - 0.5 ? '#F59E0B' : theme.mutedText, opacity: restaurant.google_rating! >= s - 0.5 ? 1 : 0.3 }}
-                        />
-                      ))}
-                    </div>
-                    <span className="text-sm font-bold" style={{ color: theme.text }}>
-                      {restaurant.google_rating.toFixed(1)}
-                    </span>
-                    {(restaurant.google_review_count ?? 0) > 0 && (
-                      <span className="text-xs" style={{ color: theme.mutedText }}>
-                        ({restaurant.google_review_count} {UI.reviews[toUiLang(lang)]})
-                      </span>
-                    )}
-                  </div>
-                  <a
-                    href={`https://search.google.com/local/writereview?placeid=${restaurant.google_place_id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-colors"
-                    style={{ color: theme.mutedText, borderColor: theme.mutedText + '44' }}
-                  >
-                    <svg width={14} height={14} viewBox="0 0 24 24" fill="none">
-                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
-                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                    </svg>
-                    {UI.writeReview[toUiLang(lang)]}
-                  </a>
-                </div>
               )}
               {/* Contact info accordion — content always in DOM for SEO */}
               {renderContactDropdown(infoOpen, () => setInfoOpen(!infoOpen), 'main')}
@@ -1646,7 +1879,7 @@ export default function PublicMenu() {
               return (
                 <div className={viewMode === 'grid' ? 'grid grid-cols-2' : 'flex flex-col'} style={{ gap: 8 }}>
                   {filteredItems.map((item) => (
-                    <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} likeCount={likeCounts[item.id]} isLiked={likedItems.has(item.id)} onLike={likesEnabled ? async (id) => { const ok = await toggleLike(id, restaurant!.id); if (ok && restaurant?.google_place_id) setTimeout(() => setShowReviewPrompt(true), 800); } : undefined} format={format} />
+                    <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} likeCount={likeCounts[item.id]} isLiked={likedItems.has(item.id)} onLike={likesEnabled ? async (id) => { await toggleLike(id, restaurant!.id); } : undefined} format={format} />
 ))}
                   {filteredItems.length === 0 && (
                     <p className="text-center text-sm py-8 col-span-2" style={{ color: theme.mutedText }}>{UI.noItemsInCat[toUiLang(lang)]}</p>
@@ -1661,7 +1894,7 @@ export default function PublicMenu() {
                 {directItems.length > 0 && (
                   <div className={viewMode === 'grid' ? 'grid grid-cols-2' : 'flex flex-col'} style={{ gap: 8, marginBottom: 32 }}>
                     {directItems.map((item) => (
-                      <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} likeCount={likeCounts[item.id]} isLiked={likedItems.has(item.id)} onLike={likesEnabled ? async (id) => { const ok = await toggleLike(id, restaurant!.id); if (ok && restaurant?.google_place_id) setTimeout(() => setShowReviewPrompt(true), 800); } : undefined} format={format} />
+                      <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} likeCount={likeCounts[item.id]} isLiked={likedItems.has(item.id)} onLike={likesEnabled ? async (id) => { await toggleLike(id, restaurant!.id); } : undefined} format={format} />
   ))}
                   </div>
                 )}
@@ -1685,7 +1918,7 @@ export default function PublicMenu() {
                         </div>
                         <div className={viewMode === 'grid' ? 'grid grid-cols-2' : 'flex flex-col'} style={{ gap: 8 }}>
                           {childItems.map((item) => (
-                            <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} likeCount={likeCounts[item.id]} isLiked={likedItems.has(item.id)} onLike={likesEnabled ? async (id) => { const ok = await toggleLike(id, restaurant!.id); if (ok && restaurant?.google_place_id) setTimeout(() => setShowReviewPrompt(true), 800); } : undefined} format={format} />
+                            <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} likeCount={likeCounts[item.id]} isLiked={likedItems.has(item.id)} onLike={likesEnabled ? async (id) => { await toggleLike(id, restaurant!.id); } : undefined} format={format} />
         ))}
                         </div>
                       </div>
@@ -1720,7 +1953,7 @@ export default function PublicMenu() {
               </div>
               <div className={viewMode === 'grid' ? 'grid grid-cols-2' : 'flex flex-col'} style={{ gap: 8 }}>
                 {catItems.map((item) => (
-                  <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} likeCount={likeCounts[item.id]} isLiked={likedItems.has(item.id)} onLike={likesEnabled ? async (id) => { const ok = await toggleLike(id, restaurant!.id); if (ok && restaurant?.google_place_id) setTimeout(() => setShowReviewPrompt(true), 800); } : undefined} format={format} />
+                  <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} likeCount={likeCounts[item.id]} isLiked={likedItems.has(item.id)} onLike={likesEnabled ? async (id) => { await toggleLike(id, restaurant!.id); } : undefined} format={format} />
                 ))}
               </div>
               {subgroups.map((sg) => (
@@ -1735,7 +1968,7 @@ export default function PublicMenu() {
                   </div>
                   <div className={viewMode === 'grid' ? 'grid grid-cols-2' : 'flex flex-col'} style={{ gap: 8 }}>
                     {sg.items.map((item) => (
-                      <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} likeCount={likeCounts[item.id]} isLiked={likedItems.has(item.id)} onLike={likesEnabled ? async (id) => { const ok = await toggleLike(id, restaurant!.id); if (ok && restaurant?.google_place_id) setTimeout(() => setShowReviewPrompt(true), 800); } : undefined} format={format} />
+                      <MenuItemCard key={item.id} item={item} lang={lang} theme={theme} onSelect={setSelectedItem} viewMode={viewMode} onAddToCart={handleCardAdd} cartQty={cart.getItemQuantity(item.id)} likeCount={likeCounts[item.id]} isLiked={likedItems.has(item.id)} onLike={likesEnabled ? async (id) => { await toggleLike(id, restaurant!.id); } : undefined} format={format} />
   ))}
                   </div>
                 </div>
@@ -1837,7 +2070,7 @@ export default function PublicMenu() {
 
       {/* Item Detail Modal */}
       {selectedItem && (
-        <ItemDetailModal item={selectedItem} allItems={items} lang={lang} theme={theme} onClose={() => setSelectedItem(null)} onSelectItem={setSelectedItem} onAddToCart={cartEnabled ? handleAddToCart : undefined} likeCount={likeCounts[selectedItem.id]} isLiked={likedItems.has(selectedItem.id)} onLike={likesEnabled ? async (id) => { const ok = await toggleLike(id, restaurant!.id); if (ok && restaurant?.google_place_id) setTimeout(() => setShowReviewPrompt(true), 800); } : undefined} format={format} />
+        <ItemDetailModal item={selectedItem} allItems={items} lang={lang} theme={theme} onClose={() => setSelectedItem(null)} onSelectItem={setSelectedItem} onAddToCart={cartEnabled ? handleAddToCart : undefined} likeCount={likeCounts[selectedItem.id]} isLiked={likedItems.has(selectedItem.id)} onLike={likesEnabled ? async (id) => { await toggleLike(id, restaurant!.id); } : undefined} format={format} />
       )}
 
       {/* Promo Popup */}
@@ -1879,43 +2112,9 @@ export default function PublicMenu() {
         />
       )}
 
-      {/* Google Review Prompt */}
-      {showReviewPrompt && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 backdrop-blur-sm"
-          onClick={() => setShowReviewPrompt(false)}
-        >
-          <style>{`@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }`}</style>
-          <div
-            className="bg-white rounded-t-2xl w-full max-w-lg p-6 pb-8"
-            style={{ animation: 'slideUp 0.3s ease-out' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="text-center mb-4">
-              <Heart size={32} weight="fill" className="text-[#FF4F7A] mx-auto mb-2" />
-              <h3 className="text-lg font-semibold">{UI.reviewPromptTitle[toUiLang(lang)]}</h3>
-              <p className="text-sm text-gray-500 mt-1">{UI.reviewPromptText[toUiLang(lang)]}</p>
-            </div>
-            <div className="flex flex-col gap-3">
-              <a
-                href={`https://search.google.com/local/writereview?placeid=${restaurant.google_place_id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full py-3 bg-[#FF4F7A] text-white rounded-xl text-center font-medium hover:bg-[#e8456e] transition-colors"
-                onClick={() => setShowReviewPrompt(false)}
-              >
-                {UI.reviewButton[toUiLang(lang)]}
-              </a>
-              <button
-                onClick={() => setShowReviewPrompt(false)}
-                className="w-full py-3 text-gray-500 text-sm"
-              >
-                {UI.notNow[toUiLang(lang)]}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {renderBildirFab('main')}
+      {renderBildirModal()}
+      {renderBildirToast()}
     </div>
   );
 }

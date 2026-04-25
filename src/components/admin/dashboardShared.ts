@@ -27,6 +27,8 @@ export type Restaurant = {
   google_rating: number | null;
   google_review_count: number | null;
   google_rating_updated_at: string | null;
+  latitude: number | null;
+  longitude: number | null;
   menu_view_mode: string | null;
   admin_theme: string | null;
   price_effective_date?: string | null;
