@@ -32,3 +32,24 @@ dist-server
 
 # Local SSR debugging notes (kept locally, not committed)
 docs/ssr-debug/
+
+# Working prompts, audit reports, and session runbooks (forward-only)
+# Historical .md files committed before 2026-04-25 remain tracked.
+# New .md files are local working materials by default.
+# Wrap-ups go to Claude Project, code goes here.
+*.md
+
+# But keep these tracked
+!README.md
+!LICENSE.md
+!LICENSE
+!CHANGELOG.md
+!CONTRIBUTING.md
+!CLAUDE.md
+!SKILL.md
+
+# And keep .md files inside these directories tracked
+!src/**/*.md
+!.claude/**/*.md
+!supabase/**/*.md
+!docs/**/*.md
