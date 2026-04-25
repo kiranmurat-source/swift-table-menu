@@ -38,6 +38,7 @@ import QuantitySelector from '../components/QuantitySelector';
 import CartBottomBar from '../components/CartBottomBar';
 import CartDrawer from '../components/CartDrawer';
 import { useLikes } from '../hooks/useLikes';
+import { hasFeature } from '../lib/planFeatures';
 import { useCurrency } from '../hooks/useCurrency';
 import CurrencyDropdown from '../components/CurrencyDropdown';
 import { demoRestaurant, demoCategories, demoItems } from '../data/demoMenuData';
@@ -337,7 +338,7 @@ export default function PublicMenu() {
   const [showFeedback, setShowFeedback] = useState(false);
   const cart = useCart();
   const currency = useCurrency(
-    restaurant?.feature_multi_currency === true,
+    hasFeature(restaurant, 'multi_currency'),
     restaurant?.base_currency ?? 'TRY',
   );
   const { format, formatBase } = currency;
@@ -352,7 +353,7 @@ export default function PublicMenu() {
   const [todayHours, setTodayHours] = useState<{ open: string; close: string; closed: boolean } | null>(null);
 
   // Product likes — hook skips its Supabase calls when the feature is disabled.
-  const likesEnabled = restaurant?.feature_likes !== false;
+  const likesEnabled = hasFeature(restaurant, 'likes');
   const { likeCounts, likedItems, toggleLike } = useLikes(restaurant?.id, likesEnabled);
 
   const theme = useMemo<MenuTheme>(
@@ -989,7 +990,7 @@ export default function PublicMenu() {
         </div>
 
         {/* Floating Feedback Pill */}
-        {restaurant.feature_feedback !== false && (
+        {hasFeature(restaurant, 'feedback') && (
           <button
             type="button"
             onClick={() => setShowFeedback(true)}
@@ -1175,7 +1176,7 @@ export default function PublicMenu() {
     });
   };
 
-  const cartEnabled = restaurant.feature_cart !== false;
+  const cartEnabled = hasFeature(restaurant, 'cart');
 
   const handleCardAdd = cartEnabled ? (menuItem: MenuItem) => {
     if (hasVariants(menuItem)) {
@@ -1738,7 +1739,7 @@ export default function PublicMenu() {
       {/* Bottom bars container */}
       <div className="fixed bottom-0 left-0 right-0 z-40" style={{ maxWidth: 480, margin: '0 auto' }}>
         {/* Cart bottom bar — only if cart feature enabled */}
-        {restaurant.feature_cart !== false && (
+        {hasFeature(restaurant, 'cart') && (
           <CartBottomBar
             totalItems={cart.totalItems}
             totalAmount={cart.totalAmount}
@@ -1749,7 +1750,7 @@ export default function PublicMenu() {
           />
         )}
         {/* Waiter call bar — only if feature enabled */}
-        {table && restaurant.feature_waiter_calls !== false && (
+        {table && hasFeature(restaurant, 'waiter_calls') && (
           <WaiterCallBar restaurantId={restaurant.id} tableNumber={table} theme={theme} language={lang} />
         )}
         {/* Powered by (no table, no cart) */}
@@ -1813,9 +1814,9 @@ export default function PublicMenu() {
           }}
           restaurantId={restaurant.id}
           restaurantName={restaurant.name}
-          whatsappNumber={restaurant.feature_whatsapp_order !== false ? restaurant.social_whatsapp : null}
+          whatsappNumber={hasFeature(restaurant, 'whatsapp_order') ? restaurant.social_whatsapp : null}
           tableNumber={table}
-          discountEnabled={restaurant.feature_discount_codes !== false}
+          discountEnabled={hasFeature(restaurant, 'discount_codes')}
           format={format}
           formatBase={formatBase}
           currencySymbol={currency.selectedRate.symbol || '₺'}

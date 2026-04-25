@@ -2,7 +2,9 @@ import React from 'react';
 import type { AdminTheme } from '../../lib/adminTheme';
 
 export type Restaurant = {
-  id: string; name: string; slug: string; enabled_languages: string[]; current_plan: string | null;
+  id: string; name: string; slug: string; enabled_languages: string[];
+  current_plan: 'basic' | 'premium' | 'enterprise';
+  plan_overrides: Record<string, boolean>;
   logo_url: string | null; cover_url: string | null; cover_image_url: string | null;
   splash_video_url: string | null;
   address: string | null; phone: string | null; tagline: string | null;
@@ -11,14 +13,15 @@ export type Restaurant = {
   social_x: string | null; social_tiktok: string | null; social_website: string | null;
   social_whatsapp: string | null; social_google_maps: string | null;
   working_hours: Record<string, { open: string; close: string; closed: boolean }> | null;
-  feature_waiter_calls: boolean;
-  feature_cart: boolean;
-  feature_whatsapp_order: boolean;
-  feature_feedback: boolean;
-  feature_discount_codes: boolean;
-  feature_likes: boolean;
+  /** @deprecated Use hasFeature(restaurant, 'key') from @/lib/planFeatures. Field kept until cleanup migration drops DB columns. */
+  feature_waiter_calls?: boolean;
+  feature_cart?: boolean;
+  feature_whatsapp_order?: boolean;
+  feature_feedback?: boolean;
+  feature_discount_codes?: boolean;
+  feature_likes?: boolean;
   feature_reviews: boolean;
-  feature_multi_currency: boolean;
+  feature_multi_currency?: boolean;
   base_currency: string;
   google_place_id: string | null;
   google_rating: number | null;

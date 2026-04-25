@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { StatCardSkeleton } from '../components/Skeleton';
 import { supabase } from '../lib/supabase';
-import { CheckCircle, XCircle, PencilSimple, Storefront, Money, Warning, ListBullets, Camera, Calendar, Kanban, CurrencyDollar, Timer, ListChecks, Pulse, Rows } from "@phosphor-icons/react";
+import { CheckCircle, XCircle, PencilSimple, Storefront, Money, Warning, ListBullets, Camera, Calendar, Kanban, CurrencyDollar, Timer, ListChecks, Pulse, Rows, Sliders } from "@phosphor-icons/react";
+import { PLAN_FEATURES, type FeatureKey, type PlanTier } from '../lib/planFeatures';
 
-type Restaurant = { id: string; name: string; slug: string; is_active: boolean; subscription_status: string; current_plan: string; created_at: string; address: string | null; phone: string | null; };
+type Restaurant = { id: string; name: string; slug: string; is_active: boolean; subscription_status: string; current_plan: string; created_at: string; address: string | null; phone: string | null; plan_overrides: Record<string, boolean> | null; };
 type Profile = { id: string; email: string; full_name: string | null; role: string; restaurant_id: string | null; };
 type Plan = { id: string; name: string; price_monthly: number | null; price_yearly: number; features: string[]; sort_order: number; };
 type Subscription = { id: string; restaurant_id: string; plan_id: string; start_date: string; end_date: string; status: string; payment_method: string; notes: string | null; };
@@ -62,6 +63,7 @@ export default function SuperAdminDashboard() {
   const [editPFValue, setEditPFValue] = useState('');
   const [editingRest, setEditingRest] = useState<string | null>(null);
   const [editRestForm, setEditRestForm] = useState({ name: '', slug: '', address: '', phone: '' });
+  const [overridesOpen, setOverridesOpen] = useState<string | null>(null);
   const [editingUser, setEditingUser] = useState<string | null>(null);
   const [editUserForm, setEditUserForm] = useState({ full_name: '', restaurant_id: '' });
   const [changingPlan, setChangingPlan] = useState<string | null>(null);
@@ -329,6 +331,25 @@ export default function SuperAdminDashboard() {
     loadAll();
   }
 
+  // --- Plan overrides ---
+  async function updateOverride(restaurantId: string, key: FeatureKey, newState: 'inherit' | 'on' | 'off') {
+    const r = restaurants.find(x => x.id === restaurantId);
+    if (!r) return;
+    const newOverrides = { ...(r.plan_overrides ?? {}) };
+    if (newState === 'inherit') {
+      delete newOverrides[key];
+    } else {
+      newOverrides[key] = newState === 'on';
+    }
+    const { error } = await supabase
+      .from('restaurants')
+      .update({ plan_overrides: newOverrides })
+      .eq('id', restaurantId);
+    if (error) { setMsg('Override guncellenmedi: ' + error.message); return; }
+    setMsg('Override guncellendi');
+    loadRestaurants();
+  }
+
   // --- Feature ---
   async function addFeature(e: React.FormEvent) {
     e.preventDefault(); setSaving(true); setMsg('');
@@ -489,8 +510,46 @@ export default function SuperAdminDashboard() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ ...S.badge, ...statusColor(r.subscription_status) }}>{r.subscription_status}</span>
                   <button onClick={() => toggleActive(r.id, r.is_active)} style={{ ...S.btnSm, color: r.is_active ? '#166534' : '#991B1B' }}>{r.is_active ? 'Aktif' : 'Pasif'}</button>
+                  <button onClick={() => setOverridesOpen(overridesOpen === r.id ? null : r.id)} style={S.btnSm} title="Plan Overrides"><Sliders size={14} /></button>
                   <button onClick={() => { setEditingRest(r.id); setEditRestForm({ name: r.name, slug: r.slug, address: r.address || '', phone: r.phone || '' }); }} style={S.btnSm}><PencilSimple size={14} /></button>
                   <button onClick={() => deleteRestaurant(r.id)} style={S.btnDanger}>Sil</button>
+                </div>
+              </div>
+            )}
+            {overridesOpen === r.id && (
+              <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #E5E5E3' }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#1C1C1E', marginBottom: 4 }}>Plan Overrides</div>
+                <div style={{ fontSize: 12, color: '#6B6B6F', marginBottom: 12 }}>
+                  Plan: <strong>{r.current_plan || 'basic'}</strong>. "Inherit" plan default'unu kullanir, "On" zorla acar, "Off" zorla kapatir.
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                  {(Object.keys(PLAN_FEATURES.enterprise) as FeatureKey[]).map((key) => {
+                    const planTier = ((r.current_plan || 'basic').toLowerCase() as PlanTier);
+                    const planDefault = PLAN_FEATURES[planTier]?.[key] ?? false;
+                    const overrideValue = (r.plan_overrides ?? {})[key];
+                    const state: 'inherit' | 'on' | 'off' =
+                      overrideValue === undefined ? 'inherit' : overrideValue === true ? 'on' : 'off';
+                    const isOverridden = state !== 'inherit';
+                    return (
+                      <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #F0F0EC' }}>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <code style={{ fontSize: 12, color: '#1C1C1E', fontWeight: isOverridden ? 600 : 400 }}>{key}</code>
+                          <span style={{ fontSize: 11, color: '#A0A0A0', marginLeft: 8 }}>
+                            (plan default: {planDefault ? 'on' : 'off'})
+                          </span>
+                        </div>
+                        <select
+                          value={state}
+                          onChange={(e) => updateOverride(r.id, key, e.target.value as 'inherit' | 'on' | 'off')}
+                          style={{ ...S.input, width: 110, padding: '6px 10px', fontSize: 12 }}
+                        >
+                          <option value="inherit">Inherit</option>
+                          <option value="on">On</option>
+                          <option value="off">Off</option>
+                        </select>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

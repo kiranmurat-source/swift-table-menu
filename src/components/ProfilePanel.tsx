@@ -9,6 +9,11 @@ import MediaPickerModal, { type MediaAccept, attachMediaUsage, detachMediaUsage 
 
 const SUPABASE_URL = 'https://qmnrawqvkwehufebbkxp.supabase.co';
 
+// LEGACY: feature_* toggles deprecated 25 Apr 2026.
+// Features now controlled by plan tier + plan_overrides JSONB (super admin only).
+// Keeping code dormant until cleanup migration removes feature_* DB columns.
+const SHOW_LEGACY_FEATURE_TOGGLES = false;
+
 function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; onUpdate: (r: Restaurant) => void; theme: AdminTheme }) {
   const S = useMemo(() => makeStyles(theme), [theme]);
   const [currentTheme, setCurrentTheme] = useState<string>(restaurant.theme_color || 'white');
@@ -504,38 +509,44 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
           </div>
         </div>
 
-        {/* Feature Toggles */}
-        <h4 style={{ fontSize: 14, fontWeight: 600, color: theme.value, marginTop: 8, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-          <SquaresFour size={16} /> Menü Özellikleri
-        </h4>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
-          {([
-            { key: 'feature_waiter_calls' as const, label: 'Garson Çağırma', desc: 'QR menüde garson çağırma butonları' },
-            { key: 'feature_cart' as const, label: 'Sepet', desc: 'Müşteriler sepete ürün ekleyebilir' },
-            { key: 'feature_whatsapp_order' as const, label: 'WhatsApp Sipariş', desc: 'Sepetten WhatsApp ile sipariş gönderme' },
-            { key: 'feature_feedback' as const, label: 'Geri Bildirim', desc: 'Müşterilerden yıldız puanı ve yorum toplayın' },
-            { key: 'feature_reviews' as const, label: 'Müşteri Yorumları', desc: 'Menü sayfasında müşteri yorumları bölümü göster' },
-            { key: 'feature_discount_codes' as const, label: 'İndirim Kodları', desc: 'Müşteriler sepette indirim kodu kullanabilir' },
-            { key: 'feature_likes' as const, label: 'Ürün Beğeni', desc: 'Müşteriler ürünleri beğenebilir (kalp butonu)' },
-            { key: 'feature_multi_currency' as const, label: 'Çoklu Para Birimi', desc: 'Menüde TCMB günlük kuru ile döviz fiyat gösterimi' },
-          ]).map(feat => (
-            <label key={feat.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 8, border: `1px solid ${theme.border}`, backgroundColor: form[feat.key] ? theme.successBg : theme.pageBg, cursor: 'pointer' }}>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: theme.value, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  {feat.key === 'feature_multi_currency' && <CurrencyCircleDollar size={14} weight="thin" />}
-                  {feat.label}
-                </div>
-                <div style={{ fontSize: 11, color: theme.heading }}>{feat.desc}</div>
-              </div>
-              <input
-                type="checkbox"
-                checked={form[feat.key]}
-                onChange={e => setForm({ ...form, [feat.key]: e.target.checked })}
-                style={{ width: 18, height: 18, cursor: 'pointer' }}
-              />
-            </label>
-          ))}
-        </div>
+        {/* LEGACY: feature_* toggles — hidden 25 Apr 2026.
+            Features now controlled by plan tier + plan_overrides (super admin).
+            Code kept dormant until cleanup migration drops feature_* DB columns. */}
+        {SHOW_LEGACY_FEATURE_TOGGLES && (
+          <>
+            <h4 style={{ fontSize: 14, fontWeight: 600, color: theme.value, marginTop: 8, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <SquaresFour size={16} /> Menü Özellikleri
+            </h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+              {([
+                { key: 'feature_waiter_calls' as const, label: 'Garson Çağırma', desc: 'QR menüde garson çağırma butonları' },
+                { key: 'feature_cart' as const, label: 'Sepet', desc: 'Müşteriler sepete ürün ekleyebilir' },
+                { key: 'feature_whatsapp_order' as const, label: 'WhatsApp Sipariş', desc: 'Sepetten WhatsApp ile sipariş gönderme' },
+                { key: 'feature_feedback' as const, label: 'Geri Bildirim', desc: 'Müşterilerden yıldız puanı ve yorum toplayın' },
+                { key: 'feature_reviews' as const, label: 'Müşteri Yorumları', desc: 'Menü sayfasında müşteri yorumları bölümü göster' },
+                { key: 'feature_discount_codes' as const, label: 'İndirim Kodları', desc: 'Müşteriler sepette indirim kodu kullanabilir' },
+                { key: 'feature_likes' as const, label: 'Ürün Beğeni', desc: 'Müşteriler ürünleri beğenebilir (kalp butonu)' },
+                { key: 'feature_multi_currency' as const, label: 'Çoklu Para Birimi', desc: 'Menüde TCMB günlük kuru ile döviz fiyat gösterimi' },
+              ]).map(feat => (
+                <label key={feat.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderRadius: 8, border: `1px solid ${theme.border}`, backgroundColor: form[feat.key] ? theme.successBg : theme.pageBg, cursor: 'pointer' }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: theme.value, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {feat.key === 'feature_multi_currency' && <CurrencyCircleDollar size={14} weight="thin" />}
+                      {feat.label}
+                    </div>
+                    <div style={{ fontSize: 11, color: theme.heading }}>{feat.desc}</div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={form[feat.key]}
+                    onChange={e => setForm({ ...form, [feat.key]: e.target.checked })}
+                    style={{ width: 18, height: 18, cursor: 'pointer' }}
+                  />
+                </label>
+              ))}
+            </div>
+          </>
+        )}
 
         {/* Theme Selector */}
         <h4 style={{ fontSize: 14, fontWeight: 600, color: theme.value, marginTop: 8, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>

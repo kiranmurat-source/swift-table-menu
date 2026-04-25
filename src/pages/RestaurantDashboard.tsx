@@ -23,6 +23,7 @@ import DiscountCodesPanel from '../components/DiscountCodesPanel';
 import LikesPanel from '../components/LikesPanel';
 import CustomersPanel from '../components/CustomersPanel';
 import NotificationsPanel from '../components/NotificationsPanel';
+import { hasFeature } from '../lib/planFeatures';
 import { getAdminTheme, type AdminTheme } from '../lib/adminTheme';
 import {
   DndContext,
@@ -1437,8 +1438,8 @@ export default function RestaurantDashboard() {
           {activeTab === 'dashboard' && (
             <RestaurantAnalytics
               restaurantId={restaurant.id}
-              featureWaiterCalls={restaurant.feature_waiter_calls !== false}
-              featureFeedback={restaurant.feature_feedback !== false}
+              featureWaiterCalls={hasFeature(restaurant, 'waiter_calls')}
+              featureFeedback={hasFeature(restaurant, 'feedback')}
               featureReviews={restaurant.feature_reviews !== false}
               onNavigate={(tab) => setActiveTab(tab as typeof activeTab)}
             />
