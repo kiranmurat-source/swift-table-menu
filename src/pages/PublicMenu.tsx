@@ -901,8 +901,13 @@ export default function PublicMenu() {
           {/* Table badge */}
           {table && (
             <div
-              className="text-sm px-5 py-2 rounded-xl mb-6 shadow-lg"
-              style={{ backgroundColor: theme.accent, color: theme.key === 'white' ? '#FFFFFF' : theme.bg, fontWeight: 600 }}
+              className="text-sm px-5 py-2 rounded-xl mb-6"
+              style={{
+                backgroundColor: 'transparent',
+                color: '#FFFFFF',
+                border: '1px solid rgba(255, 255, 255, 0.8)',
+                fontWeight: 600,
+              }}
             >
               {UI.table[toUiLang(lang)]} {table}
             </div>
@@ -946,13 +951,16 @@ export default function PublicMenu() {
               const next = promos.find(isPromoVisible);
               if (next) setTimeout(() => setActivePromo(next), 500);
             }}
-            className="text-base px-10 py-3.5 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+            className="text-base px-10 py-3.5 rounded-full transition-all duration-200 hover:scale-105"
             style={{
-              backgroundColor: theme.accent,
-              color: theme.key === 'white' ? '#FFFFFF' : theme.bg,
+              backgroundColor: 'transparent',
+              color: '#FFFFFF',
+              border: '2px solid #FFFFFF',
               fontFamily: bodyFont,
               fontWeight: 500,
             }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
           >
             {UI.viewMenu[toUiLang(lang)]}
           </button>
@@ -1406,17 +1414,17 @@ export default function PublicMenu() {
               {/* Contact info accordion — content always in DOM for SEO */}
               {renderContactDropdown(infoOpen, () => setInfoOpen(!infoOpen), 'main')}
             </div>
-            {table && (
-              <span
-                className="text-xs px-3 py-1.5 rounded-lg flex-shrink-0 shadow-sm"
-                style={{
-                  backgroundColor: theme.accent,
-                  color: theme.key === 'white' ? '#FFFFFF' : theme.bg,
-                  fontWeight: 600,
-                }}
-              >
-                {UI.table[toUiLang(lang)]} {table}
-              </span>
+            {currency.visible && (
+              <div className="flex-shrink-0">
+                <CurrencyDropdown
+                  available={currency.available}
+                  selected={currency.selected}
+                  onSelect={currency.setCurrency}
+                  lang={toUiLang(lang)}
+                  theme={theme}
+                  variant="header"
+                />
+              </div>
             )}
           </div>
 
@@ -1443,15 +1451,18 @@ export default function PublicMenu() {
                   </div>
                 </div>
               )}
-              {currency.visible && (
-                <CurrencyDropdown
-                  available={currency.available}
-                  selected={currency.selected}
-                  onSelect={currency.setCurrency}
-                  lang={toUiLang(lang)}
-                  theme={theme}
-                  variant="header"
-                />
+              {table && (
+                <div
+                  className="text-xs px-3 py-1.5 rounded-lg"
+                  style={{
+                    backgroundColor: 'transparent',
+                    color: theme.text,
+                    border: `1px solid ${theme.text}40`,
+                    fontWeight: 600,
+                  }}
+                >
+                  {UI.table[toUiLang(lang)]} {table}
+                </div>
               )}
             </div>
 
