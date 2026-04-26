@@ -442,15 +442,27 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
                             new Date(new Date(result.next_available_at).getTime() - COOLDOWN_MS).toISOString()
                           );
                           setMsg(`${result.remaining_hours} saat sonra tekrar güncellenebilir`);
-                        } else if (result.success) {
-                          setGoogleRating(result.rating);
-                          setGoogleReviewCount(result.review_count);
-                          setLatitude(result.latitude ?? null);
-                          setLongitude(result.longitude ?? null);
+                        } else if (result.success && result.updated) {
+                          const u = result.updated;
+                          setGoogleRating(u.google_rating ?? null);
+                          setGoogleReviewCount(u.google_review_count ?? 0);
+                          setLatitude(u.latitude ?? null);
+                          setLongitude(u.longitude ?? null);
                           setGoogleRatingUpdatedAt(new Date().toISOString());
-                          setMsg('Google bilgileri güncellendi');
+
+                          const fields: string[] = [];
+                          if (u.address) fields.push('adres');
+                          if (u.phone) fields.push('telefon');
+                          if (u.working_hours) fields.push('çalışma saatleri');
+                          if (u.google_rating != null) fields.push('puan');
+                          if (u.latitude != null && u.longitude != null) fields.push('konum');
+                          setMsg(
+                            fields.length > 0
+                              ? `Google'dan güncellendi: ${fields.join(', ')}`
+                              : "Google'dan güncellendi (yeni veri yok)"
+                          );
                         } else {
-                          setMsg(result.error || 'Puan çekilemedi');
+                          setMsg(result.message || result.error || 'Puan çekilemedi');
                         }
                       } catch {
                         setMsg('Bağlantı hatası');
