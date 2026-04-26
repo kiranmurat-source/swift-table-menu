@@ -270,10 +270,16 @@ const NUTRITION_NUMERIC_KEYS: Array<keyof NutritionDraft> = [
   'vitamin_a', 'vitamin_c', 'calcium', 'iron',
 ];
 
+type RecommendationRow = {
+  recommended_category_id: string;
+  recommended_item_id: string | null;
+  reason_tr: string;
+  reason_en: string;
+};
+
 const emptyItemForm = {
   name_tr: '', description_tr: '', price: '', image_url: '', video_url: '',
-  recommended_ids: [] as string[],
-  recommendation_reasons: {} as Record<string, { tr: string; en: string }>,
+  recommendations: [] as RecommendationRow[],
   allergens: [] as string[], is_vegetarian: false, is_new: false, is_featured: false,
   is_sold_out: false,
   schedule_type: 'always' as 'always' | 'date_range' | 'periodic',
@@ -871,13 +877,17 @@ export default function RestaurantDashboard() {
         if (delErr && delErr.code !== 'PGRST116' && !/does not exist/i.test(delErr.message || '')) {
           console.warn('[item_recommendations delete]', delErr.message);
         }
-        const recRows = itemForm.recommended_ids.slice(0, 5).map((rid, idx) => ({
-          menu_item_id: savedId,
-          recommended_item_id: rid,
-          reason_tr: itemForm.recommendation_reasons[rid]?.tr || null,
-          reason_en: itemForm.recommendation_reasons[rid]?.en || null,
-          sort_order: idx,
-        }));
+        const recRows = itemForm.recommendations
+          .filter((r) => r.recommended_category_id)
+          .slice(0, 5)
+          .map((r, idx) => ({
+            menu_item_id: savedId,
+            recommended_category_id: r.recommended_category_id,
+            recommended_item_id: r.recommended_item_id || null,
+            reason_tr: r.reason_tr || null,
+            reason_en: r.reason_en || null,
+            sort_order: idx,
+          }));
         if (recRows.length > 0) {
           const { error: insErr } = await supabase.from('item_recommendations').insert(recRows);
           if (insErr) console.warn('[item_recommendations insert]', insErr.message);
@@ -960,21 +970,21 @@ export default function RestaurantDashboard() {
     try {
       const { data } = await supabase
         .from('item_recommendations')
-        .select('recommended_item_id, reason_tr, reason_en, sort_order')
+        .select('recommended_category_id, recommended_item_id, reason_tr, reason_en, sort_order')
         .eq('menu_item_id', item.id)
         .order('sort_order');
       recs = data;
     } catch (e) {
       console.warn('[item_recommendations load skipped]', e);
     }
-    const recommended_ids = (recs ?? []).map((r: any) => r.recommended_item_id as string);
-    const recommendation_reasons: Record<string, { tr: string; en: string }> = {};
-    for (const r of recs ?? []) {
-      recommendation_reasons[r.recommended_item_id] = {
-        tr: r.reason_tr ?? '',
-        en: r.reason_en ?? '',
-      };
-    }
+    const recommendations: RecommendationRow[] = (recs ?? [])
+      .filter((r: any) => r.recommended_category_id)
+      .map((r: any) => ({
+        recommended_category_id: r.recommended_category_id,
+        recommended_item_id: r.recommended_item_id ?? null,
+        reason_tr: r.reason_tr ?? '',
+        reason_en: r.reason_en ?? '',
+      }));
     const baseSchedule = defaultPeriodicSchedule();
     const mergedPeriodic = { ...baseSchedule };
     if (item.schedule_periodic) {
@@ -1020,8 +1030,7 @@ export default function RestaurantDashboard() {
       price: item.price.toString(),
       image_url: item.image_url || '',
       video_url: item.video_url || '',
-      recommended_ids,
-      recommendation_reasons,
+      recommendations,
       allergens: item.allergens || [],
       is_vegetarian: item.is_vegetarian || false,
       is_new: item.is_new || false,
@@ -1812,24 +1821,50 @@ export default function RestaurantDashboard() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#A0A0A0', marginTop: 4 }}><Info size={14} /><span>.mp4/.webm direkt URL veya YouTube/Vimeo linki — Storage'a yüklenmez</span></div>
                   </div>
                   <div>
-                    <label style={S.label}>Önerilen Ürünler ({itemForm.recommended_ids.length}/5)</label>
-                    {itemForm.recommended_ids.length > 0 && (
+                    <label style={S.label}>Önerilen Ürünler ({itemForm.recommendations.length}/5)</label>
+                    {itemForm.recommendations.length > 0 && (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
-                        {itemForm.recommended_ids.map((rid) => {
-                          const recItem = items.find((it) => it.id === rid);
-                          if (!recItem) return null;
-                          const reasons = itemForm.recommendation_reasons[rid] || { tr: '', en: '' };
+                        {itemForm.recommendations.map((row, idx) => {
+                          const itemsInCat = row.recommended_category_id
+                            ? items.filter((it) => it.category_id === row.recommended_category_id && it.id !== editingItem)
+                            : [];
                           return (
-                            <div key={rid} style={{ border: '1px solid #E5E5E3', borderRadius: 8, padding: 10, background: '#F7F7F5' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                                <span style={{ fontSize: 13, fontWeight: 600, flex: 1 }}>{recItem.name_tr}</span>
+                            <div key={idx} style={{ border: '1px solid #E5E5E3', borderRadius: 8, padding: 10, background: '#F7F7F5' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                                <select
+                                  style={{ ...S.input, padding: '6px 10px', fontSize: 12, flex: 1 }}
+                                  value={row.recommended_category_id}
+                                  onChange={(e) => {
+                                    const next = [...itemForm.recommendations];
+                                    next[idx] = { ...row, recommended_category_id: e.target.value, recommended_item_id: null };
+                                    setItemForm({ ...itemForm, recommendations: next });
+                                  }}
+                                >
+                                  <option value="">Kategori seç...</option>
+                                  {categories.map((c) => (
+                                    <option key={c.id} value={c.id}>{c.name_tr}</option>
+                                  ))}
+                                </select>
+                                <select
+                                  style={{ ...S.input, padding: '6px 10px', fontSize: 12, flex: 1 }}
+                                  value={row.recommended_item_id || ''}
+                                  disabled={!row.recommended_category_id}
+                                  onChange={(e) => {
+                                    const next = [...itemForm.recommendations];
+                                    next[idx] = { ...row, recommended_item_id: e.target.value || null };
+                                    setItemForm({ ...itemForm, recommendations: next });
+                                  }}
+                                >
+                                  <option value="">Kategoriden rastgele</option>
+                                  {itemsInCat.map((it) => (
+                                    <option key={it.id} value={it.id}>{it.name_tr}</option>
+                                  ))}
+                                </select>
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    const next_ids = itemForm.recommended_ids.filter((x) => x !== rid);
-                                    const next_reasons = { ...itemForm.recommendation_reasons };
-                                    delete next_reasons[rid];
-                                    setItemForm({ ...itemForm, recommended_ids: next_ids, recommendation_reasons: next_reasons });
+                                    const next = itemForm.recommendations.filter((_, i) => i !== idx);
+                                    setItemForm({ ...itemForm, recommendations: next });
                                   }}
                                   style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: 2, display: 'inline-flex' }}
                                   title="Kaldır"
@@ -1839,14 +1874,22 @@ export default function RestaurantDashboard() {
                               </div>
                               <input
                                 style={{ ...S.input, padding: '6px 10px', fontSize: 12, marginBottom: 4 }}
-                                value={reasons.tr}
-                                onChange={(e) => setItemForm({ ...itemForm, recommendation_reasons: { ...itemForm.recommendation_reasons, [rid]: { ...reasons, tr: e.target.value } } })}
+                                value={row.reason_tr}
+                                onChange={(e) => {
+                                  const next = [...itemForm.recommendations];
+                                  next[idx] = { ...row, reason_tr: e.target.value };
+                                  setItemForm({ ...itemForm, recommendations: next });
+                                }}
                                 placeholder="Neden? (TR) — ör: Acılı nachos'u serinleten bir eşlik"
                               />
                               <input
                                 style={{ ...S.input, padding: '6px 10px', fontSize: 12 }}
-                                value={reasons.en}
-                                onChange={(e) => setItemForm({ ...itemForm, recommendation_reasons: { ...itemForm.recommendation_reasons, [rid]: { ...reasons, en: e.target.value } } })}
+                                value={row.reason_en}
+                                onChange={(e) => {
+                                  const next = [...itemForm.recommendations];
+                                  next[idx] = { ...row, reason_en: e.target.value };
+                                  setItemForm({ ...itemForm, recommendations: next });
+                                }}
                                 placeholder="Why? (EN) — optional"
                               />
                             </div>
@@ -1854,30 +1897,27 @@ export default function RestaurantDashboard() {
                         })}
                       </div>
                     )}
-                    {itemForm.recommended_ids.length < 5 && (
-                      <select
-                        style={S.input}
-                        value=""
-                        onChange={(e) => {
-                          const id = e.target.value;
-                          if (!id) return;
-                          if (itemForm.recommended_ids.includes(id)) return;
+                    {itemForm.recommendations.length < 5 && (
+                      <button
+                        type="button"
+                        onClick={() => {
                           setItemForm({
                             ...itemForm,
-                            recommended_ids: [...itemForm.recommended_ids, id],
-                            recommendation_reasons: { ...itemForm.recommendation_reasons, [id]: { tr: '', en: '' } },
+                            recommendations: [
+                              ...itemForm.recommendations,
+                              { recommended_category_id: '', recommended_item_id: null, reason_tr: '', reason_en: '' },
+                            ],
                           });
                         }}
+                        style={{ ...S.input, cursor: 'pointer', textAlign: 'left', background: '#fff' }}
                       >
-                        <option value="">+ Öneri ekle...</option>
-                        {items
-                          .filter((it) => it.id !== editingItem && !itemForm.recommended_ids.includes(it.id))
-                          .map((it) => (
-                            <option key={it.id} value={it.id}>{it.name_tr}</option>
-                          ))}
-                      </select>
+                        + Öneri ekle
+                      </button>
                     )}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#A0A0A0', marginTop: 4 }}><Info size={14} /><span>Ürün detayında "Yanında İyi Gider" olarak gösterilir. Max 5.</span></div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#A0A0A0', marginTop: 4 }}>
+                      <Info size={14} />
+                      <span>Ürün detayında "Yanında İyi Gider" olarak gösterilir. Kategori zorunlu, ürün opsiyonel (boş = kategoriden rastgele). Max 5.</span>
+                    </div>
                   </div>
                 </div>
               ) : (

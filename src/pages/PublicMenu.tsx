@@ -30,6 +30,7 @@ import {
   type NutriScore,
 } from '../lib/nutritionEU';
 import { stripHtml } from '../lib/html';
+import { hashStringToInt } from '../lib/utils';
 import AnimatedLogo from '../components/AnimatedLogo';
 import WaiterCallBar from '../components/WaiterCallBar';
 import { useCart } from '../lib/useCart';
@@ -2616,7 +2617,7 @@ function ItemDetailModal({ item, allItems, lang, theme, onClose, onSelectItem, o
       try {
         const { data } = await supabase
           .from('item_recommendations')
-          .select('recommended_item_id, reason_tr, reason_en, sort_order')
+          .select('recommended_category_id, recommended_item_id, reason_tr, reason_en, sort_order')
           .eq('menu_item_id', item.id)
           .order('sort_order');
         if (!cancelled) setRecommendations((data as RecRow[]) ?? []);
@@ -2629,8 +2630,24 @@ function ItemDetailModal({ item, allItems, lang, theme, onClose, onSelectItem, o
 
   const recItems = recommendations
     .map((r) => {
-      const it = allItems?.find((x) => x.id === r.recommended_item_id);
-      return it ? { item: it, reason_tr: r.reason_tr, reason_en: r.reason_en } : null;
+      if (r.recommended_item_id) {
+        const it = allItems?.find(
+          (x) => x.id === r.recommended_item_id && x.is_available && !x.is_sold_out,
+        );
+        return it ? { item: it, reason_tr: r.reason_tr, reason_en: r.reason_en } : null;
+      }
+      const candidates = (allItems ?? []).filter(
+        (m) =>
+          m.category_id === r.recommended_category_id &&
+          m.id !== item.id &&
+          m.is_available &&
+          !m.is_sold_out,
+      );
+      if (candidates.length === 0) return null;
+      const today = new Date().toISOString().slice(0, 10);
+      const seed = `${item.id}-${r.sort_order}-${today}`;
+      const pick = candidates[hashStringToInt(seed) % candidates.length];
+      return { item: pick, reason_tr: r.reason_tr, reason_en: r.reason_en };
     })
     .filter((x): x is { item: MenuItem; reason_tr: string | null; reason_en: string | null } => x !== null);
   const name = t(item.translations, 'name', item.name_tr, lang);

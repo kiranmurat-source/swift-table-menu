@@ -107,4 +107,10 @@ export interface MenuItem {
   happy_hour_end_time: string | null;
 }
 
-export type RecRow = { recommended_item_id: string; reason_tr: string | null; reason_en: string | null; sort_order: number };
+export type RecRow = {
+  recommended_category_id: string;
+  recommended_item_id: string | null;
+  reason_tr: string | null;
+  reason_en: string | null;
+  sort_order: number;
+};
