@@ -300,8 +300,18 @@ const SocialIcon = ({ type, size = 20 }: { type: string; size?: number }) => {
 export default function PublicMenu() {
   const { slug } = useParams<{ slug: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const table = searchParams.get('table');
-  const langParam: LangCode = searchParams.get('lang') || 'tr';
+  const rawTable = searchParams.get('table');
+  const rawLangParam = (searchParams.get('lang') as LangCode) || 'tr';
+
+  // Hydration guard: api/menu/[slug].ts strips the query string before SSR,
+  // so on the server these always read as null/'tr'. On the client they read the
+  // real URL. Without this guard, the render trees differ -> React errors #418/#423.
+  // The same flag is reused for schedule filtering below (Fix #2).
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => { setHydrated(true); }, []);
+
+  const table = hydrated ? rawTable : null;
+  const langParam: LangCode = hydrated ? rawLangParam : 'tr';
 
   // Demo slug hydrates synchronously so SSG captures full content in prerendered HTML.
   const isDemo = slug === 'demo';
@@ -680,19 +690,21 @@ export default function PublicMenu() {
     }
     if (spec.length) restaurantLd.openingHours = spec;
   }
-  if (restaurant.latitude !== null && restaurant.latitude !== undefined &&
-      restaurant.longitude !== null && restaurant.longitude !== undefined) {
+  // Numeric stability: Postgres numeric(10,7) may round-trip through __SSR_DATA__
+  // as string but inline JSON.stringify here as number -> 1-char text mismatch in
+  // <script type="application/ld+json"> -> React #418. Coerce explicitly via Number().
+  if (restaurant.latitude != null && restaurant.longitude != null) {
     restaurantLd.geo = {
       '@type': 'GeoCoordinates',
-      latitude: restaurant.latitude,
-      longitude: restaurant.longitude,
+      latitude: Number(restaurant.latitude),
+      longitude: Number(restaurant.longitude),
     };
   }
-  if (restaurant.google_rating && restaurant.google_review_count && restaurant.google_review_count > 0) {
+  if (restaurant.google_rating != null) {
     restaurantLd.aggregateRating = {
       '@type': 'AggregateRating',
-      ratingValue: restaurant.google_rating,
-      reviewCount: restaurant.google_review_count,
+      ratingValue: Number(restaurant.google_rating),
+      reviewCount: Number(restaurant.google_review_count ?? 0),
       bestRating: 5,
       worstRating: 1,
     };
@@ -1322,7 +1334,13 @@ export default function PublicMenu() {
   const filterApplied = activeFilterCount > 0;
 
   // Filter out items whose schedule says "not now". Sold-out items stay visible.
-  const scheduleFilteredItems = items.filter((it) => isItemVisibleBySchedule(it));
+  // Hydration guard: schedule filtering uses new Date() which differs between
+  // server (UTC, iad1 region) and client (user's local TZ). Until hydrated, render
+  // the unfiltered list to keep server and client trees identical. After mount,
+  // the filter applies and any out-of-window items quietly disappear.
+  const scheduleFilteredItems = hydrated
+    ? items.filter((it) => isItemVisibleBySchedule(it))
+    : items;
 
   const globallyFilteredItems = (() => {
     let list = scheduleFilteredItems;
@@ -1547,19 +1565,18 @@ export default function PublicMenu() {
                 sameAs: restaurant.google_place_id
                   ? [`https://www.google.com/maps/place/?q=place_id:${restaurant.google_place_id}`]
                   : undefined,
-                geo: (restaurant.latitude !== null && restaurant.latitude !== undefined &&
-                      restaurant.longitude !== null && restaurant.longitude !== undefined)
+                geo: (restaurant.latitude != null && restaurant.longitude != null)
                   ? {
                       '@type': 'GeoCoordinates',
-                      latitude: restaurant.latitude,
-                      longitude: restaurant.longitude,
+                      latitude: Number(restaurant.latitude),
+                      longitude: Number(restaurant.longitude),
                     }
                   : undefined,
-                aggregateRating: (restaurant.google_rating && restaurant.google_review_count && restaurant.google_review_count > 0)
+                aggregateRating: restaurant.google_rating != null
                   ? {
                       '@type': 'AggregateRating',
-                      ratingValue: restaurant.google_rating,
-                      reviewCount: restaurant.google_review_count,
+                      ratingValue: Number(restaurant.google_rating),
+                      reviewCount: Number(restaurant.google_review_count ?? 0),
                       bestRating: 5,
                       worstRating: 1,
                     }
