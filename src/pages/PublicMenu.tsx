@@ -294,6 +294,83 @@ const SocialIcon = ({ type, size = 20 }: { type: string; size?: number }) => {
 };
 
 /* ------------------------------------------------------------------ */
+/*  JSON-LD: hasMenu builder                                           */
+/*  Pure helpers — no Date, no window, no random ordering.             */
+/*  Hydration-safe by construction (server == client output).          */
+/* ------------------------------------------------------------------ */
+
+type MenuItemLd = Record<string, unknown>;
+type MenuSectionLd = { '@type': 'MenuSection'; name: string; hasMenuItem: MenuItemLd[] };
+type MenuLd = { '@type': 'Menu'; name: string; hasMenuSection: MenuSectionLd[] };
+
+function buildMenuItemLd(item: MenuItem, priceCurrency: string): MenuItemLd {
+  const ld: MenuItemLd = {
+    '@type': 'MenuItem',
+    name: item.name_tr,
+  };
+
+  if (item.description_tr) ld.description = item.description_tr;
+  if (item.image_url) ld.image = item.image_url;
+
+  if (item.price != null) {
+    ld.offers = {
+      '@type': 'Offer',
+      price: String(item.price),
+      priceCurrency,
+    };
+  }
+
+  if (item.is_vegetarian) {
+    ld.suitableForDiet = 'https://schema.org/VegetarianDiet';
+  }
+
+  if (item.nutrition?.calories != null && item.nutrition?.show_on_menu) {
+    ld.nutrition = {
+      '@type': 'NutritionInformation',
+      calories: `${item.nutrition.calories} kcal`,
+    };
+  }
+
+  const additionalProps: Array<{ '@type': 'PropertyValue'; name: string; value: string | boolean }> = [];
+  if (item.is_popular) additionalProps.push({ '@type': 'PropertyValue', name: 'popularity', value: 'popular' });
+  if (item.is_new) additionalProps.push({ '@type': 'PropertyValue', name: 'new', value: true });
+  if (item.is_featured) additionalProps.push({ '@type': 'PropertyValue', name: 'featured', value: true });
+  if (item.nutri_score) additionalProps.push({ '@type': 'PropertyValue', name: 'nutriScore', value: item.nutri_score });
+  if (item.allergens && Array.isArray(item.allergens) && item.allergens.length > 0) {
+    additionalProps.push({ '@type': 'PropertyValue', name: 'allergens', value: item.allergens.join(', ') });
+  }
+  if (additionalProps.length > 0) ld.additionalProperty = additionalProps;
+
+  return ld;
+}
+
+function buildMenuLd(restaurant: Restaurant, categories: MenuCategory[], items: MenuItem[]): MenuLd | null {
+  const priceCurrency = restaurant.base_currency || 'TRY';
+  const activeCategories = categories
+    .filter((c) => c.is_active)
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+
+  const sections: MenuSectionLd[] = activeCategories
+    .map((category) => ({
+      '@type': 'MenuSection' as const,
+      name: category.name_tr,
+      hasMenuItem: items
+        .filter((item) => item.category_id === category.id && item.is_available && !item.is_sold_out)
+        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+        .map((item) => buildMenuItemLd(item, priceCurrency)),
+    }))
+    .filter((section) => section.hasMenuItem.length > 0);
+
+  if (sections.length === 0) return null;
+
+  return {
+    '@type': 'Menu',
+    name: `${restaurant.name} Menüsü`,
+    hasMenuSection: sections,
+  };
+}
+
+/* ------------------------------------------------------------------ */
 /*  Main Component                                                     */
 /* ------------------------------------------------------------------ */
 
@@ -658,6 +735,12 @@ export default function PublicMenu() {
   const headMetaDescription =
     `${restaurant.name} dijital menüsü. ${restaurant.tagline || ''} ${restaurant.address || ''}`.trim();
 
+  // hasMenu structured data — built once, reused in both head + body LD blocks.
+  // Filters: is_active categories, is_available && !is_sold_out items.
+  // Schedule filter intentionally omitted (would re-introduce SSR/client time mismatch
+  // inside <script type="application/ld+json"> and break hydration — see PublicMenu.tsx:1334).
+  const menuLd = buildMenuLd(restaurant, categories, items);
+
   // Restaurant JSON-LD (schema.org) — embedded as SSR-rendered script for rich results
   const restaurantLd: Record<string, unknown> = {
     '@context': 'https://schema.org',
@@ -709,6 +792,7 @@ export default function PublicMenu() {
       worstRating: 1,
     };
   }
+  if (menuLd) restaurantLd.hasMenu = menuLd;
 
   const pageHead = (
     <Helmet>
@@ -1531,7 +1615,7 @@ export default function PublicMenu() {
                 menu: canonicalUrl,
                 acceptsReservations: false,
                 priceRange: '₺₺',
-                hasMenu: { '@type': 'Menu', url: canonicalUrl },
+                hasMenu: menuLd ?? undefined,
                 sameAs: restaurant.google_place_id
                   ? [`https://www.google.com/maps/place/?q=place_id:${restaurant.google_place_id}`]
                   : undefined,
