@@ -1226,21 +1226,6 @@ export default function PublicMenu() {
             {renderContactDropdown(splashInfoOpen, () => setSplashInfoOpen(!splashInfoOpen), 'splash')}
           </div>
 
-          {/* Table badge */}
-          {table && (
-            <div
-              className="text-sm px-5 py-2 rounded-xl mb-6"
-              style={{
-                backgroundColor: 'transparent',
-                color: '#FFFFFF',
-                border: '1px solid rgba(255, 255, 255, 0.8)',
-                fontWeight: 600,
-              }}
-            >
-              {UI.table[toUiLang(lang)]} {table}
-            </div>
-          )}
-
           {/* Social Media Icons */}
           {socials.length > 0 && (
             <div className="flex items-center mb-8" style={{ gap: 12 }}>
