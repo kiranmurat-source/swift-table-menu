@@ -812,7 +812,7 @@ export default function PublicMenu() {
           {restaurant.address && (
             <div className="flex items-start gap-2 flex-wrap">
               <MapPin size={16} className="flex-shrink-0 mt-0.5" style={{ color: bodyColor }} />
-              <span className="text-xs" style={{ color: bodyColor }}>{restaurant.address}</span>
+              <span className="text-xs flex-1 min-w-0" style={{ color: bodyColor }}>{restaurant.address}</span>
               {isSplash && directionsUrl && (
                 <a
                   href={directionsUrl}
