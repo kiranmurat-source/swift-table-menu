@@ -19,10 +19,12 @@ export function NutritionFactsTable({
   nutrition,
   lang,
   theme,
+  bare = false,
 }: {
   nutrition: Nutrition;
   lang: LangCode;
   theme: MenuTheme;
+  bare?: boolean;
 }) {
   const headingFont = "'Roboto', sans-serif";
   const uiLang = toUiLang(lang);
@@ -88,6 +90,78 @@ export function NutritionFactsTable({
 
   const showPerServing = servingG != null;
 
+  const body = (
+    <>
+      {/* Column headers */}
+      <div
+        className={bare ? 'grid pb-2 text-xs' : 'grid mt-3 pb-2 text-xs'}
+        style={{
+          gridTemplateColumns: showPerServing ? '1.4fr 1fr 1fr 0.6fr' : '1.6fr 1fr 0.6fr',
+          gap: 8,
+          borderBottom: `1px solid ${theme.divider}`,
+          color: theme.mutedText,
+          fontWeight: 500,
+        }}
+      >
+        <span />
+        <span style={{ textAlign: 'right' }}>{UI_STRINGS.per100g[uiLang]}</span>
+        {showPerServing && (
+          <span style={{ textAlign: 'right' }}>
+            {UI_STRINGS.perServing[uiLang]} ({servingG}g)
+          </span>
+        )}
+        <span style={{ textAlign: 'right' }}>RI%</span>
+      </div>
+
+      {/* Rows */}
+      {visibleRows.map((r) => {
+        const ps = perServing(r.value);
+        const psStr = ps != null ? formatNutritionValue(ps, uiLang) : null;
+        const valStr = r.value != null ? formatNutritionValue(r.value, uiLang) : null;
+        return (
+          <div
+            key={r.label}
+            className="grid items-center py-1.5 text-sm tabular-nums"
+            style={{
+              gridTemplateColumns: showPerServing ? '1.4fr 1fr 1fr 0.6fr' : '1.6fr 1fr 0.6fr',
+              gap: 8,
+              color: theme.text,
+              fontWeight: r.bold ? 700 : 400,
+              paddingLeft: r.indent ? 12 : 0,
+            }}
+          >
+            <span className="flex items-center gap-2">
+              {r.tl && (
+                <span
+                  aria-hidden
+                  style={{ width: 8, height: 8, borderRadius: '50%', background: r.tl, flexShrink: 0 }}
+                />
+              )}
+              <span>{r.indent ? `— ${r.label}` : r.label}</span>
+            </span>
+            <span style={{ textAlign: 'right' }}>
+              {r.customDisplay ?? (valStr != null ? `${valStr} ${r.unit}` : '—')}
+            </span>
+            {showPerServing && (
+              <span style={{ textAlign: 'right' }}>
+                {psStr != null ? `${psStr} ${r.unit}` : '—'}
+              </span>
+            )}
+            <span style={{ textAlign: 'right', color: theme.mutedText, fontWeight: 400 }}>
+              {r.ri != null ? `${r.ri}%` : '—'}
+            </span>
+          </div>
+        );
+      })}
+
+      <p className="text-[11px] mt-3" style={{ color: theme.mutedText, fontWeight: 300 }}>
+        {UI_STRINGS.referenceIntakeNote[uiLang]}
+      </p>
+    </>
+  );
+
+  if (bare) return body;
+
   return (
     <div className="mt-5 pt-4" style={{ borderTop: `1px solid ${theme.divider}` }}>
       <div
@@ -97,72 +171,7 @@ export function NutritionFactsTable({
         <h3 className="text-base" style={{ fontFamily: headingFont, fontWeight: 700, color: theme.text }}>
           {UI_STRINGS.nutritionTitle[uiLang]}
         </h3>
-
-        {/* Column headers */}
-        <div
-          className="grid mt-3 pb-2 text-xs"
-          style={{
-            gridTemplateColumns: showPerServing ? '1.4fr 1fr 1fr 0.6fr' : '1.6fr 1fr 0.6fr',
-            gap: 8,
-            borderBottom: `1px solid ${theme.divider}`,
-            color: theme.mutedText,
-            fontWeight: 500,
-          }}
-        >
-          <span />
-          <span style={{ textAlign: 'right' }}>{UI_STRINGS.per100g[uiLang]}</span>
-          {showPerServing && (
-            <span style={{ textAlign: 'right' }}>
-              {UI_STRINGS.perServing[uiLang]} ({servingG}g)
-            </span>
-          )}
-          <span style={{ textAlign: 'right' }}>RI%</span>
-        </div>
-
-        {/* Rows */}
-        {visibleRows.map((r) => {
-          const ps = perServing(r.value);
-          const psStr = ps != null ? formatNutritionValue(ps, uiLang) : null;
-          const valStr = r.value != null ? formatNutritionValue(r.value, uiLang) : null;
-          return (
-            <div
-              key={r.label}
-              className="grid items-center py-1.5 text-sm tabular-nums"
-              style={{
-                gridTemplateColumns: showPerServing ? '1.4fr 1fr 1fr 0.6fr' : '1.6fr 1fr 0.6fr',
-                gap: 8,
-                color: theme.text,
-                fontWeight: r.bold ? 700 : 400,
-                paddingLeft: r.indent ? 12 : 0,
-              }}
-            >
-              <span className="flex items-center gap-2">
-                {r.tl && (
-                  <span
-                    aria-hidden
-                    style={{ width: 8, height: 8, borderRadius: '50%', background: r.tl, flexShrink: 0 }}
-                  />
-                )}
-                <span>{r.indent ? `— ${r.label}` : r.label}</span>
-              </span>
-              <span style={{ textAlign: 'right' }}>
-                {r.customDisplay ?? (valStr != null ? `${valStr} ${r.unit}` : '—')}
-              </span>
-              {showPerServing && (
-                <span style={{ textAlign: 'right' }}>
-                  {psStr != null ? `${psStr} ${r.unit}` : '—'}
-                </span>
-              )}
-              <span style={{ textAlign: 'right', color: theme.mutedText, fontWeight: 400 }}>
-                {r.ri != null ? `${r.ri}%` : '—'}
-              </span>
-            </div>
-          );
-        })}
-
-        <p className="text-[11px] mt-3" style={{ color: theme.mutedText, fontWeight: 300 }}>
-          {UI_STRINGS.referenceIntakeNote[uiLang]}
-        </p>
+        {body}
       </div>
     </div>
   );

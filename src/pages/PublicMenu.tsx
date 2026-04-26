@@ -5,7 +5,7 @@ import { sanitize } from '../lib/sanitize';
 import { supabase } from '../lib/supabase';
 import { getOptimizedImageUrl, handleImageError } from '../lib/imageUtils';
 import {
-  Star, AppleLogo, Thermometer, MapPin, Phone, Globe, CaretDown, CaretLeft,
+  Star, AppleLogo, Thermometer, MapPin, Phone, Globe, CaretDown, CaretUp, CaretLeft,
   ForkKnife, XCircle, Funnel, Timer, Tag, Heart, Clock, Play,
   InstagramLogo, FacebookLogo, XLogo, TiktokLogo, YoutubeLogo, LinkedinLogo,
   WhatsappLogo, ChatCircle, NavigationArrow, X,
@@ -157,6 +157,7 @@ const UI: Record<string, Record<UiLangCode, string>> = {
   categories:   { tr: 'Kategoriler', en: 'Categories', ar: 'الفئات', zh: '分类' },
   backToCategories: { tr: 'Kategoriler', en: 'Categories', ar: 'الفئات', zh: '分类' },
   recommendations:  { tr: 'Yanında İyi Gider', en: 'Goes Well With', ar: 'يتناسب مع', zh: '搭配推荐' },
+  goesWellWith:     { tr: 'İyi gider:', en: 'Goes well with:', ar: 'يتناسب مع:', zh: '搭配:' },
   itemsCount:   { tr: 'ürün', en: 'items', ar: 'عنصر', zh: '项' },
   viewMenu:     { tr: 'Menüyü Görüntüle', en: 'View Menu', ar: 'عرض القائمة', zh: '查看菜单' },
   allergens:    { tr: 'Alerjenler', en: 'Allergens', ar: 'مسببات الحساسية', zh: '过敏原' },
@@ -2577,6 +2578,7 @@ function ItemDetailModal({ item, allItems, lang, theme, onClose, onSelectItem, o
   const [selectedVariant, setSelectedVariant] = useState<number | null>(hasVariants(item) ? null : 0);
   const [modalQty, setModalQty] = useState(1);
   const [showVideo, setShowVideo] = useState(false);
+  const [nutritionOpen, setNutritionOpen] = useState(false);
   const [recommendations, setRecommendations] = useState<RecRow[]>([]);
   const video = parseVideoEmbed(item.video_url);
 
@@ -2608,6 +2610,7 @@ function ItemDetailModal({ item, allItems, lang, theme, onClose, onSelectItem, o
     setShowVideo(false);
     setSelectedVariant(hasVariants(item) ? null : 0);
     setModalQty(1);
+    setNutritionOpen(false);
     let cancelled = false;
     (async () => {
       try {
@@ -2946,7 +2949,40 @@ function ItemDetailModal({ item, allItems, lang, theme, onClose, onSelectItem, o
           )}
 
           {item.nutrition && item.nutrition.show_on_menu !== false && (
-            <NutritionFactsTable nutrition={item.nutrition} lang={lang} theme={theme} />
+            <div className="mt-5 pt-4" style={{ borderTop: `1px solid ${theme.divider}` }}>
+              <button
+                type="button"
+                onClick={() => setNutritionOpen(o => !o)}
+                aria-expanded={nutritionOpen}
+                aria-controls="nutrition-facts-panel"
+                className="w-full flex items-center justify-between rounded-2xl px-4 py-3"
+                style={{
+                  backgroundColor: theme.cardBg,
+                  border: `1px solid ${theme.cardBorder}`,
+                  color: theme.text,
+                  cursor: 'pointer',
+                  fontFamily: headingFont,
+                  fontWeight: 700,
+                  fontSize: 16,
+                }}
+              >
+                <span>{UI.nutritionTitle[toUiLang(lang)]}</span>
+                {nutritionOpen ? (
+                  <CaretUp size={18} style={{ color: theme.mutedText }} />
+                ) : (
+                  <CaretDown size={18} style={{ color: theme.mutedText }} />
+                )}
+              </button>
+              {nutritionOpen && (
+                <div
+                  id="nutrition-facts-panel"
+                  className="mt-2 rounded-2xl p-4"
+                  style={{ backgroundColor: theme.cardBg, border: `1px solid ${theme.cardBorder}` }}
+                >
+                  <NutritionFactsTable bare nutrition={item.nutrition} lang={lang} theme={theme} />
+                </div>
+              )}
+            </div>
           )}
 
           {/* Add to Cart */}
@@ -2976,6 +3012,28 @@ function ItemDetailModal({ item, allItems, lang, theme, onClose, onSelectItem, o
                     );
                   })}
                 </div>
+              )}
+              {recItems[0]?.item && (
+                <button
+                  type="button"
+                  onClick={() => onSelectItem?.(recItems[0]!.item)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    width: '100%', padding: '10px 0', marginBottom: 12,
+                    borderTop: `1px solid ${theme.divider}`,
+                    background: 'none', border: 'none', borderRadius: 0,
+                    cursor: 'pointer', textAlign: 'left',
+                    fontFamily: bodyFont, fontSize: 13,
+                  }}
+                >
+                  <ForkKnife size={16} style={{ color: '#FF4F7A', flexShrink: 0 }} />
+                  <span style={{ color: theme.mutedText, fontWeight: 400 }}>
+                    {UI.goesWellWith[toUiLang(lang)]}
+                  </span>
+                  <span style={{ color: theme.text, fontWeight: 600, textDecoration: 'underline', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {t(recItems[0]!.item.translations, 'name', recItems[0]!.item.name_tr, lang)}
+                  </span>
+                </button>
               )}
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <QuantitySelector
@@ -3017,54 +3075,6 @@ function ItemDetailModal({ item, allItems, lang, theme, onClose, onSelectItem, o
             </div>
           )}
 
-          {recItems.length > 0 && (
-            <div style={{ marginTop: 24, paddingTop: 16, borderTop: `1px solid ${theme.divider}` }}>
-              <h3 style={{ fontFamily: headingFont, fontWeight: 700, fontSize: 16, letterSpacing: '-0.02em', color: theme.text, marginBottom: 12 }}>
-                {UI.recommendations[toUiLang(lang)]}
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {recItems.map(({ item: rec, reason_tr, reason_en }) => {
-                  const reason = toUiLang(lang) === 'tr' ? reason_tr : (reason_en || reason_tr);
-                  const recName = t(rec.translations, 'name', rec.name_tr, lang);
-                  return (
-                    <button
-                      key={rec.id}
-                      type="button"
-                      onClick={() => onSelectItem?.(rec)}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: 10,
-                        padding: 8, borderRadius: 12,
-                        background: theme.cardBg,
-                        border: `1px solid ${theme.cardBorder}`,
-                        cursor: 'pointer', textAlign: 'left', width: '100%',
-                      }}
-                    >
-                      {rec.image_url ? (
-                        <img onError={handleImageError} src={getOptimizedImageUrl(rec.image_url, 'thumbnail')} alt="" style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
-                      ) : (
-                        <div style={{ width: 56, height: 56, borderRadius: 8, background: `${theme.accent}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: headingFont, fontWeight: 700, color: theme.mutedText }}>
-                          {recName.charAt(0).toUpperCase()}
-                        </div>
-                      )}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontFamily: bodyFont, fontWeight: 600, fontSize: 14, color: theme.text, lineHeight: 1.3 }}>
-                          {recName}
-                        </div>
-                        {reason && (
-                          <div style={{ fontFamily: bodyFont, fontWeight: 300, fontStyle: 'italic', fontSize: 12, color: theme.mutedText, marginTop: 2, lineHeight: 1.4 }}>
-                            {reason}
-                          </div>
-                        )}
-                      </div>
-                      <span className="tabular-nums" style={{ fontFamily: bodyFont, fontWeight: 700, fontSize: 14, color: theme.price, flexShrink: 0 }}>
-                        {formatPriceDisplay(rec, toUiLang(lang), format)}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
