@@ -18,6 +18,9 @@ import { AI_CREDIT_COSTS } from '../lib/aiCredits';
 import { NUTRI_SCORE_COLORS, NUTRI_SCORE_VALUES } from "@/lib/nutritionEU";
 import RestaurantAnalytics from "@/components/dashboard/RestaurantAnalytics";
 import TabbledLogo from '@/components/TabbledLogo';
+import { DirtySaveProvider, useDirtySave } from '@/contexts/DirtySaveContext';
+import { DirtySaveButtons } from '@/components/admin/DirtySaveButtons';
+import { useDirtyState } from '@/hooks/useDirtyState';
 import FeedbackPanel from '../components/FeedbackPanel';
 import DiscountCodesPanel from '../components/DiscountCodesPanel';
 import LikesPanel from '../components/LikesPanel';
@@ -319,7 +322,18 @@ async function triggerTranslation(table: string, recordId: string, languages: st
 /*  Main Component                                                     */
 /* ------------------------------------------------------------------ */
 
+// Pilot flag — flip to false to revert without deleting code.
+const STICKY_SAVE_PILOT_MENU_PANEL = true;
+
 export default function RestaurantDashboard() {
+  return (
+    <DirtySaveProvider>
+      <RestaurantDashboardInner />
+    </DirtySaveProvider>
+  );
+}
+
+function RestaurantDashboardInner() {
   const { user, signOut } = useAuth();
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const baseSymbol = useBaseCurrencySymbol(restaurant?.base_currency);
@@ -344,6 +358,17 @@ export default function RestaurantDashboard() {
   const [pendingCallCount, setPendingCallCount] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Sticky-save pilot — bridge MenuPanel forms to header navbar buttons.
+  const { setDirtyState, clearDirtyState, requestCancel } = useDirtySave();
+  const itemSnapshotKey = showItemForm ? (editingItem ?? 'new') : null;
+  const itemDirty = useDirtyState(itemForm, itemSnapshotKey);
+  const catSnapshotKey = showCatForm ? 'cat-create' : null;
+  const catDirty = useDirtyState(catForm, catSnapshotKey);
+  const submitItemRef = useRef<(() => void | Promise<void>) | null>(null);
+  const cancelItemRef = useRef<(() => void) | null>(null);
+  const submitCatRef = useRef<(() => void | Promise<void>) | null>(null);
+  const cancelCatRef = useRef<(() => void) | null>(null);
+
   useEffect(() => {
     const openSidebar = () => setSidebarOpen(true);
     window.addEventListener('tabbled:open-sidebar', openSidebar);
@@ -358,6 +383,45 @@ export default function RestaurantDashboard() {
     window.addEventListener('tabbled:set-tab', setTabFromEvent as EventListener);
     return () => window.removeEventListener('tabbled:set-tab', setTabFromEvent as EventListener);
   }, []);
+
+  // Sticky-save pilot — keep submit/cancel refs current so the navbar buttons
+  // always trigger the latest form-handler closures. addOrUpdateItem / addCategory
+  // are hoisted function declarations defined later in the component scope.
+  submitItemRef.current = () =>
+    addOrUpdateItem({ preventDefault: () => {} } as React.FormEvent);
+  cancelItemRef.current = () => {
+    setItemForm(itemDirty.resetToInitial());
+    closeItemForm();
+  };
+  submitCatRef.current = () =>
+    addCategory({ preventDefault: () => {} } as React.FormEvent);
+  cancelCatRef.current = () => {
+    setCatForm(catDirty.resetToInitial());
+    setShowCatForm(false);
+  };
+
+  useEffect(() => {
+    if (!STICKY_SAVE_PILOT_MENU_PANEL || activeTab !== 'menu') {
+      clearDirtyState();
+      return;
+    }
+    if (showItemForm) {
+      setDirtyState(
+        itemDirty.isDirty,
+        () => submitItemRef.current?.(),
+        () => cancelItemRef.current?.(),
+      );
+    } else if (showCatForm) {
+      setDirtyState(
+        catDirty.isDirty,
+        () => submitCatRef.current?.(),
+        () => cancelCatRef.current?.(),
+      );
+    } else {
+      clearDirtyState();
+    }
+  }, [activeTab, showItemForm, showCatForm, itemDirty.isDirty, catDirty.isDirty, setDirtyState, clearDirtyState]);
+
   const [isDesktop, setIsDesktop] = useState(typeof window !== 'undefined' && window.innerWidth >= 1024);
   const [sidebarHovered, setSidebarHovered] = useState(false);
   const sidebarHoverTimerRef = useRef<number | null>(null);
@@ -902,6 +966,7 @@ export default function RestaurantDashboard() {
       setEditingItem(savedId);
     }
     snapshotForm(itemForm);
+    itemDirty.markClean();
     setMsg(editingItem ? 'Ürün güncellendi' : 'Ürün eklendi');
     setTimeout(() => setMsg(''), 3000);
     loadItems(restaurant.id);
@@ -1517,6 +1582,7 @@ export default function RestaurantDashboard() {
                 />
               )}
               <button onClick={() => setShowCatForm(!showCatForm)} style={S.btnSm}>{showCatForm ? 'İptal' : '+ Kategori'}</button>
+              {STICKY_SAVE_PILOT_MENU_PANEL && <DirtySaveButtons theme={adminTheme} />}
             </div>
           </div>
 
@@ -1601,7 +1667,9 @@ export default function RestaurantDashboard() {
                 })()}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: adminTheme.subtle, marginTop: 4 }}><Info size={14} /><span>3-5 saniyelik kısa loop video önerilir</span></div>
               </div>
-              <button type="submit" disabled={saving} style={{ ...S.btn, alignSelf: 'flex-start' }}>{saving ? '...' : 'Ekle'}</button>
+              {!STICKY_SAVE_PILOT_MENU_PANEL && (
+                <button type="submit" disabled={saving} style={{ ...S.btn, alignSelf: 'flex-start' }}>{saving ? '...' : 'Ekle'}</button>
+              )}
             </form>
           )}
 
@@ -2523,8 +2591,23 @@ export default function RestaurantDashboard() {
               </div>
 
               <div style={{ display: 'flex', gap: 8, alignSelf: 'flex-end', justifyContent: 'flex-end' }}>
-                <button type="button" onClick={closeItemForm} disabled={saving} style={{ ...S.btnSm, padding: '8px 16px' }}>İptal</button>
-                <button type="submit" disabled={saving} style={{ ...S.btn }}>{saving ? '...' : editingItem ? 'Güncelle' : 'Ekle'}</button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (STICKY_SAVE_PILOT_MENU_PANEL && itemDirty.isDirty) {
+                      requestCancel();
+                    } else {
+                      closeItemForm();
+                    }
+                  }}
+                  disabled={saving}
+                  style={{ ...S.btnSm, padding: '8px 16px' }}
+                >
+                  İptal
+                </button>
+                {!STICKY_SAVE_PILOT_MENU_PANEL && (
+                  <button type="submit" disabled={saving} style={{ ...S.btn }}>{saving ? '...' : editingItem ? 'Güncelle' : 'Ekle'}</button>
+                )}
               </div>
             </form>
           ); return null; })()}
