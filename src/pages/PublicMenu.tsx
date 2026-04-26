@@ -1198,6 +1198,29 @@ export default function PublicMenu() {
             </p>
           )}
 
+          {/* Language switcher */}
+          {availableLanguages.length > 1 && (
+            <div className="flex items-center gap-2 mb-3">
+              <Globe size={14} style={{ color: 'rgba(255,255,255,0.6)' }} />
+              <div className="flex gap-1">
+                {availableLanguages.map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => setLang(l)}
+                    className="px-2.5 py-1 rounded-md text-xs transition-all"
+                    style={{
+                      backgroundColor: lang === l ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.1)',
+                      color: lang === l ? '#FFFFFF' : 'rgba(255,255,255,0.6)',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {getLanguage(l)?.nativeName || l}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Contact info accordion — content always in DOM for SEO */}
           <div className="flex flex-col items-center mb-6">
             {renderContactDropdown(splashInfoOpen, () => setSplashInfoOpen(!splashInfoOpen), 'splash')}
@@ -1270,28 +1293,6 @@ export default function PublicMenu() {
             {UI.viewMenu[toUiLang(lang)]}
           </button>
 
-          {/* Language switcher */}
-          {availableLanguages.length > 1 && (
-            <div className="flex items-center gap-2 mt-6">
-              <Globe size={14} style={{ color: 'rgba(255,255,255,0.6)' }} />
-              <div className="flex gap-1">
-                {availableLanguages.map((l) => (
-                  <button
-                    key={l}
-                    onClick={() => setLang(l)}
-                    className="px-2.5 py-1 rounded-md text-xs transition-all"
-                    style={{
-                      backgroundColor: lang === l ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.1)',
-                      color: lang === l ? '#FFFFFF' : 'rgba(255,255,255,0.6)',
-                      fontWeight: 500,
-                    }}
-                  >
-                    {getLanguage(l)?.nativeName || l}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Powered by */}
