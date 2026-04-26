@@ -1279,7 +1279,7 @@ export default function PublicMenu() {
               const next = promos.find(isPromoVisible);
               if (next) setTimeout(() => setActivePromo(next), 500);
             }}
-            className="text-base px-10 py-3.5 rounded-full transition-all duration-200 hover:scale-105"
+            className="text-sm px-8 py-3 rounded-full transition-all duration-200 hover:scale-105"
             style={{
               backgroundColor: 'transparent',
               color: '#FFFFFF',
