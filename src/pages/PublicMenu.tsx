@@ -847,22 +847,6 @@ export default function PublicMenu() {
               </span>
             </div>
           )}
-          {socials.length > 0 && (
-            <div className="flex items-center gap-2 mt-1">
-              {socials.map(({ type, url }) => (
-                <a
-                  key={type}
-                  href={url!}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:opacity-80 transition-opacity"
-                  style={{ color: bodyColor }}
-                >
-                  <SocialIcon type={type} size={14} />
-                </a>
-              ))}
-            </div>
-          )}
         </div>
       </>
     );
