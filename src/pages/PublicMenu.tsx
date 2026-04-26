@@ -5,7 +5,7 @@ import { sanitize } from '../lib/sanitize';
 import { supabase } from '../lib/supabase';
 import { getOptimizedImageUrl, handleImageError } from '../lib/imageUtils';
 import {
-  Star, AppleLogo, Thermometer, MapPin, Phone, Globe, CaretDown, CaretUp, CaretLeft,
+  Star, AppleLogo, Thermometer, MapPin, Phone, Globe, CaretDown, CaretUp, CaretLeft, CaretRight,
   ForkKnife, XCircle, Funnel, Timer, Tag, Heart, Clock, Play,
   InstagramLogo, FacebookLogo, XLogo, TiktokLogo, YoutubeLogo, LinkedinLogo,
   WhatsappLogo, ChatCircle, NavigationArrow, X,
@@ -3030,28 +3030,57 @@ function ItemDetailModal({ item, allItems, lang, theme, onClose, onSelectItem, o
                   })}
                 </div>
               )}
-              {recItems[0]?.item && (
-                <button
-                  type="button"
-                  onClick={() => onSelectItem?.(recItems[0]!.item)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    width: '100%', padding: '10px 0', marginBottom: 12,
-                    borderTop: `1px solid ${theme.divider}`,
-                    background: 'none', border: 'none', borderRadius: 0,
-                    cursor: 'pointer', textAlign: 'left',
-                    fontFamily: bodyFont, fontSize: 13,
-                  }}
-                >
-                  <ForkKnife size={16} style={{ color: '#FF4F7A', flexShrink: 0 }} />
-                  <span style={{ color: theme.mutedText, fontWeight: 400 }}>
-                    {UI.goesWellWith[toUiLang(lang)]}
-                  </span>
-                  <span style={{ color: theme.text, fontWeight: 600, textDecoration: 'underline', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {t(recItems[0]!.item.translations, 'name', recItems[0]!.item.name_tr, lang)}
-                  </span>
-                </button>
-              )}
+              {recItems[0]?.item && (() => {
+                const recItem = recItems[0]!.item;
+                const recName = t(recItem.translations, 'name', recItem.name_tr, lang);
+                return (
+                  <button
+                    type="button"
+                    onClick={() => onSelectItem?.(recItem)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      width: '100%', padding: 12, marginBottom: 12,
+                      border: `1px solid ${theme.cardBorder}`,
+                      borderRadius: 12,
+                      background: 'transparent',
+                      cursor: 'pointer', textAlign: 'left',
+                      fontFamily: bodyFont,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 48, height: 48, borderRadius: 8,
+                        flexShrink: 0, overflow: 'hidden',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        backgroundColor: theme.cardBg,
+                      }}
+                    >
+                      {recItem.image_url ? (
+                        <img
+                          src={getOptimizedImageUrl(recItem.image_url, 'thumbnail')}
+                          alt={recName}
+                          loading="lazy"
+                          onError={handleImageError}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <span style={{ fontSize: 20, fontWeight: 700, color: theme.mutedText }}>
+                          {recName.charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                      <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', color: theme.mutedText, fontWeight: 500 }}>
+                        {UI.goesWellWith[toUiLang(lang)]}
+                      </div>
+                      <div style={{ fontSize: 15, fontWeight: 600, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {recName}
+                      </div>
+                    </div>
+                    <CaretRight size={18} weight="bold" style={{ color: theme.mutedText, flexShrink: 0 }} />
+                  </button>
+                );
+              })()}
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <QuantitySelector
                   quantity={modalQty}
