@@ -33,6 +33,10 @@ dist-server
 # Local SSR debugging notes (kept locally, not committed)
 docs/ssr-debug/
 
+# Local dry-run SQL scripts (paste into Supabase Studio, not committed)
+dry-run-*.sql
+studio-*.sql
+
 # Working prompts, audit reports, and session runbooks (forward-only)
 # Historical .md files committed before 2026-04-25 remain tracked.
 # New .md files are local working materials by default.
