@@ -22,6 +22,10 @@ export type Restaurant = {
   feature_likes?: boolean;
   feature_reviews: boolean;
   feature_multi_currency?: boolean;
+  feature_table_reservation?: boolean;
+  feature_table_payment?: boolean;
+  feature_digital_tip?: boolean;
+  feature_group_payment?: boolean;
   base_currency: string;
   google_place_id: string | null;
   google_rating: number | null;

@@ -48,7 +48,12 @@ export type FeatureKey =
   | 'multi_currency'
   | 'waiter_calls'
   | 'feedback_form'
-  | 'local_seo';
+  | 'local_seo'
+  // Tahsilat operational toggles (added 27 Apr 2026, plan-aware admin UI pilot)
+  | 'table_reservation'
+  | 'table_payment'
+  | 'digital_tip'
+  | 'group_payment';
 
 export const PLAN_FEATURES: Record<PlanTier, Record<FeatureKey, boolean>> = {
   basic: {
@@ -79,13 +84,17 @@ export const PLAN_FEATURES: Record<PlanTier, Record<FeatureKey, boolean>> = {
     sms_marketing: false,
     // Operational
     cart: true,
-    whatsapp_order: true,
+    whatsapp_order: false,
     feedback: true,
     discount_codes: false,
     multi_currency: false,
     waiter_calls: false,
     feedback_form: true,
     local_seo: true,
+    table_reservation: false,
+    table_payment: false,
+    digital_tip: false,
+    group_payment: false,
   },
   premium: {
     menu_item_schema: true,
@@ -117,6 +126,10 @@ export const PLAN_FEATURES: Record<PlanTier, Record<FeatureKey, boolean>> = {
     waiter_calls: true,
     feedback_form: true,
     local_seo: true,
+    table_reservation: false,
+    table_payment: false,
+    digital_tip: false,
+    group_payment: false,
   },
   enterprise: {
     menu_item_schema: true,
@@ -148,6 +161,10 @@ export const PLAN_FEATURES: Record<PlanTier, Record<FeatureKey, boolean>> = {
     waiter_calls: true,
     feedback_form: true,
     local_seo: true,
+    table_reservation: true,
+    table_payment: true,
+    digital_tip: true,
+    group_payment: true,
   },
 };
 

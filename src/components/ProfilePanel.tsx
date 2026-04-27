@@ -6,6 +6,7 @@ import { getOptimizedImageUrl, handleImageError } from '../lib/imageUtils';
 import { THEMES } from '../lib/themes';
 import { Restaurant, DAY_KEYS, DAY_LABELS, DEFAULT_DAY, makeStyles } from './admin/dashboardShared';
 import MediaPickerModal, { type MediaAccept, attachMediaUsage, detachMediaUsage } from './admin/MediaPickerModal';
+import { hasFeature, PLAN_FEATURES, type FeatureKey } from '../lib/planFeatures';
 
 const SUPABASE_URL = 'https://qmnrawqvkwehufebbkxp.supabase.co';
 
@@ -13,6 +14,152 @@ const SUPABASE_URL = 'https://qmnrawqvkwehufebbkxp.supabase.co';
 // Features now controlled by plan tier + plan_overrides JSONB (super admin only).
 // Keeping code dormant until cleanup migration removes feature_* DB columns.
 const SHOW_LEGACY_FEATURE_TOGGLES = false;
+
+type ToggleColumn =
+  | 'feature_cart'
+  | 'feature_waiter_calls'
+  | 'feature_whatsapp_order'
+  | 'feature_table_reservation'
+  | 'feature_table_payment'
+  | 'feature_digital_tip'
+  | 'feature_group_payment';
+
+function getRequiredPlan(feature: FeatureKey): string {
+  if (PLAN_FEATURES.premium[feature]) return 'Premium';
+  if (PLAN_FEATURES.enterprise[feature]) return 'Enterprise';
+  return 'Premium';
+}
+
+function PillarHeader({ title, accent, theme }: { title: string; accent: string; theme: AdminTheme }) {
+  return (
+    <div style={{ marginTop: 18, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ width: 4, height: 14, background: accent, borderRadius: 1 }} />
+      <span style={{ fontSize: 11, fontWeight: 500, color: theme.subtle, letterSpacing: 0.4, textTransform: 'uppercase' }}>
+        {title}
+      </span>
+    </div>
+  );
+}
+
+function PillSwitch({ checked, onCheckedChange, disabled, theme }: { checked: boolean; onCheckedChange?: (v: boolean) => void; disabled?: boolean; theme: AdminTheme }) {
+  if (disabled) {
+    return (
+      <div style={{ width: 36, height: 22, background: theme.pageBg, border: `0.5px solid ${theme.border}`, borderRadius: 11, position: 'relative', flexShrink: 0, opacity: 0.6 }}>
+        <div style={{ width: 18, height: 18, background: '#D3D1C7', borderRadius: '50%', position: 'absolute', top: 1.5, left: 1.5 }} />
+      </div>
+    );
+  }
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onCheckedChange?.(!checked)}
+      style={{
+        width: 36,
+        height: 22,
+        background: checked ? theme.accent : theme.subtle,
+        borderRadius: 11,
+        border: 'none',
+        position: 'relative',
+        cursor: 'pointer',
+        transition: 'background 150ms ease',
+        flexShrink: 0,
+      }}
+    >
+      <div style={{
+        width: 18,
+        height: 18,
+        background: 'white',
+        borderRadius: '50%',
+        position: 'absolute',
+        top: 2,
+        left: checked ? 16 : 2,
+        transition: 'left 150ms ease',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
+      }} />
+    </button>
+  );
+}
+
+type ToggleRowProps = {
+  feature: FeatureKey;
+  dbColumn: ToggleColumn;
+  label: string;
+  description: string;
+  restaurant: Restaurant;
+  form: any;
+  setForm: (next: any) => void;
+  theme: AdminTheme;
+};
+
+function ToggleRow({ feature, dbColumn, label, description, restaurant, form, setForm, theme }: ToggleRowProps) {
+  const isInPlan = hasFeature(restaurant, feature);
+  const isOn = !!form[dbColumn];
+  const requiredPlan = getRequiredPlan(feature);
+
+  if (!isInPlan) {
+    return (
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '12px 0',
+        borderBottom: `0.5px solid ${theme.border}`,
+        opacity: 0.6,
+      }}>
+        <div style={{ flex: 1, paddingRight: 16 }}>
+          <div style={{ fontSize: 14, color: theme.subtle, marginBottom: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>{label}</span>
+            <span style={{
+              background: theme.pageBg,
+              color: theme.subtle,
+              fontSize: 10,
+              padding: '2px 6px',
+              borderRadius: 3,
+              fontWeight: 500,
+              letterSpacing: 0.3,
+              textTransform: 'uppercase',
+            }}>
+              {requiredPlan}
+            </span>
+          </div>
+          <div style={{ fontSize: 12, color: theme.subtle }}>
+            {description}{' '}
+            <a
+              href="/iletisim?subject=plan-upgrade"
+              style={{ color: theme.accent, textDecoration: 'none', fontWeight: 500 }}
+            >
+              {requiredPlan}'a yükselt →
+            </a>
+          </div>
+        </div>
+        <PillSwitch checked={false} disabled theme={theme} />
+      </div>
+    );
+  }
+
+  return (
+    <label style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '12px 0',
+      borderBottom: `0.5px solid ${theme.border}`,
+      cursor: 'pointer',
+    }}>
+      <div style={{ flex: 1, paddingRight: 16 }}>
+        <div style={{ fontSize: 14, color: theme.value, marginBottom: 2 }}>{label}</div>
+        <div style={{ fontSize: 12, color: theme.subtle }}>{description}</div>
+      </div>
+      <PillSwitch
+        checked={isOn}
+        onCheckedChange={(checked) => setForm({ ...form, [dbColumn]: checked })}
+        theme={theme}
+      />
+    </label>
+  );
+}
 
 function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; onUpdate: (r: Restaurant) => void; theme: AdminTheme }) {
   const S = useMemo(() => makeStyles(theme), [theme]);
@@ -41,6 +188,10 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
     feature_likes: restaurant.feature_likes ?? true,
     feature_reviews: restaurant.feature_reviews ?? true,
     feature_multi_currency: restaurant.feature_multi_currency ?? false,
+    feature_table_reservation: restaurant.feature_table_reservation ?? true,
+    feature_table_payment: restaurant.feature_table_payment ?? true,
+    feature_digital_tip: restaurant.feature_digital_tip ?? true,
+    feature_group_payment: restaurant.feature_group_payment ?? true,
     base_currency: restaurant.base_currency || 'TRY',
     google_place_id: restaurant.google_place_id || '',
   });
@@ -115,6 +266,10 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
       feature_likes: form.feature_likes,
       feature_reviews: form.feature_reviews,
       feature_multi_currency: form.feature_multi_currency,
+      feature_table_reservation: form.feature_table_reservation,
+      feature_table_payment: form.feature_table_payment,
+      feature_digital_tip: form.feature_digital_tip,
+      feature_group_payment: form.feature_group_payment,
       base_currency: form.base_currency,
       google_place_id: form.google_place_id || null,
     }).eq('id', restaurant.id);
@@ -151,6 +306,10 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
         feature_likes: form.feature_likes,
         feature_reviews: form.feature_reviews,
         feature_multi_currency: form.feature_multi_currency,
+        feature_table_reservation: form.feature_table_reservation,
+        feature_table_payment: form.feature_table_payment,
+        feature_digital_tip: form.feature_digital_tip,
+        feature_group_payment: form.feature_group_payment,
         base_currency: form.base_currency,
         google_place_id: form.google_place_id || null,
       });
@@ -588,6 +747,88 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
             </div>
           </>
         )}
+
+        {/* Plan-aware feature toggles — added 27 Apr 2026 */}
+        <h4 style={{ fontSize: 14, fontWeight: 600, color: theme.value, marginTop: 8, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <SquaresFour size={16} /> Özellikler
+        </h4>
+        <p style={{ fontSize: 12, color: theme.subtle, marginTop: 0, marginBottom: 12 }}>
+          Plan dahilindeki özellikleri açıp kapatabilirsiniz. Plan dışındakiler için yükseltme gerekir.
+        </p>
+
+        <PillarHeader title="Gelir Yönetimi" accent="#1D9E75" theme={theme} />
+        <ToggleRow
+          feature="cart"
+          dbColumn="feature_cart"
+          label="Sepet"
+          description="Müşteriler menüden sepete ürün ekleyebilir."
+          restaurant={restaurant}
+          form={form}
+          setForm={setForm}
+          theme={theme}
+        />
+
+        <PillarHeader title="Tahsilat" accent="#534AB7" theme={theme} />
+        <ToggleRow
+          feature="waiter_calls"
+          dbColumn="feature_waiter_calls"
+          label="Garson çağırma"
+          description="Müşteri masadan tek tıkla garson çağırır."
+          restaurant={restaurant}
+          form={form}
+          setForm={setForm}
+          theme={theme}
+        />
+        <ToggleRow
+          feature="whatsapp_order"
+          dbColumn="feature_whatsapp_order"
+          label="WhatsApp sipariş"
+          description="Müşteri sepetini WhatsApp üzerinden gönderir."
+          restaurant={restaurant}
+          form={form}
+          setForm={setForm}
+          theme={theme}
+        />
+        <ToggleRow
+          feature="table_reservation"
+          dbColumn="feature_table_reservation"
+          label="Masa rezervasyonu"
+          description="Müşteri menüden masa rezervasyonu yapabilir."
+          restaurant={restaurant}
+          form={form}
+          setForm={setForm}
+          theme={theme}
+        />
+        <ToggleRow
+          feature="table_payment"
+          dbColumn="feature_table_payment"
+          label="Masadan ödeme (QR)"
+          description="Müşteri QR ile masadan online ödeme yapar."
+          restaurant={restaurant}
+          form={form}
+          setForm={setForm}
+          theme={theme}
+        />
+        <ToggleRow
+          feature="digital_tip"
+          dbColumn="feature_digital_tip"
+          label="Dijital bahşiş"
+          description="Ödeme sırasında garsona online bahşiş seçeneği."
+          restaurant={restaurant}
+          form={form}
+          setForm={setForm}
+          theme={theme}
+        />
+        <ToggleRow
+          feature="group_payment"
+          dbColumn="feature_group_payment"
+          label="Grup ödeme"
+          description="Hesap birden fazla kişiye paylaştırılabilir."
+          restaurant={restaurant}
+          form={form}
+          setForm={setForm}
+          theme={theme}
+        />
 
         {/* Theme Selector */}
         <h4 style={{ fontSize: 14, fontWeight: 600, color: theme.value, marginTop: 8, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
