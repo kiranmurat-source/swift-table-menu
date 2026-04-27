@@ -5,7 +5,7 @@ import { sanitize } from '../lib/sanitize';
 import { supabase } from '../lib/supabase';
 import { getOptimizedImageUrl, handleImageError } from '../lib/imageUtils';
 import {
-  Star, AppleLogo, Thermometer, MapPin, Phone, Globe, CaretDown, CaretUp, CaretLeft, CaretRight,
+  Star, AppleLogo, Thermometer, MapPin, Phone, Globe, CaretDown, CaretUp, CaretLeft,
   ForkKnife, XCircle, Funnel, Timer, Tag, Heart, Clock, Play,
   InstagramLogo, FacebookLogo, XLogo, TiktokLogo, YoutubeLogo, LinkedinLogo,
   WhatsappLogo, ChatCircle, NavigationArrow, X,
@@ -3030,57 +3030,91 @@ function ItemDetailModal({ item, allItems, lang, theme, onClose, onSelectItem, o
                   })}
                 </div>
               )}
-              {recItems[0]?.item && (() => {
-                const recItem = recItems[0]!.item;
-                const recName = t(recItem.translations, 'name', recItem.name_tr, lang);
-                return (
-                  <button
-                    type="button"
-                    onClick={() => onSelectItem?.(recItem)}
+              {recItems.length > 0 && (
+                <>
+                  <div
+                    className="text-xs uppercase tracking-wider"
+                    style={{ color: theme.mutedText, fontWeight: 600, marginTop: 4, marginBottom: 8 }}
+                  >
+                    {UI.recommendations[toUiLang(lang)]}
+                  </div>
+                  <div
                     style={{
-                      display: 'flex', alignItems: 'center', gap: 12,
-                      width: '100%', padding: 12, marginBottom: 12,
-                      border: `1px solid ${theme.cardBorder}`,
-                      borderRadius: 12,
-                      background: 'transparent',
-                      cursor: 'pointer', textAlign: 'left',
-                      fontFamily: bodyFont,
+                      display: 'flex',
+                      gap: 10,
+                      overflowX: 'auto',
+                      margin: '0 -20px 20px',
+                      padding: '0 20px 4px',
+                      scrollbarWidth: 'thin',
                     }}
                   >
-                    <div
-                      style={{
-                        width: 48, height: 48, borderRadius: 8,
-                        flexShrink: 0, overflow: 'hidden',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        backgroundColor: theme.cardBg,
-                      }}
-                    >
-                      {recItem.image_url ? (
-                        <img
-                          src={getOptimizedImageUrl(recItem.image_url, 'thumbnail')}
-                          alt={recName}
-                          loading="lazy"
-                          onError={handleImageError}
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                        />
-                      ) : (
-                        <span style={{ fontSize: 20, fontWeight: 700, color: theme.mutedText }}>
-                          {recName.charAt(0).toUpperCase()}
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                      <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', color: theme.mutedText, fontWeight: 500 }}>
-                        {UI.goesWellWith[toUiLang(lang)]}
-                      </div>
-                      <div style={{ fontSize: 15, fontWeight: 600, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {recName}
-                      </div>
-                    </div>
-                    <CaretRight size={18} weight="bold" style={{ color: theme.mutedText, flexShrink: 0 }} />
-                  </button>
-                );
-              })()}
+                    {recItems.slice(0, 3).map((rec) => {
+                      const recName = t(rec.item.translations, 'name', rec.item.name_tr, lang);
+                      return (
+                        <button
+                          key={rec.item.id}
+                          type="button"
+                          onClick={() => onSelectItem?.(rec.item)}
+                          style={{
+                            minWidth: 130,
+                            flexShrink: 0,
+                            background: theme.cardBg,
+                            border: `1px solid ${theme.cardBorder}`,
+                            borderRadius: 8,
+                            padding: 10,
+                            cursor: 'pointer',
+                            fontFamily: bodyFont,
+                            textAlign: 'left',
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: '100%',
+                              height: 80,
+                              borderRadius: 6,
+                              marginBottom: 8,
+                              overflow: 'hidden',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              backgroundColor: theme.bg,
+                            }}
+                          >
+                            {rec.item.image_url ? (
+                              <img
+                                src={getOptimizedImageUrl(rec.item.image_url, 'thumbnail')}
+                                alt={recName}
+                                loading="lazy"
+                                onError={handleImageError}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              />
+                            ) : (
+                              <span style={{ fontSize: 28, fontWeight: 700, color: theme.mutedText }}>
+                                {recName.charAt(0).toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 500,
+                              color: theme.text,
+                              lineHeight: 1.3,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical',
+                            }}
+                          >
+                            {recName}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <QuantitySelector
                   quantity={modalQty}
