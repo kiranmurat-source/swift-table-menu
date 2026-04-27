@@ -480,7 +480,7 @@ export default function PhotoEnhance({ restaurantId, originalUrl, theme, onClose
               İyileştiriliyor...
             </div>
             <div style={{ marginTop: 4, fontSize: 12, color: theme.subtle }}>
-              Bu işlem 10-20 saniye sürebilir
+              Bu işlem 15-45 saniye sürebilir.
             </div>
           </div>
         )}
