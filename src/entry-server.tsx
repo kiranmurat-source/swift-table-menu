@@ -43,7 +43,7 @@ async function collectStream(app: React.ReactElement): Promise<string> {
   });
 }
 
-export async function renderPage(url: string, initialData: SSRData): Promise<RenderResult> {
+export async function renderPage(url: string, initialData: SSRData | undefined): Promise<RenderResult> {
   const handler = createStaticHandler(routes as any);
   const request = new Request(url);
   const context = await handler.query(request);
