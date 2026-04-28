@@ -46,19 +46,25 @@ export default function Dashboard() {
     if (user) {
       supabase
         .from('profiles')
-        .select('role, restaurant_id, restaurant:restaurants(onboarding_completed_at, slug)')
+        .select('role, restaurant_id, restaurant:restaurants(onboarding_completed_at, slug, is_active, subscription_status)')
         .eq('id', user.id)
         .single()
-        .then(({ data }) => {
+        .then(async ({ data }) => {
           if (data && data.role !== 'super_admin') {
-            const rel = (data as { restaurant?: { onboarding_completed_at?: string | null; slug?: string | null } | Array<{ onboarding_completed_at?: string | null; slug?: string | null }> | null }).restaurant;
+            const rel = (data as { restaurant?: { onboarding_completed_at?: string | null; slug?: string | null; is_active?: boolean | null; subscription_status?: string | null } | Array<{ onboarding_completed_at?: string | null; slug?: string | null; is_active?: boolean | null; subscription_status?: string | null }> | null }).restaurant;
             const completedAt = Array.isArray(rel) ? rel[0]?.onboarding_completed_at : rel?.onboarding_completed_at;
             const slug = Array.isArray(rel) ? rel[0]?.slug : rel?.slug;
+            const isActive = Array.isArray(rel) ? rel[0]?.is_active : rel?.is_active;
             const needsOnboarding =
               !data.restaurant_id ||
               (!completedAt && isDraftSlug(slug));
             if (needsOnboarding) {
               navigate('/onboarding', { replace: true });
+              return;
+            }
+            if (data.restaurant_id && isActive === false) {
+              await supabase.auth.signOut();
+              navigate('/login?suspended=1', { replace: true });
               return;
             }
           }

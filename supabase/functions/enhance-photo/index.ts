@@ -221,7 +221,7 @@ serve(async (req) => {
 
     const { data: rest, error: restErr } = await supabase
       .from("restaurants")
-      .select("ai_credits_total, ai_credits_used, current_plan")
+      .select("ai_credits_total, ai_credits_used, current_plan, is_active")
       .eq("id", restaurant_id)
       .single();
 
@@ -229,6 +229,13 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: "Restoran bulunamadı" }),
         { status: 404, headers: JSON_HEADERS },
+      );
+    }
+
+    if (!rest.is_active) {
+      return new Response(
+        JSON.stringify({ error: "Aboneliğiniz aktif değil. Lütfen info@tabbled.com adresinden bizimle iletişime geçin." }),
+        { status: 403, headers: JSON_HEADERS },
       );
     }
 

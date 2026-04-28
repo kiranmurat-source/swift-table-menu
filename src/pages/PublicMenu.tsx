@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase';
 import { getOptimizedImageUrl, handleImageError } from '../lib/imageUtils';
 import {
   Star, AppleLogo, Thermometer, MapPin, Phone, Globe, CaretDown, CaretUp, CaretLeft,
-  ForkKnife, XCircle, Funnel, Timer, Tag, Heart, Clock, Play,
+  ForkKnife, XCircle, Funnel, Timer, Tag, Heart, Clock, Play, Warning,
   InstagramLogo, FacebookLogo, XLogo, TiktokLogo, YoutubeLogo, LinkedinLogo,
   WhatsappLogo, ChatCircle, NavigationArrow, X,
 } from "@phosphor-icons/react";
@@ -148,6 +148,7 @@ const UI: Record<string, Record<UiLangCode, string>> = {
   all:          { tr: 'Tümü', en: 'All', ar: 'الكل', zh: '全部' },
   loading:      { tr: 'Menü yükleniyor...', en: 'Loading menu...', ar: 'جاري تحميل القائمة...', zh: '菜单加载中...' },
   notFound:     { tr: 'Bu menü mevcut değil', en: 'This menu does not exist', ar: 'هذه القائمة غير موجودة', zh: '此菜单不存在' },
+  suspended:    { tr: 'Bu menü şu anda erişilebilir değil', en: 'This menu is currently unavailable', ar: 'هذه القائمة غير متاحة حاليًا', zh: '此菜单目前无法访问' },
   noItems:      { tr: 'Menü henüz hazırlanıyor', en: 'Menu is being prepared', ar: 'القائمة قيد الإعداد', zh: '菜单正在准备中' },
   noItemsInCat: { tr: 'Bu kategoride ürün bulunmuyor', en: 'No items in this category', ar: 'لا توجد عناصر في هذه الفئة', zh: '此类别中没有项目' },
   popular:      { tr: 'Popüler', en: 'Popular', ar: 'شائع', zh: '热门' },
@@ -541,7 +542,6 @@ export default function PublicMenu() {
         .from('restaurants')
         .select('*')
         .eq('slug', slug)
-        .eq('is_active', true)
         .single();
 
       const restaurantElapsed = performance.now() - startTime;
@@ -706,6 +706,27 @@ export default function PublicMenu() {
           <ForkKnife size={32} style={{ color: theme.mutedText }} />
         </div>
         <p className="text-lg" style={{ fontFamily: headingFont, fontWeight: 700 }}>{UI.notFound[toUiLang(lang)]}</p>
+        <a href="https://tabbled.com" aria-label="Tabbled" className="hover:opacity-80 transition-opacity">
+          <img src="/tabbled-logo-icon.png" alt="Tabbled" className="h-8 w-auto block" />
+        </a>
+      </div>
+    );
+  }
+
+  /* ---- Suspended (is_active=false) ---- */
+  if (!restaurant.is_active) {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center gap-4 px-4"
+        style={{ backgroundColor: theme.bg, color: theme.text, fontFamily: bodyFont }}
+      >
+        <div
+          className="w-16 h-16 rounded-2xl flex items-center justify-center"
+          style={{ backgroundColor: theme.cardBg }}
+        >
+          <Warning size={32} style={{ color: theme.mutedText }} />
+        </div>
+        <p className="text-lg" style={{ fontFamily: headingFont, fontWeight: 700 }}>{UI.suspended[toUiLang(lang)]}</p>
         <a href="https://tabbled.com" aria-label="Tabbled" className="hover:opacity-80 transition-opacity">
           <img src="/tabbled-logo-icon.png" alt="Tabbled" className="h-8 w-auto block" />
         </a>
