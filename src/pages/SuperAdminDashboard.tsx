@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react';
 import { StatCardSkeleton } from '../components/Skeleton';
 import { supabase } from '../lib/supabase';
 import { CheckCircle, XCircle, PencilSimple, Storefront, Money, Warning, ListBullets, Camera, Calendar, Kanban, CurrencyDollar, Timer, ListChecks, Pulse, Rows, Sliders } from "@phosphor-icons/react";
-import { PLAN_FEATURES, type FeatureKey, type PlanTier } from '../lib/planFeatures';
+import { PLAN_FEATURES, capitalizePlan, type FeatureKey, type PlanTier } from '../lib/planFeatures';
 
-type Restaurant = { id: string; name: string; slug: string; is_active: boolean; subscription_status: string; current_plan: string; created_at: string; address: string | null; phone: string | null; plan_overrides: Record<string, boolean> | null; };
+type Restaurant = { id: string; name: string; slug: string; is_active: boolean; subscription_status: 'active' | 'cancelled' | 'expired' | 'trial'; current_plan: 'basic' | 'premium' | 'enterprise'; created_at: string; address: string | null; phone: string | null; plan_overrides: Record<string, boolean> | null; };
 type Profile = { id: string; email: string; full_name: string | null; role: string; restaurant_id: string | null; };
 type Plan = { id: string; name: string; price_monthly: number | null; price_yearly: number; features: string[]; sort_order: number; };
-type Subscription = { id: string; restaurant_id: string; plan_id: string; start_date: string; end_date: string; status: string; payment_method: string; notes: string | null; };
+type Subscription = { id: string; restaurant_id: string; plan_id: string; start_date: string; end_date: string; status: 'active' | 'cancelled' | 'expired' | 'trial'; payment_method: string; notes: string | null; };
 type Feature = { id: string; category: string; name: string; description: string | null; sort_order: number; };
 type PlanFeature = { id: string; plan_id: string; feature_id: string; value: string; };
 type KPIData = {
@@ -68,6 +68,8 @@ export default function SuperAdminDashboard() {
   const [editUserForm, setEditUserForm] = useState({ full_name: '', restaurant_id: '' });
   const [changingPlan, setChangingPlan] = useState<string | null>(null);
   const [newPlanId, setNewPlanId] = useState('');
+  const [reactivating, setReactivating] = useState<string | null>(null);
+  const [reactivateEndDate, setReactivateEndDate] = useState('');
   const [kpiData, setKpiData] = useState<KPIData | null>(null);
 
   useEffect(() => { loadAll(); }, []);
@@ -248,21 +250,33 @@ export default function SuperAdminDashboard() {
 
   // --- Subscription ---
   async function addSubscription(e: React.FormEvent) {
-    e.preventDefault(); setSaving(true); setMsg('');
-    const startDate = subForm.start_date || new Date().toISOString().split('T')[0];
-    const endDate = new Date(new Date(startDate).getTime() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    e.preventDefault();
+    setSaving(true);
+    setMsg('');
+
     const plan = plans.find(p => p.id === subForm.plan_id);
-    const { error } = await supabase.from('subscriptions').insert({
-      restaurant_id: subForm.restaurant_id, plan_id: subForm.plan_id,
-      start_date: startDate, end_date: endDate, status: 'active', notes: subForm.notes || null
-    });
-    if (error) { setMsg(error.message); setSaving(false); return; }
-    if (plan) {
-      const planCredits: Record<string, number> = { basic: 60, premium: 150, enterprise: 300 };
-      const credits = planCredits[plan.name.toLowerCase()] ?? 60;
-      await supabase.from('restaurants').update({ subscription_status: 'active', current_plan: plan.name, ai_credits_total: credits, ai_credits_used: 0 }).eq('id', subForm.restaurant_id);
+    if (!plan) {
+      setMsg('Üyelik oluşturulamadı: plan bulunamadı');
+      setSaving(false);
+      return;
     }
-    setSubForm({ restaurant_id: '', plan_id: '', start_date: '', notes: '' }); setShowSubForm(false); loadAll();
+
+    const { error } = await supabase.rpc('subscription_create', {
+      p_restaurant_id: subForm.restaurant_id,
+      p_plan_name: plan.name,
+      p_start_date: subForm.start_date || null,
+      p_notes: subForm.notes || null,
+    });
+
+    if (error) {
+      setMsg('Üyelik oluşturulamadı: ' + error.message);
+      setSaving(false);
+      return;
+    }
+
+    setSubForm({ restaurant_id: '', plan_id: '', start_date: '', notes: '' });
+    setShowSubForm(false);
+    loadAll();
     setSaving(false);
   }
   // --- Restaurant Edit/Delete ---
@@ -307,27 +321,80 @@ export default function SuperAdminDashboard() {
   // --- Subscription Extend/Change Plan ---
   async function extendSubscription(id: string, currentEndDate: string) {
     if (!confirm('Uyelik 1 yil uzatilacak. Emin misiniz?')) return;
-    const newEnd = new Date(new Date(currentEndDate).getTime() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    await supabase.from('subscriptions').update({ end_date: newEnd, status: 'active' }).eq('id', id);
+
+    const newEnd = new Date(new Date(currentEndDate).getTime() + 365 * 24 * 60 * 60 * 1000)
+      .toISOString().split('T')[0];
+
+    const { error } = await supabase.rpc('subscription_extend', {
+      p_subscription_id: id,
+      p_new_end_date: newEnd,
+    });
+
+    if (error) {
+      setMsg('Uzatma başarısız: ' + error.message);
+      return;
+    }
+
+    setMsg('');
     loadAll();
   }
-  async function changePlan(subId: string, restaurantId: string) {
+  async function changePlan(subId: string, _restaurantId: string) {
     if (!newPlanId) return;
+
     const plan = plans.find(p => p.id === newPlanId);
     if (!plan) return;
-    await supabase.from('subscriptions').update({ plan_id: newPlanId }).eq('id', subId);
-    const planCredits: Record<string, number> = { basic: 60, premium: 150, enterprise: 300 };
-    const credits = planCredits[plan.name.toLowerCase()] ?? 60;
-    await supabase.from('restaurants').update({ current_plan: plan.name, ai_credits_total: credits }).eq('id', restaurantId);
+
+    const { error } = await supabase.rpc('subscription_change_plan', {
+      p_subscription_id: subId,
+      p_new_plan_name: plan.name,
+    });
+
+    if (error) {
+      setMsg('Plan değiştirilemedi: ' + error.message);
+      return;
+    }
+
+    setMsg('');
     setChangingPlan(null);
     setNewPlanId('');
     loadAll();
   }
 
-  async function cancelSubscription(id: string, rid: string) {
+  async function cancelSubscription(id: string) {
     if (!confirm('Bu uyeligi iptal etmek istediginize emin misiniz?')) return;
-    await supabase.from('subscriptions').update({ status: 'cancelled' }).eq('id', id);
-    await supabase.from('restaurants').update({ subscription_status: 'cancelled', current_plan: 'cancelled' }).eq('id', rid);
+
+    const { error } = await supabase.rpc('subscription_cancel', {
+      p_subscription_id: id,
+    });
+
+    if (error) {
+      setMsg('İptal başarısız: ' + error.message);
+      return;
+    }
+
+    setMsg('');
+    loadAll();
+  }
+
+  async function reactivateSubscription(id: string) {
+    if (!reactivateEndDate) {
+      setMsg('Reaktive edilemedi: bitiş tarihi gerekli');
+      return;
+    }
+
+    const { error } = await supabase.rpc('subscription_reactivate', {
+      p_subscription_id: id,
+      p_new_end_date: reactivateEndDate,
+    });
+
+    if (error) {
+      setMsg('Reaktive edilemedi: ' + error.message);
+      return;
+    }
+
+    setMsg('');
+    setReactivating(null);
+    setReactivateEndDate('');
     loadAll();
   }
 
@@ -395,6 +462,9 @@ export default function SuperAdminDashboard() {
   };
   function daysLeft(endDate: string) {
     return Math.ceil((new Date(endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  }
+  function defaultOneYearFromToday(): string {
+    return new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
   }
   const restName = (id: string) => restaurants.find(r => r.id === id)?.name || id;
   const planName = (id: string) => plans.find(p => p.id === id)?.name || id;
@@ -504,7 +574,7 @@ export default function SuperAdminDashboard() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <div style={{ fontSize: 16, fontWeight: 600, color: '#1C1C1E' }}>{r.name}</div>
-                  <div style={{ fontSize: 13, color: '#A0A0A0', marginTop: 2 }}>/{r.slug} &middot; {r.current_plan}</div>
+                  <div style={{ fontSize: 13, color: '#A0A0A0', marginTop: 2 }}>/{r.slug} &middot; {capitalizePlan(r.current_plan)}</div>
                   {(r.address || r.phone) && <div style={{ fontSize: 12, color: '#6B6B6F', marginTop: 2 }}>{r.address}{r.address && r.phone ? ' · ' : ''}{r.phone}</div>}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -520,7 +590,7 @@ export default function SuperAdminDashboard() {
               <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid #E5E5E3' }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: '#1C1C1E', marginBottom: 4 }}>Plan Overrides</div>
                 <div style={{ fontSize: 12, color: '#6B6B6F', marginBottom: 12 }}>
-                  Plan: <strong>{r.current_plan || 'basic'}</strong>. "Inherit" plan default'unu kullanir, "On" zorla acar, "Off" zorla kapatir.
+                  Plan: <strong>{capitalizePlan(r.current_plan || 'basic')}</strong>. "Inherit" plan default'unu kullanir, "On" zorla acar, "Off" zorla kapatir.
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                   {(Object.keys(PLAN_FEATURES.enterprise) as FeatureKey[]).map((key) => {
@@ -629,7 +699,7 @@ export default function SuperAdminDashboard() {
             const pFeats = allFeatures.filter(f => getPFValue(p.id, f.id) !== 'false').slice(0, 8);
             return (
               <div key={p.id} style={{ ...S.card, textAlign: 'center', marginBottom: 0 }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#1C1C1E' }}>{p.name}</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#1C1C1E' }}>{capitalizePlan(p.name)}</div>
                 <div style={{ fontSize: 24, fontWeight: 800, color: '#1C1C1E', margin: '8px 0' }}>
                   {p.price_monthly ? Number(p.price_monthly).toLocaleString('tr-TR') : '—'} TL
                   <span style={{ fontSize: 13, fontWeight: 400, color: '#A0A0A0' }}>/ay</span>
@@ -662,7 +732,7 @@ export default function SuperAdminDashboard() {
               <div><label style={S.label}>Paket *</label>
                 <select style={S.input} value={subForm.plan_id} onChange={e => setSubForm({ ...subForm, plan_id: e.target.value })} required>
                   <option value="">-- Seciniz --</option>
-                  {plans.map(p => <option key={p.id} value={p.id}>{p.name} - {Number(p.price_yearly).toLocaleString('tr-TR')} TL/yil</option>)}
+                  {plans.map(p => <option key={p.id} value={p.id}>{capitalizePlan(p.name)} - {Number(p.price_yearly).toLocaleString('tr-TR')} TL/yil</option>)}
                 </select>
               </div>
             </div>
@@ -683,7 +753,7 @@ export default function SuperAdminDashboard() {
               <div>
                 <div style={{ fontSize: 15, fontWeight: 600, color: '#1C1C1E' }}>{restName(s.restaurant_id)}</div>
                 <div style={{ fontSize: 13, color: '#6B6B6F', marginTop: 2 }}>
-                  {planName(s.plan_id)} &middot; {s.start_date} - {s.end_date}
+                  {capitalizePlan(planName(s.plan_id))} &middot; {s.start_date} - {s.end_date}
                 </div>
                 {expiring && <div style={{ fontSize: 12, color: '#FF4F7A', fontWeight: 600, marginTop: 4 }}>Son {days} gun!</div>}
                 {expired && <div style={{ fontSize: 12, color: '#EF4444', fontWeight: 600, marginTop: 4 }}>Suresi doldu ({Math.abs(days)} gun once)</div>}
@@ -698,7 +768,7 @@ export default function SuperAdminDashboard() {
                       <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                         <select style={{ ...S.input, width: 120, padding: '4px 8px', fontSize: 12 }} value={newPlanId} onChange={e => setNewPlanId(e.target.value)}>
                           <option value="">Plan sec</option>
-                          {plans.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                          {plans.map(p => <option key={p.id} value={p.id}>{capitalizePlan(p.name)}</option>)}
                         </select>
                         <button onClick={() => changePlan(s.id, s.restaurant_id)} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11 }}><CheckCircle size={14} /></button>
                         <button onClick={() => { setChangingPlan(null); setNewPlanId(''); }} style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11 }}><XCircle size={14} /></button>
@@ -706,8 +776,39 @@ export default function SuperAdminDashboard() {
                     ) : (
                       <button onClick={() => { setChangingPlan(s.id); setNewPlanId(''); }} style={S.btnSm}>Plan Degistir</button>
                     )}
-                    <button onClick={() => cancelSubscription(s.id, s.restaurant_id)} style={S.btnDanger}>Iptal</button>
+                    <button onClick={() => cancelSubscription(s.id)} style={S.btnDanger}>Iptal</button>
                   </>
+                )}
+                {s.status === 'cancelled' && (
+                  reactivating === s.id ? (
+                    <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                      <input
+                        type="date"
+                        style={{ ...S.input, width: 150, padding: '4px 8px', fontSize: 12 }}
+                        value={reactivateEndDate}
+                        onChange={e => setReactivateEndDate(e.target.value)}
+                      />
+                      <button
+                        onClick={() => reactivateSubscription(s.id)}
+                        style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11 }}
+                      >
+                        <CheckCircle size={14} />
+                      </button>
+                      <button
+                        onClick={() => { setReactivating(null); setReactivateEndDate(''); }}
+                        style={{ ...S.btnSm, padding: '3px 8px', fontSize: 11 }}
+                      >
+                        <XCircle size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => { setReactivating(s.id); setReactivateEndDate(defaultOneYearFromToday()); }}
+                      style={S.btn}
+                    >
+                      Reaktive Et
+                    </button>
+                  )
                 )}
               </div>
             </div>
@@ -746,7 +847,7 @@ export default function SuperAdminDashboard() {
                 <th style={{ textAlign: 'left', padding: '10px 8px', fontWeight: 700, color: '#1C1C1E', minWidth: 220 }}>Ozellik</th>
                 {plans.map(p => (
                   <th key={p.id} style={{ textAlign: 'center', padding: '10px 8px', fontWeight: 700, color: '#1C1C1E', minWidth: 100 }}>
-                    {p.name}
+                    {capitalizePlan(p.name)}
                     <div style={{ fontSize: 10, fontWeight: 400, color: '#A0A0A0' }}>{planActiveCount(p.id)} aktif</div>
                   </th>
                 ))}

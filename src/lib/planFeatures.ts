@@ -14,6 +14,10 @@
 
 export type PlanTier = 'basic' | 'premium' | 'enterprise';
 
+export function capitalizePlan(name: string): string {
+  return name ? name[0].toUpperCase() + name.slice(1) : '';
+}
+
 export type FeatureKey =
   // Pillar 1: SEO
   | 'menu_item_schema'
