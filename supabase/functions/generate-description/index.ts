@@ -1,21 +1,28 @@
+// Edge Function: generate-description
+// Anthropic Claude Haiku ile Türkçe menü açıklaması üretir.
+// Provider call logic _shared/anthropic_text.ts'de — process-ai-queue worker ile paylaşılıyor.
+// Mevcut davranış: kredi düşümü server-side (consume_ai_credits). Bu PR'de değiştirilmiyor;
+// PR3'te frontend bu fonksiyonu çağırmayı bırakınca server-side deduction kaldırılacak.
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { callAnthropic } from "../_shared/anthropic_text.ts";
 
-const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const MENU_DESCRIPTION_COST = 15;
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "https://tabbled.com",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey",
+};
+const JSON_HEADERS = { "Content-Type": "application/json", ...CORS_HEADERS };
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: {
-        "Access-Control-Allow-Origin": "https://tabbled.com",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey",
-      },
-    });
+    return new Response("ok", { headers: CORS_HEADERS });
   }
 
   try {
@@ -24,7 +31,7 @@ serve(async (req) => {
     if (!restaurant_id || !item_id || !name_tr) {
       return new Response(JSON.stringify({ error: "Missing params" }), {
         status: 400,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "https://tabbled.com" },
+        headers: JSON_HEADERS,
       });
     }
 
@@ -40,7 +47,7 @@ serve(async (req) => {
     if (restErr || !rest) {
       return new Response(JSON.stringify({ error: "Restaurant not found" }), {
         status: 404,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "https://tabbled.com" },
+        headers: JSON_HEADERS,
       });
     }
 
@@ -51,79 +58,29 @@ serve(async (req) => {
     if (remaining < MENU_DESCRIPTION_COST) {
       return new Response(JSON.stringify({ error: `Yetersiz AI kredisi. Gerekli: ${MENU_DESCRIPTION_COST}, kalan: ${remaining}.`, code: "INSUFFICIENT_CREDITS", usage: usedCredits, limit: totalCredits }), {
         status: 402,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "https://tabbled.com" },
+        headers: JSON_HEADERS,
       });
     }
 
-    // Ton rehberi
-    const toneGuide: Record<string, string> = {
-      elegant: "Şık, rafine, lüks restoran tarzında. Kısa ve etkileyici.",
-      casual: "Samimi, sıcak, kafe/bistro tarzında. Arkadaşça ve davetkar.",
-      descriptive: "Detaylı, bilgilendirici, malzemeleri ve pişirme tekniğini anlatan.",
-    };
-    const selectedTone = toneGuide[tone] || toneGuide["descriptive"];
-
-    // Claude API çağrısı
-    const allergenText = allergens && allergens.length > 0 ? `Alerjenler: ${allergens.join(", ")}. ` : "";
-    const vegText = is_vegetarian ? "Bu vejetaryen bir üründür. " : "";
-    const calText = calories ? `${calories} kcal. ` : "";
-    const currentDescText = currentDesc && currentDesc.trim().length > 0
-      ? `\nMevcut açıklama (bunu iyileştir): ${currentDesc}`
-      : "";
-
-    const prompt = `Sen profesyonel bir restoran menü yazarısın. Türkiye'deki restoranlar için iştah açıcı, profesyonel menü açıklamaları yazıyorsun.
-
-Kurallar:
-- SADECE Türkçe yaz
-- 1-3 cümle (40-120 karakter arası ideal, max 200 karakter)
-- İştah açıcı, duygusal, görsel imgeler kullan
-- Malzemeleri, pişirme tekniğini veya sunumu vurgula
-- Abartma, klişe ifadelerden kaçın ("eşsiz", "muhteşem", "benzersiz" gibi)
-- Emoji KULLANMA
-- Fiyat veya kalori bilgisi YAZMA (bunlar zaten ayrı gösteriliyor)
-- HTML tag'i KULLANMA, düz metin yaz
-- Allerjen bilgisi YAZMA (bunlar zaten ayrı gösteriliyor)
-- Restoran adı YAZMA
-- Sadece açıklama metnini döndür, başka hiçbir şey yazma
-
-Ürün: ${name_tr}
-Kategori: ${category_name || "Belirtilmemiş"}
-Fiyat: ₺${price}
-${allergenText}${vegText}${calText}${currentDescText}
-
-Ton: ${selectedTone}
-
-Bu ürün için kısa, iştah açıcı bir menü açıklaması yaz.`;
-
-    const claudeRes = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 200,
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
-
-    const claudeData = await claudeRes.json();
-
-    if (!claudeRes.ok) {
-      return new Response(JSON.stringify({ error: "AI servisi hatası: " + (claudeData.error?.message || "Bilinmeyen hata") }), {
-        status: 500,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "https://tabbled.com" },
+    let description: string;
+    try {
+      const out = await callAnthropic({
+        name_tr,
+        category_name,
+        price,
+        allergens,
+        is_vegetarian,
+        calories,
+        tone,
+        currentDesc,
       });
-    }
-
-    const description = claudeData.content?.[0]?.text?.trim() || "";
-
-    if (!description) {
-      return new Response(JSON.stringify({ error: "Açıklama üretilemedi" }), {
+      description = out.description;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error("[generate-description] anthropic error:", msg);
+      return new Response(JSON.stringify({ error: "AI servisi hatası: " + msg }), {
         status: 500,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "https://tabbled.com" },
+        headers: JSON_HEADERS,
       });
     }
 
@@ -139,7 +96,7 @@ Bu ürün için kısa, iştah açıcı bir menü açıklaması yaz.`;
     if (consumeErr) {
       return new Response(JSON.stringify({ error: "Kredi düşürülemedi: " + consumeErr.message }), {
         status: 500,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "https://tabbled.com" },
+        headers: JSON_HEADERS,
       });
     }
 
@@ -152,12 +109,12 @@ Bu ürün için kısa, iştah açıcı bir menü açıklaması yaz.`;
       usage: newUsed,
       limit: totalCredits,
     }), {
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "https://tabbled.com" },
+      headers: JSON_HEADERS,
     });
   } catch (err) {
     return new Response(JSON.stringify({ error: String(err) }), {
       status: 500,
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "https://tabbled.com" },
+      headers: JSON_HEADERS,
     });
   }
 });
