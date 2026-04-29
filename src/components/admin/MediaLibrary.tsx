@@ -17,8 +17,11 @@ import {
   CheckCircle,
   Funnel,
   VideoCamera,
+  PencilSimple,
 } from '@phosphor-icons/react';
 import PhotoEnhance from './PhotoEnhance';
+import ImageEditor from './ImageEditor';
+import { measureBlob } from '../../lib/imageEdit';
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
@@ -144,6 +147,7 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<MediaItem | null>(null);
   const [enhanceTarget, setEnhanceTarget] = useState<MediaItem | null>(null);
+  const [editTarget, setEditTarget] = useState<MediaItem | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -308,7 +312,7 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
     source: MediaItem,
     blob: Blob,
     mimeType: string,
-  ): Promise<{ id: string } | null> {
+  ): Promise<{ id: string; file_path: string } | null> {
     // Kota kontrolü
     if (credits.storageUsedBytes + blob.size > credits.storageLimitMb * 1024 * 1024) {
       flash('Storage kotası aşılacak — önce eski görseller silinmeli.', 'err');
@@ -327,6 +331,8 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
     const hashBuf = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer());
     const hash = Array.from(new Uint8Array(hashBuf)).map((b) => b.toString(16).padStart(2, '0')).join('');
 
+    const dims = await measureBlob(blob).catch(() => ({ width: 0, height: 0 } as { width: number; height: number }));
+
     const { data: inserted, error: insErr } = await supabase
       .from('media_library')
       .insert({
@@ -335,8 +341,8 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
         file_path: path,
         file_size: blob.size,
         file_type: mimeType,
-        width: null,
-        height: null,
+        width: dims.width || null,
+        height: dims.height || null,
         file_hash: hash,
         tags: source.tags,
         used_in: [],
@@ -363,7 +369,7 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
     setSelected(null);
     loadMedia();
     credits.refresh();
-    return { id: inserted.id };
+    return { id: inserted.id, file_path: path };
   }
 
   async function deleteItemSilent(id: string) {
@@ -843,6 +849,17 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
                   <Sparkle size={14} weight="fill" /> AI İyileştir
                 </button>
               )}
+              {!selected.file_type.startsWith('video/') && (
+                <button
+                  style={S.btnGhost}
+                  onClick={() => {
+                    setEditTarget(selected);
+                    setSelected(null);
+                  }}
+                >
+                  <PencilSimple size={14} /> Düzenle
+                </button>
+              )}
               <button
                 style={{ ...S.btnGhost, color: '#EF4444', borderColor: '#EF4444' }}
                 onClick={() => deleteItem(selected)}
@@ -862,14 +879,35 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
       {enhanceTarget && (
         <PhotoEnhance
           restaurantId={restaurantId}
+          restaurantSlug={restaurantSlug}
           originalUrl={getPublicUrl(enhanceTarget.file_path)}
           theme={theme}
-          onClose={() => setEnhanceTarget(null)}
+          onClose={() => {
+            setEnhanceTarget(null);
+            loadMedia();
+          }}
           onAutoSave={async (blob, mime) => {
             return await handleEnhanceSave(enhanceTarget, blob, mime);
           }}
           onUndo={async (id) => {
             await deleteItemSilent(id);
+          }}
+        />
+      )}
+
+      {/* ImageEditor modal */}
+      {editTarget && (
+        <ImageEditor
+          mediaId={editTarget.id}
+          oldFilePath={editTarget.file_path}
+          publicUrl={getPublicUrl(editTarget.file_path)}
+          restaurantSlug={restaurantSlug}
+          theme={theme}
+          mode="standalone"
+          onClose={() => setEditTarget(null)}
+          onSaved={async () => {
+            await loadMedia();
+            credits.refresh();
           }}
         />
       )}

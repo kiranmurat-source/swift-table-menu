@@ -13,7 +13,9 @@ import {
   Aperture,
   SunDim,
   Square,
+  PencilSimple,
 } from '@phosphor-icons/react';
+import ImageEditor from './ImageEditor';
 
 type AngleOpt = 'original' | '45' | '90';
 type LightingOpt = 'original' | 'studio' | 'natural';
@@ -42,6 +44,7 @@ const SUPABASE_URL = 'https://qmnrawqvkwehufebbkxp.supabase.co';
 
 interface Props {
   restaurantId: string;
+  restaurantSlug: string;
   /** Kaynak (orijinal) görsel URL — public bir URL olmalı, base64'e çevrilir */
   originalUrl: string;
   theme: AdminTheme;
@@ -49,9 +52,9 @@ interface Props {
   /**
    * Edge Function başarılı dönünce ANINDA çağrılır (compare view'a girmeden önce).
    * Parent Storage'a yükler + media_library row'u oluşturur + kredi düşer.
-   * Başarılı ise eklenen row'un id'sini döner; kota gibi nedenlerle başarısız olursa null.
+   * Başarılı ise eklenen row'un id ve file_path'ini döner; kota gibi nedenlerle başarısız olursa null.
    */
-  onAutoSave: (enhancedBlob: Blob, mimeType: string) => Promise<{ id: string } | null>;
+  onAutoSave: (enhancedBlob: Blob, mimeType: string) => Promise<{ id: string; file_path: string } | null>;
   /** Kullanıcı "Geri Al" derse: oto-kaydedilen row'u sil (storage + db). */
   onUndo: (mediaId: string) => Promise<void>;
 }
@@ -75,12 +78,13 @@ function base64ToBlob(base64: string, mime: string): Blob {
   return new Blob([bytes], { type: mime });
 }
 
-export default function PhotoEnhance({ restaurantId, originalUrl, theme, onClose, onAutoSave, onUndo }: Props) {
+export default function PhotoEnhance({ restaurantId, restaurantSlug, originalUrl, theme, onClose, onAutoSave, onUndo }: Props) {
   const credits = useAICredits(restaurantId);
-  const [status, setStatus] = useState<'confirm' | 'loading' | 'compare' | 'error'>('confirm');
+  const [status, setStatus] = useState<'confirm' | 'loading' | 'compare' | 'editing' | 'error'>('confirm');
   const [error, setError] = useState<string | null>(null);
   const [enhanced, setEnhanced] = useState<{ base64: string; mime: string } | null>(null);
   const [savedMediaId, setSavedMediaId] = useState<string | null>(null);
+  const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
   const [sliderPercent, setSliderPercent] = useState(50);
   const [angle, setAngle] = useState<AngleOpt>('original');
   const [lighting, setLighting] = useState<LightingOpt>('original');
@@ -90,6 +94,7 @@ export default function PhotoEnhance({ restaurantId, originalUrl, theme, onClose
     setStatus('loading');
     setError(null);
     setSavedMediaId(null);
+    setSavedFilePath(null);
     try {
       const dataUrl = await urlToBase64DataUrl(originalUrl);
 
@@ -123,6 +128,7 @@ export default function PhotoEnhance({ restaurantId, originalUrl, theme, onClose
         const saved = await onAutoSave(blob, mime);
         if (saved?.id) {
           setSavedMediaId(saved.id);
+          setSavedFilePath(saved.file_path);
         } else {
           setError('Otomatik kayıt başarısız oldu. Lütfen tekrar deneyin.');
           setStatus('error');
@@ -534,18 +540,40 @@ export default function PhotoEnhance({ restaurantId, originalUrl, theme, onClose
             <div style={{ marginTop: 8, fontSize: 11, color: theme.subtle, textAlign: 'center' }}>
               Karşılaştırmak için sürükleyin
             </div>
-            <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+            <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
               <button style={S.btnGhost} onClick={handleUndoAndClose}>
                 Geri Al
               </button>
+              <span style={{ flex: 1 }} />
+              {savedMediaId && savedFilePath && (
+                <button style={S.btnGhost} onClick={() => setStatus('editing')}>
+                  <PencilSimple size={14} /> Düzenle
+                </button>
+              )}
               <button style={S.btn} onClick={onClose}>
                 <Check size={14} /> Tamam
               </button>
             </div>
             <p style={{ marginTop: 10, fontSize: 11, color: theme.subtle, textAlign: 'center' }}>
-              Otomatik kaydedildi. "Geri Al" ile kütüphaneden silebilirsin.
+              Otomatik kaydedildi. "Düzenle" ile döndür/kırp, "Geri Al" ile sil.
             </p>
           </div>
+        )}
+
+        {status === 'editing' && savedMediaId && savedFilePath && enhanced && (
+          <ImageEditor
+            mediaId={savedMediaId}
+            oldFilePath={savedFilePath}
+            publicUrl={`data:${enhanced.mime};base64,${enhanced.base64}`}
+            restaurantSlug={restaurantSlug}
+            theme={theme}
+            mode="inline"
+            onClose={() => setStatus('compare')}
+            onSaved={(updated) => {
+              setSavedFilePath(updated.file_path);
+              setStatus('compare');
+            }}
+          />
         )}
 
         {status === 'error' && (
