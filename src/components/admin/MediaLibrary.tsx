@@ -304,11 +304,15 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
    * PhotoEnhance'ten gelen iyileştirilmiş blob'u Storage'a yükler, media_library'ye
    * ai_enhanced=true + original_id olarak yeni row ekler, kredi düşer, log yazar.
    */
-  async function handleEnhanceSave(source: MediaItem, blob: Blob, mimeType: string) {
+  async function handleEnhanceSave(
+    source: MediaItem,
+    blob: Blob,
+    mimeType: string,
+  ): Promise<{ id: string } | null> {
     // Kota kontrolü
     if (credits.storageUsedBytes + blob.size > credits.storageLimitMb * 1024 * 1024) {
       flash('Storage kotası aşılacak — önce eski görseller silinmeli.', 'err');
-      throw new Error('Kota aşıldı');
+      return null;
     }
 
     const ext = mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : 'jpg';
@@ -359,6 +363,26 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
     setSelected(null);
     loadMedia();
     credits.refresh();
+    return { id: inserted.id };
+  }
+
+  async function deleteItemSilent(id: string) {
+    try {
+      const { data: row } = await supabase
+        .from('media_library')
+        .select('file_path')
+        .eq('id', id)
+        .single();
+      if (row?.file_path) {
+        await supabase.storage.from('menu-images').remove([row.file_path]);
+      }
+      await supabase.from('media_library').delete().eq('id', id);
+      loadMedia();
+      credits.refresh();
+    } catch (e) {
+      console.error('Geri al başarısız', e);
+      flash('Geri al başarısız', 'err');
+    }
   }
 
   function copyUrl(item: MediaItem) {
@@ -841,9 +865,11 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
           originalUrl={getPublicUrl(enhanceTarget.file_path)}
           theme={theme}
           onClose={() => setEnhanceTarget(null)}
-          onSave={async (blob, mime) => {
-            await handleEnhanceSave(enhanceTarget, blob, mime);
-            setEnhanceTarget(null);
+          onAutoSave={async (blob, mime) => {
+            return await handleEnhanceSave(enhanceTarget, blob, mime);
+          }}
+          onUndo={async (id) => {
+            await deleteItemSilent(id);
           }}
         />
       )}

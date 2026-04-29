@@ -9,7 +9,7 @@ import {
   ArrowsHorizontal,
   Warning,
   CheckCircle,
-  FloppyDisk,
+  Check,
   Aperture,
   SunDim,
   Square,
@@ -47,10 +47,13 @@ interface Props {
   theme: AdminTheme;
   onClose: () => void;
   /**
-   * Kullanıcı kaydet dedi. `enhancedBlob` yeni görsel, `mimeType` ile beraber.
-   * Parent bunu Storage'a yükler + media_library row'u oluşturur + kredi düşer.
+   * Edge Function başarılı dönünce ANINDA çağrılır (compare view'a girmeden önce).
+   * Parent Storage'a yükler + media_library row'u oluşturur + kredi düşer.
+   * Başarılı ise eklenen row'un id'sini döner; kota gibi nedenlerle başarısız olursa null.
    */
-  onSave: (enhancedBlob: Blob, mimeType: string) => Promise<void> | void;
+  onAutoSave: (enhancedBlob: Blob, mimeType: string) => Promise<{ id: string } | null>;
+  /** Kullanıcı "Geri Al" derse: oto-kaydedilen row'u sil (storage + db). */
+  onUndo: (mediaId: string) => Promise<void>;
 }
 
 async function urlToBase64DataUrl(url: string): Promise<string> {
@@ -72,11 +75,12 @@ function base64ToBlob(base64: string, mime: string): Blob {
   return new Blob([bytes], { type: mime });
 }
 
-export default function PhotoEnhance({ restaurantId, originalUrl, theme, onClose, onSave }: Props) {
+export default function PhotoEnhance({ restaurantId, originalUrl, theme, onClose, onAutoSave, onUndo }: Props) {
   const credits = useAICredits(restaurantId);
-  const [status, setStatus] = useState<'confirm' | 'loading' | 'compare' | 'saving' | 'error'>('confirm');
+  const [status, setStatus] = useState<'confirm' | 'loading' | 'compare' | 'error'>('confirm');
   const [error, setError] = useState<string | null>(null);
   const [enhanced, setEnhanced] = useState<{ base64: string; mime: string } | null>(null);
+  const [savedMediaId, setSavedMediaId] = useState<string | null>(null);
   const [sliderPercent, setSliderPercent] = useState(50);
   const [angle, setAngle] = useState<AngleOpt>('original');
   const [lighting, setLighting] = useState<LightingOpt>('original');
@@ -85,6 +89,7 @@ export default function PhotoEnhance({ restaurantId, originalUrl, theme, onClose
   const runEnhance = useCallback(async () => {
     setStatus('loading');
     setError(null);
+    setSavedMediaId(null);
     try {
       const dataUrl = await urlToBase64DataUrl(originalUrl);
 
@@ -109,13 +114,33 @@ export default function PhotoEnhance({ restaurantId, originalUrl, theme, onClose
         throw new Error(body?.error || 'İyileştirme başarısız');
       }
 
-      setEnhanced({ base64: body.enhanced_base64, mime: body.mime_type || 'image/png' });
+      const mime = body.mime_type || 'image/png';
+      setEnhanced({ base64: body.enhanced_base64, mime });
+
+      // Otomatik kayıt: compare view'a geçmeden önce kalıcı yap
+      try {
+        const blob = base64ToBlob(body.enhanced_base64, mime);
+        const saved = await onAutoSave(blob, mime);
+        if (saved?.id) {
+          setSavedMediaId(saved.id);
+        } else {
+          setError('Otomatik kayıt başarısız oldu. Lütfen tekrar deneyin.');
+          setStatus('error');
+          return;
+        }
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : '';
+        setError('Otomatik kayıt başarısız oldu' + (msg ? ': ' + msg : ''));
+        setStatus('error');
+        return;
+      }
+
       setStatus('compare');
     } catch (e) {
       setError((e as Error).message);
       setStatus('error');
     }
-  }, [originalUrl, restaurantId, angle, lighting, surface]);
+  }, [originalUrl, restaurantId, angle, lighting, surface, onAutoSave]);
 
   // Drag slider
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -144,18 +169,16 @@ export default function PhotoEnhance({ restaurantId, originalUrl, theme, onClose
     };
   }, []);
 
-  async function save() {
-    if (!enhanced) return;
-    setStatus('saving');
-    try {
-      const blob = base64ToBlob(enhanced.base64, enhanced.mime);
-      await onSave(blob, enhanced.mime);
-      onClose();
-    } catch (e) {
-      setError((e as Error).message);
-      setStatus('error');
+  const handleUndoAndClose = async () => {
+    if (savedMediaId) {
+      try {
+        await onUndo(savedMediaId);
+      } catch {
+        // Sessiz: parent zaten kullanıcıya hata gösteriyor.
+      }
     }
-  }
+    onClose();
+  };
 
   const S: Record<string, CSSProperties> = {
     backdrop: {
@@ -512,28 +535,16 @@ export default function PhotoEnhance({ restaurantId, originalUrl, theme, onClose
               Karşılaştırmak için sürükleyin
             </div>
             <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-              <button style={S.btnGhost} onClick={onClose}>İptal</button>
-              <button style={S.btn} onClick={save}>
-                <FloppyDisk size={14} /> Kaydet
+              <button style={S.btnGhost} onClick={handleUndoAndClose}>
+                Geri Al
+              </button>
+              <button style={S.btn} onClick={onClose}>
+                <Check size={14} /> Tamam
               </button>
             </div>
-          </div>
-        )}
-
-        {status === 'saving' && (
-          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-            <div
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: '50%',
-                border: `3px solid ${theme.border}`,
-                borderTopColor: theme.accent,
-                animation: 'spin 0.8s linear infinite',
-                margin: '0 auto',
-              }}
-            />
-            <div style={{ marginTop: 12, fontSize: 13, color: theme.value }}>Kaydediliyor...</div>
+            <p style={{ marginTop: 10, fontSize: 11, color: theme.subtle, textAlign: 'center' }}>
+              Otomatik kaydedildi. "Geri Al" ile kütüphaneden silebilirsin.
+            </p>
           </div>
         )}
 
