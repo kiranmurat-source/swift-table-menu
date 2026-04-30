@@ -15,6 +15,7 @@ import MediaPickerModal, { type MediaAccept, attachMediaUsage, detachMediaUsage 
 import MenuImport from '../components/admin/MenuImport';
 import { useAICredits } from '../hooks/useAICredits';
 import { AI_CREDIT_COSTS } from '../lib/aiCredits';
+import { enqueueAIJob, subscribeToJob } from '../lib/aiQueue';
 import { NUTRI_SCORE_COLORS, NUTRI_SCORE_VALUES } from "@/lib/nutritionEU";
 import RestaurantAnalytics from "@/components/dashboard/RestaurantAnalytics";
 import TabbledLogo from '@/components/TabbledLogo';
@@ -667,39 +668,49 @@ function RestaurantDashboardInner() {
     if (!restaurant || !itemForm.name_tr) return;
     setGeneratingAI(true);
     setAiPreview(null);
-    try {
-      const catNameVal = selectedCat ? categories.find(c => c.id === selectedCat)?.name_tr || '' : '';
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-description`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          restaurant_id: restaurant.id,
-          item_id: editingItem || 'new',
-          name_tr: itemForm.name_tr,
-          category_name: catNameVal,
-          price: itemForm.price,
-          allergens: itemForm.allergens,
-          is_vegetarian: itemForm.allergens.includes('vegetarian'),
-          calories: itemForm.nutrition.calories ? parseInt(itemForm.nutrition.calories) : null,
-          tone: aiTone,
-          currentDesc: itemForm.description_tr || '',
-        }),
-      });
-      const data = await res.json();
-      if (data.success && data.description) {
-        setAiPreview(data.description);
-        aiCredits.refresh();
-        if (data.usage && data.limit) {
-          setMsg(`AI açıklama oluşturuldu (${data.usage}/${data.limit} kredi kullanıldı)`);
-          setTimeout(() => setMsg(''), 4000);
-        }
-      } else {
-        setMsg(data.error || 'AI açıklama oluşturulamadı');
-      }
-    } catch (err) {
-      setMsg('AI servisi bağlantı hatası');
+
+    const catNameVal = selectedCat ? categories.find(c => c.id === selectedCat)?.name_tr || '' : '';
+
+    const enqueueResult = await enqueueAIJob('description_writer', {
+      restaurant_id: restaurant.id,
+      item_id: editingItem || 'new',
+      name_tr: itemForm.name_tr,
+      category_name: catNameVal,
+      price: itemForm.price,
+      allergens: itemForm.allergens,
+      is_vegetarian: itemForm.allergens.includes('vegetarian'),
+      calories: itemForm.nutrition.calories ? parseInt(itemForm.nutrition.calories) : null,
+      tone: aiTone,
+      currentDesc: itemForm.description_tr || '',
+    });
+
+    if (!enqueueResult.ok) {
+      setMsg(enqueueResult.error.userMessage);
+      setTimeout(() => setMsg(''), 4000);
+      setGeneratingAI(false);
+      return;
     }
-    setGeneratingAI(false);
+
+    const unsubscribe = subscribeToJob(enqueueResult.data.job_id, (row) => {
+      if (row.status === 'completed') {
+        const result = (row.result_data ?? {}) as { description?: string };
+        if (result.description) {
+          setAiPreview(result.description);
+          aiCredits.refresh();
+          setMsg('AI açıklama oluşturuldu');
+        } else {
+          setMsg('AI açıklama oluşturulamadı');
+        }
+        setTimeout(() => setMsg(''), 4000);
+        setGeneratingAI(false);
+        unsubscribe();
+      } else if (row.status === 'failed') {
+        setMsg(row.error_message || 'AI servisi hatası');
+        setTimeout(() => setMsg(''), 4000);
+        setGeneratingAI(false);
+        unsubscribe();
+      }
+    });
   }
 
   function acceptAiDescription() {

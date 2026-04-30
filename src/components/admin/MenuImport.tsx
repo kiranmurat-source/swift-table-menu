@@ -1,7 +1,8 @@
-import { useCallback, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAICredits } from '../../hooks/useAICredits';
-import { AI_CREDIT_COSTS, consumeAICredits } from '../../lib/aiCredits';
+import { AI_CREDIT_COSTS } from '../../lib/aiCredits';
+import { enqueueAIJob, cancelAIJob, subscribeToJob } from '../../lib/aiQueue';
 import type { AdminTheme } from '../../lib/adminTheme';
 import { useBaseCurrencySymbol } from '../../lib/currencySymbols';
 import {
@@ -18,11 +19,10 @@ import {
   Trash,
 } from '@phosphor-icons/react';
 
-const SUPABASE_URL = 'https://qmnrawqvkwehufebbkxp.supabase.co';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const MAX_IMAGES = 10;
 
-type Step = 'upload' | 'loading' | 'preview' | 'done';
+type Step = 'upload' | 'queued' | 'processing' | 'preview' | 'saving' | 'done';
 
 interface DraftItem {
   id: string; // client-side uuid
@@ -64,11 +64,12 @@ export default function MenuImport({ restaurantId, baseCurrency, theme, onImport
   const baseSymbol = useBaseCurrencySymbol(baseCurrency);
   const [step, setStep] = useState<Step>('upload');
   const [files, setFiles] = useState<File[]>([]);
-  const [progress, setProgress] = useState(0); // fake progress (0-100)
+  const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState<DraftCategory[]>([]);
   const [importStats, setImportStats] = useState<{ cats: number; items: number; skipped: number } | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [jobId, setJobId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const creditsPerFile = AI_CREDIT_COSTS.menuImportPerFile;
@@ -93,65 +94,84 @@ export default function MenuImport({ restaurantId, baseCurrency, theme, onImport
   const analyze = useCallback(async () => {
     if (files.length === 0) return;
     if (notEnoughCredits) {
-      setError('Krediniz yetersiz.');
+      setError('AI krediniz yetersiz. Plan yükselterek daha fazla kullanım hakkı kazanabilirsiniz.');
       return;
     }
     setError(null);
-    setStep('loading');
+    setStep('queued');
     setProgress(10);
-
-    // Fake progress ticker
-    const ticker = window.setInterval(() => {
-      setProgress((p) => (p < 85 ? p + 5 : p));
-    }, 600);
+    setJobId(null);
 
     try {
       const dataUrls = await Promise.all(files.map(fileToDataUrl));
-      setProgress(40);
-
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/import-menu`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ images: dataUrls }),
+      const result = await enqueueAIJob('menu_import', {
+        images: dataUrls,
+        image_count: dataUrls.length,
       });
-
-      const body = await res.json();
-      if (!res.ok || !body.ok) {
-        throw new Error(body?.error || 'Analiz başarısız');
+      if (!result.ok) {
+        setError(result.error.userMessage);
+        setStep('upload');
+        return;
       }
-
-      setProgress(95);
-
-      type Parsed = { name_tr: string; items: { name_tr: string; description_tr: string | null; price: number | null }[] };
-      const parsed: Parsed[] = body.categories || [];
-      const draftCats: DraftCategory[] = parsed.map((c) => ({
-        id: uid(),
-        name_tr: c.name_tr,
-        expanded: true,
-        items: c.items.map((it) => ({
-          id: uid(),
-          name_tr: it.name_tr,
-          description_tr: it.description_tr,
-          price: it.price,
-          selected: true,
-        })),
-      }));
-      setDraft(draftCats);
-      setProgress(100);
-      setStep('preview');
+      setJobId(result.data.job_id);
+      setProgress(20);
+      // Status stays 'queued' until Realtime delivers the next transition.
     } catch (e) {
       setError((e as Error).message);
       setStep('upload');
-    } finally {
-      window.clearInterval(ticker);
     }
   }, [files, notEnoughCredits]);
+
+  useEffect(() => {
+    if (!jobId) return;
+    const unsubscribe = subscribeToJob(jobId, (row) => {
+      if (row.status === 'processing') {
+        setStep('processing');
+        setProgress(60);
+      } else if (row.status === 'completed') {
+        type ParsedCat = {
+          name_tr: string;
+          items: { name_tr: string; description_tr: string | null; price: number | null }[];
+        };
+        const result = (row.result_data ?? {}) as { categories?: ParsedCat[] };
+        if (!Array.isArray(result.categories)) {
+          setError('Analiz tamamlandı ama sonuç okunamadı.');
+          setStep('upload');
+          return;
+        }
+        const draftCats: DraftCategory[] = result.categories.map((c) => ({
+          id: uid(),
+          name_tr: c.name_tr,
+          expanded: true,
+          items: c.items.map((it) => ({
+            id: uid(),
+            name_tr: it.name_tr,
+            description_tr: it.description_tr,
+            price: it.price,
+            selected: true,
+          })),
+        }));
+        setDraft(draftCats);
+        setProgress(100);
+        credits.refresh();
+        setStep('preview');
+      } else if (row.status === 'failed') {
+        setError(row.error_message || 'Analiz başarısız oldu.');
+        setStep('upload');
+      } else if (row.status === 'cancelled') {
+        setStep('upload');
+        setProgress(0);
+        setJobId(null);
+      }
+    });
+    return unsubscribe;
+  }, [jobId, credits.refresh]);
+
+  const handleCancel = async () => {
+    if (!jobId) return;
+    await cancelAIJob(jobId);
+    // Realtime UPDATE for status='cancelled' will reset us to 'upload'.
+  };
 
   const updateItem = (catId: string, itemId: string, patch: Partial<DraftItem>) => {
     setDraft((prev) =>
@@ -193,7 +213,7 @@ export default function MenuImport({ restaurantId, baseCurrency, theme, onImport
       return;
     }
     setError(null);
-    setStep('loading');
+    setStep('saving');
     setProgress(20);
 
     try {
@@ -284,16 +304,8 @@ export default function MenuImport({ restaurantId, baseCurrency, theme, onImport
         importedItems += rows.length;
       }
 
-      // Atomik kredi düş + log
-      const creditsToCharge = files.length * AI_CREDIT_COSTS.menuImportPerFile;
-      await consumeAICredits({
-        restaurantId,
-        amount: creditsToCharge,
-        actionType: 'menu_import',
-        input: { file_count: files.length, image_names: files.map((f) => f.name) },
-        output: { categories: importedCats, items: importedItems, skipped },
-      });
-
+      // Worker zaten analyze tamamlandığında atomik krediyi düşmüştür (PR3).
+      // Buradaki credits.refresh() sadece UI sayacını günceller.
       setProgress(100);
       setImportStats({ cats: importedCats, items: importedItems, skipped });
       credits.refresh();
@@ -530,18 +542,33 @@ export default function MenuImport({ restaurantId, baseCurrency, theme, onImport
         </div>
       )}
 
-      {/* Step: loading */}
-      {step === 'loading' && (
+      {/* Step: queued / processing / saving */}
+      {(step === 'queued' || step === 'processing' || step === 'saving') && (
         <div style={S.card}>
           <div style={{ fontSize: 14, fontWeight: 600, color: theme.value, marginBottom: 8 }}>
-            {progress < 100 ? 'Menü analiz ediliyor...' : 'İçe aktarılıyor...'}
+            {step === 'queued'
+              ? 'Sırada bekleniyor…'
+              : step === 'processing'
+                ? 'Menü analiz ediliyor…'
+                : 'İçe aktarılıyor…'}
           </div>
           <div style={S.progressBar}>
             <div style={S.progressFill} />
           </div>
           <div style={{ marginTop: 8, fontSize: 12, color: theme.subtle }}>
-            {progress < 50 ? 'Fotoğraf gönderiliyor...' : progress < 85 ? 'Kategoriler ve ürünler çıkarılıyor...' : 'Son kontroller...'}
+            {step === 'queued'
+              ? 'Worker görevi yakında alacak.'
+              : step === 'processing'
+                ? 'Kategoriler ve ürünler çıkarılıyor…'
+                : 'Veritabanına yazılıyor…'}
           </div>
+          {step === 'queued' && jobId && (
+            <div style={{ marginTop: 14 }}>
+              <button type="button" style={S.btnGhost} onClick={handleCancel}>
+                İptal
+              </button>
+            </div>
+          )}
         </div>
       )}
 

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import { supabase } from '../../lib/supabase';
 import { getOptimizedImageUrl, handleImageError } from '../../lib/imageUtils';
 import { useAICredits } from '../../hooks/useAICredits';
-import { AI_CREDIT_COSTS, consumeAICredits } from '../../lib/aiCredits';
 import type { AdminTheme } from '../../lib/adminTheme';
 import {
   UploadSimple,
@@ -21,7 +20,6 @@ import {
 } from '@phosphor-icons/react';
 import PhotoEnhance from './PhotoEnhance';
 import ImageEditor from './ImageEditor';
-import { measureBlob } from '../../lib/imageEdit';
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
@@ -305,71 +303,16 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
   }
 
   /**
-   * PhotoEnhance'ten gelen iyileştirilmiş blob'u Storage'a yükler, media_library'ye
-   * ai_enhanced=true + original_id olarak yeni row ekler, kredi düşer, log yazar.
+   * Worker (process-ai-queue) media_library row'unu eklemiş, storage'a yüklemiş,
+   * krediyi düşmüştür. Frontend sadece grid + kredi sayacını yeniler.
    */
-  async function handleEnhanceSave(
-    source: MediaItem,
-    blob: Blob,
-    mimeType: string,
-  ): Promise<{ id: string; file_path: string } | null> {
-    // Kota kontrolü
-    if (credits.storageUsedBytes + blob.size > credits.storageLimitMb * 1024 * 1024) {
-      flash('Storage kotası aşılacak — önce eski görseller silinmeli.', 'err');
-      return null;
-    }
-
-    const ext = mimeType === 'image/png' ? 'png' : mimeType === 'image/webp' ? 'webp' : 'jpg';
-    const path = `${restaurantSlug}/library/enhanced-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-
-    const up = await supabase.storage
-      .from('menu-images')
-      .upload(path, blob, { upsert: false, contentType: mimeType });
-    if (up.error) throw new Error(`Yükleme hatası: ${up.error.message}`);
-
-    // Hash hesapla (duplicate için)
-    const hashBuf = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer());
-    const hash = Array.from(new Uint8Array(hashBuf)).map((b) => b.toString(16).padStart(2, '0')).join('');
-
-    const dims = await measureBlob(blob).catch(() => ({ width: 0, height: 0 } as { width: number; height: number }));
-
-    const { data: inserted, error: insErr } = await supabase
-      .from('media_library')
-      .insert({
-        restaurant_id: restaurantId,
-        file_name: `enhanced-${source.file_name}`,
-        file_path: path,
-        file_size: blob.size,
-        file_type: mimeType,
-        width: dims.width || null,
-        height: dims.height || null,
-        file_hash: hash,
-        tags: source.tags,
-        used_in: [],
-        ai_enhanced: true,
-        original_id: source.id,
-      })
-      .select()
-      .single();
-    if (insErr || !inserted) throw new Error(insErr?.message || 'Kayıt başarısız');
-
-    // Atomik kredi düş + log
-    const consumed = await consumeAICredits({
-      restaurantId,
-      amount: AI_CREDIT_COSTS.photoEnhance,
-      actionType: 'photo_enhance',
-      input: { source_id: source.id, source_path: source.file_path },
-      output: { new_id: inserted.id, new_path: path },
-    });
-    if (!consumed) {
-      flash('Kredi düşürülemedi — yetersiz kredi olabilir.', 'warn');
-    }
-
-    flash('Fotoğraf iyileştirildi ve kaydedildi.', 'ok');
-    setSelected(null);
-    loadMedia();
+  async function handleWorkerJobComplete(
+    _mediaId: string,
+    _filePath: string,
+  ): Promise<void> {
+    await loadMedia();
     credits.refresh();
-    return { id: inserted.id, file_path: path };
+    flash('Fotoğraf iyileştirildi ve kaydedildi.', 'ok');
   }
 
   async function deleteItemSilent(id: string) {
@@ -880,15 +823,11 @@ export default function MediaLibrary({ restaurantId, restaurantSlug, theme }: Pr
         <PhotoEnhance
           restaurantId={restaurantId}
           restaurantSlug={restaurantSlug}
+          sourceId={enhanceTarget.id}
           originalUrl={getPublicUrl(enhanceTarget.file_path)}
           theme={theme}
-          onClose={() => {
-            setEnhanceTarget(null);
-            loadMedia();
-          }}
-          onAutoSave={async (blob, mime) => {
-            return await handleEnhanceSave(enhanceTarget, blob, mime);
-          }}
+          onClose={() => setEnhanceTarget(null)}
+          onAutoSave={handleWorkerJobComplete}
           onUndo={async (id) => {
             await deleteItemSilent(id);
           }}

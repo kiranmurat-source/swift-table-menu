@@ -14,6 +14,7 @@ import {
   X,
 } from '@phosphor-icons/react';
 import { supabase } from '../lib/supabase';
+import { enqueueAIJob, subscribeToJob } from '../lib/aiQueue';
 import { isDraftSlug } from '@/lib/slug';
 import TabbledLogo from '@/components/TabbledLogo';
 import MediaPickerModal, {
@@ -536,39 +537,45 @@ export default function Onboarding() {
     if (!nameTrim || aiLoading || aiUsed) return;
     setAiLoading(true);
     setAiError(null);
-    try {
-      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://qmnrawqvkwehufebbkxp.supabase.co';
-      const priceNum = itemPrice ? parseFloat(itemPrice) : 0;
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-description`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          restaurant_id: restaurant.id,
-          item_id: 'new',
-          name_tr: nameTrim,
-          category_name: catName.trim() || '',
-          price: Number.isFinite(priceNum) ? priceNum : 0,
-          allergens: [],
-          is_vegetarian: false,
-          calories: null,
-          tone: 'descriptive',
-          currentDesc: itemDescription.trim(),
-        }),
-      });
-      const data = await res.json();
-      if (data.success && data.description) {
-        setItemDescription(data.description);
-        setAiUsed(true);
-      } else if (res.status === 402 && data.code === 'INSUFFICIENT_CREDITS') {
-        setAiError('AI krediniz yetersiz. Plan yükselterek daha fazla açıklama üretebilirsiniz.');
-      } else {
-        setAiError(data.error || 'AI açıklama oluşturulamadı.');
-      }
-    } catch {
-      setAiError('AI servisi bağlantı hatası.');
-    } finally {
+
+    const priceNum = itemPrice ? parseFloat(itemPrice) : 0;
+
+    const enqueueResult = await enqueueAIJob('description_writer', {
+      restaurant_id: restaurant.id,
+      item_id: 'new',
+      name_tr: nameTrim,
+      category_name: catName.trim() || '',
+      price: Number.isFinite(priceNum) ? priceNum : 0,
+      allergens: [],
+      is_vegetarian: false,
+      calories: null,
+      tone: 'descriptive',
+      currentDesc: itemDescription.trim(),
+    });
+
+    if (!enqueueResult.ok) {
+      setAiError(enqueueResult.error.userMessage);
       setAiLoading(false);
+      return;
     }
+
+    const unsubscribe = subscribeToJob(enqueueResult.data.job_id, (row) => {
+      if (row.status === 'completed') {
+        const result = (row.result_data ?? {}) as { description?: string };
+        if (result.description) {
+          setItemDescription(result.description);
+          setAiUsed(true);
+        } else {
+          setAiError('AI açıklama oluşturulamadı.');
+        }
+        setAiLoading(false);
+        unsubscribe();
+      } else if (row.status === 'failed') {
+        setAiError(row.error_message || 'AI servisi hatası');
+        setAiLoading(false);
+        unsubscribe();
+      }
+    });
   };
 
   const goNext = async () => {

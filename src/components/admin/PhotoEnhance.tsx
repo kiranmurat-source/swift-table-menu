@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from 're
 import { supabase } from '../../lib/supabase';
 import { useAICredits } from '../../hooks/useAICredits';
 import { AI_CREDIT_COSTS } from '../../lib/aiCredits';
+import { enqueueAIJob, cancelAIJob, subscribeToJob } from '../../lib/aiQueue';
 import type { AdminTheme } from '../../lib/adminTheme';
 import {
   Sparkle,
@@ -20,6 +21,7 @@ import ImageEditor from './ImageEditor';
 type AngleOpt = 'original' | '45' | '90';
 type LightingOpt = 'original' | 'studio' | 'natural';
 type SurfaceOpt = 'original' | 'wood' | 'light_marble' | 'dark_marble' | 'white' | 'black';
+type EnhanceStatus = 'idle' | 'queued' | 'processing' | 'compare' | 'editing' | 'error';
 
 const ANGLE_OPTIONS: { value: AngleOpt; label: string; desc: string }[] = [
   { value: 'original', label: 'Orijinal', desc: 'Değiştirme' },
@@ -40,22 +42,22 @@ const SURFACE_OPTIONS: { value: SurfaceOpt; label: string; swatch: string }[] = 
   { value: 'black', label: 'Siyah Düz', swatch: '#111111' },
 ];
 
-const SUPABASE_URL = 'https://qmnrawqvkwehufebbkxp.supabase.co';
-
 interface Props {
   restaurantId: string;
   restaurantSlug: string;
+  /** Source MediaItem.id — worker'a iletilir, media_library.original_id olarak kaydedilir. */
+  sourceId: string;
   /** Kaynak (orijinal) görsel URL — public bir URL olmalı, base64'e çevrilir */
   originalUrl: string;
   theme: AdminTheme;
   onClose: () => void;
   /**
-   * Edge Function başarılı dönünce ANINDA çağrılır (compare view'a girmeden önce).
-   * Parent Storage'a yükler + media_library row'u oluşturur + kredi düşer.
-   * Başarılı ise eklenen row'un id ve file_path'ini döner; kota gibi nedenlerle başarısız olursa null.
+   * Worker tamamlandığında çağrılır. Worker zaten media_library row'unu eklemiş,
+   * storage'a yüklemiş ve krediyi düşmüştür. Caller sadece grid + kredi sayacını
+   * yeniler.
    */
-  onAutoSave: (enhancedBlob: Blob, mimeType: string) => Promise<{ id: string; file_path: string } | null>;
-  /** Kullanıcı "Geri Al" derse: oto-kaydedilen row'u sil (storage + db). */
+  onAutoSave: (mediaId: string, filePath: string) => Promise<void>;
+  /** Kullanıcı "Geri Al" derse: worker tarafından eklenen row'u sil. */
   onUndo: (mediaId: string) => Promise<void>;
 }
 
@@ -70,83 +72,90 @@ async function urlToBase64DataUrl(url: string): Promise<string> {
   });
 }
 
-function base64ToBlob(base64: string, mime: string): Blob {
-  const binStr = atob(base64);
-  const len = binStr.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) bytes[i] = binStr.charCodeAt(i);
-  return new Blob([bytes], { type: mime });
-}
-
-export default function PhotoEnhance({ restaurantId, restaurantSlug, originalUrl, theme, onClose, onAutoSave, onUndo }: Props) {
+export default function PhotoEnhance({ restaurantId, restaurantSlug, sourceId, originalUrl, theme, onClose, onAutoSave, onUndo }: Props) {
   const credits = useAICredits(restaurantId);
-  const [status, setStatus] = useState<'confirm' | 'loading' | 'compare' | 'editing' | 'error'>('confirm');
+  const [status, setStatus] = useState<EnhanceStatus>('idle');
   const [error, setError] = useState<string | null>(null);
-  const [enhanced, setEnhanced] = useState<{ base64: string; mime: string } | null>(null);
+  const [enhancedPublicUrl, setEnhancedPublicUrl] = useState<string | null>(null);
   const [savedMediaId, setSavedMediaId] = useState<string | null>(null);
   const [savedFilePath, setSavedFilePath] = useState<string | null>(null);
+  const [jobId, setJobId] = useState<string | null>(null);
   const [sliderPercent, setSliderPercent] = useState(50);
   const [angle, setAngle] = useState<AngleOpt>('original');
   const [lighting, setLighting] = useState<LightingOpt>('original');
   const [surface, setSurface] = useState<SurfaceOpt>('original');
 
   const runEnhance = useCallback(async () => {
-    setStatus('loading');
+    setStatus('queued');
     setError(null);
     setSavedMediaId(null);
     setSavedFilePath(null);
+    setEnhancedPublicUrl(null);
+    setJobId(null);
     try {
       const dataUrl = await urlToBase64DataUrl(originalUrl);
-
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/enhance-photo`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          image: dataUrl,
-          restaurant_id: restaurantId,
-          options: { angle, lighting, surface },
-        }),
+      const result = await enqueueAIJob('photo_enhance', {
+        image: dataUrl,
+        restaurant_id: restaurantId,
+        source_id: sourceId,
+        options: { angle, lighting, surface },
       });
-
-      const body = await res.json();
-      if (!res.ok || !body.ok) {
-        throw new Error(body?.error || 'İyileştirme başarısız');
-      }
-
-      const mime = body.mime_type || 'image/png';
-      setEnhanced({ base64: body.enhanced_base64, mime });
-
-      // Otomatik kayıt: compare view'a geçmeden önce kalıcı yap
-      try {
-        const blob = base64ToBlob(body.enhanced_base64, mime);
-        const saved = await onAutoSave(blob, mime);
-        if (saved?.id) {
-          setSavedMediaId(saved.id);
-          setSavedFilePath(saved.file_path);
-        } else {
-          setError('Otomatik kayıt başarısız oldu. Lütfen tekrar deneyin.');
-          setStatus('error');
-          return;
-        }
-      } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : '';
-        setError('Otomatik kayıt başarısız oldu' + (msg ? ': ' + msg : ''));
+      if (!result.ok) {
+        setError(result.error.userMessage);
         setStatus('error');
         return;
       }
-
-      setStatus('compare');
+      setJobId(result.data.job_id);
+      // Status stays 'queued' until Realtime delivers the next transition.
     } catch (e) {
       setError((e as Error).message);
       setStatus('error');
     }
-  }, [originalUrl, restaurantId, angle, lighting, surface, onAutoSave]);
+  }, [originalUrl, restaurantId, sourceId, angle, lighting, surface]);
+
+  useEffect(() => {
+    if (!jobId) return;
+    const unsubscribe = subscribeToJob(jobId, async (row) => {
+      if (row.status === 'processing') {
+        setStatus('processing');
+      } else if (row.status === 'completed') {
+        const result = (row.result_data ?? {}) as {
+          media_library_id?: string;
+          file_path?: string;
+        };
+        if (!result.media_library_id || !result.file_path) {
+          setError('İyileştirme tamamlandı ama sonuç okunamadı.');
+          setStatus('error');
+          return;
+        }
+        const { data: urlData } = supabase.storage
+          .from('menu-images')
+          .getPublicUrl(result.file_path);
+        try {
+          await onAutoSave(result.media_library_id, result.file_path);
+        } catch {
+          // onAutoSave is a parent-side UI refresh; don't block the compare view on its errors.
+        }
+        setSavedMediaId(result.media_library_id);
+        setSavedFilePath(result.file_path);
+        setEnhancedPublicUrl(urlData.publicUrl);
+        setStatus('compare');
+      } else if (row.status === 'failed') {
+        setError(row.error_message || 'İyileştirme başarısız oldu.');
+        setStatus('error');
+      } else if (row.status === 'cancelled') {
+        setStatus('idle');
+        setJobId(null);
+      }
+    });
+    return unsubscribe;
+  }, [jobId, onAutoSave]);
+
+  const handleCancel = async () => {
+    if (!jobId) return;
+    await cancelAIJob(jobId);
+    // Realtime UPDATE for status='cancelled' will reset us to 'idle'.
+  };
 
   // Drag slider
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -366,7 +375,7 @@ export default function PhotoEnhance({ restaurantId, restaurantSlug, originalUrl
           </button>
         </div>
 
-        {status === 'confirm' && (
+        {status === 'idle' && (
           <div>
             <img src={originalUrl} alt="" style={{ width: '100%', borderRadius: 10, maxHeight: 280, objectFit: 'contain', background: theme.pageBg }} />
 
@@ -492,7 +501,7 @@ export default function PhotoEnhance({ restaurantId, restaurantSlug, originalUrl
           </div>
         )}
 
-        {status === 'loading' && (
+        {(status === 'queued' || status === 'processing') && (
           <div style={{ textAlign: 'center', padding: '40px 20px' }}>
             <div
               style={{
@@ -506,15 +515,33 @@ export default function PhotoEnhance({ restaurantId, restaurantSlug, originalUrl
               }}
             />
             <div style={{ marginTop: 12, fontSize: 14, color: theme.value, fontWeight: 500 }}>
-              İyileştiriliyor...
+              {status === 'queued' ? 'Sırada bekleniyor…' : 'AI fotoğrafı iyileştiriyor…'}
             </div>
             <div style={{ marginTop: 4, fontSize: 12, color: theme.subtle }}>
-              Bu işlem 15-45 saniye sürebilir.
+              Bu işlem 15-60 saniye sürebilir.
             </div>
+            {status === 'queued' && jobId && (
+              <button
+                type="button"
+                onClick={handleCancel}
+                style={{
+                  marginTop: 16,
+                  padding: '8px 16px',
+                  background: 'transparent',
+                  color: theme.value,
+                  border: `1px solid ${theme.border}`,
+                  borderRadius: 8,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                }}
+              >
+                İptal
+              </button>
+            )}
           </div>
         )}
 
-        {status === 'compare' && enhanced && (
+        {status === 'compare' && enhancedPublicUrl && (
           <div>
             <div
               ref={wrapRef}
@@ -525,7 +552,7 @@ export default function PhotoEnhance({ restaurantId, restaurantSlug, originalUrl
               <img src={originalUrl} alt="Orijinal" style={S.imgFull} draggable={false} />
               <div style={S.clipLayer}>
                 <img
-                  src={`data:${enhanced.mime};base64,${enhanced.base64}`}
+                  src={enhancedPublicUrl}
                   alt="İyileştirilmiş"
                   style={S.imgFull}
                   draggable={false}
@@ -560,11 +587,11 @@ export default function PhotoEnhance({ restaurantId, restaurantSlug, originalUrl
           </div>
         )}
 
-        {status === 'editing' && savedMediaId && savedFilePath && enhanced && (
+        {status === 'editing' && savedMediaId && savedFilePath && enhancedPublicUrl && (
           <ImageEditor
             mediaId={savedMediaId}
             oldFilePath={savedFilePath}
-            publicUrl={`data:${enhanced.mime};base64,${enhanced.base64}`}
+            publicUrl={enhancedPublicUrl}
             restaurantSlug={restaurantSlug}
             theme={theme}
             mode="inline"
