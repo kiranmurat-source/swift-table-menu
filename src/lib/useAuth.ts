@@ -16,7 +16,15 @@ export function useAuth() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      setUser(session?.user ?? null);
+      setUser((prevUser) => {
+        const nextUser = session?.user ?? null;
+        // Skip update if user identity hasn't changed — prevents tab-focus
+        // form wipes caused by new object references on TOKEN_REFRESHED.
+        if (prevUser?.id === nextUser?.id) {
+          return prevUser;
+        }
+        return nextUser;
+      });
       setLoading(false);
     });
 
