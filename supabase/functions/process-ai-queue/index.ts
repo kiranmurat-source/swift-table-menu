@@ -208,7 +208,7 @@ async function handlePhoto(supabase: SupabaseClient, job: JobRow): Promise<Handl
   const input = job.input_data as {
     image: string;
     options?: EnhanceOptions;
-    original_id?: string | null;
+    source_id?: string | null;
   };
   if (!input?.image) {
     throw new Error("INVALID_INPUT_NO_IMAGE");
@@ -268,7 +268,7 @@ async function handlePhoto(supabase: SupabaseClient, job: JobRow): Promise<Handl
       width: dims?.width ?? null,
       height: dims?.height ?? null,
       ai_enhanced: true,
-      original_id: input.original_id ?? null,
+      original_id: input.source_id ?? null,
     })
     .select("id")
     .single();
