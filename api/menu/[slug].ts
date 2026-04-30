@@ -20,7 +20,7 @@ const SUPABASE_ANON_KEY =
   process.env.VITE_SUPABASE_ANON_KEY ||
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtbnJhd3F2a3dlaHVmZWJia3hwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTk5OTQsImV4cCI6MjA5MDc5NTk5NH0.cQeGl66uJAy3Q4FpAgh6hgNImEx4RsVK-CfBuukJuEc';
 
-const CACHE_CONTROL = 's-maxage=60, stale-while-revalidate=300';
+const CACHE_CONTROL = 's-maxage=10, stale-while-revalidate=30';
 
 let cachedTemplate: string | null = null;
 function readTemplate(): string {
