@@ -9,7 +9,7 @@ import MediaPickerModal, { attachMediaUsage, detachMediaUsage } from './admin/Me
 import { useDirtySave } from '../contexts/DirtySaveContext';
 import { useDirtyState } from '../hooks/useDirtyState';
 
-const STICKY_SAVE_PILOT_PROMOS = true;
+export const STICKY_SAVE_PILOT_PROMOS = true;
 
 type PromoCategory = { id: string; name_tr: string };
 
@@ -220,9 +220,11 @@ function PromosTab({ restaurant, theme }: { restaurant: Restaurant; theme: Admin
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1C1C1E' }}>Promosyonlar</h3>
-        <button onClick={() => { if (showForm) resetForm(); else { setForm(emptyPromoForm); setShowForm(true); } }} style={S.btnSm}>
-          {showForm ? 'İptal' : '+ Yeni Promo'}
-        </button>
+        {(!STICKY_SAVE_PILOT_PROMOS || !showForm) && (
+          <button onClick={() => { if (showForm) resetForm(); else { setForm(emptyPromoForm); setShowForm(true); } }} style={S.btnSm}>
+            {showForm ? 'İptal' : '+ Yeni Promo'}
+          </button>
+        )}
       </div>
 
       {showForm && (

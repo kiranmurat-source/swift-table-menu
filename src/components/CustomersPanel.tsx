@@ -9,7 +9,7 @@ import { getAdminTheme } from '../lib/adminTheme';
 import { useDirtySave } from '../contexts/DirtySaveContext';
 import { useDirtyState } from '../hooks/useDirtyState';
 
-const STICKY_SAVE_PILOT_CUSTOMERS = true;
+export const STICKY_SAVE_PILOT_CUSTOMERS = true;
 
 type Customer = {
   id: string;
@@ -282,9 +282,11 @@ export default function CustomersPanel({ restaurantId, theme }: { restaurantId: 
             <h4 style={{ fontSize: 14, fontWeight: 600, color: t.value, margin: 0 }}>
               {editingId ? 'Müşteriyi Düzenle' : 'Yeni Müşteri'}
             </h4>
-            <button type="button" onClick={resetForm} style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.subtle }}>
-              <X size={18} weight="thin" />
-            </button>
+            {!STICKY_SAVE_PILOT_CUSTOMERS && (
+              <button type="button" onClick={resetForm} style={{ background: 'none', border: 'none', cursor: 'pointer', color: t.subtle }}>
+                <X size={18} weight="thin" />
+              </button>
+            )}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
             <label style={{ fontSize: 12, color: t.subtle }}>

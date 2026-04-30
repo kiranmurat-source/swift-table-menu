@@ -25,7 +25,7 @@ import { useDirtyState } from '@/hooks/useDirtyState';
 import FeedbackPanel from '../components/FeedbackPanel';
 import DiscountCodesPanel from '../components/DiscountCodesPanel';
 import LikesPanel from '../components/LikesPanel';
-import CustomersPanel from '../components/CustomersPanel';
+import CustomersPanel, { STICKY_SAVE_PILOT_CUSTOMERS } from '../components/CustomersPanel';
 import NotificationsPanel from '../components/NotificationsPanel';
 import { hasFeature } from '../lib/planFeatures';
 import { getAdminTheme, type AdminTheme } from '../lib/adminTheme';
@@ -80,7 +80,7 @@ import { useBaseCurrencySymbol } from '../lib/currencySymbols';
 import { ProfileTab } from '../components/ProfilePanel';
 import { LegalSettings } from '../components/admin/LegalSettings';
 import { PDFDownloadButton } from '../components/admin/pdf/PDFDownloadButton';
-import { PromosTab } from '../components/PromosPanel';
+import { PromosTab, STICKY_SAVE_PILOT_PROMOS } from '../components/PromosPanel';
 import { Restaurant, makeStyles, toggleSwitchStyle, toggleKnobStyle } from '../components/admin/dashboardShared';
 
 type Translations = {
@@ -1644,7 +1644,6 @@ function RestaurantDashboardInner() {
                 />
               )}
               <button onClick={() => setShowCatForm(!showCatForm)} style={S.btnSm}>{showCatForm ? 'İptal' : '+ Kategori'}</button>
-              {STICKY_SAVE_PILOT_MENU_PANEL && <DirtySaveButtons theme={adminTheme} />}
             </div>
           </div>
 
@@ -3073,6 +3072,9 @@ function RestaurantDashboardInner() {
           restaurantSlug={restaurant.slug}
           theme={adminTheme}
         />
+      )}
+      {(STICKY_SAVE_PILOT_MENU_PANEL || STICKY_SAVE_PILOT_PROMOS || STICKY_SAVE_PILOT_CUSTOMERS) && (
+        <DirtySaveButtons theme={adminTheme} />
       )}
     </div>
   );
