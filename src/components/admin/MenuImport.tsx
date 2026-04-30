@@ -170,6 +170,7 @@ export default function MenuImport({ restaurantId, baseCurrency, theme, onImport
   // Resume any in-flight or recently-completed-but-unconsumed menu_import job
   // for this restaurant. Runs once when component mounts (or restaurantId changes).
   useEffect(() => {
+    console.log("[MenuImport] resume effect mount, restaurantId:", restaurantId, "jobId:", jobId, "step:", step);
     let cancelled = false;
     if (jobId || step !== 'upload') return;
     (async () => {
