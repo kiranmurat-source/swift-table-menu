@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import {
   Users, PlusCircle, PencilSimple, Trash, X, CheckCircle,
   ChatCircle, ShoppingCart, CalendarBlank, MagnifyingGlass, Star,
@@ -6,6 +6,10 @@ import {
 import { supabase } from '../lib/supabase';
 import type { AdminTheme } from '../lib/adminTheme';
 import { getAdminTheme } from '../lib/adminTheme';
+import { useDirtySave } from '../contexts/DirtySaveContext';
+import { useDirtyState } from '../hooks/useDirtyState';
+
+const STICKY_SAVE_PILOT_CUSTOMERS = true;
 
 type Customer = {
   id: string;
@@ -70,6 +74,39 @@ export default function CustomersPanel({ restaurantId, theme }: { restaurantId: 
   const [search, setSearch] = useState('');
   const [tagFilter, setTagFilter] = useState<string>('');
   const [msg, setMsg] = useState('');
+
+  const { setDirtyState, clearDirtyState } = useDirtySave();
+  const customerSnapshotKey = showForm ? (editingId ?? 'new') : null;
+  const customerDirty = useDirtyState(form, customerSnapshotKey);
+  const submitCustomerRef = useRef<(() => void | Promise<void>) | null>(null);
+  const cancelCustomerRef = useRef<(() => void) | null>(null);
+
+  submitCustomerRef.current = () => saveCustomer();
+  cancelCustomerRef.current = () => {
+    setForm(customerDirty.resetToInitial());
+    setEditingId(null);
+    setShowForm(false);
+  };
+
+  useEffect(() => {
+    if (!STICKY_SAVE_PILOT_CUSTOMERS) return;
+    if (showForm) {
+      setDirtyState(
+        customerDirty.isDirty,
+        () => submitCustomerRef.current?.(),
+        () => cancelCustomerRef.current?.(),
+        editingId ? 'Güncelle' : 'Kaydet',
+      );
+    } else {
+      clearDirtyState();
+    }
+  }, [showForm, customerDirty.isDirty, editingId, setDirtyState, clearDirtyState]);
+
+  useEffect(() => {
+    return () => {
+      if (STICKY_SAVE_PILOT_CUSTOMERS) clearDirtyState();
+    };
+  }, [clearDirtyState]);
 
   useEffect(() => {
     void load();
@@ -291,14 +328,16 @@ export default function CustomersPanel({ restaurantId, theme }: { restaurantId: 
               })}
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-            <button type="button" onClick={saveCustomer} style={{ background: '#FF4F7A', color: '#FFFFFF', border: 'none', padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
-              {editingId ? 'Güncelle' : 'Kaydet'}
-            </button>
-            <button type="button" onClick={resetForm} style={{ background: t.cardBg, color: t.value, border: `1px solid ${t.cardBorder}`, padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>
-              İptal
-            </button>
-          </div>
+          {!STICKY_SAVE_PILOT_CUSTOMERS && (
+            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+              <button type="button" onClick={saveCustomer} style={{ background: '#FF4F7A', color: '#FFFFFF', border: 'none', padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+                {editingId ? 'Güncelle' : 'Kaydet'}
+              </button>
+              <button type="button" onClick={resetForm} style={{ background: t.cardBg, color: t.value, border: `1px solid ${t.cardBorder}`, padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13 }}>
+                İptal
+              </button>
+            </div>
+          )}
         </div>
       )}
 

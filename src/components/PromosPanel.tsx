@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { Trash, Info, Image } from "@phosphor-icons/react";
 import type { AdminTheme } from '../lib/adminTheme';
@@ -6,6 +6,10 @@ import { getOptimizedImageUrl, handleImageError } from '../lib/imageUtils';
 import type { Promo } from './PromoPopup';
 import { Restaurant, makeStyles } from './admin/dashboardShared';
 import MediaPickerModal, { attachMediaUsage, detachMediaUsage } from './admin/MediaPickerModal';
+import { useDirtySave } from '../contexts/DirtySaveContext';
+import { useDirtyState } from '../hooks/useDirtyState';
+
+const STICKY_SAVE_PILOT_PROMOS = true;
 
 type PromoCategory = { id: string; name_tr: string };
 
@@ -56,6 +60,39 @@ function PromosTab({ restaurant, theme }: { restaurant: Restaurant; theme: Admin
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
   const [pickerOpen, setPickerOpen] = useState(false);
+
+  const { setDirtyState, clearDirtyState } = useDirtySave();
+  const promoSnapshotKey = showForm ? (form.id ?? 'new') : null;
+  const promoDirty = useDirtyState(form, promoSnapshotKey);
+  const submitPromoRef = useRef<(() => void | Promise<void>) | null>(null);
+  const cancelPromoRef = useRef<(() => void) | null>(null);
+
+  submitPromoRef.current = () =>
+    save({ preventDefault: () => {} } as React.FormEvent);
+  cancelPromoRef.current = () => {
+    setForm(promoDirty.resetToInitial());
+    setShowForm(false);
+  };
+
+  useEffect(() => {
+    if (!STICKY_SAVE_PILOT_PROMOS) return;
+    if (showForm) {
+      setDirtyState(
+        promoDirty.isDirty,
+        () => submitPromoRef.current?.(),
+        () => cancelPromoRef.current?.(),
+        form.id ? 'Güncelle' : 'Kaydet',
+      );
+    } else {
+      clearDirtyState();
+    }
+  }, [showForm, promoDirty.isDirty, form.id, setDirtyState, clearDirtyState]);
+
+  useEffect(() => {
+    return () => {
+      if (STICKY_SAVE_PILOT_PROMOS) clearDirtyState();
+    };
+  }, [clearDirtyState]);
 
   useEffect(() => {
     load();
@@ -313,10 +350,12 @@ function PromosTab({ restaurant, theme }: { restaurant: Restaurant; theme: Admin
             </label>
           </div>
 
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button type="submit" disabled={saving} style={S.btn}>{saving ? '...' : form.id ? 'Güncelle' : 'Kaydet'}</button>
-            <button type="button" onClick={resetForm} style={S.btnSm}>İptal</button>
-          </div>
+          {!STICKY_SAVE_PILOT_PROMOS && (
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button type="submit" disabled={saving} style={S.btn}>{saving ? '...' : form.id ? 'Güncelle' : 'Kaydet'}</button>
+              <button type="button" onClick={resetForm} style={S.btnSm}>İptal</button>
+            </div>
+          )}
         </form>
       )}
 
