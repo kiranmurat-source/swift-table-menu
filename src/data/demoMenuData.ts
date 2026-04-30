@@ -34,6 +34,7 @@ export const demoRestaurant = {
     saturday: { open: '10:00', close: '00:00', closed: false },
     sunday: { open: '10:00', close: '22:00', closed: false },
   },
+  current_plan: 'premium',
   feature_waiter_calls: true,
   feature_cart: true,
   feature_whatsapp_order: true,

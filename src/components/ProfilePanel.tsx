@@ -180,18 +180,18 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
     social_whatsapp: restaurant.social_whatsapp || '',
     social_google_maps: restaurant.social_google_maps || '',
     splash_video_url: restaurant.splash_video_url || '',
-    feature_waiter_calls: restaurant.feature_waiter_calls ?? true,
-    feature_cart: restaurant.feature_cart ?? true,
-    feature_whatsapp_order: restaurant.feature_whatsapp_order ?? true,
-    feature_feedback: restaurant.feature_feedback ?? true,
-    feature_discount_codes: restaurant.feature_discount_codes ?? true,
-    feature_likes: restaurant.feature_likes ?? true,
+    feature_waiter_calls: hasFeature(restaurant, 'waiter_calls'),
+    feature_cart: hasFeature(restaurant, 'cart'),
+    feature_whatsapp_order: hasFeature(restaurant, 'whatsapp_order'),
+    feature_feedback: hasFeature(restaurant, 'feedback'),
+    feature_discount_codes: hasFeature(restaurant, 'discount_codes'),
+    feature_likes: hasFeature(restaurant, 'likes'),
     feature_reviews: restaurant.feature_reviews ?? true,
-    feature_multi_currency: restaurant.feature_multi_currency ?? false,
-    feature_table_reservation: restaurant.feature_table_reservation ?? true,
-    feature_table_payment: restaurant.feature_table_payment ?? true,
-    feature_digital_tip: restaurant.feature_digital_tip ?? true,
-    feature_group_payment: restaurant.feature_group_payment ?? true,
+    feature_multi_currency: hasFeature(restaurant, 'multi_currency'),
+    feature_table_reservation: hasFeature(restaurant, 'table_reservation'),
+    feature_table_payment: hasFeature(restaurant, 'table_payment'),
+    feature_digital_tip: hasFeature(restaurant, 'digital_tip'),
+    feature_group_payment: hasFeature(restaurant, 'group_payment'),
     base_currency: restaurant.base_currency || 'TRY',
     google_place_id: restaurant.google_place_id || '',
   });
@@ -243,6 +243,26 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
 
   async function performSave() {
     setSaving(true);
+
+    // Build new plan_overrides from form state. Preserve any keys not managed
+    // by this form (super-admin-only flags), then explicitly write each toggle
+    // this form controls. Mirrors SuperAdminDashboard.updateOverride's
+    // 'on'/'off' paths — always explicit boolean, no delete-on-default.
+    const newOverrides: Record<string, boolean> = {
+      ...(restaurant.plan_overrides ?? {}),
+      cart: form.feature_cart,
+      waiter_calls: form.feature_waiter_calls,
+      whatsapp_order: form.feature_whatsapp_order,
+      feedback: form.feature_feedback,
+      discount_codes: form.feature_discount_codes,
+      likes: form.feature_likes,
+      multi_currency: form.feature_multi_currency,
+      table_reservation: form.feature_table_reservation,
+      table_payment: form.feature_table_payment,
+      digital_tip: form.feature_digital_tip,
+      group_payment: form.feature_group_payment,
+    };
+
     const { error } = await supabase.from('restaurants').update({
       name: form.name,
       address: form.address || null,
@@ -258,18 +278,8 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
       social_google_maps: form.social_google_maps || null,
       splash_video_url: form.splash_video_url.trim() || null,
       working_hours: workingHours,
-      feature_waiter_calls: form.feature_waiter_calls,
-      feature_cart: form.feature_cart,
-      feature_whatsapp_order: form.feature_whatsapp_order,
-      feature_feedback: form.feature_feedback,
-      feature_discount_codes: form.feature_discount_codes,
-      feature_likes: form.feature_likes,
+      plan_overrides: newOverrides,
       feature_reviews: form.feature_reviews,
-      feature_multi_currency: form.feature_multi_currency,
-      feature_table_reservation: form.feature_table_reservation,
-      feature_table_payment: form.feature_table_payment,
-      feature_digital_tip: form.feature_digital_tip,
-      feature_group_payment: form.feature_group_payment,
       base_currency: form.base_currency,
       google_place_id: form.google_place_id || null,
     }).eq('id', restaurant.id);
@@ -298,18 +308,8 @@ function ProfileTab({ restaurant, onUpdate, theme }: { restaurant: Restaurant; o
         social_google_maps: form.social_google_maps || null,
         splash_video_url: form.splash_video_url.trim() || null,
         working_hours: workingHours,
-        feature_waiter_calls: form.feature_waiter_calls,
-        feature_cart: form.feature_cart,
-        feature_whatsapp_order: form.feature_whatsapp_order,
-        feature_feedback: form.feature_feedback,
-        feature_discount_codes: form.feature_discount_codes,
-        feature_likes: form.feature_likes,
+        plan_overrides: newOverrides,
         feature_reviews: form.feature_reviews,
-        feature_multi_currency: form.feature_multi_currency,
-        feature_table_reservation: form.feature_table_reservation,
-        feature_table_payment: form.feature_table_payment,
-        feature_digital_tip: form.feature_digital_tip,
-        feature_group_payment: form.feature_group_payment,
         base_currency: form.base_currency,
         google_place_id: form.google_place_id || null,
       });
