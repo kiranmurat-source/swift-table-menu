@@ -15,7 +15,7 @@ import MediaPickerModal, { type MediaAccept, attachMediaUsage, detachMediaUsage 
 import MenuImport from '../components/admin/MenuImport';
 import { useAICredits } from '../hooks/useAICredits';
 import { AI_CREDIT_COSTS } from '../lib/aiCredits';
-import { enqueueAIJob, subscribeToJob } from '../lib/aiQueue';
+import { enqueueAIJob, subscribeToJob, findResumableJob, markJobConsumed, isJobConsumed } from '../lib/aiQueue';
 import { NUTRI_SCORE_COLORS, NUTRI_SCORE_VALUES } from "@/lib/nutritionEU";
 import RestaurantAnalytics from "@/components/dashboard/RestaurantAnalytics";
 import TabbledLogo from '@/components/TabbledLogo';
@@ -351,6 +351,7 @@ function RestaurantDashboardInner() {
   const [generatingAI, setGeneratingAI] = useState(false);
   const [aiTone, setAiTone] = useState<'elegant' | 'casual' | 'descriptive'>('descriptive');
   const [aiPreview, setAiPreview] = useState<string | null>(null);
+  const [aiJobId, setAiJobId] = useState<string | null>(null);
   const [msg, setMsg] = useState('');
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [editingCat, setEditingCat] = useState<string | null>(null);
@@ -668,6 +669,7 @@ function RestaurantDashboardInner() {
     if (!restaurant || !itemForm.name_tr) return;
     setGeneratingAI(true);
     setAiPreview(null);
+    setAiJobId(null);
 
     const catNameVal = selectedCat ? categories.find(c => c.id === selectedCat)?.name_tr || '' : '';
 
@@ -691,7 +693,15 @@ function RestaurantDashboardInner() {
       return;
     }
 
-    const unsubscribe = subscribeToJob(enqueueResult.data.job_id, (row) => {
+    setAiJobId(enqueueResult.data.job_id);
+    // Subscription handled by useEffect on [aiJobId] — auto-cleanup on unmount.
+  }
+
+  // Subscribe to the active description_writer job. Cleanup unsubscribes
+  // automatically on unmount, fixing the channel leak from PR3's inline pattern.
+  useEffect(() => {
+    if (!aiJobId) return;
+    const unsubscribe = subscribeToJob(aiJobId, (row) => {
       if (row.status === 'completed') {
         const result = (row.result_data ?? {}) as { description?: string };
         if (result.description) {
@@ -703,20 +713,61 @@ function RestaurantDashboardInner() {
         }
         setTimeout(() => setMsg(''), 4000);
         setGeneratingAI(false);
-        unsubscribe();
       } else if (row.status === 'failed') {
         setMsg(row.error_message || 'AI servisi hatası');
         setTimeout(() => setMsg(''), 4000);
         setGeneratingAI(false);
-        unsubscribe();
+      } else if (row.status === 'cancelled') {
+        setGeneratingAI(false);
       }
     });
-  }
+    return unsubscribe;
+  }, [aiJobId, aiCredits.refresh]);
+
+  // Resume any in-flight or completed-but-unconsumed description_writer job
+  // for this restaurant after a tab switch or navigation.
+  useEffect(() => {
+    if (!restaurant?.id) return;
+    let cancelled = false;
+    if (aiJobId || aiPreview) return;
+    (async () => {
+      const existing = await findResumableJob({
+        restaurantId: restaurant.id,
+        jobType: 'description_writer',
+      });
+      if (cancelled || !existing) return;
+      if (existing.status === 'completed' && isJobConsumed(existing.id)) return;
+
+      if (existing.status === 'completed') {
+        const result = (existing.result_data ?? {}) as { description?: string };
+        if (result.description) {
+          setAiPreview(result.description);
+          setAiJobId(existing.id);
+        }
+      } else {
+        setGeneratingAI(true);
+        setAiJobId(existing.id);
+      }
+    })();
+    return () => { cancelled = true; };
+    // aiJobId/aiPreview deliberately omitted
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurant?.id]);
+
+  // Clear stale AI preview when user switches to editing a different item.
+  // Pre-existing cross-item leak: aiPreview is wrapper-level, would persist
+  // across form-close + reopen and attach to the wrong item.
+  useEffect(() => {
+    setAiPreview(null);
+    setAiJobId(null);
+  }, [editingItem]);
 
   function acceptAiDescription() {
     if (aiPreview) {
       setItemForm(prev => ({ ...prev, description_tr: aiPreview }));
+      if (aiJobId) markJobConsumed(aiJobId);
       setAiPreview(null);
+      setAiJobId(null);
     }
   }
 

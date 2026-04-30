@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from 're
 import { supabase } from '../../lib/supabase';
 import { useAICredits } from '../../hooks/useAICredits';
 import { AI_CREDIT_COSTS } from '../../lib/aiCredits';
-import { enqueueAIJob, cancelAIJob, subscribeToJob } from '../../lib/aiQueue';
+import { enqueueAIJob, cancelAIJob, subscribeToJob, findResumableJob } from '../../lib/aiQueue';
 import type { AdminTheme } from '../../lib/adminTheme';
 import {
   Sparkle,
@@ -150,6 +150,42 @@ export default function PhotoEnhance({ restaurantId, restaurantSlug, sourceId, o
     });
     return unsubscribe;
   }, [jobId, onAutoSave]);
+
+  // Resume any in-flight or completed-but-unconsumed photo_enhance job for
+  // this exact source image. Consumed signal: media_library row presence —
+  // worker writes the row on completion, Geri Al deletes it.
+  useEffect(() => {
+    let cancelled = false;
+    if (jobId || status !== 'idle') return;
+    (async () => {
+      const existing = await findResumableJob({
+        restaurantId,
+        jobType: 'photo_enhance',
+        inputDataFilter: { source_id: sourceId },
+      });
+      if (cancelled || !existing) return;
+
+      if (existing.status === 'completed') {
+        const result = (existing.result_data ?? {}) as { media_library_id?: string };
+        if (!result.media_library_id) return;
+        const { data: mediaRow } = await supabase
+          .from('media_library')
+          .select('id')
+          .eq('id', result.media_library_id)
+          .maybeSingle();
+        if (cancelled) return;
+        if (!mediaRow) return; // Already deleted via Geri Al — don't resurface
+      }
+
+      // Hand the existing jobId to the subscribe-effect; its one-shot SELECT
+      // will pick up the current row state and transition through the normal flow.
+      setJobId(existing.id);
+      setStatus(existing.status === 'completed' ? 'processing' : existing.status);
+    })();
+    return () => { cancelled = true; };
+    // jobId/status deliberately omitted: only run on mount or sourceId switch
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurantId, sourceId]);
 
   const handleCancel = async () => {
     if (!jobId) return;

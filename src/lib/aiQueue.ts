@@ -128,3 +128,65 @@ export function subscribeToJob(
     supabase.removeChannel(channel);
   };
 }
+
+export interface InFlightJobQuery {
+  restaurantId: string;
+  jobType: AIJobType;
+  /** JSONB containment filter on input_data, e.g. { source_id: '<uuid>' } for PhotoEnhance. */
+  inputDataFilter?: Record<string, string>;
+}
+
+const RESUME_WINDOW_MS = 5 * 60 * 1000;
+
+/**
+ * Queries ai_jobs for any in-flight (queued/processing) or recently-completed
+ * job matching the filter. Returns the most recent matching row, or null.
+ *
+ * - Window: jobs created in the last 5 minutes
+ * - Statuses included: queued, processing, completed
+ * - Excluded: failed, cancelled (user already saw the outcome)
+ */
+export async function findResumableJob(
+  query: InFlightJobQuery,
+): Promise<AIJobRow | null> {
+  let q = supabase
+    .from('ai_jobs')
+    .select('id, status, result_data, error_code, error_message, attempt_count')
+    .eq('restaurant_id', query.restaurantId)
+    .eq('job_type', query.jobType)
+    .in('status', ['queued', 'processing', 'completed'])
+    .gte('created_at', new Date(Date.now() - RESUME_WINDOW_MS).toISOString())
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  if (query.inputDataFilter) {
+    q = q.contains('input_data', query.inputDataFilter);
+  }
+
+  const { data, error } = await q.maybeSingle();
+  if (error || !data) return null;
+  return data as AIJobRow;
+}
+
+/**
+ * Mark a job's result as consumed (user accepted/saw it). Persisted in
+ * localStorage so subsequent mounts don't re-surface the same preview.
+ */
+export function markJobConsumed(jobId: string): void {
+  try {
+    localStorage.setItem(`tabbled:ai-job:consumed:${jobId}`, '1');
+  } catch {
+    // localStorage may be unavailable (private browsing, SSR); silent fail OK.
+  }
+}
+
+/**
+ * Check whether a completed job's result has been consumed.
+ */
+export function isJobConsumed(jobId: string): boolean {
+  try {
+    return localStorage.getItem(`tabbled:ai-job:consumed:${jobId}`) === '1';
+  } catch {
+    return false;
+  }
+}

@@ -14,7 +14,7 @@ import {
   X,
 } from '@phosphor-icons/react';
 import { supabase } from '../lib/supabase';
-import { enqueueAIJob, subscribeToJob } from '../lib/aiQueue';
+import { enqueueAIJob, subscribeToJob, findResumableJob, markJobConsumed, isJobConsumed } from '../lib/aiQueue';
 import { isDraftSlug } from '@/lib/slug';
 import TabbledLogo from '@/components/TabbledLogo';
 import MediaPickerModal, {
@@ -211,6 +211,7 @@ export default function Onboarding() {
   const [step4Error, setStep4Error] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiUsed, setAiUsed] = useState(false);
+  const [aiJobId, setAiJobId] = useState<string | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
 
   // Step 5
@@ -537,6 +538,7 @@ export default function Onboarding() {
     if (!nameTrim || aiLoading || aiUsed) return;
     setAiLoading(true);
     setAiError(null);
+    setAiJobId(null);
 
     const priceNum = itemPrice ? parseFloat(itemPrice) : 0;
 
@@ -559,24 +561,82 @@ export default function Onboarding() {
       return;
     }
 
-    const unsubscribe = subscribeToJob(enqueueResult.data.job_id, (row) => {
+    setAiJobId(enqueueResult.data.job_id);
+    // Subscription handled by useEffect on [aiJobId] — auto-cleanup on unmount.
+  };
+
+  // Subscribe to the active description_writer job. Cleanup unsubscribes
+  // automatically on unmount, fixing the channel leak from PR3's inline pattern.
+  useEffect(() => {
+    if (!aiJobId) return;
+    const unsubscribe = subscribeToJob(aiJobId, (row) => {
       if (row.status === 'completed') {
         const result = (row.result_data ?? {}) as { description?: string };
         if (result.description) {
           setItemDescription(result.description);
           setAiUsed(true);
+          if (restaurant?.id) {
+            try {
+              localStorage.setItem(`tabbled:onboarding-ai-used:${restaurant.id}`, '1');
+            } catch { /* ignore */ }
+          }
+          markJobConsumed(aiJobId);
         } else {
           setAiError('AI açıklama oluşturulamadı.');
         }
         setAiLoading(false);
-        unsubscribe();
       } else if (row.status === 'failed') {
         setAiError(row.error_message || 'AI servisi hatası');
         setAiLoading(false);
-        unsubscribe();
+      } else if (row.status === 'cancelled') {
+        setAiLoading(false);
       }
     });
-  };
+    return unsubscribe;
+  }, [aiJobId, restaurant?.id]);
+
+  // Restore aiUsed from localStorage so a browser-close mid-onboarding doesn't
+  // reset the one-shot flag and let the user trigger a duplicate description_writer.
+  useEffect(() => {
+    if (!restaurant?.id) return;
+    try {
+      const persisted = localStorage.getItem(`tabbled:onboarding-ai-used:${restaurant.id}`);
+      if (persisted === '1') setAiUsed(true);
+    } catch { /* ignore */ }
+  }, [restaurant?.id]);
+
+  // Resume any in-flight or completed-but-unconsumed description_writer job.
+  useEffect(() => {
+    if (!restaurant?.id) return;
+    let cancelled = false;
+    if (aiJobId || aiUsed) return;
+    (async () => {
+      const existing = await findResumableJob({
+        restaurantId: restaurant.id,
+        jobType: 'description_writer',
+      });
+      if (cancelled || !existing) return;
+      if (existing.status === 'completed' && isJobConsumed(existing.id)) return;
+
+      if (existing.status === 'completed') {
+        const result = (existing.result_data ?? {}) as { description?: string };
+        if (result.description) {
+          setItemDescription(result.description);
+          setAiUsed(true);
+          markJobConsumed(existing.id);
+          try {
+            localStorage.setItem(`tabbled:onboarding-ai-used:${restaurant.id}`, '1');
+          } catch { /* ignore */ }
+        }
+      } else {
+        setAiLoading(true);
+        setAiJobId(existing.id);
+      }
+    })();
+    return () => { cancelled = true; };
+    // aiJobId/aiUsed deliberately omitted
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurant?.id]);
 
   const goNext = async () => {
     if (saving) return;

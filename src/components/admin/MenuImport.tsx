@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import { supabase } from '../../lib/supabase';
 import { useAICredits } from '../../hooks/useAICredits';
 import { AI_CREDIT_COSTS } from '../../lib/aiCredits';
-import { enqueueAIJob, cancelAIJob, subscribeToJob } from '../../lib/aiQueue';
+import { enqueueAIJob, cancelAIJob, subscribeToJob, findResumableJob, markJobConsumed, isJobConsumed } from '../../lib/aiQueue';
 import type { AdminTheme } from '../../lib/adminTheme';
 import { useBaseCurrencySymbol } from '../../lib/currencySymbols';
 import {
@@ -167,6 +167,54 @@ export default function MenuImport({ restaurantId, baseCurrency, theme, onImport
     return unsubscribe;
   }, [jobId, credits.refresh]);
 
+  // Resume any in-flight or recently-completed-but-unconsumed menu_import job
+  // for this restaurant. Runs once when component mounts (or restaurantId changes).
+  useEffect(() => {
+    let cancelled = false;
+    if (jobId || step !== 'upload') return;
+    (async () => {
+      const existing = await findResumableJob({
+        restaurantId,
+        jobType: 'menu_import',
+      });
+      if (cancelled || !existing) return;
+      if (existing.status === 'completed' && isJobConsumed(existing.id)) return;
+
+      if (existing.status === 'completed') {
+        type ParsedCat = {
+          name_tr: string;
+          items: { name_tr: string; description_tr: string | null; price: number | null }[];
+        };
+        const result = (existing.result_data ?? {}) as { categories?: ParsedCat[] };
+        if (!Array.isArray(result.categories)) return;
+        const decorated: DraftCategory[] = result.categories.map((c) => ({
+          id: uid(),
+          name_tr: c.name_tr,
+          expanded: true,
+          items: (c.items || []).map((it) => ({
+            id: uid(),
+            name_tr: it.name_tr,
+            description_tr: it.description_tr,
+            price: it.price,
+            selected: true,
+          })),
+        }));
+        setDraft(decorated);
+        setJobId(existing.id);
+        setStep('preview');
+        setProgress(100);
+      } else {
+        // queued or processing — let the subscribe-effect take over
+        setJobId(existing.id);
+        setStep(existing.status === 'processing' ? 'processing' : 'queued');
+        setProgress(existing.status === 'processing' ? 60 : 20);
+      }
+    })();
+    return () => { cancelled = true; };
+    // jobId/step deliberately omitted: this only runs on mount + restaurantId change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurantId]);
+
   const handleCancel = async () => {
     if (!jobId) return;
     await cancelAIJob(jobId);
@@ -212,6 +260,9 @@ export default function MenuImport({ restaurantId, baseCurrency, theme, onImport
       setError('İçe aktarmak için en az bir ürün seçin.');
       return;
     }
+    // Mark consumed up front so a half-failed import doesn't re-surface the
+    // same preview on the next mount. Trade-off accepted per PR3.5 spec.
+    if (jobId) markJobConsumed(jobId);
     setError(null);
     setStep('saving');
     setProgress(20);
