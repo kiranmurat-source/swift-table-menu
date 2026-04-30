@@ -6,7 +6,7 @@ import { getOptimizedImageUrl, handleImageError } from '../lib/imageUtils';
 import { THEMES } from '../lib/themes';
 import { Restaurant, DAY_KEYS, DAY_LABELS, DEFAULT_DAY, makeStyles } from './admin/dashboardShared';
 import MediaPickerModal, { type MediaAccept, attachMediaUsage, detachMediaUsage } from './admin/MediaPickerModal';
-import { hasFeature, PLAN_FEATURES, type FeatureKey } from '../lib/planFeatures';
+import { hasFeature, isFeatureInPlan, PLAN_FEATURES, type FeatureKey } from '../lib/planFeatures';
 
 const SUPABASE_URL = 'https://qmnrawqvkwehufebbkxp.supabase.co';
 
@@ -94,7 +94,7 @@ type ToggleRowProps = {
 };
 
 function ToggleRow({ feature, dbColumn, label, description, restaurant, form, setForm, theme }: ToggleRowProps) {
-  const isInPlan = hasFeature(restaurant, feature);
+  const isInPlan = isFeatureInPlan(restaurant, feature);
   const isOn = !!form[dbColumn];
   const requiredPlan = getRequiredPlan(feature);
 

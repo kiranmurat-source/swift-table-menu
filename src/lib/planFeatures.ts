@@ -197,6 +197,26 @@ export function hasFeature(
   return false;
 }
 
+/**
+ * Returns whether a feature is included in the plan's defaults,
+ * IGNORING any plan_overrides. Use this to answer "is this feature
+ * available on the user's tier" — independent of whether they've
+ * disabled it via override.
+ *
+ * Compare to hasFeature() which factors in overrides. ProfilePanel's
+ * ToggleRow uses this to decide whether to show an upgrade CTA, while
+ * the public menu uses hasFeature() to decide what to render right now.
+ */
+export function isFeatureInPlan(
+  restaurant: RestaurantFeatureContext | null | undefined,
+  key: FeatureKey
+): boolean {
+  if (!restaurant) return false;
+  const plan = (restaurant.current_plan ?? 'basic') as PlanTier;
+  const planMap = PLAN_FEATURES[plan];
+  return planMap?.[key] === true;
+}
+
 export function getEnabledFeatures(
   restaurant: RestaurantFeatureContext | null | undefined
 ): FeatureKey[] {
